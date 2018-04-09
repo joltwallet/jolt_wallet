@@ -1,4 +1,4 @@
-menu "Menu8g2 Config"
+menu "NanoRay Config"
 
     menu "Display"
         config NANORAY_DISPLAY_PIN_SDA

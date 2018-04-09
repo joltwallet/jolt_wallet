@@ -5,4 +5,6 @@
 
 PROJECT_NAME := NanoRay
 
+EXTRA_COMPONENT_DIRS := $(IDF_PATH)/../third-party-components
+
 include $(IDF_PATH)/make/project.mk
