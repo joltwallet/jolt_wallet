@@ -1,0 +1,33 @@
+menu "Menu8g2 Config"
+
+    menu "Display"
+        config NANORAY_DISPLAY_PIN_SDA
+            int
+            prompt "Display SDA GPIO PIN"
+            default 4
+            help
+                help text here
+
+        config NANORAY_DISPLAY_PIN_SCL
+            int
+            prompt "Display SCL GPIO PIN"
+            default 15
+            help
+                help text here
+
+        config NANORAY_DISPLAY_PIN_RST
+            int
+            prompt "Display RST GPIO PIN"
+            default 16
+            help
+                help text here
+
+        config NANORAY_DISPLAY_ADDRESS
+            hex
+            prompt "Display RST GPIO PIN"
+            default 0x78
+            help
+                help text here
+    endmenu
+
+endmenu
