@@ -39,7 +39,7 @@ void gui_task(void *input_queue){
     menu8g2_t menu;
     menu8g2_init(&menu, &u8g2, *(QueueHandle_t *)input_queue);
 
-    const char title[] = "Element Stack Menu";
+    const char title[] = "Main";
 
     menu8g2_elements_t elements;
     menu8g2_elements_init(&elements, 8);
