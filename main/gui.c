@@ -39,31 +39,24 @@ void gui_task(void *input_queue){
     menu8g2_t menu;
     menu8g2_init(&menu, &u8g2, *(QueueHandle_t *)input_queue);
 
-    bool main_menu_response;
+    const char title[] = "Element Stack Menu";
 
-    const char title[] = "Main Menu";
-    const char *options[] = {
-        "Receive",          // 0
-        "Block Count",      // 1
-        "Balance",          // 2
-        "Select Account",   // 3
-        "Address (text)",   // 4
-        "Addresss (QR)",    // 5
-        "Seed (text)",      // 6
-        "Settings"          // 7
-    };
+    menu8g2_elements_t elements;
+    menu8g2_elements_init(&elements, 8);
+    menu8g2_set_element(&elements, "Receive", NULL);
+    menu8g2_set_element(&elements, "Block Count", NULL);
+    menu8g2_set_element(&elements, "Balance", NULL);
+    menu8g2_set_element(&elements, "Select Account", NULL);
+    menu8g2_set_element(&elements, "Address (text)", NULL);
+    menu8g2_set_element(&elements, "Address (QR)", NULL);
+    menu8g2_set_element(&elements, "Seed (text)", NULL);
+    menu8g2_set_element(&elements, "Settings", NULL);
+
     for(;;){
-        main_menu_response = menu8g2_create_simple(&menu, title, options, 8);
-        if(main_menu_response==false){
-            continue;
-        }
-        switch(menu8g2_get_index(&menu)){
-            case 7:
-                break;
-            default:
-                break;
-        }
+        menu8g2_create_vertical_element_menu(&menu, title, &elements);
+        menu.index = 0;
     }
 
+    menu8g2_elements_free(&elements);
     vTaskDelete(NULL); // Should never reach here!
 }
