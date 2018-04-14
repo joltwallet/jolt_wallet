@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := NanoRay
+PROJECT_NAME := nanoray
 
 EXTRA_COMPONENT_DIRS := $(IDF_PATH)/../third-party-components
 

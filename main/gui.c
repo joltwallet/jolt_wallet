@@ -3,7 +3,7 @@
 #include "menu8g2.h"
 
 #include "gui.h"
-#include "menus/settings.h"
+#include "menus/submenus.h"
 
 static void setup_screen(u8g2_t *u8g2){
     // Initialize OLED Screen I2C params
@@ -50,7 +50,7 @@ void gui_task(void *input_queue){
     menu8g2_set_element(&elements, "Address (text)", NULL);
     menu8g2_set_element(&elements, "Address (QR)", NULL);
     menu8g2_set_element(&elements, "Seed (text)", NULL);
-    menu8g2_set_element(&elements, "Settings", NULL);
+    menu8g2_set_element(&elements, "Settings", &settings_menu);
 
     for(;;){
         menu8g2_create_vertical_element_menu(&menu, title, &elements);
