@@ -7,4 +7,6 @@ PROJECT_NAME := nanoray
 
 EXTRA_COMPONENT_DIRS := $(IDF_PATH)/../third-party-components
 
+CFLAGS += -Wno-unknown-pragmas
+
 include $(IDF_PATH)/make/project.mk

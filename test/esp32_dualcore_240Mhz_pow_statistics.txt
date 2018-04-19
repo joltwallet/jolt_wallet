@@ -1,0 +1,10 @@
+Following statistics were derived from 10 PoW tests with a threshold of: 0xFFFFFFC000000000
+
+The ESP32 Clock Speed was 160Mhz
+
+Min: 2531 Seconds (0 Hours, 42Min, 11 Seconds)
+Max: 46116 Seconds (12 Hours, 48 Min, 36 Seconds)
+Mean: 10526 Seconds (2 Hours, 55 Min, 25 Seconds)
+Median: 7135 Seconds (1 Hours, 58 Min, 55.5 Seconds)
+Standard Deviation: 12250 Seconds (3 Hour, 24 Min, 10 Seconds)
+

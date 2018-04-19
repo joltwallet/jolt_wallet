@@ -29,5 +29,26 @@ menu "NanoRay Config"
             help
                 help text here
     endmenu
+    
+    config NANORAY_DEFAULT_TIMEOUT_S
+        int
+        prompt "Default idle time in seconds before wiping vault from memory."
+        default 300
+        help
+            help text here
+
+    config NANORAY_DEFAULT_BOOT_SPLASH_ENABLE
+        bool
+        prompt "Enable boot splash screen"
+        default true
+        help
+            help text here
+
+    config NANORAY_DEFAULT_MAX_ATTEMPT
+        int
+        prompt "Number of pin attempts before wiping NVS"
+        default 10
+        help
+            help text here
 
 endmenu
