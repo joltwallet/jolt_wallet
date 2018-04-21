@@ -7,13 +7,13 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "libsodium.h"
 
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "nano_lib.h"
 
-/* Two main NVS Namespaces: ("secret", "user")
- */
+/* Two main NVS Namespaces: ("secret", "user") */
 
 static void factory_reset(){
     /* Erases all NVM and resets device */
@@ -62,8 +62,12 @@ nl_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace){
     }
 }
 
-nl_err_t vault_init(){
-    /* Storage Security Notes:
+nl_err_t vault_init(vault_t *vault){
+    /* Secure allocates space for vault, and checks if it exists in NVS
+     *   Returns E_SUCCESS if vault found in NVS
+     *   Returns E_FAILURE if vault is not found in NVS
+     *
+     * Storage Security Notes:
      *     * make sure seed and attempt counter are on same page
      *          - Prevents a malicious person from reseting the counter via
      *            page wipe. However, a missing attempt counter should trigger
@@ -73,7 +77,7 @@ nl_err_t vault_init(){
 	nvs_handle nvs_secret;
     esp_err_t err;
     nl_err_t res;
-    vault_t *vault; // Global
+    size_t required_size;
 
     // Allocate guarded space on the heap for the vault
     vault = sodium_malloc(sizeof(vault_t));
@@ -86,7 +90,7 @@ nl_err_t vault_init(){
     init_nvm_namespace(&nvs_secret, "secret");
     
     // Reads vault from nvs into ram
-    err = nvs_get_blob(nvs_secret, "vault", vault, &required_size);
+    err = nvs_get_blob(nvs_secret, "vault", NULL, &required_size);
     if ( ESP_OK == err){
         // vault was found and successfully read from memory;
         // nothing really need to be done here

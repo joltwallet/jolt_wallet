@@ -4,16 +4,12 @@
 #include "nvs.h"
 #include "nano_lib.h"
 
-nvs_handle *nvs_user; // Namespace for holding user configs
-nvs_handle *nvs_public; // Namespace for holding public keys, etc.
-nvs_handle *nvs_secret; // Namespace for holding encrypted data
-
 /* Structure to store anything that if modified could perform something
  * malicious
  */
 typedef struct vault_t{
     char mnemonic[MNEMONIC_BUF_LEN];
-    uint512_t master_seed;
+    uint32_t index;
     bool valid;
 } vault_t;
 
@@ -26,12 +22,16 @@ typedef enum vault_rpc_type_t {
     BLUETOOTH_UNPAIR
 } vault_rpc_type_t;
 
+typedef union vault_payload_t {
+    block_t block;
+} vault payload_t;
+
 typedef struct vault_rpc_t {
     enum vault_rpc_type_t type;
-
+    QueueHandle_t response_queue;
+    vault_payload_t payload;
 } vault_rpc_t
 
-extern vault_t *vault; // global vault variable
 
 nl_err_t vault_init();
 void vault_access_task(void *menu8g2);

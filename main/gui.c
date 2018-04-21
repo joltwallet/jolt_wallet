@@ -9,7 +9,7 @@
 #include "menus/submenus.h"
 #include "security.h"
 
-static void setup_screen(u8g2_t *u8g2){
+void setup_screen(u8g2_t *u8g2){
     // Initialize OLED Screen I2C params
 	u8g2_esp32_hal_t u8g2_esp32_hal = U8G2_ESP32_HAL_DEFAULT;
 	u8g2_esp32_hal.sda  = CONFIG_NANORAY_DISPLAY_PIN_SDA;
@@ -35,16 +35,16 @@ static void setup_screen(u8g2_t *u8g2){
     u8g2_SetContrast(u8g2, 255);
 }
 
-void gui_task(void *input_queue){
+void gui_task(){
     /* Master GUI Task */
+    GLOBAL u8g2_t u8g2;
+    GLOBAL QueueHandle_t input_queue;
+
     nl_err_t err;
 	nvs_handle nvs_user;
     uint8_t boot_splash_enable = CONFIG_NANORAY_DEFAULT_BOOT_SPLASH_ENABLE;
-    u8g2_t u8g2;
-    setup_screen(&u8g2);
-
     menu8g2_t menu;
-    menu8g2_init(&menu, &u8g2, *(QueueHandle_t *)input_queue);
+    menu8g2_init(&menu, &u8g2, input_queue);
 
     // display boot_splash if option is set
     err = init_nvm_namespace(nvs_user, "user");
@@ -52,19 +52,10 @@ void gui_task(void *input_queue){
         nvs_get_u8(nvs_user, "boot_splash", &boot_splash_enable);
         nvs_close(nvs_user);
     }
+    nvs_close(nvs_user);
     if(boot_splash_enable){
 	    boot_splash( &menu );
     }
-
-    // Start up the vault
-    err = vault_init(); // Internally performs first-boot check and sequence
-    if (E_FAILURE == err){
-        // todo: first boot sequence
-    }
-    xTaskCreate(gui_task,
-            "VaultTask", 16000,
-            (void *)input_queue, 20,
-            NULL);
 
     const char title[] = "Main";
 
