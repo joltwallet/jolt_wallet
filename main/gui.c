@@ -4,10 +4,13 @@
 #include "u8g2_esp32_hal.h"
 #include "menu8g2.h"
 
+#include "globals.h"
 #include "graphics.h"
 #include "gui.h"
-#include "menus/submenus.h"
 #include "security.h"
+
+#include "menus/submenus.h"
+
 
 void setup_screen(u8g2_t *u8g2){
     // Initialize OLED Screen I2C params
@@ -37,9 +40,6 @@ void setup_screen(u8g2_t *u8g2){
 
 void gui_task(){
     /* Master GUI Task */
-    GLOBAL u8g2_t u8g2;
-    GLOBAL QueueHandle_t input_queue;
-
     nl_err_t err;
 	nvs_handle nvs_user;
     uint8_t boot_splash_enable = CONFIG_NANORAY_DEFAULT_BOOT_SPLASH_ENABLE;
@@ -47,14 +47,14 @@ void gui_task(){
     menu8g2_init(&menu, &u8g2, input_queue);
 
     // display boot_splash if option is set
-    err = init_nvm_namespace(nvs_user, "user");
+    err = init_nvm_namespace(&nvs_user, "user");
     if(E_SUCCESS == err){
         nvs_get_u8(nvs_user, "boot_splash", &boot_splash_enable);
         nvs_close(nvs_user);
     }
     nvs_close(nvs_user);
     if(boot_splash_enable){
-	    boot_splash( &menu );
+	    boot_splash( menu.u8g2 );
     }
 
     const char title[] = "Main";

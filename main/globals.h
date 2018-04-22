@@ -2,8 +2,10 @@
 #define __NANORAY_GLOBALS_H__
 
 #include "u8g2.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "freertos/task.h"
 
-#define GLOBAL
 
 extern u8g2_t u8g2;
 extern QueueHandle_t vault_queue;

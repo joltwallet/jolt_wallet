@@ -2,16 +2,30 @@
 #include <stdlib.h>
 #include <string.h>
 #include <esp_system.h>
-#include "libsoidum.h"
+#include "sodium.h"
 #include "easy_input.h"
 #include "menu8g2.h"
+#include "u8g2.h"
 #include "security.h"
 #include "secure_entry.h"
 
-bool pin_entry(menu8g2_t menu, unsigned char *pin_hash, const char *title){
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "freertos/task.h"
+
+
+uint8_t get_center_x(u8g2_t *u8g2, const char *text){
+    // Computes X position to print text in center of screen
+    u8g2_uint_t width = u8g2_GetStrWidth(u8g2, text);
+    return (u8g2_GetDisplayWidth(u8g2)-width)/2 ;
+}
+
+#define PIN_SPACING 13
+
+bool pin_entry(menu8g2_t *menu, unsigned char *pin_hash, const char *title){
     /* Screen for Pin Entry 
      * Saves results into pin_entries*/
-    u8g2 = menu->u8g2;
+    u8g2_t *u8g2 = menu->u8g2;
     uint8_t max_pos = MAX_PIN_DIGITS - 1;
     u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
     u8g2_uint_t title_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) +

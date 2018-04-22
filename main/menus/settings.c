@@ -1,7 +1,7 @@
 #include "menu8g2.h"
 #include "submenus.h"
 
-void settings_menu(menu8g2_t *prev){
+void menu_settings(menu8g2_t *prev){
     menu8g2_t menu;
     menu8g2_init(&menu,
             menu8g2_get_u8g2(prev),

@@ -2,28 +2,34 @@
 #include <stdlib.h>
 #include <string.h>
 #include <esp_system.h>
+#include "esp_log.h"
+#include "sodium.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
-#include "esp_log.h"
-#include "libsodium.h"
+
+#include "menu8g2.h"
 
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "nano_lib.h"
+#include "secure_entry.h"
+#include "security.h"
+#include "globals.h"
 
 /* Two main NVS Namespaces: ("secret", "user") */
+static const char* TAG = "security";
 
 static void factory_reset(){
     /* Erases all NVM and resets device */
     nvs_handle h;
-    init_nvm_namespace(&h, "secret")
+    init_nvm_namespace(&h, "secret");
     nvs_erase_all(h);
     nvs_commit(h);
     nvs_close(h);
 
-    init_nvm_namespace(&h, "user")
+    init_nvm_namespace(&h, "user");
     nvs_erase_all(h);
     nvs_commit(h);
     nvs_close(h);
@@ -50,14 +56,14 @@ nl_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace){
     ESP_ERROR_CHECK( err );
     
     // Open
-    ESP_LOGI("Opening Non-Volatile Storage (NVS) handle... ");
+    ESP_LOGI(TAG, "Opening Non-Volatile Storage (NVS) handle... ");
 
     err = nvs_open(namespace, NVS_READWRITE, nvs_h);
     if (err != ESP_OK) {
-        ESP_LOGE("Error (%d) opening NVS handle with namespace %s!\n", err, namespace);
+        ESP_LOGE(TAG, "Error (%d) opening NVS handle with namespace %s!\n", err, namespace);
         return E_FAILURE;
     } else {
-        ESP_LOGI("Successfully opened NVM with namespace %s\n", namespace);
+        ESP_LOGI(TAG, "Successfully opened NVM with namespace %s\n", namespace);
         return E_SUCCESS;
     }
 }
@@ -82,7 +88,7 @@ nl_err_t vault_init(vault_t *vault){
     // Allocate guarded space on the heap for the vault
     vault = sodium_malloc(sizeof(vault_t));
     if( NULL==vault ){
-        ESP_LOGE("Unable to allocate space for the Vault");
+        ESP_LOGE(TAG, "Unable to allocate space for the Vault");
         esp_restart();
     }
 
@@ -101,11 +107,11 @@ nl_err_t vault_init(vault_t *vault){
         res = E_FAILURE;
     }
     
-	nvs_close(nvs_secret)
+	nvs_close(nvs_secret);
     return res;
 }
 
-void vault_access_task(void *menu8g2){
+void vault_task(void *vault_in){
     /* This task should be ran at HIGHEST PRIORITY
      * This task is essentially a daemon that is the only activity that should
      * be accessing the vault. This task will respond to commands that
@@ -118,26 +124,87 @@ void vault_access_task(void *menu8g2){
     // If not accessed recently, prompt for pin
     // If accessed recently, update the last accessed time
     // ONLY THIS FUNCTION SHOULD MODIFY SODIUM_MPROTECT FOR VAULT
-    uint64_t timeout_us;
+    vault_t *vault = (vault_t *)vault_in;
+
     TickType_t xNextWakeTime = xTaskGetTickCount();
     vault_rpc_t cmd;
+    bool command_cancelled = false;
+    nl_err_t err;
 
-    sodium_mprotect_read(vault);
-    timeout_us = vault->timeout_us;
+    menu8g2_t menu;
+    menu8g2_init(&menu, &u8g2, input_queue);
 
-    // todo: setup COMMAND_QUEUE
+    sodium_mprotect_readonly(vault);
+
     for(;;){
-        // todo: replace COMMAND_QUEUE placeholder (make it global)
-    	if(xQueueReceive(COMMAND_QUEUE, &cmd,
-                    pdMS_TO_TICKS(timeout_us / 1000))){
-            sodium_mprotect_read(vault)
-            // todo: check vault validity
-            // todo: prompt user for pin if invalid
-            // todo: Perform command
+    	if( xQueueReceive(vault_queue, &cmd,
+                pdMS_TO_TICKS(CONFIG_NANORAY_DEFAULT_TIMEOUT_S * 1000)) ){
+            // Prompt user for Pin
+            if(!(vault->valid)){
+                uint8_t pin_attempts;
+                nvs_handle nvs_secret;
+                char title[20];
+                uint256_t pin_hash;
+	            uint256_t nonce = {0};
+                int8_t decrypt_result;
+                size_t required_size;
+	            CONFIDENTIAL unsigned char enc_vault[crypto_secretbox_MACBYTES +
+                        sizeof(vault_t)];
+
+                init_nvm_namespace(&nvs_secret, "secret");
+                err = nvs_get_u8(nvs_secret, "pin_attempts", &pin_attempts);
+                if(ESP_OK != err || pin_attempts >= CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT){
+                    factory_reset();
+                }
+                nvs_get_blob(nvs_secret, "enc_vault", enc_vault, &required_size);
+                for(;;){
+                    if(pin_attempts >= CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT){
+                        factory_reset();
+                    }
+                    sprintf(title, "Enter Pin (%d/%d)", pin_attempts+1,
+                            CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT);
+                    if(!pin_entry(&menu, pin_hash, title)){
+                        // User cancelled vault operation
+                        command_cancelled =  true;
+                        break;
+                    };
+                    pin_attempts++;
+                    nvs_set_u8(nvs_secret, "pin_attempts", pin_attempts);
+                    nvs_commit(nvs_secret);
+
+                    sodium_mprotect_readwrite(vault);
+                    decrypt_result = crypto_secretbox_open_easy(
+                            (unsigned char *)&vault,
+                            enc_vault, crypto_secretbox_MACBYTES + sizeof(vault_t),
+                            nonce, pin_hash);
+                    if(decrypt_result == 0){ //success
+                        sodium_memzero(enc_vault, sizeof(enc_vault));
+                        nvs_set_u8(nvs_secret, "pin_attempts", 0);
+                        nvs_commit(nvs_secret);
+                        break;
+                    }
+                }
+                nvs_close(nvs_secret);
+            }
+
+            // Abort command if user pressed back
+            if(command_cancelled){
+                continue;
+            }
+
+            // Perform command
+            switch(cmd.type){
+                case(BLOCK_SIGN):
+                    break;
+                case(PUBLIC_KEY):
+                    break;
+                default:
+                    break;
+            }
         }
         else{
-            // Timedout: Wipe the vault!
-            sodium_mprotect_write(vault);
+            // Timed Out: Wipe the vault!
+            sodium_mprotect_readwrite(vault);
             sodium_memzero(vault, sizeof(vault_t));
         }
         // Always disable access when outside of this task

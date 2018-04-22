@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <esp_system.h>
+#include "sodium.h"
 
 #include "easy_input.h"
 #include "menu8g2.h"
 #include "security.h"
 #include "secure_entry.h"
+#include "globals.h"
 
 
 static bool array_match(unsigned char *arr1, unsigned char *arr2, uint8_t len){
@@ -31,13 +33,13 @@ static bool display_welcome(menu8g2_t *menu){
     }
 }
 
-static menu8g2_err_t get_nth_word(char buf[], const size_t buf_len,
+static menu8g2_err_t get_nth_word(char buf[], size_t buf_len,
         const char *str, const uint32_t n){
     // Used as dynamic function to display mnemonic as a menu
     // Assumes a single space between words; no leading/trailing spaces
     // Copies the nth word of null-terminated str into buf.
     if (n==25){
-        strlcpy(buf, "Continue",buf_len);
+        strlcpy(buf, "Continue", buf_len);
         return E_SUCCESS;
     }
 
@@ -55,7 +57,7 @@ static menu8g2_err_t get_nth_word(char buf[], const size_t buf_len,
         if( i == n ){
             if(*str == ' ' || *str == '\0' || buf_len <= 1){
                 *buf = '\0';
-                return;
+                return E_SUCCESS;
             }
             else{
                 *buf = *str;
@@ -67,42 +69,39 @@ static menu8g2_err_t get_nth_word(char buf[], const size_t buf_len,
             i++;
         }
     }
-    return E_SUCCESS;
+    return E_FAILURE;
 }
 
-void first_boot_menu(menu8g2_t *prev, vault_t *vault){
+void first_boot_menu(vault_t *vault){
     /* This and vault_task are the only functions that can directly access 
      * the vault */
+
 	int8_t current_screen = 0;
-    bool exit_welcome = false;
     CONFIDENTIAL uint256_t pin_hash;
     CONFIDENTIAL uint256_t pin_hash_verify;
 	uint256_t nonce = {0};
 	unsigned char enc_vault[crypto_secretbox_MACBYTES + sizeof(vault_t)];
 
     menu8g2_t menu;
-    menu8g2_init(&menu,
-            menu8g2_get_u8g2(prev),
-            menu8g2_get_input_queue(prev)
-            );
+    menu8g2_init(&menu, &u8g2, input_queue);
 
     // Generate Mnemonic
-    sodium_mprotect_write(vault);
+    sodium_mprotect_readwrite(vault);
     nl_mnemonic_generate(vault->mnemonic, MNEMONIC_BUF_LEN, 256);
     vault->valid = true;
     vault->index = 0;
-    sodium_mprotect_read(vault);
+    sodium_mprotect_readonly(vault);
 
-	for(int8_t exit_welcome=0; exit_welcome == false;){
+	for(bool exit_welcome=false; !exit_welcome;){
 		current_screen = (current_screen<0) ? 0 : current_screen;
 		switch(current_screen){
 			case(0):
-				current_screen += display_welcome(menu);
+				current_screen += display_welcome(&menu);
 				break;
 			case(1):{
                 const char title[] = "Write Down Mnemonic!";
                 if( menu8g2_create_vertical_menu(&menu, title, NULL,
-                        (void *)&get_nth_word, 25); ){
+                        (void *)&get_nth_word, 25) ){
                     if(menu.index == 25){
                         current_screen++;
                     }
@@ -129,7 +128,7 @@ void first_boot_menu(menu8g2_t *prev, vault_t *vault){
 						break;
 					}
 					else{
-						display_text(u8g2, "Pin mismatch");
+						menu8g2_display_text(&menu, "Pin mismatch");
 					}
 				}
 				break;
@@ -142,16 +141,16 @@ void first_boot_menu(menu8g2_t *prev, vault_t *vault){
 	}
 
 	// Nonce is sort of irrelevant for this encryption
-	crypto_secretbox_easy(enc_vault, vault->mnemonic, 
+	crypto_secretbox_easy(enc_vault, (unsigned char *) vault, 
             sizeof(vault_t), nonce, pin_hash);
 	sodium_memzero(pin_hash, 32);
 
 	// Save everything to NVS
 	nvs_handle nvs_secret;
     init_nvm_namespace(&nvs_secret, "secret");
-	err = nvs_set_blob(*nvs_secret, "vault", enc_vault, sizeof(enc_vault));
-    err = nvs_set_u8(*nvs_secret, "pin_attempts", 0);
-	nvs_commit(*nvs_secret);
+	nvs_set_blob(nvs_secret, "vault", enc_vault, sizeof(enc_vault));
+    nvs_set_u8(nvs_secret, "pin_attempts", 0);
+	nvs_commit(nvs_secret);
 	sodium_memzero(enc_vault, sizeof(enc_vault));
 
     sodium_mprotect_noaccess(vault);

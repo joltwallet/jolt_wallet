@@ -4,6 +4,10 @@
 #include <esp_system.h>
 #include "nvs.h"
 
+#include "u8g2.h"
+#include "u8g2_esp32_hal.h"
+#include "menu8g2.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
@@ -13,14 +17,18 @@
 #include "globals.h"
 
 #include "security.h"
+#include "nano_lib.h"
+#include "first_boot.h"
 
+
+// Definitions for variables in globals.h
+u8g2_t u8g2;
+QueueHandle_t input_queue;
+QueueHandle_t vault_queue;
 
 void app_main(){
     // Setup Input Button Debouncing Code
-    GLOBAL QueueHandle_t input_queue;
-    GLOBAL u8g2_t u8g2;
-
-    easy_input_queue_init(input_queue);
+    easy_input_queue_init(&input_queue);
     xTaskCreate(easy_input_push_button_task,
             "ButtonDebounce", 4096,
             (void *)&input_queue, 15,
@@ -32,13 +40,15 @@ void app_main(){
     // Todo: Initialize Wireless Here
     
     // Allocate space for the vault and see if a copy exists in NVS
+    nl_err_t err;
     vault_t vault;
     err = vault_init(&vault);
+
     if (E_FAILURE == err){
         first_boot_menu(&vault);
     }
 
-    xTaskCreate(vault_access_task,
+    xTaskCreate(vault_task,
             "VaultTask", 16000,
             (void *) &vault, 20,
             NULL);

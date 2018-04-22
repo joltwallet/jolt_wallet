@@ -24,17 +24,17 @@ typedef enum vault_rpc_type_t {
 
 typedef union vault_payload_t {
     block_t block;
-} vault payload_t;
+} vault_payload_t;
 
 typedef struct vault_rpc_t {
     enum vault_rpc_type_t type;
     QueueHandle_t response_queue;
     vault_payload_t payload;
-} vault_rpc_t
+} vault_rpc_t;
 
 
 nl_err_t vault_init();
-void vault_access_task(void *menu8g2);
+void vault_task(void *vault_in);
 nl_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace);
 
 #endif
