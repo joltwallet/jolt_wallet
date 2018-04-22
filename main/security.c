@@ -127,12 +127,18 @@ void vault_task(void *vault_in){
     vault_t *vault = (vault_t *)vault_in;
 
     TickType_t xNextWakeTime = xTaskGetTickCount();
-    vault_rpc_t cmd;
+    vault_rpc_t *cmd;
     bool command_cancelled = false;
     nl_err_t err;
 
     menu8g2_t menu;
     menu8g2_init(&menu, &u8g2, input_queue);
+
+    /* The vault_queue holds a pointer to the vault_rpc_t object declared
+     * by the producer task. Results are directly modified on that object.
+     * A response status is sent back on the queue in the vault_rpc_t stating
+     * the RPC error code. */
+    vault_queue = xQueueCreate( 4, sizeof( vault_rpc_t* ) );
 
     sodium_mprotect_readonly(vault);
 
@@ -193,7 +199,7 @@ void vault_task(void *vault_in){
             }
 
             // Perform command
-            switch(cmd.type){
+            switch(cmd->type){
                 case(BLOCK_SIGN):
                     break;
                 case(PUBLIC_KEY):
