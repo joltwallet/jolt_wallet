@@ -24,10 +24,10 @@ static bool display_welcome(menu8g2_t *menu){
     uint64_t response;
     for(;;){
         response = menu8g2_display_text(menu, "Welcome!");
-        if (1ULL << EASY_INPUT_ENTER != response){
+        if (1ULL << EASY_INPUT_ENTER == response){
             return 1;
         }
-        else if (1ULL << EASY_INPUT_BACK != response){
+        else if (1ULL << EASY_INPUT_BACK == response){
             return 0;
         }
     }
@@ -38,16 +38,16 @@ static menu8g2_err_t get_nth_word(char buf[], size_t buf_len,
     // Used as dynamic function to display mnemonic as a menu
     // Assumes a single space between words; no leading/trailing spaces
     // Copies the nth word of null-terminated str into buf.
-    if (n==25){
+    if ( (n+1)==25 ){
         strlcpy(buf, "Continue", buf_len);
         return E_SUCCESS;
     }
 
     // Copy over number prefix
-    sprintf(buf, "%d. ", n);
+    sprintf(buf, "%d. ", n+1); // 1-indexing
     buf_len -= 3;
     buf += 3;
-    if(n>9){
+    if( (n+1)>9 ){
         buf_len--;
         buf++;
     }
@@ -100,9 +100,9 @@ void first_boot_menu(vault_t *vault){
 				break;
 			case(1):{
                 const char title[] = "Write Down Mnemonic!";
-                if( menu8g2_create_vertical_menu(&menu, title, NULL,
+                if( menu8g2_create_vertical_menu(&menu, title, vault->mnemonic,
                         (void *)&get_nth_word, 25) ){
-                    if(menu.index == 25){
+                    if(menu.index == 24){
                         current_screen++;
                     }
                 }
