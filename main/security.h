@@ -29,7 +29,10 @@ typedef enum vault_rpc_response_t {
 } vault_rpc_response_t;
 
 typedef union vault_payload_t {
-    struct nl_block_t block;
+    union{
+        struct nl_block_t block;
+        uint32_t index;
+    } public_key;
 } vault_payload_t;
 
 typedef struct vault_rpc_t {

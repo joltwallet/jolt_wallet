@@ -37,10 +37,18 @@ static void factory_reset(){
     esp_restart();
 }
 
-static void sign_block(){
-}
-
-static void derive_address(){
+static vault_rpc_response_t rpc_public_key(vault_t *vault, vault_rpc_t *cmd){
+    // Derive private key from mnemonic
+    vault_rpc_response_t response;
+    CONFIDENTIAL uint256_t private_key;
+    nl_master_seed_to_nano_private_key(private_key, 
+            vault->master_seed,
+            cmd->payload.public_key.index);
+    // Derive public key from private
+    nl_private_to_public(cmd->payload.public_key.block.account, private_key);
+    sodium_memzero(private_key, sizeof(private_key));
+    response = RPC_SUCCESS;
+    return response;
 }
 
 static void nvs_log_err(esp_err_t err){
@@ -209,9 +217,7 @@ void vault_task(void *vault_in){
     // ONLY THIS FUNCTION SHOULD MODIFY SODIUM_MPROTECT FOR VAULT
     vault_t *vault = (vault_t *)vault_in;
 
-    TickType_t xNextWakeTime = xTaskGetTickCount();
     vault_rpc_t *cmd;
-    nl_err_t err;
     vault_rpc_response_t response;
 
     menu8g2_t menu;
@@ -223,11 +229,11 @@ void vault_task(void *vault_in){
      * the RPC error code. */
     vault_queue = xQueueCreate( 4, sizeof( vault_rpc_t* ) );
 
-    sodium_mprotect_readonly(vault);
-
     for(;;){
     	if( xQueueReceive(vault_queue, &cmd,
                 pdMS_TO_TICKS(CONFIG_NANORAY_DEFAULT_TIMEOUT_S * 1000)) ){
+            sodium_mprotect_readonly(vault);
+
             // Prompt user for Pin if necessary
             if(!pin_prompt(vault)){
                 continue;
@@ -238,22 +244,12 @@ void vault_task(void *vault_in){
                 case(BLOCK_SIGN):
                     break;
                 case(PUBLIC_KEY):{
-                    uint32_t index;
-                    nvs_handle nvs_secret;
-                    init_nvm_namespace(&nvs_secret, "secret");
-                    err = nvs_get_u32(nvs_secret, "index", &index);
-                    nvs_close(nvs_secret);
-
-                    // Derive private key from mnemonic
-                    CONFIDENTIAL uint256_t private_key;
-                    nl_master_seed_to_nano_private_key(private_key, 
-                            vault->master_seed, index);
-                    // Derive public key from private
-                    nl_private_to_public(cmd->payload.block.account, private_key);
-                    sodium_memzero(private_key, sizeof(private_key));
-                    response = RPC_SUCCESS;
+                    response = rpc_public_key(vault, cmd);
                     break;
                 }
+                case(FACTORY_RESET):
+                    factory_reset();
+                    break;
                 default:
                     break;
             }

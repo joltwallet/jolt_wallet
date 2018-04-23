@@ -11,7 +11,6 @@
 #include "globals.h"
 
 void menu_address_text(menu8g2_t *prev){
-    nl_err_t err;
     menu8g2_t menu;
     menu8g2_init(&menu,
             menu8g2_get_u8g2(prev),
@@ -20,6 +19,12 @@ void menu_address_text(menu8g2_t *prev){
     vault_rpc_t rpc;
     vault_rpc_t *rpc_p = &rpc;
     vault_rpc_response_t res;
+    nvs_handle nvs_secret;
+
+    init_nvm_namespace(&nvs_secret, "secret");
+    nvs_get_u32(nvs_secret, "index", &(rpc.payload.public_key.index));
+    nvs_close(nvs_secret);
+
     rpc.type = PUBLIC_KEY;
     rpc.response_queue = xQueueCreate( 1, sizeof(res) );
 
@@ -28,9 +33,8 @@ void menu_address_text(menu8g2_t *prev){
 
     if(res == RPC_SUCCESS){
         char address[ADDRESS_BUF_LEN];
-        err = nl_public_to_address(address, sizeof(address),
-                rpc.payload.block.account);
+        nl_public_to_address(address, sizeof(address),
+                rpc.payload.public_key.block.account);
 	    menu8g2_display_text(&menu, address);
     }
-
 }
