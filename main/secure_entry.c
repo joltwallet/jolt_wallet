@@ -63,6 +63,8 @@ bool pin_entry(menu8g2_t *menu, unsigned char *pin_hash, const char *title){
                         buf);
             }
         } while(u8g2_NextPage(u8g2));
+
+        u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
         u8g2_SetDrawColor(u8g2, 1); // Set it back to default background
 
 		if(xQueueReceive(menu->input_queue, &input_buf, portMAX_DELAY)) {
