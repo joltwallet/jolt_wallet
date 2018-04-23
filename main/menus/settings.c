@@ -24,11 +24,7 @@ static void menu_factory_reset_confirm(menu8g2_t *prev){
     }
 
     rpc.type = FACTORY_RESET;
-    xQueueSend( vault_queue, (void *) &rpc_p, 0);
-
-    /* Suspend task to prevent display race condition as this function returns
-     * while the vault task is accessing the display */
-    vTaskSuspend(NULL);
+    vault_rpc(&rpc);
 }
 
 void menu_settings(menu8g2_t *prev){

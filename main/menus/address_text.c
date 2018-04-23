@@ -17,7 +17,6 @@ void menu_address_text(menu8g2_t *prev){
             menu8g2_get_input_queue(prev)
             );
     vault_rpc_t rpc;
-    vault_rpc_t *rpc_p = &rpc;
     vault_rpc_response_t res;
     nvs_handle nvs_secret;
 
@@ -26,10 +25,7 @@ void menu_address_text(menu8g2_t *prev){
     nvs_close(nvs_secret);
 
     rpc.type = PUBLIC_KEY;
-    rpc.response_queue = xQueueCreate( 1, sizeof(res) );
-
-    xQueueSend( vault_queue, (void *) &rpc_p, 0);
-    xQueueReceive(rpc.response_queue, (void *) &res, portMAX_DELAY);
+    res = vault_rpc(&rpc);
 
     if(res == RPC_SUCCESS){
         char address[ADDRESS_BUF_LEN];

@@ -22,23 +22,30 @@
 static const char* TAG = "security";
 static void nvs_log_err(esp_err_t err);
 
+vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
+    /* Sets up rpc queue, blocks until vault responds. */
+    vault_rpc_response_t res;
+
+    rpc->response_queue = xQueueCreate( 1, sizeof(res) );
+    xQueueSend( vault_queue, (void *) &rpc, 0);
+    xQueueReceive(rpc->response_queue, (void *) &res, portMAX_DELAY);
+    return res;
+}
+
 static void factory_reset(){
     /* Erases all NVM and resets device */
-    esp_err_t err;
     nvs_handle h;
+    esp_err_t err;
 
     init_nvm_namespace(&h, "secret");
-    err = nvs_erase_all(h);
-    nvs_log_err(err);
+    nvs_erase_all(h);
     nvs_commit(h);
     nvs_close(h);
 
     init_nvm_namespace(&h, "user");
-    err = nvs_erase_all(h);
+    nvs_erase_all(h);
     nvs_commit(h);
     nvs_close(h);
-
-    printf("meow\n");
 
     esp_restart();
 }

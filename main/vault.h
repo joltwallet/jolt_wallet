@@ -41,6 +41,7 @@ typedef struct vault_rpc_t {
     vault_payload_t payload;
 } vault_rpc_t;
 
+vault_rpc_response_t vault_rpc(vault_rpc_t *rpc);
 nl_err_t vault_init();
 void vault_task(void *vault_in);
 nl_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace);
