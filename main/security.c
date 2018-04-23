@@ -132,6 +132,68 @@ nl_err_t vault_init(vault_t *vault){
     return res;
 }
 
+static bool pin_prompt(vault_t *vault){
+    /* Reads and Decrypts mnemonic from NVS.
+     * Returns true if the vault object is now valid.
+     * Will factory reset when max_attempts is reached.
+     * Returns False when user presses back. */
+    nl_err_t err;
+    uint8_t pin_attempts;
+    nvs_handle nvs_secret;
+    char title[20];
+    uint256_t pin_hash;
+    uint256_t nonce = {0};
+    int8_t decrypt_result;
+    CONFIDENTIAL unsigned char enc_mnemonic[crypto_secretbox_MACBYTES + MNEMONIC_BUF_LEN];
+    size_t required_size = sizeof(enc_mnemonic);
+    menu8g2_t menu;
+    menu8g2_init(&menu, &u8g2, input_queue);
+
+    if( vault->valid ){
+        return true;
+    }
+
+    init_nvm_namespace(&nvs_secret, "secret");
+    err = nvs_get_u8(nvs_secret, "pin_attempts", &pin_attempts);
+    if(ESP_OK != err || pin_attempts >= CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT){
+        factory_reset();
+    }
+    err = nvs_get_blob(nvs_secret, "mnemonic", enc_mnemonic, &required_size);
+    nvs_log_err(err);
+
+    for(;;){
+        if(pin_attempts >= CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT){
+            factory_reset();
+        }
+        sprintf(title, "Enter Pin (%d/%d)", pin_attempts+1,
+                CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT);
+        if(!pin_entry(&menu, pin_hash, title)){
+            // User cancelled vault operation
+            nvs_close(nvs_secret);
+            return false;
+        };
+        pin_attempts++;
+        nvs_set_u8(nvs_secret, "pin_attempts", pin_attempts);
+        nvs_commit(nvs_secret);
+
+        sodium_mprotect_readwrite(vault);
+        decrypt_result = crypto_secretbox_open_easy(
+                (unsigned char *)(vault->mnemonic),
+                enc_mnemonic, required_size, nonce, pin_hash);
+        if(decrypt_result == 0){ //success
+            sodium_memzero(enc_mnemonic, sizeof(enc_mnemonic));
+            nvs_set_u8(nvs_secret, "pin_attempts", 0);
+            nvs_commit(nvs_secret);
+            nl_mnemonic_to_master_seed(vault->master_seed,
+                    vault->mnemonic, "");
+            vault->valid = true;
+            break;
+        }
+    }
+    nvs_close(nvs_secret);
+    return true;
+}
+
 void vault_task(void *vault_in){
     /* This task should be ran at HIGHEST PRIORITY
      * This task is essentially a daemon that is the only activity that should
@@ -149,7 +211,6 @@ void vault_task(void *vault_in){
 
     TickType_t xNextWakeTime = xTaskGetTickCount();
     vault_rpc_t *cmd;
-    bool command_cancelled = false;
     nl_err_t err;
     vault_rpc_response_t response;
 
@@ -167,59 +228,8 @@ void vault_task(void *vault_in){
     for(;;){
     	if( xQueueReceive(vault_queue, &cmd,
                 pdMS_TO_TICKS(CONFIG_NANORAY_DEFAULT_TIMEOUT_S * 1000)) ){
-            // Prompt user for Pin
-            if(!(vault->valid)){
-                uint8_t pin_attempts;
-                nvs_handle nvs_secret;
-                char title[20];
-                uint256_t pin_hash;
-	            uint256_t nonce = {0};
-                int8_t decrypt_result;
-	            CONFIDENTIAL unsigned char enc_mnemonic[crypto_secretbox_MACBYTES + MNEMONIC_BUF_LEN];
-                const size_t required_size = sizeof(enc_mnemonic);
-
-                init_nvm_namespace(&nvs_secret, "secret");
-                err = nvs_get_u8(nvs_secret, "pin_attempts", &pin_attempts);
-                if(ESP_OK != err || pin_attempts >= CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT){
-                    factory_reset();
-                }
-                err = nvs_get_blob(nvs_secret, "mnemonic", enc_mnemonic, &required_size);
-                nvs_log_err(err);
-
-                for(;;){
-                    if(pin_attempts >= CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT){
-                        factory_reset();
-                    }
-                    sprintf(title, "Enter Pin (%d/%d)", pin_attempts+1,
-                            CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT);
-                    if(!pin_entry(&menu, pin_hash, title)){
-                        // User cancelled vault operation
-                        command_cancelled =  true;
-                        break;
-                    };
-                    pin_attempts++;
-                    nvs_set_u8(nvs_secret, "pin_attempts", pin_attempts);
-                    nvs_commit(nvs_secret);
-
-                    sodium_mprotect_readwrite(vault);
-                    decrypt_result = crypto_secretbox_open_easy(
-                            (unsigned char *)(vault->mnemonic),
-                            enc_mnemonic, required_size, nonce, pin_hash);
-                    if(decrypt_result == 0){ //success
-                        sodium_memzero(enc_mnemonic, sizeof(enc_mnemonic));
-                        nvs_set_u8(nvs_secret, "pin_attempts", 0);
-                        nvs_commit(nvs_secret);
-                        nl_mnemonic_to_master_seed(vault->master_seed,
-                                vault->mnemonic, "");
-                        vault->valid = true;
-                        break;
-                    }
-                }
-                nvs_close(nvs_secret);
-            }
-
-            // Abort command if user pressed back
-            if(command_cancelled){
+            // Prompt user for Pin if necessary
+            if(!pin_prompt(vault)){
                 continue;
             }
 
