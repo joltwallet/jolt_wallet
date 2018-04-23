@@ -35,6 +35,10 @@ void menu_address_text(menu8g2_t *prev){
         char address[ADDRESS_BUF_LEN];
         nl_public_to_address(address, sizeof(address),
                 rpc.payload.public_key.block.account);
-	    menu8g2_display_text(&menu, address);
+        for(;;){
+            if(menu8g2_display_text(&menu, address) == (1ULL << EASY_INPUT_BACK)){
+                return;
+            }
+        }
     }
 }

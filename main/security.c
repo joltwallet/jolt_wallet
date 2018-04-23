@@ -20,10 +20,12 @@
 
 /* Two main NVS Namespaces: ("secret", "user") */
 static const char* TAG = "security";
+static void nvs_log_err(esp_err_t err);
 
 static void factory_reset(){
     /* Erases all NVM and resets device */
     nvs_handle h;
+
     init_nvm_namespace(&h, "secret");
     nvs_erase_all(h);
     nvs_commit(h);
