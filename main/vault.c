@@ -91,7 +91,6 @@ nl_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace){
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
         // NVS partition was truncated and needs to be erased
-        // Retry nvs_flash_init
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
@@ -144,7 +143,6 @@ nl_err_t vault_init(vault_t *vault){
     err = nvs_get_blob(nvs_secret, "mnemonic", NULL, &required_size);
     if ( ESP_OK == err){
         // vault was found and successfully read from memory;
-        // nothing really need to be done here
         res = E_SUCCESS;
     }
     else{
@@ -161,23 +159,25 @@ static bool pin_prompt(vault_t *vault){
      * Returns true if the vault object is now valid.
      * Will factory reset when max_attempts is reached.
      * Returns False when user presses back. */
-    nl_err_t err;
+    esp_err_t err;
     uint8_t pin_attempts;
     nvs_handle nvs_secret;
     char title[20];
     uint256_t pin_hash;
     uint256_t nonce = {0};
     int8_t decrypt_result;
-    CONFIDENTIAL unsigned char enc_mnemonic[crypto_secretbox_MACBYTES + MNEMONIC_BUF_LEN];
+    CONFIDENTIAL unsigned char enc_mnemonic[
+            crypto_secretbox_MACBYTES + MNEMONIC_BUF_LEN];
     size_t required_size = sizeof(enc_mnemonic);
     menu8g2_t menu;
-    menu8g2_init(&menu, &u8g2, input_queue);
 
     if( vault->valid ){
         return true;
     }
 
+    menu8g2_init(&menu, &u8g2, input_queue);
     init_nvm_namespace(&nvs_secret, "secret");
+
     err = nvs_get_u8(nvs_secret, "pin_attempts", &pin_attempts);
     if(ESP_OK != err || pin_attempts >= CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT){
         factory_reset();
@@ -205,6 +205,7 @@ static bool pin_prompt(vault_t *vault){
                 (unsigned char *)(vault->mnemonic),
                 enc_mnemonic, required_size, nonce, pin_hash);
         sodium_mprotect_readonly(vault);
+
         if(decrypt_result == 0){ //success
             sodium_memzero(enc_mnemonic, sizeof(enc_mnemonic));
             nvs_set_u8(nvs_secret, "pin_attempts", 0);
@@ -228,10 +229,6 @@ void vault_task(void *vault_in){
      * vault must already be initialized before starting this task
      * */
 
-    // Checks last time vault has been accessed
-    // If not accessed recently, prompt for pin
-    // If accessed recently, update the last accessed time
-    // ONLY THIS FUNCTION SHOULD MODIFY SODIUM_MPROTECT FOR VAULT
     vault_t *vault = (vault_t *)vault_in;
 
     vault_rpc_t *cmd;

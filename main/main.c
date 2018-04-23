@@ -40,10 +40,8 @@ void app_main(){
     // Todo: Initialize Wireless Here
     
     // Allocate space for the vault and see if a copy exists in NVS
-    nl_err_t err;
     vault_t vault;
-    err = vault_init(&vault);
-    if (E_FAILURE == err){
+    if (E_FAILURE == vault_init(&vault)){
         first_boot_menu(&vault);
     }
 

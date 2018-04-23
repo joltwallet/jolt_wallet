@@ -40,15 +40,13 @@ void setup_screen(u8g2_t *u8g2){
 
 void gui_task(){
     /* Master GUI Task */
-    nl_err_t err;
 	nvs_handle nvs_user;
     uint8_t boot_splash_enable = CONFIG_NANORAY_DEFAULT_BOOT_SPLASH_ENABLE;
     menu8g2_t menu;
     menu8g2_init(&menu, &u8g2, input_queue);
 
     // display boot_splash if option is set
-    err = init_nvm_namespace(&nvs_user, "user");
-    if(E_SUCCESS == err){
+    if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){
         nvs_get_u8(nvs_user, "boot_splash", &boot_splash_enable);
         nvs_close(nvs_user);
     }
