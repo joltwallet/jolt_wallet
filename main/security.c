@@ -37,11 +37,32 @@ static void factory_reset(){
     esp_restart();
 }
 
-
 static void sign_block(){
 }
 
 static void derive_address(){
+}
+
+static void nvs_log_err(esp_err_t err){
+    switch(err){
+        case(ESP_OK): ESP_LOGI(TAG, "ESP_OK"); break;
+        case(ESP_ERR_NVS_NOT_INITIALIZED): ESP_LOGI(TAG, "ESP_ERR_NVS_NOT_INITIALIZED "); break;
+        case(ESP_ERR_NVS_NOT_FOUND): ESP_LOGI(TAG, "ESP_ERR_NVS_NOT_FOUND"); break;
+        case(ESP_ERR_NVS_TYPE_MISMATCH): ESP_LOGI(TAG, "ESP_ERR_NVS_TYPE_MISMATCH"); break;
+        case(ESP_ERR_NVS_READ_ONLY): ESP_LOGI(TAG, "ESP_ERR_NVS_READ_ONLY"); break;
+        case(ESP_ERR_NVS_NOT_ENOUGH_SPACE): ESP_LOGI(TAG, "ESP_ERR_NVS_NOT_ENOUGH_SPACE"); break;
+        case(ESP_ERR_NVS_INVALID_NAME): ESP_LOGI(TAG, "ESP_ERR_NVS_INVALID_NAME"); break;
+        case(ESP_ERR_NVS_INVALID_HANDLE): ESP_LOGI(TAG, "ESP_ERR_NVS_INVALID_HANDLE"); break;
+        case(ESP_ERR_NVS_REMOVE_FAILED): ESP_LOGI(TAG, "ESP_ERR_NVS_REMOVE_FAILED"); break;
+        case(ESP_ERR_NVS_KEY_TOO_LONG): ESP_LOGI(TAG, "ESP_ERR_NVS_KEY_TOO_LONG"); break;
+        case(ESP_ERR_NVS_PAGE_FULL): ESP_LOGI(TAG, "ESP_ERR_NVS_PAGE_FULL"); break;
+        case(ESP_ERR_NVS_INVALID_STATE): ESP_LOGI(TAG, "ESP_ERR_NVS_INVALID_STATE"); break;
+        case(ESP_ERR_NVS_INVALID_LENGTH): ESP_LOGI(TAG, "ESP_ERR_NVS_INVALID_LENGTH"); break;
+        case(ESP_ERR_NVS_NO_FREE_PAGES): ESP_LOGI(TAG, "ESP_ERR_NVS_NO_FREE_PAGES"); break;
+        case(ESP_ERR_NVS_VALUE_TOO_LONG): ESP_LOGI(TAG, "ESP_ERR_NVS_VALUE_TOO_LONG"); break;
+        case(ESP_ERR_NVS_PART_NOT_FOUND): ESP_LOGI(TAG, "ESP_ERR_NVS_PART_NOT_FOUND"); break;
+        case(ESP_ERR_INVALID_ARG): ESP_LOGI(TAG, "ESP_ERR_INVALID_ARG"); break;
+    }
 }
 
 nl_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace){
@@ -96,7 +117,7 @@ nl_err_t vault_init(vault_t *vault){
     init_nvm_namespace(&nvs_secret, "secret");
     
     // Reads vault from nvs into ram
-    err = nvs_get_blob(nvs_secret, "vault", NULL, &required_size);
+    err = nvs_get_blob(nvs_secret, "mnemonic", NULL, &required_size);
     if ( ESP_OK == err){
         // vault was found and successfully read from memory;
         // nothing really need to be done here
@@ -130,6 +151,7 @@ void vault_task(void *vault_in){
     vault_rpc_t *cmd;
     bool command_cancelled = false;
     nl_err_t err;
+    vault_rpc_response_t response;
 
     menu8g2_t menu;
     menu8g2_init(&menu, &u8g2, input_queue);
@@ -153,16 +175,17 @@ void vault_task(void *vault_in){
                 uint256_t pin_hash;
 	            uint256_t nonce = {0};
                 int8_t decrypt_result;
-                size_t required_size;
-	            CONFIDENTIAL unsigned char enc_vault[crypto_secretbox_MACBYTES +
-                        sizeof(vault_t)];
+	            CONFIDENTIAL unsigned char enc_mnemonic[crypto_secretbox_MACBYTES + MNEMONIC_BUF_LEN];
+                const size_t required_size = sizeof(enc_mnemonic);
 
                 init_nvm_namespace(&nvs_secret, "secret");
                 err = nvs_get_u8(nvs_secret, "pin_attempts", &pin_attempts);
                 if(ESP_OK != err || pin_attempts >= CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT){
                     factory_reset();
                 }
-                nvs_get_blob(nvs_secret, "enc_vault", enc_vault, &required_size);
+                err = nvs_get_blob(nvs_secret, "mnemonic", enc_mnemonic, &required_size);
+                nvs_log_err(err);
+
                 for(;;){
                     if(pin_attempts >= CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT){
                         factory_reset();
@@ -180,13 +203,14 @@ void vault_task(void *vault_in){
 
                     sodium_mprotect_readwrite(vault);
                     decrypt_result = crypto_secretbox_open_easy(
-                            (unsigned char *)&vault,
-                            enc_vault, crypto_secretbox_MACBYTES + sizeof(vault_t),
-                            nonce, pin_hash);
+                            (unsigned char *)(vault->mnemonic),
+                            enc_mnemonic, required_size, nonce, pin_hash);
                     if(decrypt_result == 0){ //success
-                        sodium_memzero(enc_vault, sizeof(enc_vault));
+                        sodium_memzero(enc_mnemonic, sizeof(enc_mnemonic));
                         nvs_set_u8(nvs_secret, "pin_attempts", 0);
                         nvs_commit(nvs_secret);
+                        nl_mnemonic_to_master_seed(vault->master_seed,
+                                vault->mnemonic, "");
                         break;
                     }
                 }
@@ -202,16 +226,35 @@ void vault_task(void *vault_in){
             switch(cmd->type){
                 case(BLOCK_SIGN):
                     break;
-                case(PUBLIC_KEY):
+                case(PUBLIC_KEY):{
+                    uint32_t index;
+                    nvs_handle nvs_secret;
+                    init_nvm_namespace(&nvs_secret, "secret");
+                    err = nvs_get_u32(nvs_secret, "index", &index);
+                    nvs_close(nvs_secret);
+
+                    // Derive private key from mnemonic
+                    CONFIDENTIAL uint256_t private_key;
+                    nl_master_seed_to_nano_private_key(private_key, 
+                            vault->master_seed, index);
+                    // Derive public key from private
+                    nl_private_to_public(cmd->payload.block.account, private_key);
+                    sodium_memzero(private_key, sizeof(private_key));
+                    response = RPC_SUCCESS;
                     break;
+                }
                 default:
                     break;
             }
+
+            // Send back response
+            xQueueSend(cmd->response_queue, &response, 0);
         }
         else{
             // Timed Out: Wipe the vault!
             sodium_mprotect_readwrite(vault);
             sodium_memzero(vault, sizeof(vault_t));
+            ESP_LOGI(TAG, "Vault timed out; wiping.");
         }
         // Always disable access when outside of this task
         sodium_mprotect_noaccess(vault);

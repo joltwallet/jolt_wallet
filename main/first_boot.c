@@ -80,7 +80,7 @@ void first_boot_menu(vault_t *vault){
     CONFIDENTIAL uint256_t pin_hash;
     CONFIDENTIAL uint256_t pin_hash_verify;
 	uint256_t nonce = {0};
-	unsigned char enc_vault[crypto_secretbox_MACBYTES + sizeof(vault_t)];
+	CONFIDENTIAL unsigned char enc_mnemonic[crypto_secretbox_MACBYTES + MNEMONIC_BUF_LEN];
 
     menu8g2_t menu;
     menu8g2_init(&menu, &u8g2, input_queue);
@@ -141,17 +141,18 @@ void first_boot_menu(vault_t *vault){
 	}
 
 	// Nonce is sort of irrelevant for this encryption
-	crypto_secretbox_easy(enc_vault, (unsigned char *) vault, 
-            sizeof(vault_t), nonce, pin_hash);
+	crypto_secretbox_easy(enc_mnemonic, (unsigned char *) vault->mnemonic, 
+            MNEMONIC_BUF_LEN, nonce, pin_hash);
 	sodium_memzero(pin_hash, 32);
 
 	// Save everything to NVS
 	nvs_handle nvs_secret;
     init_nvm_namespace(&nvs_secret, "secret");
-	nvs_set_blob(nvs_secret, "vault", enc_vault, sizeof(enc_vault));
+	nvs_set_blob(nvs_secret, "mnemonic", enc_mnemonic, sizeof(enc_mnemonic));
     nvs_set_u8(nvs_secret, "pin_attempts", 0);
+    nvs_set_u32(nvs_secret, "index", 0);
 	nvs_commit(nvs_secret);
-	sodium_memzero(enc_vault, sizeof(enc_vault));
+	sodium_memzero(enc_mnemonic, sizeof(enc_mnemonic));
 
     sodium_mprotect_noaccess(vault);
 }
