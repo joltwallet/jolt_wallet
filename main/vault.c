@@ -252,23 +252,25 @@ void vault_task(void *vault_in){
             sodium_mprotect_readonly(vault);
 
             // Prompt user for Pin if necessary
-            if(!pin_prompt(vault)){
-                continue;
-            }
-
-            // Perform command
-            switch(cmd->type){
-                case(BLOCK_SIGN):
-                    break;
-                case(PUBLIC_KEY):{
-                    response = rpc_public_key(vault, cmd);
-                    break;
+            if(pin_prompt(vault)){
+                // Perform command
+                switch(cmd->type){
+                    case(BLOCK_SIGN):
+                        break;
+                    case(PUBLIC_KEY):{
+                        response = rpc_public_key(vault, cmd);
+                        break;
+                    }
+                    case(FACTORY_RESET):
+                        factory_reset();
+                        break;
+                    default:
+                        break;
                 }
-                case(FACTORY_RESET):
-                    factory_reset();
-                    break;
-                default:
-                    break;
+               
+            }
+            else{
+                response = RPC_CANCELLED;
             }
 
             // Send back response
