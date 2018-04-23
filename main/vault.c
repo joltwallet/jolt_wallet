@@ -27,8 +27,13 @@ vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
     vault_rpc_response_t res;
 
     rpc->response_queue = xQueueCreate( 1, sizeof(res) );
-    xQueueSend( vault_queue, (void *) &rpc, 0);
-    xQueueReceive(rpc->response_queue, (void *) &res, portMAX_DELAY);
+    if(xQueueSend( vault_queue, (void *) &rpc, 0)){
+        xQueueReceive(rpc->response_queue, (void *) &res, portMAX_DELAY);
+    }
+    else{
+        res = RPC_QUEUE_FULL;
+    }
+
     vQueueDelete(rpc->response_queue);
     return res;
 }

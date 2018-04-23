@@ -26,7 +26,8 @@ typedef enum vault_rpc_type_t {
 typedef enum vault_rpc_response_t {
     RPC_SUCCESS = 0,
     RPC_FAILURE,
-    RPC_CANCELLED
+    RPC_CANCELLED,
+    RPC_QUEUE_FULL
 } vault_rpc_response_t;
 
 typedef union vault_payload_t {
