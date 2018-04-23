@@ -29,13 +29,13 @@ vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
     rpc->response_queue = xQueueCreate( 1, sizeof(res) );
     xQueueSend( vault_queue, (void *) &rpc, 0);
     xQueueReceive(rpc->response_queue, (void *) &res, portMAX_DELAY);
+    vQueueDelete(rpc->response_queue);
     return res;
 }
 
 static void factory_reset(){
     /* Erases all NVM and resets device */
     nvs_handle h;
-    esp_err_t err;
 
     init_nvm_namespace(&h, "secret");
     nvs_erase_all(h);
