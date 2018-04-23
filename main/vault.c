@@ -15,7 +15,7 @@
 #include "nvs.h"
 #include "nano_lib.h"
 #include "secure_entry.h"
-#include "security.h"
+#include "vault.h"
 #include "globals.h"
 
 /* Two main NVS Namespaces: ("secret", "user") */

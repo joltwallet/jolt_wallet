@@ -1,5 +1,5 @@
-#ifndef __NANORAY_SECURITY_H__
-#define __NANORAY_SECURITY_H__
+#ifndef __NANORAY_VAULT_H__
+#define __NANORAY_VAULT_H__
 
 #include "nvs.h"
 #include "nano_lib.h"

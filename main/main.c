@@ -16,7 +16,7 @@
 #include "gui.h"
 #include "globals.h"
 
-#include "security.h"
+#include "vault.h"
 #include "nano_lib.h"
 #include "first_boot.h"
 

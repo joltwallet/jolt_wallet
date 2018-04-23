@@ -7,7 +7,7 @@
 #include "globals.h"
 #include "graphics.h"
 #include "gui.h"
-#include "security.h"
+#include "vault.h"
 
 #include "menus/submenus.h"
 

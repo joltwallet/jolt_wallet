@@ -6,7 +6,7 @@
 #include "easy_input.h"
 #include "menu8g2.h"
 #include "u8g2.h"
-#include "security.h"
+#include "vault.h"
 #include "secure_entry.h"
 
 #include "freertos/FreeRTOS.h"
