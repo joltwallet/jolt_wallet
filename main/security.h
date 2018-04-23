@@ -9,6 +9,7 @@
  */
 typedef struct vault_t{
     char mnemonic[MNEMONIC_BUF_LEN];
+    uint512_t master_seed;
     uint32_t index;
     bool valid;
 } vault_t;
@@ -22,8 +23,13 @@ typedef enum vault_rpc_type_t {
     BLUETOOTH_UNPAIR
 } vault_rpc_type_t;
 
+typedef enum vault_rpc_response_t {
+    RPC_SUCCESS = 0,
+    RPC_FAILURE
+} vault_rpc_response_t;
+
 typedef union vault_payload_t {
-    block_t block;
+    struct nl_block_t block;
 } vault_payload_t;
 
 typedef struct vault_rpc_t {
@@ -31,7 +37,6 @@ typedef struct vault_rpc_t {
     QueueHandle_t response_queue;
     vault_payload_t payload;
 } vault_rpc_t;
-
 
 nl_err_t vault_init();
 void vault_task(void *vault_in);
