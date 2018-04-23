@@ -197,6 +197,7 @@ static bool pin_prompt(vault_t *vault){
         decrypt_result = crypto_secretbox_open_easy(
                 (unsigned char *)(vault->mnemonic),
                 enc_mnemonic, required_size, nonce, pin_hash);
+        sodium_mprotect_readonly(vault);
         if(decrypt_result == 0){ //success
             sodium_memzero(enc_mnemonic, sizeof(enc_mnemonic));
             nvs_set_u8(nvs_secret, "pin_attempts", 0);

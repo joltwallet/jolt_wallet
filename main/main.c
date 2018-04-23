@@ -43,13 +43,12 @@ void app_main(){
     nl_err_t err;
     vault_t vault;
     err = vault_init(&vault);
-
     if (E_FAILURE == err){
         first_boot_menu(&vault);
     }
 
     xTaskCreate(vault_task,
-            "VaultTask", 16000,
+            "VaultTask", 32000,
             (void *) &vault, 20,
             NULL);
 
