@@ -211,6 +211,7 @@ void vault_task(void *vault_in){
                         nvs_commit(nvs_secret);
                         nl_mnemonic_to_master_seed(vault->master_seed,
                                 vault->mnemonic, "");
+                        vault->valid = true;
                         break;
                     }
                 }
