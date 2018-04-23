@@ -6,9 +6,9 @@
 #include "nano_lib.h"
 
 #include "menu8g2.h"
-#include "vault.h"
+#include "../vault.h"
 #include "submenus.h"
-#include "globals.h"
+#include "../globals.h"
 
 void menu_address_text(menu8g2_t *prev){
     menu8g2_t menu;

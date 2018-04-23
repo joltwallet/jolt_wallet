@@ -1,0 +1,12 @@
+[submodule "components/nano_lib"]
+	path = components/nano_lib
+	url = git@github.com:NanoRay/nano_lib.git
+[submodule "components/menu8g2"]
+	path = components/menu8g2
+	url = git@github.com:NanoRay/menu8g2.git
+[submodule "components/easy_input"]
+	path = components/easy_input
+	url = git@github.com:NanoRay/easy_input.git
+[submodule "components/u8g2"]
+	path = components/u8g2
+	url = https://github.com/olikraus/u8g2.git

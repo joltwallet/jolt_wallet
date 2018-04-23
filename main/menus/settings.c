@@ -1,13 +1,12 @@
 #include "menu8g2.h"
-#include "vault.h"
+#include "../vault.h"
 #include "submenus.h"
-#include "globals.h"
+#include "../globals.h"
 
 
 static void menu_factory_reset_confirm(menu8g2_t *prev){
     bool res;
     vault_rpc_t rpc;
-    vault_rpc_t *rpc_p = &rpc;
     menu8g2_t menu;
     menu8g2_init(&menu,
             menu8g2_get_u8g2(prev),
