@@ -88,7 +88,7 @@ void first_boot_menu(vault_t *vault){
     // Generate Mnemonic
     sodium_mprotect_readwrite(vault);
     nl_mnemonic_generate(vault->mnemonic, MNEMONIC_BUF_LEN, 256);
-    vault->valid = true;
+    vault->valid = false; // To force proper vault update later
     vault->index = 0;
     sodium_mprotect_readonly(vault);
 
