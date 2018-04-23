@@ -24,17 +24,21 @@ static void nvs_log_err(esp_err_t err);
 
 static void factory_reset(){
     /* Erases all NVM and resets device */
+    esp_err_t err;
     nvs_handle h;
 
     init_nvm_namespace(&h, "secret");
-    nvs_erase_all(h);
+    err = nvs_erase_all(h);
+    nvs_log_err(err);
     nvs_commit(h);
     nvs_close(h);
 
     init_nvm_namespace(&h, "user");
-    nvs_erase_all(h);
+    err = nvs_erase_all(h);
     nvs_commit(h);
     nvs_close(h);
+
+    printf("meow\n");
 
     esp_restart();
 }
@@ -122,6 +126,9 @@ nl_err_t vault_init(vault_t *vault){
         ESP_LOGE(TAG, "Unable to allocate space for the Vault");
         esp_restart();
     }
+    sodium_mprotect_readwrite(vault);
+    sodium_memzero(vault, sizeof(vault_t));
+    sodium_mprotect_noaccess(vault);
 
     // Initializes the secret nvs
     init_nvm_namespace(&nvs_secret, "secret");

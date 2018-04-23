@@ -146,12 +146,13 @@ void first_boot_menu(vault_t *vault){
 	sodium_memzero(pin_hash, 32);
 
 	// Save everything to NVS
-	nvs_handle nvs_secret;
-    init_nvm_namespace(&nvs_secret, "secret");
-	nvs_set_blob(nvs_secret, "mnemonic", enc_mnemonic, sizeof(enc_mnemonic));
-    nvs_set_u8(nvs_secret, "pin_attempts", 0);
-    nvs_set_u32(nvs_secret, "index", 0);
-	nvs_commit(nvs_secret);
+	nvs_handle h;
+    init_nvm_namespace(&h, "secret");
+	nvs_set_blob(h, "mnemonic", enc_mnemonic, sizeof(enc_mnemonic));
+    nvs_set_u8(h, "pin_attempts", 0);
+    nvs_set_u32(h, "index", 0);
+	nvs_commit(h);
+    nvs_close(h);
 	sodium_memzero(enc_mnemonic, sizeof(enc_mnemonic));
 
     sodium_mprotect_noaccess(vault);

@@ -54,7 +54,7 @@ void app_main(){
             NULL);
 
     xTaskCreate(gui_task,
-            "GuiTask", 16000,
+            "GuiTask", 32000,
             NULL, 10,
             NULL);
 
