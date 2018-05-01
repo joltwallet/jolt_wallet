@@ -10,15 +10,15 @@
 [submodule "components/u8g2"]
 	path = components/u8g2
 	url = https://github.com/olikraus/u8g2.git
-[submodule "components/nano_lws"]
-	path = components/nano_lws
-	url = git@github.com:NanoRay/nano_lws.git
-[submodule "components/libwebsockets"]
-	path = components/libwebsockets
-	url = git@github.com:warmcat/libwebsockets.git
-[submodule "components/nano_parse"]
-	path = components/nano_parse
-	url = git@github.com:NanoRay/nano_parse.git
 [submodule "components/zlib"]
 	path = components/zlib
 	url = git@github.com:NanoRay/nano_zlib.git
+[submodule "components/nano_lws"]
+	path = components/nano_lws
+	url = git@github.com:NanoRay/nano_lws.git
+[submodule "components/nano_parse"]
+	path = components/nano_parse
+	url = git@github.com:NanoRay/nano_parse.git
+[submodule "components/libwebsockets"]
+	path = components/libwebsockets
+	url = git@github.com:warmcat/libwebsockets.git
