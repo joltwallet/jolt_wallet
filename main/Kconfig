@@ -40,7 +40,7 @@ menu "NanoRay Config"
     config NANORAY_DEFAULT_BOOT_SPLASH_ENABLE
         bool
         prompt "Enable boot splash screen"
-        default true
+        default y
         help
             help text here
 
