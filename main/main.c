@@ -19,6 +19,7 @@
 #include "vault.h"
 #include "nano_lib.h"
 #include "first_boot.h"
+#include "wifi.h"
 
 
 // Definitions for variables in globals.h
@@ -37,7 +38,8 @@ void app_main(){
     // Initialize the OLED Display
     setup_screen(&u8g2);
 
-    // Todo: Initialize Wireless Here
+    // Initialize Wireless
+    wifi_connect();
     
     // Allocate space for the vault and see if a copy exists in NVS
     vault_t vault;
