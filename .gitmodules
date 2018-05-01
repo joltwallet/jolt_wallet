@@ -10,9 +10,6 @@
 [submodule "components/u8g2"]
 	path = components/u8g2
 	url = https://github.com/olikraus/u8g2.git
-[submodule "components/QRCode/QRCode"]
-	path = components/QRCode/QRCode
-	url = https://github.com/ricmoo/QRCode.git
 [submodule "components/QRCode"]
 	path = components/QRCode
 	url = https://github.com/phildubach/QRCode.git

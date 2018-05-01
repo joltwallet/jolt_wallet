@@ -25,6 +25,7 @@ void menu_address_qr(menu8g2_t *prev){
     QRCode qrcode;
     uint8_t qrcode_bytes[qrcode_getBufferSize(CONFIG_NANORAY_QR_VERSION)];
     uint64_t input_buf;
+    nl_err_t err;
 
     //get public key
     init_nvm_namespace(&nvs_secret, "secret");
@@ -38,14 +39,17 @@ void menu_address_qr(menu8g2_t *prev){
         return;
     }
 
-    nl_err_t public_to_qr(&qrcode, qrcode_bytes, 
+    err = public_to_qr(&qrcode, qrcode_bytes, 
             rpc.payload.public_key.block.account, NULL);
+    if( err != E_SUCCESS ){
+        return;
+    }
 
     //u8g2_SetContrast(u8g2, 1); // Phones have trouble with bright displays
     display_centered_qr(menu.u8g2, &qrcode, CONFIG_NANORAY_QR_SCALE);
 
     for(;;){
-		if(xQueueReceive(menu->input_queue, &input_buf, portMAX_DELAY)) {
+		if(xQueueReceive(menu.input_queue, &input_buf, portMAX_DELAY)) {
             if(input_buf == (1ULL << EASY_INPUT_BACK)){
                 // todo: Restore User's Brightness Here
                 return;
