@@ -51,4 +51,27 @@ menu "NanoRay Config"
         help
             help text here
 
+    choice
+        prompt "Select QR Encoding Method"
+        config NANORAY_QR_TYPE_SIMPLE
+            bool "simple address encoding xrb_"
+        config NANORAY_QR_TYPE_STANDARD
+            bool "Follows the Nano QR URI standard"
+        config NANORAY_QR_TYPE_SHORT
+            bool "Encodes using QR alphanumeric XRB-"
+    endchoice
+
+    config NANORAY_QR_VERSION
+        int
+        prompt "QR Version"
+        default 6
+        help
+            Determines QR Code size
+
+    config NANORAY_QR_SCALE
+        int
+        prompt "Pixel-wise QR code scale multiplier"
+        default 1
+        help
+            help text here
 endmenu
