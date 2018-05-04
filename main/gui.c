@@ -64,7 +64,7 @@ void gui_task(){
     menu8g2_set_element(&elements, "Balance", NULL);
     menu8g2_set_element(&elements, "Select Account", NULL);
     menu8g2_set_element(&elements, "Address (text)", &menu_address_text);
-    menu8g2_set_element(&elements, "Address (QR)", NULL);
+    menu8g2_set_element(&elements, "Address (QR)", &menu_address_qr);
     menu8g2_set_element(&elements, "Seed (text)", NULL);
     menu8g2_set_element(&elements, "Settings", &menu_settings);
 

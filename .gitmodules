@@ -22,3 +22,6 @@
 [submodule "components/libwebsockets"]
 	path = components/libwebsockets
 	url = git@github.com:warmcat/libwebsockets.git
+[submodule "components/QRCode"]
+	path = components/QRCode
+	url = https://github.com/phildubach/QRCode.git
