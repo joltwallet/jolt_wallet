@@ -58,14 +58,13 @@ void gui_task(){
     const char title[] = "Main";
 
     menu8g2_elements_t elements;
-    menu8g2_elements_init(&elements, 8);
+    menu8g2_elements_init(&elements, 7);
     menu8g2_set_element(&elements, "Receive", NULL);
     menu8g2_set_element(&elements, "Block Count", &menu_block_count);
     menu8g2_set_element(&elements, "Balance", NULL);
     menu8g2_set_element(&elements, "Select Account", NULL);
     menu8g2_set_element(&elements, "Address (text)", &menu_address_text);
     menu8g2_set_element(&elements, "Address (QR)", &menu_address_qr);
-    menu8g2_set_element(&elements, "Seed (text)", NULL);
     menu8g2_set_element(&elements, "Settings", &menu_settings);
 
     for(;;){
