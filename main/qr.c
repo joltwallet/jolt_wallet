@@ -39,8 +39,6 @@ void display_centered_qr(u8g2_t *u8g2, QRCode *qrcode, uint8_t scale){
 
     x_offset = (x_offset < 0) ? 0 : x_offset;
     y_offset = (y_offset < 0) ? 0 : y_offset;
-    printf("x: %d\n", x_offset);
-    printf("y: %d\n", y_offset);
     
 	display_qr(u8g2, x_offset, y_offset, qrcode, scale);
 }
@@ -50,7 +48,6 @@ nl_err_t public_to_qr(QRCode *qrcode, uint8_t *qrcode_bytes,
     char buf[120];
     char address[ADDRESS_BUF_LEN];
     char amount_str[BALANCE_DEC_BUF_LEN];
-    const char prefix[] = "xrb";
     size_t olen;
     nl_err_t err;
 
@@ -74,7 +71,8 @@ nl_err_t public_to_qr(QRCode *qrcode, uint8_t *qrcode_bytes,
 
     #if CONFIG_NANORAY_QR_TYPE_STANDARD
     char *buf_moving = buf;
-    strncpy(buf, prefix, strlen(prefix));
+    strncpy(buf, CONFIG_NANO_LIB_ADDRESS_PREFIX,
+            strlen(CONFIG_NANO_LIB_ADDRESS_PREFIX)-1);
     buf_moving += strlen(prefix);
 
     *buf_moving = ':';
