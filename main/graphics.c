@@ -4,6 +4,8 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
+#include "wifi.h"
+
 
 const unsigned char graphic_nano_logo_small[] = {
     0x00, 0x00, 0x06, 0x00, 0x00, 0xE0, 0x00, 0x00, 0x00, 0x0F, 0x00, 0x00, 
@@ -51,6 +53,32 @@ extern const unsigned char graphic_wifi_3[] = {
 
 extern const unsigned char graphic_bluetooth[] = {
     0x04, 0x0D, 0x16, 0x34, 0x0C, 0x34, 0x16, 0x0D, 0x04,}; 
+
+void statusbar_wifi(){
+    /* Call in a drawing loop */
+    const uint16_t x = 100;
+    const uint16_t y = 10;
+    unsigned char *graphic;
+    uint8_t wifi_strength = get_wifi_strength();
+    switch(wifi_strength){
+        case 1:
+            graphic = graphic_wifi_1;
+            break;
+        case 2:
+            graphic = graphic_wifi_2;
+            break;
+        case 3:
+            graphic = graphic_wifi_3;
+            break;
+        default:
+            // Draw Nothing
+            return;
+    }
+    u8g2_DrawXBM( u8g2, logo_start_x, logo_y,
+            GRAPHIC_WIFI_W,
+            GRAPHIC_WIFI_H,
+            graphic);
+}
 
 void boot_splash(u8g2_t *u8g2){
     int16_t gap = 18;

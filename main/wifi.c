@@ -88,6 +88,28 @@ void wifi_task(void *pvParameters)
     vTaskDelete( NULL );
 }
 
+uint8_t get_wifi_strength(){
+    /* 0 - no wifi
+     * 1 - weak
+     * 2 - medium
+     * 3 - strong
+     */
+    wifi_ap_record_t ap_info;
+    if(esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK){
+        return 0;
+    }
+
+    if (ap_info.rssi >= -55) {
+        return 3;
+    }
+    else if (ap_info.rssi >= -75) {
+        return 2;
+    }
+    else
+        return 1;
+    }
+}
+
 void get_ap_info(char * ssid_info){
     
     tcpip_adapter_ip_info_t ip;
