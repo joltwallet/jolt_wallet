@@ -8,21 +8,23 @@
 #include "nano_lib.h"
 #include "mbedtls/bignum.h"
 
-void display_qr(u8g2_t *u8g2, uint8_t x_offset, uint8_t y_offset,
+void display_qr(menu8g2_t *menu, uint8_t x_offset, uint8_t y_offset,
         QRCode *qrcode, uint8_t scale){
 	// Displays a fully formed QR Code to the OLED display
-    u8g2_FirstPage(u8g2);
+    
+    xSemaphoreTake(menu->disp_mutex, portMAX_DELAY);
+    u8g2_FirstPage(menu->u8g2);
     do{
 		for (uint8_t y = 0; y < qrcode->size; y++) {
 			for (uint8_t x = 0; x < qrcode->size; x++) {
 				if(scale==1){
 					if (qrcode_getModule(qrcode, x, y)) {
-						u8g2_DrawPixel(u8g2, x+x_offset, y+y_offset);
+						u8g2_DrawPixel(menu->u8g2, x+x_offset, y+y_offset);
 					}
 				}
 				else{
     			    if (qrcode_getModule(qrcode, x, y)) {
-						u8g2_DrawBox(u8g2,
+						u8g2_DrawBox(menu->u8g2,
                                 scale*x + x_offset,
                                 scale*y + y_offset,
                                 scale, scale);
@@ -30,19 +32,18 @@ void display_qr(u8g2_t *u8g2, uint8_t x_offset, uint8_t y_offset,
                 }
 			}
 		}
-    } while(u8g2_NextPage(u8g2));
+    } while(u8g2_NextPage(menu->u8g2));
+    xSemaphoreGive(menu->disp_mutex);
 }
 
-void display_centered_qr(u8g2_t *u8g2, QRCode *qrcode, uint8_t scale){
-    int16_t x_offset = (u8g2_GetDisplayWidth(u8g2) - (qrcode->size * scale))/2;
-    int16_t y_offset = (u8g2_GetDisplayHeight(u8g2) - (qrcode->size * scale))/2;
+void display_qr_center(menu8g2_t *menu, QRCode *qrcode, uint8_t scale){
+    int16_t x_offset = (u8g2_GetDisplayWidth(menu->u8g2) - (qrcode->size * scale))/2;
+    int16_t y_offset = (u8g2_GetDisplayHeight(menu->u8g2) - (qrcode->size * scale))/2;
 
     x_offset = (x_offset < 0) ? 0 : x_offset;
     y_offset = (y_offset < 0) ? 0 : y_offset;
-    printf("x: %d\n", x_offset);
-    printf("y: %d\n", y_offset);
     
-	display_qr(u8g2, x_offset, y_offset, qrcode, scale);
+	display_qr(menu, x_offset, y_offset, qrcode, scale);
 }
 
 nl_err_t public_to_qr(QRCode *qrcode, uint8_t *qrcode_bytes, 
@@ -50,7 +51,6 @@ nl_err_t public_to_qr(QRCode *qrcode, uint8_t *qrcode_bytes,
     char buf[120];
     char address[ADDRESS_BUF_LEN];
     char amount_str[BALANCE_DEC_BUF_LEN];
-    const char prefix[] = "xrb";
     size_t olen;
     nl_err_t err;
 
@@ -74,7 +74,8 @@ nl_err_t public_to_qr(QRCode *qrcode, uint8_t *qrcode_bytes,
 
     #if CONFIG_NANORAY_QR_TYPE_STANDARD
     char *buf_moving = buf;
-    strncpy(buf, prefix, strlen(prefix));
+    strncpy(buf, CONFIG_NANO_LIB_ADDRESS_PREFIX,
+            strlen(CONFIG_NANO_LIB_ADDRESS_PREFIX)-1);
     buf_moving += strlen(prefix);
 
     *buf_moving = ':';

@@ -10,6 +10,8 @@ PROJECT_NAME := nanoray
 #COMPONENT_ADD_INCLUDEDIRS += main/menus
 #COMPONENT_ADD_SRCDIRS += main/menus
 
-CFLAGS += -Wno-unknown-pragmas
+CFLAGS += -Wno-unknown-pragmas \
+	 -I$(BUILD_DIR_BASE)/libwebsockets/include \
+	 -I$(PROJECT_PATH)/components/libwebsockets/lib
 
 include $(IDF_PATH)/make/project.mk
