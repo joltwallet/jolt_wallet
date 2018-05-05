@@ -10,12 +10,7 @@
 #include "submenus.h"
 #include "../globals.h"
 
-void menu_address_text(menu8g2_t *prev){
-    menu8g2_t menu;
-    menu8g2_init(&menu,
-            menu8g2_get_u8g2(prev),
-            menu8g2_get_input_queue(prev)
-            );
+void menu_address_text(menu8g2_t *menu){
     vault_rpc_t rpc;
     vault_rpc_response_t res;
     nvs_handle nvs_secret;
@@ -32,7 +27,7 @@ void menu_address_text(menu8g2_t *prev){
         nl_public_to_address(address, sizeof(address),
                 rpc.payload.public_key.block.account);
         for(;;){
-            if(menu8g2_display_text(&menu, address) == (1ULL << EASY_INPUT_BACK)){
+            if(menu8g2_display_text(menu, address) == (1ULL << EASY_INPUT_BACK)){
                 return;
             }
         }

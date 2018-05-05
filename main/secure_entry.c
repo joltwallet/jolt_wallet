@@ -36,6 +36,7 @@ bool pin_entry(menu8g2_t *menu, unsigned char *pin_hash, const char *title){
     char buf[24];
     int8_t pin_entries[MAX_PIN_DIGITS] = { 0 };
     for(;;){
+        xSemaphoreTake(menu->disp_mutex, portMAX_DELAY);
         u8g2_FirstPage(u8g2);
         do{
             u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
@@ -58,6 +59,7 @@ bool pin_entry(menu8g2_t *menu, unsigned char *pin_hash, const char *title){
                         buf);
             }
         } while(u8g2_NextPage(u8g2));
+        xSemaphoreGive(menu->disp_mutex);
 
         u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
         u8g2_SetDrawColor(u8g2, 1); // Set it back to default background

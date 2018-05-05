@@ -105,7 +105,7 @@ uint8_t get_wifi_strength(){
     else if (ap_info.rssi >= -75) {
         return 2;
     }
-    else
+    else {
         return 1;
     }
 }
