@@ -9,6 +9,7 @@
 #include "gui.h"
 #include "vault.h"
 
+#include "statusbar.h"
 #include "menus/submenus.h"
 
 
@@ -54,6 +55,9 @@ void gui_task(){
     if(boot_splash_enable){
 	    boot_splash( menu.u8g2 );
     }
+
+    // Make sure the statusbar_task has higher priority than gui
+    xTaskCreate(statusbar_task, "StatusBarTask", 8192, (void *) &menu, 11, NULL);
 
     const char title[] = "Main";
 
