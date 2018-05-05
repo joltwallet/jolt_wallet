@@ -9,6 +9,7 @@
 #include "gui.h"
 #include "vault.h"
 
+#include "statusbar.h"
 #include "menus/submenus.h"
 
 
@@ -43,7 +44,7 @@ void gui_task(){
 	nvs_handle nvs_user;
     uint8_t boot_splash_enable = CONFIG_NANORAY_DEFAULT_BOOT_SPLASH_ENABLE;
     menu8g2_t menu;
-    menu8g2_init(&menu, &u8g2, input_queue, disp_mutex);
+    menu8g2_init(&menu, &u8g2, input_queue, disp_mutex, NULL, statusbar_update);
 
     // display boot_splash if option is set
     if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){
@@ -54,6 +55,9 @@ void gui_task(){
     if(boot_splash_enable){
 	    boot_splash( menu.u8g2 );
     }
+
+    xTaskCreate(statusbar_task, "StatusBarTask", 8192,
+            (void *) &menu, 5, &statusbar_task_h);
 
     const char title[] = "Main";
 

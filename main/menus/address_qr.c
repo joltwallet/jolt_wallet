@@ -12,8 +12,9 @@
 #include "../globals.h"
 #include "../helpers.h"
 #include "../qr.h"
+#include "../statusbar.h"
 
-void menu_address_qr(menu8g2_t *menu){
+void menu_address_qr(menu8g2_t *prev){
     vault_rpc_t rpc;
     vault_rpc_response_t res;
     nvs_handle nvs_secret;
@@ -21,6 +22,9 @@ void menu_address_qr(menu8g2_t *menu){
     uint8_t qrcode_bytes[qrcode_getBufferSize(CONFIG_NANORAY_QR_VERSION)];
     uint64_t input_buf;
     nl_err_t err;
+    menu8g2_t menu;
+    menu8g2_copy(&menu, prev);
+
 
     //get public key
     init_nvm_namespace(&nvs_secret, "secret");
@@ -40,15 +44,18 @@ void menu_address_qr(menu8g2_t *menu){
         return;
     }
 
+    statusbar_disable(&menu);
     //u8g2_SetContrast(u8g2, 1); // Phones have trouble with bright displays
-    display_qr_center(menu, &qrcode, CONFIG_NANORAY_QR_SCALE);
+    display_qr_center(&menu, &qrcode, CONFIG_NANORAY_QR_SCALE);
 
     for(;;){
-		if(xQueueReceive(menu->input_queue, &input_buf, portMAX_DELAY)) {
+		if(xQueueReceive(menu.input_queue, &input_buf, portMAX_DELAY)) {
             if(input_buf == (1ULL << EASY_INPUT_BACK)){
                 // todo: Restore User's Brightness Here
+                statusbar_enable(&menu);
                 return;
             }
         }
     }
+    statusbar_enable(&menu);
 }

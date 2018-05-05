@@ -83,7 +83,7 @@ void first_boot_menu(vault_t *vault){
 	CONFIDENTIAL unsigned char enc_mnemonic[crypto_secretbox_MACBYTES + MNEMONIC_BUF_LEN];
 
     menu8g2_t menu;
-    menu8g2_init(&menu, &u8g2, input_queue, disp_mutex);
+    menu8g2_init(&menu, &u8g2, input_queue, disp_mutex, NULL, NULL);
 
     // Generate Mnemonic
     sodium_mprotect_readwrite(vault);
