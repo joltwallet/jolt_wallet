@@ -5,6 +5,8 @@
 #include "freertos/task.h"
 
 #include "wifi.h"
+#include "u8g2.h"
+#include "globals.h"
 
 
 const unsigned char graphic_nano_logo_small[] = {
@@ -39,26 +41,26 @@ const unsigned char graphic_nano_ray[] = {
     0x00, 0x02, 0x70, 0x00, 0x03, 0x60, 0x60, 0x00, 0x00, 0x00, 0x70, 0x00, 
     0x03, 0xC0, 0x30, 0x00, 0x00, 0x00, 0x70, 0x00, };
 
-extern const unsigned char graphic_wifi_1[] = {
+const unsigned char graphic_wifi_1[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x38, 0x00,
     0x10 , 0x00, };  
 
-extern const unsigned char graphic_wifi_2[] = {
+const unsigned char graphic_wifi_2[] = {
     0x00, 0x00, 0x00, 0x00, 0x38, 0x00, 0x44, 0x00, 0x92, 0x00, 0x38, 0x00,
     0x10, 0x00, };    
 
-extern const unsigned char graphic_wifi_3[] = {
+const unsigned char graphic_wifi_3[] = {
     0x7C, 0x00, 0x82, 0x00, 0x39, 0x01, 0x44, 0x00, 0x92 , 0x00, 0x38, 0x00,
     0x10, 0x00, };    
 
-extern const unsigned char graphic_bluetooth[] = {
+const unsigned char graphic_bluetooth[] = {
     0x04, 0x0D, 0x16, 0x34, 0x0C, 0x34, 0x16, 0x0D, 0x04,}; 
 
 void statusbar_wifi(){
     /* Call in a drawing loop */
     const uint16_t x = 100;
     const uint16_t y = 10;
-    unsigned char *graphic;
+    const unsigned char *graphic;
     uint8_t wifi_strength = get_wifi_strength();
     switch(wifi_strength){
         case 1:
@@ -74,7 +76,7 @@ void statusbar_wifi(){
             // Draw Nothing
             return;
     }
-    u8g2_DrawXBM( u8g2, logo_start_x, logo_y,
+    u8g2_DrawXBM( &u8g2, x, y,
             GRAPHIC_WIFI_W,
             GRAPHIC_WIFI_H,
             graphic);

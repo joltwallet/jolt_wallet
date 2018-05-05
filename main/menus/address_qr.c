@@ -13,12 +13,7 @@
 #include "../helpers.h"
 #include "../qr.h"
 
-void menu_address_qr(menu8g2_t *prev){
-    menu8g2_t menu;
-    menu8g2_init(&menu,
-            menu8g2_get_u8g2(prev),
-            menu8g2_get_input_queue(prev)
-            );
+void menu_address_qr(menu8g2_t *menu){
     vault_rpc_t rpc;
     vault_rpc_response_t res;
     nvs_handle nvs_secret;
@@ -46,10 +41,10 @@ void menu_address_qr(menu8g2_t *prev){
     }
 
     //u8g2_SetContrast(u8g2, 1); // Phones have trouble with bright displays
-    display_centered_qr(menu.u8g2, &qrcode, CONFIG_NANORAY_QR_SCALE);
+    display_qr_center(menu, &qrcode, CONFIG_NANORAY_QR_SCALE);
 
     for(;;){
-		if(xQueueReceive(menu.input_queue, &input_buf, portMAX_DELAY)) {
+		if(xQueueReceive(menu->input_queue, &input_buf, portMAX_DELAY)) {
             if(input_buf == (1ULL << EASY_INPUT_BACK)){
                 // todo: Restore User's Brightness Here
                 return;

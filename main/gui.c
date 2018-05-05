@@ -43,7 +43,7 @@ void gui_task(){
 	nvs_handle nvs_user;
     uint8_t boot_splash_enable = CONFIG_NANORAY_DEFAULT_BOOT_SPLASH_ENABLE;
     menu8g2_t menu;
-    menu8g2_init(&menu, &u8g2, input_queue);
+    menu8g2_init(&menu, &u8g2, input_queue, disp_mutex);
 
     // display boot_splash if option is set
     if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){

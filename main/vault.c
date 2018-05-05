@@ -159,7 +159,7 @@ nl_err_t vault_init(vault_t *vault){
     return res;
 }
 
-static bool pin_prompt(vault_t *vault){
+static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
     /* Reads and Decrypts mnemonic from NVS.
      * Returns true if the vault object is now valid.
      * Will factory reset when max_attempts is reached.
@@ -174,13 +174,11 @@ static bool pin_prompt(vault_t *vault){
     CONFIDENTIAL unsigned char enc_mnemonic[
             crypto_secretbox_MACBYTES + MNEMONIC_BUF_LEN];
     size_t required_size = sizeof(enc_mnemonic);
-    menu8g2_t menu;
 
     if( vault->valid ){
         return true;
     }
 
-    menu8g2_init(&menu, &u8g2, input_queue);
     init_nvm_namespace(&nvs_secret, "secret");
 
     err = nvs_get_u8(nvs_secret, "pin_attempts", &pin_attempts);
@@ -196,7 +194,7 @@ static bool pin_prompt(vault_t *vault){
         }
         sprintf(title, "Enter Pin (%d/%d)", pin_attempts+1,
                 CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT);
-        if(!pin_entry(&menu, pin_hash, title)){
+        if(!pin_entry(menu, pin_hash, title)){
             // User cancelled vault operation
             nvs_close(nvs_secret);
             return false;
@@ -240,7 +238,7 @@ void vault_task(void *vault_in){
     vault_rpc_response_t response;
 
     menu8g2_t menu;
-    menu8g2_init(&menu, &u8g2, input_queue);
+    menu8g2_init(&menu, &u8g2, input_queue, disp_mutex);
 
     /* The vault_queue holds a pointer to the vault_rpc_t object declared
      * by the producer task. Results are directly modified on that object.
@@ -254,7 +252,7 @@ void vault_task(void *vault_in){
             sodium_mprotect_readonly(vault);
 
             // Prompt user for Pin if necessary
-            if(pin_prompt(vault)){
+            if(pin_prompt(&menu, vault)){
                 // Perform command
                 switch(cmd->type){
                     case(BLOCK_SIGN):

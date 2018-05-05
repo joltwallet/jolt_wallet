@@ -9,10 +9,7 @@ static void menu_factory_reset_confirm(menu8g2_t *prev){
     bool res;
     vault_rpc_t rpc;
     menu8g2_t menu;
-    menu8g2_init(&menu,
-            menu8g2_get_u8g2(prev),
-            menu8g2_get_input_queue(prev)
-            );
+    menu8g2_copy(&menu, prev);
 
     const char title[] = "Are you sure?";
 
@@ -28,14 +25,11 @@ static void menu_factory_reset_confirm(menu8g2_t *prev){
 }
 
 static void wifi_settings(menu8g2_t *prev){
-    
     bool res;
-    vault_rpc_t rpc;
+    vault_rpc_t rpc; // todo: To be used to modify SSID/Pass
     menu8g2_t menu;
-    menu8g2_init(&menu,
-                 menu8g2_get_u8g2(prev),
-                 menu8g2_get_input_queue(prev)
-                 );
+    menu8g2_copy(&menu, prev);
+
     char new_ap_info[45];
     get_ap_info(new_ap_info);
     for(;;){
@@ -47,10 +41,7 @@ static void wifi_settings(menu8g2_t *prev){
 
 void menu_settings(menu8g2_t *prev){
     menu8g2_t menu;
-    menu8g2_init(&menu,
-            menu8g2_get_u8g2(prev),
-            menu8g2_get_input_queue(prev)
-            );
+    menu8g2_copy(&menu, prev);
     const char title[] = "Settings";
 
     menu8g2_elements_t elements;
