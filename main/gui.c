@@ -56,8 +56,8 @@ void gui_task(){
 	    boot_splash( menu.u8g2 );
     }
 
-    // Make sure the statusbar_task has higher priority than gui
-    xTaskCreate(statusbar_task, "StatusBarTask", 8192, (void *) &menu, 11, NULL);
+    xTaskCreate(statusbar_task, "StatusBarTask", 8192,
+            (void *) &menu, 5, &statusbar_task_h);
 
     const char title[] = "Main";
 

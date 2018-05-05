@@ -22,6 +22,9 @@
 static const char* TAG = "security";
 static void nvs_log_err(esp_err_t err);
 
+/* Globals */
+TaskHandle_t statusbar_task_h; 
+
 vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
     /* Sets up rpc queue, blocks until vault responds. */
     vault_rpc_response_t res;
@@ -188,6 +191,7 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
     err = nvs_get_blob(nvs_secret, "mnemonic", enc_mnemonic, &required_size);
     nvs_log_err(err);
 
+    vTaskSuspend(statusbar_task_h);
     for(;;){
         if(pin_attempts >= CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT){
             factory_reset();
@@ -197,6 +201,7 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
         if(!pin_entry(menu, pin_hash, title)){
             // User cancelled vault operation
             nvs_close(nvs_secret);
+            vTaskResume(statusbar_task_h);
             return false;
         };
         pin_attempts++;
@@ -220,6 +225,7 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
         }
     }
     nvs_close(nvs_secret);
+    vTaskResume(statusbar_task_h);
     return true;
 }
 

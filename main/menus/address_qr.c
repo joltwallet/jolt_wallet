@@ -40,6 +40,7 @@ void menu_address_qr(menu8g2_t *menu){
         return;
     }
 
+    vTaskSuspend(statusbar_task_h);
     //u8g2_SetContrast(u8g2, 1); // Phones have trouble with bright displays
     display_qr_center(menu, &qrcode, CONFIG_NANORAY_QR_SCALE);
 
@@ -47,6 +48,7 @@ void menu_address_qr(menu8g2_t *menu){
 		if(xQueueReceive(menu->input_queue, &input_buf, portMAX_DELAY)) {
             if(input_buf == (1ULL << EASY_INPUT_BACK)){
                 // todo: Restore User's Brightness Here
+                vTaskResume(statusbar_task_h);
                 return;
             }
         }
