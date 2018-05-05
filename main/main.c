@@ -33,7 +33,7 @@ void app_main(){
     easy_input_queue_init(&input_queue);
     xTaskCreate(easy_input_push_button_task,
             "ButtonDebounce", 4096,
-            (void *)&input_queue, 15,
+            (void *)&input_queue, 17,
             NULL);
 
     // Initialize the OLED Display
@@ -51,7 +51,7 @@ void app_main(){
 
     xTaskCreate(vault_task,
             "VaultTask", 32000,
-            (void *) &vault, 20,
+            (void *) &vault, 14,
             NULL);
 
     xTaskCreate(gui_task,

@@ -57,7 +57,7 @@ void gui_task(){
     }
 
     xTaskCreate(statusbar_task, "StatusBarTask", 8192,
-            (void *) &menu, 5, &statusbar_task_h);
+            (void *) &menu, 2, &statusbar_task_h);
 
     const char title[] = "Main";
 

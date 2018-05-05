@@ -5,17 +5,22 @@
 #include "menu8g2.h"
 #include "submenus.h"
 #include "../globals.h"
+#include "../statusbar.h"
 
 #include <libwebsockets.h>
 #include "nano_lws.h"
 #include "nano_parse.h"
 
-void menu_block_count(menu8g2_t *menu){
+void menu_block_count(menu8g2_t *prev){
     char block_count[12];
     sprintf(block_count, "%d", get_block_count());
-    
+    menu8g2_t menu;
+    menu8g2_copy(&menu, prev);
+
+    statusbar_disable(&menu);
     for(;;){
-        if(menu8g2_display_text(menu, block_count) == (1ULL << EASY_INPUT_BACK)){
+        if(menu8g2_display_text(&menu, block_count) == (1ULL << EASY_INPUT_BACK)){
+            statusbar_enable(&menu);
             return;
         }
     }

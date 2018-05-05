@@ -191,7 +191,6 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
     err = nvs_get_blob(nvs_secret, "mnemonic", enc_mnemonic, &required_size);
     nvs_log_err(err);
 
-    vTaskSuspend(statusbar_task_h);
     for(;;){
         if(pin_attempts >= CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT){
             factory_reset();
@@ -201,7 +200,6 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
         if(!pin_entry(menu, pin_hash, title)){
             // User cancelled vault operation
             nvs_close(nvs_secret);
-            vTaskResume(statusbar_task_h);
             return false;
         };
         pin_attempts++;
@@ -225,7 +223,6 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
         }
     }
     nvs_close(nvs_secret);
-    vTaskResume(statusbar_task_h);
     return true;
 }
 
