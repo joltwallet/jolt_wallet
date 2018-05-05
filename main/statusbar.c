@@ -8,8 +8,9 @@
 #include "menu8g2.h"
 #include "u8g2.h"
 #include "globals.h"
+#include "statusbar.h"
 
-#define STATUSBAR_UPDATE_PERIOD_MS 1000
+#define STATUSBAR_UPDATE_PERIOD_MS 2000
 
 static void statusbar_wifi(menu8g2_t *menu){
     /* Call in a drawing loop */
@@ -38,6 +39,15 @@ static void statusbar_wifi(menu8g2_t *menu){
             GRAPHIC_WIFI_W,
             GRAPHIC_WIFI_H,
             graphic);
+}
+
+void statusbar_enable(menu8g2_t *menu){
+    menu->post_draw = statusbar_update;
+    vTaskResume(statusbar_task_h);
+}
+void statusbar_disable(menu8g2_t *menu){
+    menu->post_draw = NULL;
+    vTaskSuspend(statusbar_task_h);
 }
 
 void statusbar_update(menu8g2_t *menu){

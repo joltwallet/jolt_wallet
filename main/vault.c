@@ -244,7 +244,7 @@ void vault_task(void *vault_in){
     vault_rpc_response_t response;
 
     menu8g2_t menu;
-    menu8g2_init(&menu, &u8g2, input_queue, disp_mutex);
+    menu8g2_init(&menu, &u8g2, input_queue, disp_mutex, NULL, NULL);
 
     /* The vault_queue holds a pointer to the vault_rpc_t object declared
      * by the producer task. Results are directly modified on that object.
