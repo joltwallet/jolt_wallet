@@ -16,11 +16,13 @@ void menu_block_count(menu8g2_t *prev){
     sprintf(block_count, "%d", get_block_count());
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
+    bool statusbar_draw_original = statusbar_draw_enable;
 
-    statusbar_disable(&menu);
+    statusbar_draw_enable = false;
+    menu.post_draw = NULL;
     for(;;){
         if(menu8g2_display_text(&menu, block_count) == (1ULL << EASY_INPUT_BACK)){
-            statusbar_enable(&menu);
+            statusbar_draw_enable = statusbar_draw_original;
             return;
         }
     }

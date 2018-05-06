@@ -24,6 +24,7 @@ void menu_address_qr(menu8g2_t *prev){
     nl_err_t err;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
+    bool statusbar_draw_original = statusbar_draw_enable;
 
 
     //get public key
@@ -44,9 +45,8 @@ void menu_address_qr(menu8g2_t *prev){
         return;
     }
 
-    printf("disable1\n");
-    statusbar_disable(&menu);
-    printf("disable2\n");
+    statusbar_draw_enable = false;
+    menu.post_draw = NULL;
     //u8g2_SetContrast(u8g2, 1); // Phones have trouble with bright displays
     display_qr_center(&menu, &qrcode, CONFIG_NANORAY_QR_SCALE);
 
@@ -54,12 +54,9 @@ void menu_address_qr(menu8g2_t *prev){
 		if(xQueueReceive(menu.input_queue, &input_buf, portMAX_DELAY)) {
             if(input_buf == (1ULL << EASY_INPUT_BACK)){
                 // todo: Restore User's Brightness Here
-                printf("enable1\n");
-                statusbar_enable(&menu);
-                printf("enable2\n");
+                statusbar_draw_enable = statusbar_draw_original;
                 return;
             }
         }
     }
-    statusbar_enable(&menu);
 }
