@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <esp_system.h>
+#include "esp_log.h"
 #include "sodium.h"
 #include "easy_input.h"
 #include "menu8g2.h"
@@ -9,17 +10,29 @@
 #include "vault.h"
 #include "secure_entry.h"
 #include "helpers.h"
+#include "statusbar.h"
+#include "globals.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
+static const char* TAG = "secure_entry";
 
 #define PIN_SPACING 13
 
-bool pin_entry(menu8g2_t *menu, unsigned char *pin_hash, const char *title){
+/* Globals */
+//bool statusbar_draw_enable;
+
+bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
     /* Screen for Pin Entry 
      * Saves results into pin_entries*/
+    menu8g2_t local_menu;
+    menu8g2_t *menu = &local_menu;
+    menu8g2_copy(menu, prev);
+
+    bool statusbar_draw_original = statusbar_draw_enable;
+
     u8g2_t *u8g2 = menu->u8g2;
     uint8_t max_pos = MAX_PIN_DIGITS - 1;
     u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
@@ -35,10 +48,10 @@ bool pin_entry(menu8g2_t *menu, unsigned char *pin_hash, const char *title){
 	uint64_t input_buf;
     char buf[24];
     int8_t pin_entries[MAX_PIN_DIGITS] = { 0 };
+
+    statusbar_draw_enable = false;
     for(;;){
-        xSemaphoreTake(menu->disp_mutex, portMAX_DELAY);
-        u8g2_FirstPage(u8g2);
-        do{
+        MENU8G2_BEGIN_DRAW(menu)
             u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
             u8g2_DrawStr(u8g2, get_center_x(u8g2, title), title_height,
                     title);
@@ -58,8 +71,7 @@ bool pin_entry(menu8g2_t *menu, unsigned char *pin_hash, const char *title){
                         (u8g2_GetDisplayHeight(u8g2) + line_height)/2 ,
                         buf);
             }
-        } while(u8g2_NextPage(u8g2));
-        xSemaphoreGive(menu->disp_mutex);
+        MENU8G2_END_DRAW(menu)
 
         u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
         u8g2_SetDrawColor(u8g2, 1); // Set it back to default background
@@ -70,6 +82,8 @@ bool pin_entry(menu8g2_t *menu, unsigned char *pin_hash, const char *title){
                     entry_pos--;
                 }
                 else{
+                    ESP_LOGI(TAG, "User exiting (back) pin entry screen.");
+                    statusbar_draw_enable = statusbar_draw_original;
                     return false;
                 }
             }
@@ -89,13 +103,14 @@ bool pin_entry(menu8g2_t *menu, unsigned char *pin_hash, const char *title){
                     entry_pos++;
                 }
                 else{
+                    ESP_LOGI(TAG, "User entered pin; processing...");
                     // Convert pin into a 256-bit key
                     crypto_generichash_blake2b_state hs;
                     crypto_generichash_init(&hs, NULL, 32, 32);
                     crypto_generichash_update(&hs, 
                             (unsigned char *) pin_entries, MAX_PIN_DIGITS);
                     crypto_generichash_final(&hs, pin_hash, 32);
-
+                    statusbar_draw_enable = statusbar_draw_original;
                     return true;
                 }
             }

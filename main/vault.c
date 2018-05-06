@@ -17,27 +17,37 @@
 #include "secure_entry.h"
 #include "vault.h"
 #include "globals.h"
+#include "statusbar.h"
 
 /* Two main NVS Namespaces: ("secret", "user") */
-static const char* TAG = "security";
+static const char* TAG = "vault";
 static void nvs_log_err(esp_err_t err);
-
-/* Globals */
-TaskHandle_t statusbar_task_h; 
 
 vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
     /* Sets up rpc queue, blocks until vault responds. */
     vault_rpc_response_t res;
 
+    #if LOG_LOCAL_LEVEL >= ESP_LOG_INFO
+    int32_t id = randombytes_random();
+    #endif
+
     rpc->response_queue = xQueueCreate( 1, sizeof(res) );
+    
+    ESP_LOGI(TAG, "Attempting Vault RPC Send %d; ID: %d", rpc->type, id);
     if(xQueueSend( vault_queue, (void *) &rpc, 0)){
+        ESP_LOGI(TAG, "Success: Vault RPC Send %d; ID: %d", rpc->type, id);
+        ESP_LOGI(TAG, "Awaiting Vault RPC Send %d response; ID: %d", rpc->type, id);
         xQueueReceive(rpc->response_queue, (void *) &res, portMAX_DELAY);
+        ESP_LOGI(TAG, "Success: Vault RPC Send %d response %d; ID: %d",
+                rpc->type, res, id);
     }
     else{
+        ESP_LOGI(TAG, "Vault RPC Send %d failed; ID: %d", rpc->type, id);
         res = RPC_QUEUE_FULL;
     }
 
     vQueueDelete(rpc->response_queue);
+    ESP_LOGI(TAG, "Response Queue Deleted; ID: %d\n", id);
     return res;
 }
 
@@ -105,14 +115,12 @@ nl_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace){
     ESP_ERROR_CHECK( err );
     
     // Open
-    ESP_LOGI(TAG, "Opening Non-Volatile Storage (NVS) handle... ");
-
     err = nvs_open(namespace, NVS_READWRITE, nvs_h);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error (%d) opening NVS handle with namespace %s!\n", err, namespace);
+        ESP_LOGE(TAG, "Error (%d) opening NVS handle with namespace %s!", err, namespace);
         return E_FAILURE;
     } else {
-        ESP_LOGI(TAG, "Successfully opened NVM with namespace %s\n", namespace);
+        ESP_LOGI(TAG, "Successfully opened NVM with namespace %s!", namespace);
         return E_SUCCESS;
     }
 }
@@ -145,9 +153,10 @@ nl_err_t vault_init(vault_t *vault){
     sodium_mprotect_noaccess(vault);
 
     // Initializes the secret nvs
+    ESP_LOGI(TAG, "Opening SECRET namespace to check if encrypted mnemonic exists.");
     init_nvm_namespace(&nvs_secret, "secret");
     
-    // Reads vault from nvs into ram
+    // Checks if mnemonic exists in NVS
     err = nvs_get_blob(nvs_secret, "mnemonic", NULL, &required_size);
     if ( ESP_OK == err){
         // vault was found and successfully read from memory;
@@ -179,9 +188,14 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
     size_t required_size = sizeof(enc_mnemonic);
 
     if( vault->valid ){
+        ESP_LOGI(TAG, "Vault is valid, skipping pin.");
         return true;
     }
+    else{
+        ESP_LOGI(TAG, "Vault is invalid, prompting user for pin.");
+    }
 
+    ESP_LOGI(TAG, "Opening SECRET namespace to load encrypted vault.");
     init_nvm_namespace(&nvs_secret, "secret");
 
     err = nvs_get_u8(nvs_secret, "pin_attempts", &pin_attempts);
@@ -189,9 +203,8 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
         factory_reset();
     }
     err = nvs_get_blob(nvs_secret, "mnemonic", enc_mnemonic, &required_size);
-    nvs_log_err(err);
+    //nvs_log_err(err);
 
-    vTaskSuspend(statusbar_task_h);
     for(;;){
         if(pin_attempts >= CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT){
             factory_reset();
@@ -201,7 +214,6 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
         if(!pin_entry(menu, pin_hash, title)){
             // User cancelled vault operation
             nvs_close(nvs_secret);
-            vTaskResume(statusbar_task_h);
             return false;
         };
         pin_attempts++;
@@ -221,11 +233,11 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
             nl_mnemonic_to_master_seed(vault->master_seed,
                     vault->mnemonic, "");
             vault->valid = true;
+            ESP_LOGI(TAG, "Mnemonic successfully decrypted.");
             break;
         }
     }
     nvs_close(nvs_secret);
-    vTaskResume(statusbar_task_h);
     return true;
 }
 
@@ -264,10 +276,12 @@ void vault_task(void *vault_in){
                     case(BLOCK_SIGN):
                         break;
                     case(PUBLIC_KEY):{
+                        ESP_LOGI(TAG, "Executing PUBLIC_KEY RPC.");
                         response = rpc_public_key(vault, cmd);
                         break;
                     }
                     case(FACTORY_RESET):
+                        ESP_LOGI(TAG, "Executing FACTORY_RESET RPC.");
                         factory_reset();
                         break;
                     default:
@@ -278,9 +292,10 @@ void vault_task(void *vault_in){
             else{
                 response = RPC_CANCELLED;
             }
+            statusbar_draw_enable = true;
 
             // Send back response
-            xQueueSend(cmd->response_queue, &response, 0);
+            xQueueOverwrite(cmd->response_queue, &response);
         }
         else{
             // Timed Out: Wipe the vault!
