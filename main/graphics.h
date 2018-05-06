@@ -28,6 +28,10 @@ extern const unsigned char graphic_battery_1[];
 extern const unsigned char graphic_battery_2[];
 extern const unsigned char graphic_battery_3[];
 
+#define GRAPHIC_PENDING_H 7
+#define GRAPHIC_PENDING_W 9
+extern const unsigned char graphic_pending[];
+
 
 void boot_splash(u8g2_t *u8g2);
 

@@ -14,7 +14,7 @@
 #include "statusbar.h"
 
 #define STATUSBAR_UPDATE_PERIOD_MS 2000
-#define STATUSBAR_ANCHOR_X 90
+#define STATUSBAR_ANCHOR_X 82
 #define STATUSBAR_PAD 2
 
 static const char* TAG = "StatusBar";
@@ -22,9 +22,27 @@ static const char* TAG = "StatusBar";
 /* Globals */
 bool statusbar_draw_enable = true;
 
+static void statusbar_pending(menu8g2_t *menu){
+    const uint16_t x = STATUSBAR_ANCHOR_X;
+    const uint16_t y = 1;
+    bool pending_status = true; // todo: check websocket
+
+    if (pending_status){
+        u8g2_SetDrawColor(menu->u8g2, 0);
+        u8g2_DrawBox( menu->u8g2, x, y,
+                GRAPHIC_PENDING_W, GRAPHIC_PENDING_H);
+        u8g2_SetDrawColor(menu->u8g2, 1);
+        u8g2_DrawXBM( menu->u8g2, x, y,
+                GRAPHIC_PENDING_W,
+                GRAPHIC_PENDING_H,
+                graphic_pending);
+    }
+}
+
 static void statusbar_wifi(menu8g2_t *menu){
     /* Call in a drawing loop */
-    const uint16_t x = STATUSBAR_ANCHOR_X;
+    const uint16_t x = STATUSBAR_ANCHOR_X + GRAPHIC_PENDING_W 
+            + 1 * STATUSBAR_PAD;
     const uint16_t y = 1;
     const unsigned char *graphic;
     uint8_t wifi_strength = get_wifi_strength();
@@ -52,8 +70,8 @@ static void statusbar_wifi(menu8g2_t *menu){
 }
 
 static void statusbar_bluetooth(menu8g2_t *menu){
-    const uint16_t x = STATUSBAR_ANCHOR_X + GRAPHIC_WIFI_W 
-            + 1 * STATUSBAR_PAD;
+    const uint16_t x = STATUSBAR_ANCHOR_X + GRAPHIC_PENDING_W + GRAPHIC_WIFI_W 
+            + 2 * STATUSBAR_PAD;
     const uint16_t y = 0;
     bool bluetooth_status = true; // todo: read bluetooth status
 
@@ -70,8 +88,8 @@ static void statusbar_bluetooth(menu8g2_t *menu){
 }
 
 static void statusbar_battery(menu8g2_t *menu){
-    const uint16_t x = STATUSBAR_ANCHOR_X + GRAPHIC_WIFI_W + GRAPHIC_BLUETOOTH_W
-            + 2 * STATUSBAR_PAD;
+    const uint16_t x = STATUSBAR_ANCHOR_X + GRAPHIC_PENDING_W + GRAPHIC_WIFI_W 
+            + GRAPHIC_BLUETOOTH_W + 3 * STATUSBAR_PAD;
     const uint16_t y = 1;
     const unsigned char *graphic;
     uint8_t battery_strength = 0; //todo: read battery voltage
@@ -99,6 +117,7 @@ static void statusbar_battery(menu8g2_t *menu){
 }
 
 void statusbar_update(menu8g2_t *menu){
+    statusbar_pending(menu);
     statusbar_wifi(menu);
     statusbar_bluetooth(menu);
     statusbar_battery(menu);
