@@ -74,9 +74,26 @@ static vault_rpc_response_t rpc_public_key(vault_t *vault, vault_rpc_t *cmd){
     CONFIDENTIAL uint256_t private_key;
     nl_master_seed_to_nano_private_key(private_key, 
             vault->master_seed,
-            cmd->payload.public_key.index);
+            cmd->public_key.index);
     // Derive public key from private
-    nl_private_to_public(cmd->payload.public_key.block.account, private_key);
+    nl_private_to_public(cmd->public_key.block.account, private_key);
+    sodium_memzero(private_key, sizeof(private_key));
+    response = RPC_SUCCESS;
+    return response;
+}
+
+static vault_rpc_response_t rpc_block_sign(vault_t *vault, vault_rpc_t *cmd){
+    vault_rpc_response_t response;
+
+    // todo: prompt user to confirm signing
+
+    CONFIDENTIAL uint256_t private_key;
+    nl_master_seed_to_nano_private_key(private_key, 
+            vault->master_seed,
+            cmd->public_key.index);
+
+    nl_block_sign(&(cmd->block_sign.block), private_key);
+
     sodium_memzero(private_key, sizeof(private_key));
     response = RPC_SUCCESS;
     return response;
@@ -274,6 +291,8 @@ void vault_task(void *vault_in){
                 // Perform command
                 switch(cmd->type){
                     case(BLOCK_SIGN):
+                        ESP_LOGI(TAG, "Executing BLOCK_SIGN RPC.");
+                        response = rpc_block_sign(vault, cmd);
                         break;
                     case(PUBLIC_KEY):{
                         ESP_LOGI(TAG, "Executing PUBLIC_KEY RPC.");
@@ -287,7 +306,6 @@ void vault_task(void *vault_in){
                     default:
                         break;
                 }
-               
             }
             else{
                 response = RPC_CANCELLED;

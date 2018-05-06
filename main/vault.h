@@ -30,17 +30,18 @@ typedef enum vault_rpc_response_t {
     RPC_QUEUE_FULL
 } vault_rpc_response_t;
 
-typedef union vault_payload_t {
-    union{
-        struct nl_block_t block;
-        uint32_t index;
-    } public_key;
-} vault_payload_t;
-
 typedef struct vault_rpc_t {
     enum vault_rpc_type_t type;
     QueueHandle_t response_queue;
-    vault_payload_t payload;
+    union{
+        struct{
+            struct nl_block_t block;
+            uint32_t index;
+        } public_key;
+        struct{
+            struct nl_block_t block;
+        } block_sign;
+    };
 } vault_rpc_t;
 
 vault_rpc_response_t vault_rpc(vault_rpc_t *rpc);
