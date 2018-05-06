@@ -21,6 +21,14 @@ extern const unsigned char graphic_wifi_3[];
 #define GRAPHIC_BLUETOOTH_W 6
 extern const unsigned char graphic_bluetooth[];
 
+#define GRAPHIC_BATTERY_H 7
+#define GRAPHIC_BATTERY_W 13
+extern const unsigned char graphic_battery_0[];
+extern const unsigned char graphic_battery_1[];
+extern const unsigned char graphic_battery_2[];
+extern const unsigned char graphic_battery_3[];
+
+
 void boot_splash(u8g2_t *u8g2);
 
 #endif
