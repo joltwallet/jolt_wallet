@@ -10,5 +10,6 @@
 void wifi_connect();
 void get_ap_info(char * ssid_info);
 void wifi_task(void *pvParameters);
+uint8_t get_wifi_strength();
 
 #endif
