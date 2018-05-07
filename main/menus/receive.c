@@ -101,10 +101,7 @@ void menu_receive(menu8g2_t *prev){
         }
 
         // Get RECEIVE work
-        hex256_t work_hex;
-        sodium_bin2hex(work_hex, sizeof(work_hex),
-                (unsigned char *) frontier_hash, sizeof(frontier_hash));
-        if( E_SUCCESS != get_work( work_hex, &proof_of_work ) ){
+        if( E_SUCCESS != get_work( frontier_hash, &proof_of_work ) ){
             ESP_LOGI(TAG, "Invalid Work (RECEIVE) Response.");
             return;
         }
