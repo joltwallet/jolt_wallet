@@ -29,7 +29,7 @@ void menu_address_qr(menu8g2_t *prev){
 
     //get public key
     init_nvm_namespace(&nvs_secret, "secret");
-    nvs_get_u32(nvs_secret, "index", &(rpc.payload.public_key.index));
+    nvs_get_u32(nvs_secret, "index", &(rpc.public_key.index));
     nvs_close(nvs_secret);
 
     rpc.type = PUBLIC_KEY;
@@ -40,7 +40,7 @@ void menu_address_qr(menu8g2_t *prev){
     }
 
     err = public_to_qr(&qrcode, qrcode_bytes, 
-            rpc.payload.public_key.block.account, NULL);
+            rpc.public_key.block.account, NULL);
     if( err != E_SUCCESS ){
         return;
     }

@@ -63,31 +63,6 @@ void wifi_connect(){
     //ESP_ERROR_CHECK(esp_wifi_connect());
 }
 
-void wifi_task(void *pvParameters)
-{
-    tcpip_adapter_ip_info_t ip;
-    memset(&ip, 0, sizeof(tcpip_adapter_ip_info_t));
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
-    
-    while (1) {
-        
-        if (tcpip_adapter_get_ip_info(ESP_IF_WIFI_STA, &ip) == 0) {
-            wifi_ap_record_t new_ap_info;
-            esp_wifi_sta_get_ap_info(&new_ap_info);
-            ESP_LOGI(TAG, "SSID %s", new_ap_info.ssid);
-            ESP_LOGI(TAG, "~~~~~~~~~~~");
-            ESP_LOGI(TAG, "IP:"IPSTR, IP2STR(&ip.ip));
-            ESP_LOGI(TAG, "MASK:"IPSTR, IP2STR(&ip.netmask));
-            ESP_LOGI(TAG, "GW:"IPSTR, IP2STR(&ip.gw));
-            ESP_LOGI(TAG, "~~~~~~~~~~~");
-        }
-        
-        vTaskDelay(60000 / portTICK_PERIOD_MS);
-    }
-    
-    vTaskDelete( NULL );
-}
-
 uint8_t get_wifi_strength(){
     /* 0 - no wifi
      * 1 - weak

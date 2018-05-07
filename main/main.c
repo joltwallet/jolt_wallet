@@ -20,6 +20,7 @@
 #include "nano_lib.h"
 #include "first_boot.h"
 #include "wifi.h"
+#include "nano_lws.h"
 
 
 // Definitions for variables in globals.h
@@ -58,6 +59,11 @@ void app_main(){
             "GuiTask", 32000,
             NULL, 10,
             NULL);
+
+    xTaskCreate(network_task,
+			"NetworkTask", 4800,
+			NULL, 10,
+			NULL);
 
 	vTaskSuspend(NULL);
 }
