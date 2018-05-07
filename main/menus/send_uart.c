@@ -17,7 +17,7 @@
 
 static const char TAG[] = "nano_send";
 
-void get_serial_input(char *serial_rx, int buffersize){
+static void get_serial_input(char *serial_rx, int buffersize){
     
     int line_pos = 0;
     
@@ -55,7 +55,7 @@ void get_serial_input(char *serial_rx, int buffersize){
     }
 }
 
-void get_serial_input_int(char *serial_rx, const int buffersize){
+static void get_serial_input_int(char *serial_rx, const int buffersize){
     // fills up serial_rx with an ascii string where all characters must be ints
     
     int line_pos = 0;
@@ -93,7 +93,7 @@ void get_serial_input_int(char *serial_rx, const int buffersize){
     }
 }
 
-void flush_uart(){
+static void flush_uart(){
     //This is a terrible hack to flush the uarts buffer, a far better option would be rewrite all uart related code
     // to use proper uart code from driver/uart.h
     for(int bad_hack = 0; bad_hack <= 10; bad_hack++){
@@ -115,19 +115,36 @@ void menu_send_uart(menu8g2_t *prev){
     /**************************************
      * Get Destination Address and Amount *
      **************************************/
-    char dest_address[66];
+    char dest_address[ADDRESS_BUF_LEN];
     flush_uart();
     printf("\nEnter a destination address: ");
     get_serial_input(dest_address, sizeof(dest_address));
-    
-    if(dest_address[0] != 'x' || dest_address[1] != 'r' || dest_address[2] != 'b' || strlen(dest_address) != 64)
-    {
-        
-        printf("\nIncorrect Address %s\n", dest_address);
+
+	uint8_t size = strlen(dest_address);
+    // Check prefix and exclude it from the buffer
+    if ((dest_address[0] == 'n' || dest_address[0] == 'N') &&
+        (dest_address[1] == 'a' || dest_address[1] == 'A') &&
+        (dest_address[2] == 'n' || dest_address[2] == 'N') &&
+        (dest_address[3] == 'o' || dest_address[3] == 'O') &&
+        (dest_address[4] == '-' || dest_address[4] == '_')) {
+        if (size != ADDRESS_DATA_LEN + 5) {
+            return E_INVALID_ADDRESS;
+        }
+    } else if ((dest_address[0] == 'x' || dest_address[0] == 'X') &&
+               (dest_address[1] == 'r' || dest_address[1] == 'R') &&
+               (dest_address[2] == 'b' || dest_address[2] == 'B') &&
+               (dest_address[3] == '-' || dest_address[3] == '_')) {
+        if (size != ADDRESS_DATA_LEN + 4) {
+            return E_INVALID_ADDRESS;
+        }
+    } else if (size == ADDRESS_DATA_LEN){
+        // continue; assumes address doesn't have a prefix
+    } else {
         menu8g2_display_text(&menu, "Incorrect Address");
-        return;
+        ESP_LOGE(TAG, "\nIncorrect Address %s\n", dest_address);
+        return E_INVALID_ADDRESS;
     }
-    
+
     flush_uart();
     printf("destination address: %s\n", dest_address);
     
@@ -193,18 +210,18 @@ void menu_send_uart(menu8g2_t *prev){
         return;
     }
 
-    /********************************
+    /*****************
      * Check Balance *
-     ********************************/
+     *****************/
     if (mbedtls_mpi_cmp_mpi(&(frontier_block.balance), &transaction_amount) == -1) {
         ESP_LOGI(TAG, "Insufficent Funds.");
         menu8g2_display_text(&menu, "Insufficent Funds");
         return;
     }
     
-    /********************************
+    /*********************
      * Create send block *
-     ********************************/
+     *********************/
     sodium_memzero(&rpc, sizeof(rpc));
     rpc.type = BLOCK_SIGN;
     nl_block_t *new_block = &(rpc.block_sign.block);
