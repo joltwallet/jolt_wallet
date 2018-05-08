@@ -34,6 +34,8 @@ bool loading_draw_enable;
 /* Globals */
 QueueHandle_t loading_queue;
 
+static bool previous_statusbar_draw_enable;
+
 void loading_init(menu8g2_t *menu){
     loading_draw_enable = false;
     loading_queue = xQueueCreate( 1, sizeof(char *) );
@@ -41,8 +43,15 @@ void loading_init(menu8g2_t *menu){
             (void *) menu, 19, NULL);
 }
 
+void loading_enable( void ){
+    loading_draw_enable = true;
+    previous_statusbar_draw_enable = statusbar_draw_enable;
+    statusbar_draw_enable = false;
+}
+
 void loading_disable( void ){
     loading_draw_enable = false;
+    statusbar_draw_enable = previous_statusbar_draw_enable;
 }
 
 void loading_text(char *text){

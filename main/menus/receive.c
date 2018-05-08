@@ -26,6 +26,7 @@ void menu_receive(menu8g2_t *prev){
      * new_block - block we are creating
      * prev_block - frontier of our account chain
      */
+
     
     vault_rpc_t rpc;
     menu8g2_t menu;
@@ -61,6 +62,7 @@ void menu_receive(menu8g2_t *prev){
     //     * pending_hash, pending_amount
     // Returns if no pending blocks. Pending_amount doesn't need to be verified
     // since nothing malicious can be done with a wrong pending_amount.
+    loading_enable();
     loading_text("Checking Pending");
     hex256_t pending_hash;
     
