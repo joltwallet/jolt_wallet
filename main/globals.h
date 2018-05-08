@@ -16,4 +16,7 @@ extern SemaphoreHandle_t disp_mutex;
 
 extern bool statusbar_draw_enable;
 
+extern QueueHandle_t loading_queue;
+extern bool loading_draw_enable;
+
 #endif
