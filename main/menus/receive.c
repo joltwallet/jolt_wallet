@@ -11,9 +11,11 @@
 #include "../vault.h"
 #include "submenus.h"
 #include "../globals.h"
+#include "../loading.h"
 
 #include "nano_lws.h"
 #include "nano_parse.h"
+
 
 static const char TAG[] = "nano_receive";
 
@@ -28,6 +30,7 @@ void menu_receive(menu8g2_t *prev){
     vault_rpc_t rpc;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
+    menu.post_draw = NULL;
     
     /******************
      * Get My Address *
@@ -58,12 +61,14 @@ void menu_receive(menu8g2_t *prev){
     //     * pending_hash, pending_amount
     // Returns if no pending blocks. Pending_amount doesn't need to be verified
     // since nothing malicious can be done with a wrong pending_amount.
+    loading_text("Checking Pending");
     hex256_t pending_hash;
     
     /* Search for pending block(s) */
     mbedtls_mpi transaction_amount;
     mbedtls_mpi_init(&transaction_amount);
     if (get_pending(my_address, pending_hash, &transaction_amount) != E_SUCCESS) {
+        loading_disable();
         menu8g2_display_text(&menu, "No Pending Blocks Found");
         return;
     }
@@ -92,17 +97,21 @@ void menu_receive(menu8g2_t *prev){
     nl_block_init(&frontier_block);
     uint64_t proof_of_work;
 
+    loading_text("Checking Account Frontier");
     if( get_frontier(my_address, frontier_hash) == E_SUCCESS ){
         ESP_LOGI(TAG, "Creating RECEIVE Block");
 
         if( get_block(frontier_hash, &frontier_block) != E_SUCCESS ){
             ESP_LOGI(TAG, "Error retrieving frontier block.");
+            loading_disable();
             return;
         }
 
         // Get RECEIVE work
+        loading_text("Fetching Work");
         if( E_SUCCESS != get_work( frontier_hash, &proof_of_work ) ){
             ESP_LOGI(TAG, "Invalid Work (RECEIVE) Response.");
+            loading_disable();
             return;
         }
 
@@ -112,8 +121,10 @@ void menu_receive(menu8g2_t *prev){
         ESP_LOGI(TAG, "Creating OPEN Block");
         hex256_t work_hex;
         sodium_bin2hex(work_hex, sizeof(work_hex), my_public_key, sizeof(my_public_key));
+        loading_text("Fetching Work");
         if( E_SUCCESS != get_work( work_hex, &proof_of_work ) ){
             ESP_LOGI(TAG, "Invalid Work (OPEN) Response.");
+            loading_disable();
             return;
         }
     }
@@ -121,6 +132,7 @@ void menu_receive(menu8g2_t *prev){
     /********************************
      * Create open or receive block *
      ********************************/
+    loading_text("Creating Receive");
     sodium_memzero(&rpc, sizeof(rpc));
     rpc.type = BLOCK_SIGN;
     nl_block_t *new_block = &(rpc.block_sign.block);
@@ -148,13 +160,16 @@ void menu_receive(menu8g2_t *prev){
     }
     #endif
 
-
     // Sign block
+    loading_text("Signing Receive");
     if(vault_rpc(&rpc) != RPC_SUCCESS){
+        loading_disable();
         return;
     }
     
+    loading_text("Broadcasting Transaction");
     process_block(new_block);
     
+    loading_disable();
     menu8g2_display_text(&menu, "Blocks Processed");
 }
