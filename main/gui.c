@@ -10,6 +10,7 @@
 #include "vault.h"
 
 #include "statusbar.h"
+#include "loading.h"
 #include "menus/submenus.h"
 
 
@@ -58,6 +59,7 @@ void gui_task(){
 
     xTaskCreate(statusbar_task, "StatusBarTask", 8192,
             (void *) &menu, 19, NULL);
+    loading_init(&menu);
 
     const char title[] = "Main";
 
