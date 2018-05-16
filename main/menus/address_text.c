@@ -37,6 +37,8 @@ void menu_address_text(menu8g2_t *prev){
 
     statusbar_draw_enable = false;
     menu.post_draw = NULL;
+    
+    printf("Address: %s\n", address);
 
     for(;;){
         if(menu8g2_display_text(&menu, address) == (1ULL << EASY_INPUT_BACK)){
