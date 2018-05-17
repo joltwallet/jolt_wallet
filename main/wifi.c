@@ -53,8 +53,8 @@ void wifi_connect(){
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     wifi_config_t sta_config = {
         .sta = {
-            .ssid      = AP_TARGET_SSID,
-            .password  = AP_TARGET_PASSWORD,
+            .ssid      = CONFIG_AP_TARGET_SSID,
+            .password  = CONFIG_AP_TARGET_PASSWORD,
             .bssid_set = 0
         }
     };
