@@ -8,9 +8,9 @@
 #include "nano_lib.h"
 
 #include "menu8g2.h"
-#include "../vault.h"
+#include "../../vault.h"
 #include "submenus.h"
-#include "../globals.h"
+#include "../../globals.h"
 
 #include "nano_lws.h"
 #include "nano_parse.h"
@@ -37,7 +37,7 @@ void menu_balance(menu8g2_t *prev){
     nvs_close(nvs_secret);
 
     sodium_memzero(&rpc, sizeof(rpc));
-    rpc.type = PUBLIC_KEY;
+    rpc.type = NANO_PUBLIC_KEY;
     if(vault_rpc(&rpc) != RPC_SUCCESS){
         return;
     }

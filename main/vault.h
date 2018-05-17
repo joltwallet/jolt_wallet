@@ -14,13 +14,19 @@ typedef struct vault_t{
     bool valid;
 } vault_t;
 
+/* Add RPC command types here. If they are coin specific, it must be specified
+ * between dummy commands "COIN_START" and "COIN_END". */
 typedef enum vault_rpc_type_t {
-    BLOCK_SIGN = 0, // Signs passed in block
-    PUBLIC_KEY, // Derive public key at index
+    FACTORY_RESET = 0, // Wipe all NVS
     SETTINGS_CHANGE, // Change a setting
-    FACTORY_RESET, // Wipe all NVS
     BLUETOOTH_PAIR,
-    BLUETOOTH_UNPAIR
+    BLUETOOTH_UNPAIR,
+
+    NANO_START,
+    NANO_BLOCK_SIGN, // Signs passed in block
+    NANO_PUBLIC_KEY, // Derive public key at index
+    NANO_END
+
 } vault_rpc_type_t;
 
 typedef enum vault_rpc_response_t {

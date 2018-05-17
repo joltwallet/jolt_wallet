@@ -11,7 +11,9 @@
 
 #include "statusbar.h"
 #include "loading.h"
+
 #include "menus/submenus.h"
+#include "coins/nano/menu.h"
 
 
 void setup_screen(u8g2_t *u8g2){
@@ -63,15 +65,10 @@ void gui_task(){
 
     const char title[] = "Main";
 
+    /* Add Coin menu options here */
     menu8g2_elements_t elements;
-    menu8g2_elements_init(&elements, 8);
-    menu8g2_set_element(&elements, "Balance", &menu_balance);
-    menu8g2_set_element(&elements, "Receive", &menu_receive);
-    menu8g2_set_element(&elements, "Send (uart)", &menu_send_uart);
-    menu8g2_set_element(&elements, "Block Count", &menu_block_count);
-    menu8g2_set_element(&elements, "Select Account", NULL);
-    menu8g2_set_element(&elements, "Address (text)", &menu_address_text);
-    menu8g2_set_element(&elements, "Address (QR)", &menu_address_qr);
+    menu8g2_elements_init(&elements, 2);
+    menu8g2_set_element(&elements, "Nano", &menu_nano);
     menu8g2_set_element(&elements, "Settings", &menu_settings);
 
     for(;;){

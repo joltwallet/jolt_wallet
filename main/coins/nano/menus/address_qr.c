@@ -7,14 +7,14 @@
 #include "qrcode.h"
 
 #include "menu8g2.h"
-#include "../vault.h"
+#include "../../vault.h"
 #include "submenus.h"
-#include "../globals.h"
-#include "../helpers.h"
-#include "../qr.h"
-#include "../statusbar.h"
+#include "../../globals.h"
+#include "../../helpers.h"
+#include "../../qr.h"
+#include "../../statusbar.h"
 
-void menu_address_qr(menu8g2_t *prev){
+void menu_nano_address_qr(menu8g2_t *prev){
     vault_rpc_t rpc;
     vault_rpc_response_t res;
     nvs_handle nvs_secret;
@@ -32,7 +32,7 @@ void menu_address_qr(menu8g2_t *prev){
     nvs_get_u32(nvs_secret, "index", &(rpc.public_key.index));
     nvs_close(nvs_secret);
 
-    rpc.type = PUBLIC_KEY;
+    rpc.type = NANO_PUBLIC_KEY;
     res = vault_rpc(&rpc);
 
     if(res != RPC_SUCCESS){

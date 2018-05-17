@@ -7,14 +7,14 @@
 #include "nano_lib.h"
 
 #include "menu8g2.h"
-#include "../vault.h"
+#include "../../vault.h"
 #include "submenus.h"
-#include "../globals.h"
-#include "../statusbar.h"
+#include "../../globals.h"
+#include "../../statusbar.h"
 
 static const char* TAG = "address_text";
 
-void menu_address_text(menu8g2_t *prev){
+void menu_nano_address_text(menu8g2_t *prev){
     vault_rpc_t rpc;
     nvs_handle nvs_secret;
     menu8g2_t menu;
@@ -25,7 +25,7 @@ void menu_address_text(menu8g2_t *prev){
     nvs_get_u32(nvs_secret, "index", &(rpc.public_key.index));
     nvs_close(nvs_secret);
 
-    rpc.type = PUBLIC_KEY;
+    rpc.type = NANO_PUBLIC_KEY;
 
     if(vault_rpc(&rpc) != RPC_SUCCESS){
         return;
