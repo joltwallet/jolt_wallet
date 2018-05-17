@@ -11,6 +11,7 @@
 #include "../vault.h"
 #include "submenus.h"
 #include "../globals.h"
+#include "../loading.h"
 
 #include "nano_lws.h"
 #include "nano_parse.h"
@@ -111,10 +112,14 @@ void menu_send_uart(menu8g2_t *prev){
     vault_rpc_t rpc;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
+    menu.post_draw = NULL;
 
     /**************************************
      * Get Destination Address and Amount *
      **************************************/
+    loading_enable();
+    loading_text("Enter Send Details");
+    
     char dest_address[ADDRESS_BUF_LEN];
     flush_uart();
     printf("\nEnter a destination address: ");
@@ -140,6 +145,7 @@ void menu_send_uart(menu8g2_t *prev){
     } else if (size == ADDRESS_DATA_LEN){
         // continue; assumes address doesn't have a prefix
     } else {
+        loading_disable();
         menu8g2_display_text(&menu, "Incorrect Address");
         ESP_LOGE(TAG, "\nIncorrect Address %s\n", dest_address);
         return E_INVALID_ADDRESS;
@@ -159,6 +165,7 @@ void menu_send_uart(menu8g2_t *prev){
     /******************
      * Get My Address *
      ******************/
+    loading_disable();
     nvs_handle nvs_secret;
     
     init_nvm_namespace(&nvs_secret, "secret");
@@ -184,6 +191,9 @@ void menu_send_uart(menu8g2_t *prev){
     // Assumes State Blocks Only
     // Outcome:
     //     * frontier_hash, frontier_block
+    loading_enable();
+    loading_text("Getting Block Details");
+    
     hex256_t frontier_hash = { 0 };
     nl_block_t frontier_block;
     nl_block_init(&frontier_block);
@@ -193,12 +203,14 @@ void menu_send_uart(menu8g2_t *prev){
         ESP_LOGI(TAG, "Creating SEND Block");
 
         if( get_block(frontier_hash, &frontier_block) != E_SUCCESS ){
+            loading_disable();
             ESP_LOGI(TAG, "Error retrieving frontier block.");
             return;
         }
 
         // Get SEND work
         if( E_SUCCESS != get_work( frontier_hash, &proof_of_work ) ){
+            loading_disable();
             ESP_LOGI(TAG, "Invalid Work (SEND) Response.");
             return;
         }
@@ -206,6 +218,7 @@ void menu_send_uart(menu8g2_t *prev){
     }
     else {
         //To send requires a previous Open Block
+        loading_disable();
         ESP_LOGI(TAG, "Account not open.");
         return;
     }
@@ -214,6 +227,7 @@ void menu_send_uart(menu8g2_t *prev){
      * Check Balance *
      *****************/
     if (mbedtls_mpi_cmp_mpi(&(frontier_block.balance), &transaction_amount) == -1) {
+        loading_disable();
         ESP_LOGI(TAG, "Insufficent Funds.");
         menu8g2_display_text(&menu, "Insufficent Funds");
         return;
@@ -222,6 +236,9 @@ void menu_send_uart(menu8g2_t *prev){
     /*********************
      * Create send block *
      *********************/
+    
+    loading_text("Creating Send Block");
+    
     sodium_memzero(&rpc, sizeof(rpc));
     rpc.type = BLOCK_SIGN;
     nl_block_t *new_block = &(rpc.block_sign.block);
@@ -254,7 +271,9 @@ void menu_send_uart(menu8g2_t *prev){
         return;
     }
     
+    loading_text("Broadcasting Transaction");
     process_block(new_block);
     
+    loading_disable();
     menu8g2_display_text(&menu, "Transaction Sent");
 }
