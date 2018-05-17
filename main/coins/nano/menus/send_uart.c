@@ -102,7 +102,7 @@ static void flush_uart(){
     };
 }
 
-void menu_send_uart(menu8g2_t *prev){
+void menu_nano_send_uart(menu8g2_t *prev){
     /*
      * Blocks involved:
      * new_block - block we are creating

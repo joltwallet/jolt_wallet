@@ -19,7 +19,7 @@
 
 static const char TAG[] = "nano_receive";
 
-void menu_receive(menu8g2_t *prev){
+void menu_nano_receive(menu8g2_t *prev){
     /*
      * Blocks involved:
      * pending_block - The send we want to sign in

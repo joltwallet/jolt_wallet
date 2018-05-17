@@ -17,7 +17,7 @@
 
 static const char TAG[] = "nano_balance";
 
-void menu_balance(menu8g2_t *prev){
+void menu_nano_balance(menu8g2_t *prev){
     /*
      * Blocks involved:
      * prev_block - frontier of our account chain
