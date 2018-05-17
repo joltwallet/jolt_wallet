@@ -1,5 +1,5 @@
 #include "menu8g2.h"
-#include "menu/submenu.h"
+#include "menus/submenus.h"
 
 void menu_nano(menu8g2_t *prev){
     menu8g2_t menu;

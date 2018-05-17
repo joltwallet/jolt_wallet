@@ -227,6 +227,7 @@ void vault_task(void *vault_in){
                         response = rpc_nano(vault, cmd);
                         break;
                     default:
+                        response = RPC_UNDEFINED;
                         break;
                 }
             }

@@ -5,6 +5,11 @@
 #include "esp_log.h"
 #include "sodium.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "freertos/task.h"
+
+#include "../../vault.h"
 #include "rpc.h"
 
 static const char* TAG = "vault_nano";
@@ -50,6 +55,9 @@ vault_rpc_response_t rpc_nano(vault_t *vault, vault_rpc_t *cmd){
         case(NANO_PUBLIC_KEY):
             ESP_LOGI(TAG, "Executing NANO_PUBLIC_KEY RPC.");
             response = rpc_nano_public_key(vault, cmd);
+            break;
+        default:
+            response = RPC_UNDEFINED;
             break;
     }
     return response;

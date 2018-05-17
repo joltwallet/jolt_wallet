@@ -4,8 +4,8 @@
 
 #include "menu8g2.h"
 #include "submenus.h"
-#include "../../globals.h"
-#include "../../statusbar.h"
+#include "../../../globals.h"
+#include "../../../statusbar.h"
 
 #include <libwebsockets.h>
 #include "nano_lws.h"

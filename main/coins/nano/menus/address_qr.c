@@ -7,12 +7,12 @@
 #include "qrcode.h"
 
 #include "menu8g2.h"
-#include "../../vault.h"
+#include "../../../vault.h"
 #include "submenus.h"
-#include "../../globals.h"
-#include "../../helpers.h"
-#include "../../qr.h"
-#include "../../statusbar.h"
+#include "../../../globals.h"
+#include "../../../helpers.h"
+#include "../../../qr.h"
+#include "../../../statusbar.h"
 
 void menu_nano_address_qr(menu8g2_t *prev){
     vault_rpc_t rpc;

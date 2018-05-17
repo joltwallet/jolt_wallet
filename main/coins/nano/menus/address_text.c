@@ -7,10 +7,10 @@
 #include "nano_lib.h"
 
 #include "menu8g2.h"
-#include "../../vault.h"
+#include "../../../vault.h"
 #include "submenus.h"
-#include "../../globals.h"
-#include "../../statusbar.h"
+#include "../../../globals.h"
+#include "../../../statusbar.h"
 
 static const char* TAG = "address_text";
 

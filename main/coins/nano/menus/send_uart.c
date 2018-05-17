@@ -8,10 +8,10 @@
 #include "nano_lib.h"
 
 #include "menu8g2.h"
-#include "../../vault.h"
+#include "../../../vault.h"
 #include "submenus.h"
-#include "../../globals.h"
-#include "../../loading.h"
+#include "../../../globals.h"
+#include "../../../loading.h"
 
 #include "nano_lws.h"
 #include "nano_parse.h"
