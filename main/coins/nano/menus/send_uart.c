@@ -166,13 +166,12 @@ void menu_nano_send_uart(menu8g2_t *prev){
      * Get My Address *
      ******************/
     loading_disable();
-    nvs_handle nvs_secret;
-    
-    init_nvm_namespace(&nvs_secret, "secret");
-    if(ESP_OK != nvs_get_u32(nvs_secret, "index", &(rpc.nano_public_key.index))){
+    nvs_handle nvs_h;
+    init_nvm_namespace(&nvs_h, "nano");
+    if(ESP_OK != nvs_get_u32(nvs_h, "index", &(rpc.nano_public_key.index))){
         rpc.nano_public_key.index = 0;
     }
-    nvs_close(nvs_secret);
+    nvs_close(nvs_h);
 
     sodium_memzero(&rpc, sizeof(rpc));
     rpc.type = NANO_PUBLIC_KEY;

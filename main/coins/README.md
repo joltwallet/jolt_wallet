@@ -119,4 +119,4 @@ In `main/coins/${coin}/submenus/submenus.h` we include all the coin's submenu fu
 In `main/coins/${coin}/submenus/menu_${choice_action}.c` we define the functionality of each menu option. The `balance.c` menu action demonstrates the general structure.
 
 ## Non-Volatile storage
-If your coin utilizes some form of nonvolatile storage, use the all capital `${COIN}` NVS namespace. Open and close this NVS namespace on demand from within menu options or RPC commands. Do not store critical secret information (like private keys) that could result in the loss of funds in these namespaces; this includes public keys. Always derive public keys from the private key when used.
+If your coin utilizes some form of nonvolatile storage, use the all lowercase `${coin}` NVS namespace. Open and close this NVS namespace on demand from within menu options or RPC commands. Do not store critical secret information (like private keys) that could result in the loss of funds in these namespaces; this includes public keys. Always derive public keys from the private key when used.

@@ -17,7 +17,6 @@
 void menu_nano_address_qr(menu8g2_t *prev){
     vault_rpc_t rpc;
     vault_rpc_response_t res;
-    nvs_handle nvs_secret;
     QRCode qrcode;
     uint8_t qrcode_bytes[qrcode_getBufferSize(CONFIG_NANORAY_QR_VERSION)];
     uint64_t input_buf;
@@ -28,12 +27,12 @@ void menu_nano_address_qr(menu8g2_t *prev){
 
 
     //get public key
-    init_nvm_namespace(&nvs_secret, "secret");
-    if(ESP_OK != nvs_get_u32(nvs_secret, "index", &(rpc.nano_public_key.index))){
+    nvs_handle nvs_h;
+    init_nvm_namespace(&nvs_h, "nano");
+    if(ESP_OK != nvs_get_u32(nvs_h, "index", &(rpc.nano_public_key.index))){
         rpc.nano_public_key.index = 0;
     }
-
-    nvs_close(nvs_secret);
+    nvs_close(nvs_h);
 
     rpc.type = NANO_PUBLIC_KEY;
     res = vault_rpc(&rpc);
