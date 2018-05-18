@@ -10,23 +10,29 @@
 typedef struct vault_t{
     char mnemonic[MNEMONIC_BUF_LEN];
     uint512_t master_seed;
-    uint32_t index;
     bool valid;
 } vault_t;
 
+/* Add RPC command types here. If they are coin specific, it must be specified
+ * between dummy commands "COIN_START" and "COIN_END". */
 typedef enum vault_rpc_type_t {
-    BLOCK_SIGN = 0, // Signs passed in block
-    PUBLIC_KEY, // Derive public key at index
+    FACTORY_RESET = 0, // Wipe all NVS
     SETTINGS_CHANGE, // Change a setting
-    FACTORY_RESET, // Wipe all NVS
     BLUETOOTH_PAIR,
-    BLUETOOTH_UNPAIR
+    BLUETOOTH_UNPAIR,
+
+    NANO_START,
+    NANO_BLOCK_SIGN, // Signs passed in block
+    NANO_PUBLIC_KEY, // Derive public key at index
+    NANO_END
+
 } vault_rpc_type_t;
 
 typedef enum vault_rpc_response_t {
     RPC_SUCCESS = 0,
     RPC_FAILURE,
     RPC_CANCELLED,
+    RPC_UNDEFINED,
     RPC_QUEUE_FULL
 } vault_rpc_response_t;
 
@@ -37,10 +43,10 @@ typedef struct vault_rpc_t {
         struct{
             struct nl_block_t block;
             uint32_t index;
-        } public_key;
+        } nano_public_key;
         struct{
             struct nl_block_t block;
-        } block_sign;
+        } nano_block_sign;
     };
 } vault_rpc_t;
 

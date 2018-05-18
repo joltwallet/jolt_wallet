@@ -7,17 +7,16 @@
 #include "qrcode.h"
 
 #include "menu8g2.h"
-#include "../vault.h"
+#include "../../../vault.h"
 #include "submenus.h"
-#include "../globals.h"
-#include "../helpers.h"
-#include "../qr.h"
-#include "../statusbar.h"
+#include "../../../globals.h"
+#include "../../../helpers.h"
+#include "../../../qr.h"
+#include "../../../statusbar.h"
 
-void menu_address_qr(menu8g2_t *prev){
+void menu_nano_address_qr(menu8g2_t *prev){
     vault_rpc_t rpc;
     vault_rpc_response_t res;
-    nvs_handle nvs_secret;
     QRCode qrcode;
     uint8_t qrcode_bytes[qrcode_getBufferSize(CONFIG_NANORAY_QR_VERSION)];
     uint64_t input_buf;
@@ -28,11 +27,14 @@ void menu_address_qr(menu8g2_t *prev){
 
 
     //get public key
-    init_nvm_namespace(&nvs_secret, "secret");
-    nvs_get_u32(nvs_secret, "index", &(rpc.public_key.index));
-    nvs_close(nvs_secret);
+    nvs_handle nvs_h;
+    init_nvm_namespace(&nvs_h, "nano");
+    if(ESP_OK != nvs_get_u32(nvs_h, "index", &(rpc.nano_public_key.index))){
+        rpc.nano_public_key.index = 0;
+    }
+    nvs_close(nvs_h);
 
-    rpc.type = PUBLIC_KEY;
+    rpc.type = NANO_PUBLIC_KEY;
     res = vault_rpc(&rpc);
 
     if(res != RPC_SUCCESS){
@@ -40,7 +42,7 @@ void menu_address_qr(menu8g2_t *prev){
     }
 
     err = public_to_qr(&qrcode, qrcode_bytes, 
-            rpc.public_key.block.account, NULL);
+            rpc.nano_public_key.block.account, NULL);
     if( err != E_SUCCESS ){
         return;
     }

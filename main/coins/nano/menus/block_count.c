@@ -4,14 +4,14 @@
 
 #include "menu8g2.h"
 #include "submenus.h"
-#include "../globals.h"
-#include "../statusbar.h"
+#include "../../../globals.h"
+#include "../../../statusbar.h"
 
 #include <libwebsockets.h>
 #include "nano_lws.h"
 #include "nano_parse.h"
 
-void menu_block_count(menu8g2_t *prev){
+void menu_nano_block_count(menu8g2_t *prev){
     char block_count[12];
     sprintf(block_count, "%d", get_block_count());
     menu8g2_t menu;

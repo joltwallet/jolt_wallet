@@ -18,10 +18,12 @@
 #include "vault.h"
 #include "globals.h"
 #include "statusbar.h"
+#include "helpers.h"
+
+#include "coins/nano/rpc.h"
 
 /* Two main NVS Namespaces: ("secret", "user") */
 static const char* TAG = "vault";
-static void nvs_log_err(esp_err_t err);
 
 vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
     /* Sets up rpc queue, blocks until vault responds. */
@@ -68,79 +70,6 @@ static void factory_reset(){
     esp_restart();
 }
 
-static vault_rpc_response_t rpc_public_key(vault_t *vault, vault_rpc_t *cmd){
-    // Derive private key from mnemonic
-    vault_rpc_response_t response;
-    CONFIDENTIAL uint256_t private_key;
-    nl_master_seed_to_nano_private_key(private_key, 
-            vault->master_seed,
-            cmd->public_key.index);
-    // Derive public key from private
-    nl_private_to_public(cmd->public_key.block.account, private_key);
-    sodium_memzero(private_key, sizeof(private_key));
-    response = RPC_SUCCESS;
-    return response;
-}
-
-static vault_rpc_response_t rpc_block_sign(vault_t *vault, vault_rpc_t *cmd){
-    vault_rpc_response_t response;
-
-    // todo: prompt user to confirm signing
-
-    CONFIDENTIAL uint256_t private_key;
-    nl_master_seed_to_nano_private_key(private_key, 
-            vault->master_seed,
-            cmd->public_key.index);
-
-    nl_block_sign(&(cmd->block_sign.block), private_key);
-
-    sodium_memzero(private_key, sizeof(private_key));
-    response = RPC_SUCCESS;
-    return response;
-}
-
-static void nvs_log_err(esp_err_t err){
-    switch(err){
-        case(ESP_OK): ESP_LOGI(TAG, "ESP_OK"); break;
-        case(ESP_ERR_NVS_NOT_INITIALIZED): ESP_LOGI(TAG, "ESP_ERR_NVS_NOT_INITIALIZED "); break;
-        case(ESP_ERR_NVS_NOT_FOUND): ESP_LOGI(TAG, "ESP_ERR_NVS_NOT_FOUND"); break;
-        case(ESP_ERR_NVS_TYPE_MISMATCH): ESP_LOGI(TAG, "ESP_ERR_NVS_TYPE_MISMATCH"); break;
-        case(ESP_ERR_NVS_READ_ONLY): ESP_LOGI(TAG, "ESP_ERR_NVS_READ_ONLY"); break;
-        case(ESP_ERR_NVS_NOT_ENOUGH_SPACE): ESP_LOGI(TAG, "ESP_ERR_NVS_NOT_ENOUGH_SPACE"); break;
-        case(ESP_ERR_NVS_INVALID_NAME): ESP_LOGI(TAG, "ESP_ERR_NVS_INVALID_NAME"); break;
-        case(ESP_ERR_NVS_INVALID_HANDLE): ESP_LOGI(TAG, "ESP_ERR_NVS_INVALID_HANDLE"); break;
-        case(ESP_ERR_NVS_REMOVE_FAILED): ESP_LOGI(TAG, "ESP_ERR_NVS_REMOVE_FAILED"); break;
-        case(ESP_ERR_NVS_KEY_TOO_LONG): ESP_LOGI(TAG, "ESP_ERR_NVS_KEY_TOO_LONG"); break;
-        case(ESP_ERR_NVS_PAGE_FULL): ESP_LOGI(TAG, "ESP_ERR_NVS_PAGE_FULL"); break;
-        case(ESP_ERR_NVS_INVALID_STATE): ESP_LOGI(TAG, "ESP_ERR_NVS_INVALID_STATE"); break;
-        case(ESP_ERR_NVS_INVALID_LENGTH): ESP_LOGI(TAG, "ESP_ERR_NVS_INVALID_LENGTH"); break;
-        case(ESP_ERR_NVS_NO_FREE_PAGES): ESP_LOGI(TAG, "ESP_ERR_NVS_NO_FREE_PAGES"); break;
-        case(ESP_ERR_NVS_VALUE_TOO_LONG): ESP_LOGI(TAG, "ESP_ERR_NVS_VALUE_TOO_LONG"); break;
-        case(ESP_ERR_NVS_PART_NOT_FOUND): ESP_LOGI(TAG, "ESP_ERR_NVS_PART_NOT_FOUND"); break;
-        case(ESP_ERR_INVALID_ARG): ESP_LOGI(TAG, "ESP_ERR_INVALID_ARG"); break;
-    }
-}
-
-nl_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace){
-    // Initialize NVS
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
-        // NVS partition was truncated and needs to be erased
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        err = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK( err );
-    
-    // Open
-    err = nvs_open(namespace, NVS_READWRITE, nvs_h);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error (%d) opening NVS handle with namespace %s!", err, namespace);
-        return E_FAILURE;
-    } else {
-        ESP_LOGI(TAG, "Successfully opened NVM with namespace %s!", namespace);
-        return E_SUCCESS;
-    }
-}
 
 nl_err_t vault_init(vault_t *vault){
     /* Secure allocates space for vault, and checks if it exists in NVS
@@ -220,7 +149,6 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
         factory_reset();
     }
     err = nvs_get_blob(nvs_secret, "mnemonic", enc_mnemonic, &required_size);
-    //nvs_log_err(err);
 
     for(;;){
         if(pin_attempts >= CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT){
@@ -288,22 +216,18 @@ void vault_task(void *vault_in){
 
             // Prompt user for Pin if necessary
             if(pin_prompt(&menu, vault)){
-                // Perform command
+                // Perform RPC command
+                /* MASTER RPC SWITCH STATEMENT */
                 switch(cmd->type){
-                    case(BLOCK_SIGN):
-                        ESP_LOGI(TAG, "Executing BLOCK_SIGN RPC.");
-                        response = rpc_block_sign(vault, cmd);
-                        break;
-                    case(PUBLIC_KEY):{
-                        ESP_LOGI(TAG, "Executing PUBLIC_KEY RPC.");
-                        response = rpc_public_key(vault, cmd);
-                        break;
-                    }
                     case(FACTORY_RESET):
                         ESP_LOGI(TAG, "Executing FACTORY_RESET RPC.");
                         factory_reset();
                         break;
+                    case NANO_START ... NANO_END:
+                        response = rpc_nano(vault, cmd);
+                        break;
                     default:
+                        response = RPC_UNDEFINED;
                         break;
                 }
             }

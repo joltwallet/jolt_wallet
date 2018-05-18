@@ -89,7 +89,6 @@ void first_boot_menu(vault_t *vault){
     sodium_mprotect_readwrite(vault);
     nl_mnemonic_generate(vault->mnemonic, MNEMONIC_BUF_LEN, 256);
     vault->valid = false; // To force proper vault update later
-    vault->index = 0;
     sodium_mprotect_readonly(vault);
 
 	for(bool exit_welcome=false; !exit_welcome;){
@@ -150,7 +149,6 @@ void first_boot_menu(vault_t *vault){
     init_nvm_namespace(&h, "secret");
 	nvs_set_blob(h, "mnemonic", enc_mnemonic, sizeof(enc_mnemonic));
     nvs_set_u8(h, "pin_attempts", 0);
-    nvs_set_u32(h, "index", 0);
 	nvs_commit(h);
     nvs_close(h);
 	sodium_memzero(enc_mnemonic, sizeof(enc_mnemonic));

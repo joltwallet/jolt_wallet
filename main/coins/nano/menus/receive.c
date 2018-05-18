@@ -8,10 +8,10 @@
 #include "nano_lib.h"
 
 #include "menu8g2.h"
-#include "../vault.h"
+#include "../../../vault.h"
 #include "submenus.h"
-#include "../globals.h"
-#include "../loading.h"
+#include "../../../globals.h"
+#include "../../../loading.h"
 
 #include "nano_lws.h"
 #include "nano_parse.h"
@@ -19,7 +19,7 @@
 
 static const char TAG[] = "nano_receive";
 
-void menu_receive(menu8g2_t *prev){
+void menu_nano_receive(menu8g2_t *prev){
     /*
      * Blocks involved:
      * pending_block - The send we want to sign in
@@ -27,7 +27,6 @@ void menu_receive(menu8g2_t *prev){
      * prev_block - frontier of our account chain
      */
 
-    
     vault_rpc_t rpc;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
@@ -36,19 +35,20 @@ void menu_receive(menu8g2_t *prev){
     /******************
      * Get My Address *
      ******************/
-    nvs_handle nvs_secret;
-    
-    init_nvm_namespace(&nvs_secret, "secret");
-    nvs_get_u32(nvs_secret, "index", &(rpc.public_key.index));
-    nvs_close(nvs_secret);
+    nvs_handle nvs_h;
+    init_nvm_namespace(&nvs_h, "nano");
+    if(ESP_OK != nvs_get_u32(nvs_h, "index", &(rpc.nano_public_key.index))){
+        rpc.nano_public_key.index = 0;
+    }
+    nvs_close(nvs_h);
 
     sodium_memzero(&rpc, sizeof(rpc));
-    rpc.type = PUBLIC_KEY;
+    rpc.type = NANO_PUBLIC_KEY;
     if(vault_rpc(&rpc) != RPC_SUCCESS){
         return;
     }
     uint256_t my_public_key;
-    memcpy(my_public_key, rpc.public_key.block.account, sizeof(my_public_key));
+    memcpy(my_public_key, rpc.nano_public_key.block.account, sizeof(my_public_key));
 
     char my_address[ADDRESS_BUF_LEN];
     nl_public_to_address(my_address, sizeof(my_address), my_public_key);
@@ -136,8 +136,8 @@ void menu_receive(menu8g2_t *prev){
      ********************************/
     loading_text("Creating Receive");
     sodium_memzero(&rpc, sizeof(rpc));
-    rpc.type = BLOCK_SIGN;
-    nl_block_t *new_block = &(rpc.block_sign.block);
+    rpc.type = NANO_BLOCK_SIGN;
+    nl_block_t *new_block = &(rpc.nano_block_sign.block);
 
     new_block->type = STATE;
     sodium_hex2bin(new_block->previous, sizeof(new_block->previous),
