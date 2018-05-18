@@ -10,7 +10,6 @@
 typedef struct vault_t{
     char mnemonic[MNEMONIC_BUF_LEN];
     uint512_t master_seed;
-    uint32_t index;
     bool valid;
 } vault_t;
 
@@ -44,10 +43,10 @@ typedef struct vault_rpc_t {
         struct{
             struct nl_block_t block;
             uint32_t index;
-        } public_key;
+        } nano_public_key;
         struct{
             struct nl_block_t block;
-        } block_sign;
+        } nano_block_sign;
     };
 } vault_rpc_t;
 

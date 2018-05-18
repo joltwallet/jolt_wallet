@@ -65,7 +65,7 @@ void gui_task(){
 
     const char title[] = "Main";
 
-    /* Add Coin menu options here */
+    /* MAIN MENU CONSTRUCTION */
     menu8g2_elements_t elements;
     menu8g2_elements_init(&elements, 2);
     menu8g2_set_element(&elements, "Nano", &menu_nano);

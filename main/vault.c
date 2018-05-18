@@ -216,8 +216,8 @@ void vault_task(void *vault_in){
 
             // Prompt user for Pin if necessary
             if(pin_prompt(&menu, vault)){
-                // Perform command
-                /* Break out to coin subtype command list */
+                // Perform RPC command
+                /* MASTER RPC SWITCH STATEMENT */
                 switch(cmd->type){
                     case(FACTORY_RESET):
                         ESP_LOGI(TAG, "Executing FACTORY_RESET RPC.");
