@@ -20,9 +20,9 @@ static vault_rpc_response_t rpc_nano_public_key(vault_t *vault, vault_rpc_t *cmd
     CONFIDENTIAL uint256_t private_key;
     nl_master_seed_to_nano_private_key(private_key, 
             vault->master_seed,
-            cmd->public_key.index);
+            cmd->nano_public_key.index);
     // Derive public key from private
-    nl_private_to_public(cmd->public_key.block.account, private_key);
+    nl_private_to_public(cmd->nano_public_key.block.account, private_key);
     sodium_memzero(private_key, sizeof(private_key));
     response = RPC_SUCCESS;
     return response;
@@ -36,9 +36,9 @@ static vault_rpc_response_t rpc_nano_block_sign(vault_t *vault, vault_rpc_t *cmd
     CONFIDENTIAL uint256_t private_key;
     nl_master_seed_to_nano_private_key(private_key, 
             vault->master_seed,
-            cmd->public_key.index);
+            cmd->nano_public_key.index);
 
-    nl_block_sign(&(cmd->block_sign.block), private_key);
+    nl_block_sign(&(cmd->nano_block_sign.block), private_key);
 
     sodium_memzero(private_key, sizeof(private_key));
     response = RPC_SUCCESS;

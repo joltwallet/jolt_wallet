@@ -27,7 +27,6 @@ void menu_nano_receive(menu8g2_t *prev){
      * prev_block - frontier of our account chain
      */
 
-    
     vault_rpc_t rpc;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
@@ -39,7 +38,10 @@ void menu_nano_receive(menu8g2_t *prev){
     nvs_handle nvs_secret;
     
     init_nvm_namespace(&nvs_secret, "secret");
-    nvs_get_u32(nvs_secret, "index", &(rpc.public_key.index));
+    if(ESP_OK != nvs_get_u32(nvs_secret, "index", &(rpc.nano_public_key.index))){
+        rpc.nano_public_key.index = 0;
+    }
+
     nvs_close(nvs_secret);
 
     sodium_memzero(&rpc, sizeof(rpc));
@@ -48,7 +50,7 @@ void menu_nano_receive(menu8g2_t *prev){
         return;
     }
     uint256_t my_public_key;
-    memcpy(my_public_key, rpc.public_key.block.account, sizeof(my_public_key));
+    memcpy(my_public_key, rpc.nano_public_key.block.account, sizeof(my_public_key));
 
     char my_address[ADDRESS_BUF_LEN];
     nl_public_to_address(my_address, sizeof(my_address), my_public_key);
@@ -137,7 +139,7 @@ void menu_nano_receive(menu8g2_t *prev){
     loading_text("Creating Receive");
     sodium_memzero(&rpc, sizeof(rpc));
     rpc.type = NANO_BLOCK_SIGN;
-    nl_block_t *new_block = &(rpc.block_sign.block);
+    nl_block_t *new_block = &(rpc.nano_block_sign.block);
 
     new_block->type = STATE;
     sodium_hex2bin(new_block->previous, sizeof(new_block->previous),

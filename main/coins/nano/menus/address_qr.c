@@ -29,7 +29,10 @@ void menu_nano_address_qr(menu8g2_t *prev){
 
     //get public key
     init_nvm_namespace(&nvs_secret, "secret");
-    nvs_get_u32(nvs_secret, "index", &(rpc.public_key.index));
+    if(ESP_OK != nvs_get_u32(nvs_secret, "index", &(rpc.nano_public_key.index))){
+        rpc.nano_public_key.index = 0;
+    }
+
     nvs_close(nvs_secret);
 
     rpc.type = NANO_PUBLIC_KEY;
@@ -40,7 +43,7 @@ void menu_nano_address_qr(menu8g2_t *prev){
     }
 
     err = public_to_qr(&qrcode, qrcode_bytes, 
-            rpc.public_key.block.account, NULL);
+            rpc.nano_public_key.block.account, NULL);
     if( err != E_SUCCESS ){
         return;
     }

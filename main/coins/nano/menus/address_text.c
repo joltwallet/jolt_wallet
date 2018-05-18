@@ -22,7 +22,9 @@ void menu_nano_address_text(menu8g2_t *prev){
     bool statusbar_draw_original = statusbar_draw_enable;
 
     init_nvm_namespace(&nvs_secret, "secret");
-    nvs_get_u32(nvs_secret, "index", &(rpc.public_key.index));
+    if(ESP_OK != nvs_get_u32(nvs_secret, "index", &(rpc.nano_public_key.index))){
+        rpc.nano_public_key.index = 0;
+    }
     nvs_close(nvs_secret);
 
     rpc.type = NANO_PUBLIC_KEY;
@@ -33,7 +35,7 @@ void menu_nano_address_text(menu8g2_t *prev){
 
     char address[ADDRESS_BUF_LEN];
     nl_public_to_address(address, sizeof(address),
-            rpc.public_key.block.account);
+            rpc.nano_public_key.block.account);
 
     statusbar_draw_enable = false;
     menu.post_draw = NULL;

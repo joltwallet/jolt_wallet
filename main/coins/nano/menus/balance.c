@@ -33,7 +33,10 @@ void menu_nano_balance(menu8g2_t *prev){
     nvs_handle nvs_secret;
     
     init_nvm_namespace(&nvs_secret, "secret");
-    nvs_get_u32(nvs_secret, "index", &(rpc.public_key.index));
+    if(ESP_OK != nvs_get_u32(nvs_secret, "index", &(rpc.nano_public_key.index))){
+        rpc.nano_public_key.index = 0;
+    }
+
     nvs_close(nvs_secret);
 
     sodium_memzero(&rpc, sizeof(rpc));
@@ -42,7 +45,7 @@ void menu_nano_balance(menu8g2_t *prev){
         return;
     }
     uint256_t my_public_key;
-    memcpy(my_public_key, rpc.public_key.block.account, sizeof(my_public_key));
+    memcpy(my_public_key, rpc.nano_public_key.block.account, sizeof(my_public_key));
 
     char my_address[ADDRESS_BUF_LEN];
     nl_public_to_address(my_address, sizeof(my_address), my_public_key);
