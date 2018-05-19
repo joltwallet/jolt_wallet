@@ -39,6 +39,12 @@ bool nano_confirm_block(menu8g2_t *prev_menu, nl_block_t *head_block, nl_block_t
         goto exit;
     }
 
+    // Reject Invalid negative balances
+    if(-1 == new_block->balance.s || -1 == head_block->balance.s){
+        result = false;
+        goto exit;
+    }
+
     /******************************
      * Compute transaction amount *
      ******************************/
@@ -67,7 +73,7 @@ bool nano_confirm_block(menu8g2_t *prev_menu, nl_block_t *head_block, nl_block_t
         }
 
         /* Write out display string */
-        snprintf(buf, sizeof(buf), "Send %.2lf to %s ?", display_amount, address);
+        snprintf(buf, sizeof(buf), "Send %.2lf NANO to %s ?", display_amount, address);
     }
     else{
         // Receive

@@ -211,6 +211,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
         }
 
         // Get SEND work
+        loading_text("Fetching Work");
         if( E_SUCCESS != get_work( frontier_hash, &proof_of_work ) ){
             loading_disable();
             ESP_LOGI(TAG, "Invalid Work (SEND) Response.");
@@ -268,11 +269,17 @@ void menu_nano_send_uart(menu8g2_t *prev){
     #endif
 
     // Sign block
+    loading_disable();
     if( nano_confirm_block(&menu, &frontier_block, new_block) ){
         if(vault_rpc(&rpc) != RPC_SUCCESS){
             return;
         }
     }
+    else{
+        return;
+    }
+
+    loading_enable();
     
     loading_text("Broadcasting Transaction");
     process_block(new_block);
