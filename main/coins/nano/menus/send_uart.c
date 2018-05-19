@@ -268,7 +268,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
     #endif
 
     // Sign block
-    if( nano_confirm_block(&menu, &frontier_block, new_block){
+    if( nano_confirm_block(&menu, &frontier_block, new_block) ){
         if(vault_rpc(&rpc) != RPC_SUCCESS){
             return;
         }

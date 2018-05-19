@@ -9,20 +9,21 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
-#include "menu8g2"
+#include "menu8g2.h"
 #include "nano_lib.h"
 
 #include "../../vault.h"
+#include "../../globals.h"
 
 #define NANO_DISP_DECIMAL 2
 
-bool nano_confirm_block(menu8g2_t prev_menu, nl_block_t *head_block, nl_block_t new_block){
+bool nano_confirm_block(menu8g2_t *prev_menu, nl_block_t *head_block, nl_block_t *new_block){
     /* Prompts user to confirm transaction information before signing
      * Expects State Blocks 
      * Returns true on affirmation, false on error or cancellation.
      * */
     menu8g2_t menu;
-    menu8g2_copy(&menu, prev);
+    menu8g2_copy(&menu, prev_menu);
     menu.post_draw = NULL;
     statusbar_draw_enable = false;
 
@@ -43,8 +44,7 @@ bool nano_confirm_block(menu8g2_t prev_menu, nl_block_t *head_block, nl_block_t 
      ******************************/
     mbedtls_mpi transaction_amount;
     mbedtls_mpi_init(&transaction_amount);
-    mbedtls_mpi_sub(&transaction_amount, &(head_block->balance), &(new_block->balance));
-    mbedtls_mpi_write_string(&transaction_amount, 10)
+    mbedtls_mpi_sub_mpi(&transaction_amount, &(head_block->balance), &(new_block->balance));
     if( E_SUCCESS != nl_mpi_to_nano_double(&transaction_amount, &display_amount) ){
         result = false;
         goto exit;
