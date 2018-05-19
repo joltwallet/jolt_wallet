@@ -121,7 +121,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
      * Get Destination Address and Amount *
      **************************************/
     loading_enable();
-    loading_text("Enter Send Details");
+    loading_text_title("Enter Send Details", TITLE);
     
     char dest_address[ADDRESS_BUF_LEN];
     flush_uart();
@@ -196,7 +196,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
     // Outcome:
     //     * frontier_hash, frontier_block
     loading_enable();
-    loading_text("Getting Block Details");
+    loading_text_title("Getting Block Details", TITLE);
     
     hex256_t frontier_hash = { 0 };
     nl_block_t frontier_block;
@@ -213,7 +213,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
         }
 
         // Get SEND work
-        loading_text("Fetching Work");
+        loading_text_title("Fetching Work", TITLE);
         if( E_SUCCESS != get_work( frontier_hash, &proof_of_work ) ){
             loading_disable();
             ESP_LOGI(TAG, "Invalid Work (SEND) Response.");
@@ -242,7 +242,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
      * Create send block *
      *********************/
     
-    loading_text("Creating Send Block");
+    loading_text_title("Creating Send Block", TITLE);
     
     sodium_memzero(&rpc, sizeof(rpc));
     rpc.type = NANO_BLOCK_SIGN;
@@ -283,7 +283,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
 
     loading_enable();
     
-    loading_text("Broadcasting Transaction");
+    loading_text_title("Broadcasting Transaction", TITLE);
     process_block(new_block);
     
     loading_disable();
