@@ -12,6 +12,7 @@
 #include "submenus.h"
 #include "../../../globals.h"
 #include "../../../loading.h"
+#include "../../../gui.h"
 
 #include "nano_lws.h"
 #include "nano_parse.h"
@@ -31,7 +32,6 @@ void menu_nano_receive(menu8g2_t *prev){
     vault_rpc_t rpc;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
-    menu.post_draw = NULL;
     
     /******************
      * Get My Address *
@@ -73,7 +73,7 @@ void menu_nano_receive(menu8g2_t *prev){
     if (get_pending(my_address, pending_hash, &transaction_amount) != E_SUCCESS) {
         loading_disable();
         menu8g2_display_text_title(&menu, "No Pending Blocks Found", TITLE);
-        return;
+        goto exit;
     }
 
     ESP_LOGI(TAG, "Pending Hash: %s", pending_hash);
@@ -107,7 +107,7 @@ void menu_nano_receive(menu8g2_t *prev){
         if( get_block(frontier_hash, &frontier_block) != E_SUCCESS ){
             ESP_LOGI(TAG, "Error retrieving frontier block.");
             loading_disable();
-            return;
+            goto exit;
         }
 
         // Get RECEIVE work
@@ -115,7 +115,7 @@ void menu_nano_receive(menu8g2_t *prev){
         if( E_SUCCESS != get_work( frontier_hash, &proof_of_work ) ){
             ESP_LOGI(TAG, "Invalid Work (RECEIVE) Response.");
             loading_disable();
-            return;
+            goto exit;
         }
 
     }
@@ -128,7 +128,7 @@ void menu_nano_receive(menu8g2_t *prev){
         if( E_SUCCESS != get_work( work_hex, &proof_of_work ) ){
             ESP_LOGI(TAG, "Invalid Work (OPEN) Response.");
             loading_disable();
-            return;
+            goto exit;
         }
     }
 
@@ -167,8 +167,7 @@ void menu_nano_receive(menu8g2_t *prev){
     // Sign block
     loading_text("Signing Receive");
     if(vault_rpc(&rpc) != RPC_SUCCESS){
-        loading_disable();
-        return;
+        goto exit;
     }
     
     loading_text("Broadcasting Transaction");
@@ -176,4 +175,8 @@ void menu_nano_receive(menu8g2_t *prev){
     
     loading_disable();
     menu8g2_display_text_title(&menu, "Blocks Processed", TITLE);
+
+    exit:
+        loading_disable();
+        return;
 }

@@ -13,6 +13,7 @@
 #include "../../../globals.h"
 #include "../../../loading.h"
 #include "../confirmation.h"
+#include "../../../gui.h"
 
 #include "nano_lws.h"
 #include "nano_parse.h"

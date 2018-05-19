@@ -13,6 +13,7 @@
 #include "../../../helpers.h"
 #include "../../../qr.h"
 #include "../../../statusbar.h"
+#include "../../../gui.h"
 
 void menu_nano_address_qr(menu8g2_t *prev){
     vault_rpc_t rpc;
@@ -21,10 +22,10 @@ void menu_nano_address_qr(menu8g2_t *prev){
     uint8_t qrcode_bytes[qrcode_getBufferSize(CONFIG_NANORAY_QR_VERSION)];
     uint64_t input_buf;
     nl_err_t err;
+
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
-    bool statusbar_draw_original = statusbar_draw_enable;
-
+    FULLSCREEN_ENTER(&menu);
 
     //get public key
     nvs_handle nvs_h;
@@ -38,27 +39,27 @@ void menu_nano_address_qr(menu8g2_t *prev){
     res = vault_rpc(&rpc);
 
     if(res != RPC_SUCCESS){
-        return;
+        goto exit;
     }
 
     err = public_to_qr(&qrcode, qrcode_bytes, 
             rpc.nano_public_key.block.account, NULL);
     if( err != E_SUCCESS ){
-        return;
+        goto exit;
     }
 
-    statusbar_draw_enable = false;
-    menu.post_draw = NULL;
     //u8g2_SetContrast(u8g2, 1); // Phones have trouble with bright displays
     display_qr_center(&menu, &qrcode, CONFIG_NANORAY_QR_SCALE);
-
     for(;;){
 		if(xQueueReceive(menu.input_queue, &input_buf, portMAX_DELAY)) {
             if(input_buf == (1ULL << EASY_INPUT_BACK)){
                 // todo: Restore User's Brightness Here
-                statusbar_draw_enable = statusbar_draw_original;
-                return;
+                goto exit;
             }
         }
     }
+
+    exit:
+        FULLSCREEN_EXIT(&menu);
+        return;
 }

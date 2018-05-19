@@ -5,7 +5,7 @@ void setup_screen(u8g2_t *u8g2);
 void gui_task();
 
 #define FULLSCREEN_ENTER(menu) \
-    menu->post_draw = NULL; \
+    (menu)->post_draw = NULL; \
     bool statusbar_draw_original = statusbar_draw_enable; \
     statusbar_draw_enable = false;
 

@@ -19,7 +19,6 @@ void menu_nano_address_text(menu8g2_t *prev){
     vault_rpc_t rpc;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
-    bool statusbar_draw_original = statusbar_draw_enable;
 
     nvs_handle nvs_h;
     init_nvm_namespace(&nvs_h, "nano");
@@ -31,23 +30,22 @@ void menu_nano_address_text(menu8g2_t *prev){
     rpc.type = NANO_PUBLIC_KEY;
 
     if(vault_rpc(&rpc) != RPC_SUCCESS){
-        return;
+        goto exit;
     }
 
     char address[ADDRESS_BUF_LEN];
     nl_public_to_address(address, sizeof(address),
             rpc.nano_public_key.block.account);
 
-    statusbar_draw_enable = false;
-    menu.post_draw = NULL;
-    
-    printf("Address: %s\n", address);
+    ESP_LOGI(TAG, "Address: %s", address);
 
     for(;;){
         if(menu8g2_display_text_title(&menu, address, TITLE)
                 == (1ULL << EASY_INPUT_BACK)){
-            statusbar_draw_enable = statusbar_draw_original;
-            return;
+            goto exit;
         }
     }
+
+    exit:
+        return;
 }

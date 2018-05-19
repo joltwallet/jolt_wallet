@@ -11,6 +11,7 @@
 #include "../../../vault.h"
 #include "submenus.h"
 #include "../../../globals.h"
+#include "../../../gui.h"
 
 #include "nano_lws.h"
 #include "nano_parse.h"
@@ -60,20 +61,19 @@ void menu_nano_balance(menu8g2_t *prev){
     hex256_t frontier_hash = { 0 };
     nl_block_t frontier_block;
     nl_block_init(&frontier_block);
-    uint64_t proof_of_work;
 
     if( get_frontier(my_address, frontier_hash) == E_SUCCESS ){
         
         if( get_block(frontier_hash, &frontier_block) != E_SUCCESS ){
             ESP_LOGI(TAG, "Error retrieving frontier block.");
-            return;
+            goto exit;
         }
 
     }
     else {
         //To send requires a previous Open Block
         ESP_LOGI(TAG, "Account not open.");
-        return;
+        goto exit;
     }
 
     /*****************
@@ -89,15 +89,14 @@ void menu_nano_balance(menu8g2_t *prev){
     char balance_string[75];
     snprintf(balance_string, 64, "%s Raw Nano", amount);
 
-    bool statusbar_draw_original = statusbar_draw_enable;
-    
-    statusbar_draw_enable = false;
-    menu.post_draw = NULL;
     for(;;){
         if(menu8g2_display_text_title(&menu, balance_string, TITLE)
                 == (1ULL << EASY_INPUT_BACK)){
-            statusbar_draw_enable = statusbar_draw_original;
-            return;
+            goto exit;
         }
     }
+
+    exit:
+        return;
+
 }

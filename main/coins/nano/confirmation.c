@@ -24,10 +24,7 @@ bool nano_confirm_block(menu8g2_t *prev_menu, nl_block_t *head_block, nl_block_t
      * */
     menu8g2_t menu;
     menu8g2_copy(&menu, prev_menu);
-    menu.post_draw = NULL;
-    statusbar_draw_enable = false;
 
-    bool statusbar_draw_original = statusbar_draw_enable;
     bool result;
     double display_amount;
     char address[ADDRESS_BUF_LEN];
@@ -98,7 +95,6 @@ bool nano_confirm_block(menu8g2_t *prev_menu, nl_block_t *head_block, nl_block_t
     }
 
     exit:
-        statusbar_draw_enable = statusbar_draw_original;
         mbedtls_mpi_free(&transaction_amount);
         return result;
 }
