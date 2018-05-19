@@ -17,12 +17,11 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
+#include "gui.h"
+
 static const char* TAG = "secure_entry";
 
 #define PIN_SPACING 13
-
-/* Globals */
-//bool statusbar_draw_enable;
 
 bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
     /* Screen for Pin Entry 
@@ -31,7 +30,7 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
     menu8g2_t *menu = &local_menu;
     menu8g2_copy(menu, prev);
 
-    bool statusbar_draw_original = statusbar_draw_enable;
+    bool res;
 
     u8g2_t *u8g2 = menu->u8g2;
     uint8_t max_pos = MAX_PIN_DIGITS - 1;
@@ -49,7 +48,7 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
     char buf[24];
     int8_t pin_entries[MAX_PIN_DIGITS] = { 0 };
 
-    statusbar_draw_enable = false;
+    FULLSCREEN_ENTER(menu);
     for(;;){
         MENU8G2_BEGIN_DRAW(menu)
             u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
@@ -83,8 +82,9 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
                 }
                 else{
                     ESP_LOGI(TAG, "User exiting (back) pin entry screen.");
-                    statusbar_draw_enable = statusbar_draw_original;
-                    return false;
+                    res = false;
+                    goto exit;
+
                 }
             }
             else if(input_buf & (1ULL << EASY_INPUT_UP)){
@@ -104,17 +104,27 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
                 }
                 else{
                     ESP_LOGI(TAG, "User entered pin; processing...");
+
                     // Convert pin into a 256-bit key
                     crypto_generichash_blake2b_state hs;
                     crypto_generichash_init(&hs, NULL, 32, 32);
                     crypto_generichash_update(&hs, 
                             (unsigned char *) pin_entries, MAX_PIN_DIGITS);
                     crypto_generichash_final(&hs, pin_hash, 32);
-                    statusbar_draw_enable = statusbar_draw_original;
-                    return true;
+
+                    res = true;
+                    goto exit;
                 }
             }
         }
     }
+
+    exit:
+        MENU8G2_BEGIN_DRAW(menu)
+            u8g2_ClearDisplay(menu->u8g2);
+        MENU8G2_END_DRAW(menu)
+
+        FULLSCREEN_EXIT(menu);
+        return res;
 }
 
