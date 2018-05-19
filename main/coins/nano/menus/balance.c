@@ -16,6 +16,7 @@
 #include "nano_parse.h"
 
 static const char TAG[] = "nano_balance";
+static const char TITLE[] = "Nano Balance";
 
 void menu_nano_balance(menu8g2_t *prev){
     /*
@@ -93,7 +94,8 @@ void menu_nano_balance(menu8g2_t *prev){
     statusbar_draw_enable = false;
     menu.post_draw = NULL;
     for(;;){
-        if(menu8g2_display_text(&menu, balance_string) == (1ULL << EASY_INPUT_BACK)){
+        if(menu8g2_display_text_title(&menu, balance_string, TITLE)
+                == (1ULL << EASY_INPUT_BACK)){
             statusbar_draw_enable = statusbar_draw_original;
             return;
         }

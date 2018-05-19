@@ -85,7 +85,7 @@ bool nano_confirm_block(menu8g2_t *prev_menu, nl_block_t *head_block, nl_block_t
      * Draw Screen *
      ***************/
     for(;;){
-        switch(menu8g2_display_text(&menu, buf)){
+        switch(menu8g2_display_text_title(&menu, buf, "Confirm Action")){
             case(1ULL << EASY_INPUT_BACK):
                 result = false;
                 goto exit;

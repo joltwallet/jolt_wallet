@@ -18,6 +18,7 @@
 #include "nano_parse.h"
 
 static const char TAG[] = "nano_send";
+static const char TITLE[] = "Send Nano";
 
 static void get_serial_input(char *serial_rx, int buffersize){
     
@@ -147,7 +148,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
         // continue; assumes address doesn't have a prefix
     } else {
         loading_disable();
-        menu8g2_display_text(&menu, "Incorrect Address");
+        menu8g2_display_text_title(&menu, "Incorrect Address", TITLE);
         ESP_LOGE(TAG, "\nIncorrect Address %s\n", dest_address);
         return E_INVALID_ADDRESS;
     }
@@ -232,7 +233,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
     if (mbedtls_mpi_cmp_mpi(&(frontier_block.balance), &transaction_amount) == -1) {
         loading_disable();
         ESP_LOGI(TAG, "Insufficent Funds.");
-        menu8g2_display_text(&menu, "Insufficent Funds");
+        menu8g2_display_text_title(&menu, "Insufficent Funds", TITLE);
         return;
     }
     
@@ -285,5 +286,5 @@ void menu_nano_send_uart(menu8g2_t *prev){
     process_block(new_block);
     
     loading_disable();
-    menu8g2_display_text(&menu, "Transaction Sent");
+    menu8g2_display_text_title(&menu, "Transaction Sent", TITLE);
 }

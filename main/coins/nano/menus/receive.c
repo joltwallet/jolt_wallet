@@ -18,6 +18,7 @@
 
 
 static const char TAG[] = "nano_receive";
+static const char TITLE[] = "Receive Nano";
 
 void menu_nano_receive(menu8g2_t *prev){
     /*
@@ -71,7 +72,7 @@ void menu_nano_receive(menu8g2_t *prev){
     mbedtls_mpi_init(&transaction_amount);
     if (get_pending(my_address, pending_hash, &transaction_amount) != E_SUCCESS) {
         loading_disable();
-        menu8g2_display_text(&menu, "No Pending Blocks Found");
+        menu8g2_display_text_title(&menu, "No Pending Blocks Found", TITLE);
         return;
     }
 
@@ -174,5 +175,5 @@ void menu_nano_receive(menu8g2_t *prev){
     process_block(new_block);
     
     loading_disable();
-    menu8g2_display_text(&menu, "Blocks Processed");
+    menu8g2_display_text_title(&menu, "Blocks Processed", TITLE);
 }

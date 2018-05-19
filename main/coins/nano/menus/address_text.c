@@ -13,6 +13,7 @@
 #include "../../../statusbar.h"
 
 static const char* TAG = "address_text";
+static const char TITLE[] = "Nano Address";
 
 void menu_nano_address_text(menu8g2_t *prev){
     vault_rpc_t rpc;
@@ -43,7 +44,8 @@ void menu_nano_address_text(menu8g2_t *prev){
     printf("Address: %s\n", address);
 
     for(;;){
-        if(menu8g2_display_text(&menu, address) == (1ULL << EASY_INPUT_BACK)){
+        if(menu8g2_display_text_title(&menu, address, TITLE)
+                == (1ULL << EASY_INPUT_BACK)){
             statusbar_draw_enable = statusbar_draw_original;
             return;
         }
