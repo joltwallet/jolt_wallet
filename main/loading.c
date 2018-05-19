@@ -27,7 +27,7 @@
 
 #define N_LOADING_FRAMES 4
 #define LOADING_FRAME_TIME_MS 700
-#define LOADING_TEXT_Y 12
+#define LOADING_TEXT_Y 22
 
 bool loading_draw_enable;
 
@@ -36,9 +36,14 @@ QueueHandle_t loading_queue;
 
 static bool previous_statusbar_draw_enable;
 
+typedef struct loading_text_t{
+    const char *title;
+    const char *text;
+} loading_text_t;
+
 void loading_init(menu8g2_t *menu){
     loading_draw_enable = false;
-    loading_queue = xQueueCreate( 1, sizeof(char *) );
+    loading_queue = xQueueCreate( 1, sizeof(loading_text_t) );
     xTaskCreate(loading_task, "LoadingTask", 8192,
             (void *) menu, 19, NULL);
 }
@@ -54,9 +59,14 @@ void loading_disable( void ){
     statusbar_draw_enable = previous_statusbar_draw_enable;
 }
 
-void loading_text(char *text){
+void loading_text(const char *text){
+    loading_text_title(text, "");
+}
+
+void loading_text_title(const char *text, const char *title){
     loading_draw_enable = true;
-    xQueueOverwrite(loading_queue, &text);
+    loading_text_t payload = { .title = title, .text = text };
+    xQueueOverwrite( loading_queue, &payload );
 }
 
 void loading_task(void *menu_in){
@@ -65,11 +75,11 @@ void loading_task(void *menu_in){
     menu8g2_copy(&menu, prev);
     menu.post_draw = NULL;
 
-    char *text = '\0';
+    loading_text_t payload;
     const unsigned char *graphic = NULL;
 
     for(uint8_t i = 0;; i = (i+
-    	    !xQueueReceive(loading_queue, &text, 
+    	    !xQueueReceive(loading_queue, &payload, 
                 pdMS_TO_TICKS(LOADING_FRAME_TIME_MS))) % N_LOADING_FRAMES){
 
         if(!loading_draw_enable){
@@ -96,6 +106,8 @@ void loading_task(void *menu_in){
         }
 
         MENU8G2_BEGIN_DRAW(&menu)
+            menu8g2_buf_header(&menu, payload.title);
+
             u8g2_SetDrawColor(menu.u8g2, 1);
             u8g2_DrawXBM( menu.u8g2, 100, 40, // todo: better location
                     GRAPHIC_BATTERY_W,
@@ -103,8 +115,8 @@ void loading_task(void *menu_in){
                     graphic);
 
             u8g2_SetFont(menu.u8g2, u8g2_font_profont12_tf);
-            u8g2_DrawStr(menu.u8g2, get_center_x(menu.u8g2, text),
-                    LOADING_TEXT_Y, text);
+            u8g2_DrawStr(menu.u8g2, get_center_x(menu.u8g2, payload.text),
+                    LOADING_TEXT_Y, payload.text);
         MENU8G2_END_DRAW(&menu)
     }
 }

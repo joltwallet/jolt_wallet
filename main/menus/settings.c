@@ -25,6 +25,7 @@ static void menu_factory_reset_confirm(menu8g2_t *prev){
 }
 
 static void wifi_settings(menu8g2_t *prev){
+    const char title[] = "WiFi Settings";
     bool res;
     vault_rpc_t rpc; // todo: To be used to modify SSID/Pass
     menu8g2_t menu;
@@ -33,7 +34,8 @@ static void wifi_settings(menu8g2_t *prev){
     char new_ap_info[45];
     get_ap_info(new_ap_info);
     for(;;){
-        if(menu8g2_display_text(&menu, new_ap_info) == (1ULL << EASY_INPUT_BACK)){
+        if(menu8g2_display_text_title(&menu, new_ap_info, title)
+                == (1ULL << EASY_INPUT_BACK)){
             return;
         }
     }

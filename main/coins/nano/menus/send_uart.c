@@ -13,11 +13,13 @@
 #include "../../../globals.h"
 #include "../../../loading.h"
 #include "../confirmation.h"
+#include "../../../gui.h"
 
 #include "nano_lws.h"
 #include "nano_parse.h"
 
 static const char TAG[] = "nano_send";
+static const char TITLE[] = "Send Nano";
 
 static void get_serial_input(char *serial_rx, int buffersize){
     
@@ -119,7 +121,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
      * Get Destination Address and Amount *
      **************************************/
     loading_enable();
-    loading_text("Enter Send Details");
+    loading_text_title("Enter Send Details", TITLE);
     
     char dest_address[ADDRESS_BUF_LEN];
     flush_uart();
@@ -147,7 +149,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
         // continue; assumes address doesn't have a prefix
     } else {
         loading_disable();
-        menu8g2_display_text(&menu, "Incorrect Address");
+        menu8g2_display_text_title(&menu, "Incorrect Address", TITLE);
         ESP_LOGE(TAG, "\nIncorrect Address %s\n", dest_address);
         return E_INVALID_ADDRESS;
     }
@@ -194,7 +196,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
     // Outcome:
     //     * frontier_hash, frontier_block
     loading_enable();
-    loading_text("Getting Block Details");
+    loading_text_title("Getting Block Details", TITLE);
     
     hex256_t frontier_hash = { 0 };
     nl_block_t frontier_block;
@@ -211,7 +213,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
         }
 
         // Get SEND work
-        loading_text("Fetching Work");
+        loading_text_title("Fetching Work", TITLE);
         if( E_SUCCESS != get_work( frontier_hash, &proof_of_work ) ){
             loading_disable();
             ESP_LOGI(TAG, "Invalid Work (SEND) Response.");
@@ -232,7 +234,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
     if (mbedtls_mpi_cmp_mpi(&(frontier_block.balance), &transaction_amount) == -1) {
         loading_disable();
         ESP_LOGI(TAG, "Insufficent Funds.");
-        menu8g2_display_text(&menu, "Insufficent Funds");
+        menu8g2_display_text_title(&menu, "Insufficent Funds", TITLE);
         return;
     }
     
@@ -240,7 +242,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
      * Create send block *
      *********************/
     
-    loading_text("Creating Send Block");
+    loading_text_title("Creating Send Block", TITLE);
     
     sodium_memzero(&rpc, sizeof(rpc));
     rpc.type = NANO_BLOCK_SIGN;
@@ -281,9 +283,9 @@ void menu_nano_send_uart(menu8g2_t *prev){
 
     loading_enable();
     
-    loading_text("Broadcasting Transaction");
+    loading_text_title("Broadcasting Transaction", TITLE);
     process_block(new_block);
     
     loading_disable();
-    menu8g2_display_text(&menu, "Transaction Sent");
+    menu8g2_display_text_title(&menu, "Transaction Sent", TITLE);
 }

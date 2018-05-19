@@ -5,6 +5,7 @@ void loading_init(menu8g2_t *menu);
 void loading_disable();
 void loading_enable();
 void loading_task(void *menu_in);
-void loading_text(char *text);
+void loading_text(const char *text);
+void loading_text_title(const char *text, const char *title);
 
 #endif
