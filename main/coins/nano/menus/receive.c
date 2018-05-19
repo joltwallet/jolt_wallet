@@ -146,6 +146,7 @@ void menu_nano_receive(menu8g2_t *prev){
     nl_address_to_public(new_block->representative, my_address); //todo: default rep
     sodium_hex2bin(new_block->link, sizeof(new_block->link),
             pending_hash, sizeof(pending_hash), NULL, NULL, NULL);
+    // Unsigned addition so this could never accidentilly become a send
     mbedtls_mpi_add_abs(&(new_block->balance), &transaction_amount, &(frontier_block.balance));
     new_block->work = proof_of_work;
 

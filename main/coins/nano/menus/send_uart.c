@@ -12,6 +12,7 @@
 #include "submenus.h"
 #include "../../../globals.h"
 #include "../../../loading.h"
+#include "../confirmation.h"
 
 #include "nano_lws.h"
 #include "nano_parse.h"
@@ -266,10 +267,11 @@ void menu_nano_send_uart(menu8g2_t *prev){
     }
     #endif
 
-
     // Sign block
-    if(vault_rpc(&rpc) != RPC_SUCCESS){
-        return;
+    if( nano_confirm_block(&menu, &frontier_block, new_block){
+        if(vault_rpc(&rpc) != RPC_SUCCESS){
+            return;
+        }
     }
     
     loading_text("Broadcasting Transaction");
