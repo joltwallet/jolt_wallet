@@ -11,6 +11,9 @@
 #include "esp_smartconfig.h"
 #include "wifi.h"
 #include "lwip/err.h"
+#include "nvs_flash.h"
+#include "nvs.h"
+#include "vault.h"
 
 static const char *TAG = "wifi_task";
 
@@ -43,14 +46,7 @@ esp_err_t event_handler(void *ctx, system_event_t *event)
 }
 
 void wifi_connect(){
-    nvs_flash_init();
-    tcpip_adapter_init();
-    
-    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg) );
-    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    nvs_handle wifi_nvs_handle;
     wifi_config_t sta_config = {
         .sta = {
             .ssid      = CONFIG_AP_TARGET_SSID,
@@ -58,6 +54,47 @@ void wifi_connect(){
             .bssid_set = 0
         }
     };
+    
+    nvs_flash_init();
+    tcpip_adapter_init();
+    
+    //Check for WiFi credentials in NVS
+    init_nvm_namespace(&wifi_nvs_handle, "user");
+    
+    size_t string_size_ssid;
+    size_t string_size_pass;
+    esp_err_t err = nvs_get_str(wifi_nvs_handle, "wifi_ssid", NULL, &string_size_ssid);
+    if (err == ESP_ERR_NVS_NOT_FOUND) {
+        ESP_LOGI(TAG, "WiFi SSID not found, setting default");
+        nvs_set_str(wifi_nvs_handle, "wifi_ssid", CONFIG_AP_TARGET_SSID);
+        nvs_set_str(wifi_nvs_handle, "wifi_pass", CONFIG_AP_TARGET_PASSWORD);
+        err = nvs_commit(wifi_nvs_handle);
+        
+    }
+
+    ESP_LOGI(TAG, "WiFi SSID found, loading up");
+    char* wifi_ssid = malloc(string_size_ssid);
+    err = nvs_get_str(wifi_nvs_handle, "wifi_ssid", wifi_ssid, &string_size_ssid);
+    
+    err = nvs_get_str(wifi_nvs_handle, "wifi_pass", NULL, &string_size_pass);
+    char* wifi_pass = malloc(string_size_pass);
+    err = nvs_get_str(wifi_nvs_handle, "wifi_pass", wifi_pass, &string_size_pass);
+    
+    nvs_close(wifi_nvs_handle);
+    
+    
+    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg) );
+    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+
+    strncpy((char *)sta_config.sta.ssid, (char *)wifi_ssid, strlen(wifi_ssid));
+    
+    strncpy((char *)sta_config.sta.password, (char *)wifi_pass, strlen(wifi_pass));
+    
+    //ESP_LOGI(TAG, "%s %s %d %d %d %d %s %s %d %d", wifi_ssid, wifi_pass, strlen(wifi_ssid), strlen(wifi_pass), string_size_ssid, string_size_pass, sta_config.sta.ssid, sta_config.sta.password, sizeof(sta_config.sta.ssid), sizeof(sta_config.sta.password));
+    
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
     ESP_ERROR_CHECK(esp_wifi_start());
     //ESP_ERROR_CHECK(esp_wifi_connect());
@@ -85,7 +122,7 @@ uint8_t get_wifi_strength(){
     }
 }
 
-void get_ap_info(char * ssid_info){
+void get_ap_info(char * ssid_info, size_t size){
     
     tcpip_adapter_ip_info_t ip;
     memset(&ip, 0, sizeof(tcpip_adapter_ip_info_t));
@@ -95,11 +132,11 @@ void get_ap_info(char * ssid_info){
     
     if (tcpip_adapter_get_ip_info(ESP_IF_WIFI_STA, &ip) == 0) {
         char ip_address[16];
-        sprintf(ip_address, IPSTR, IP2STR(&ip.ip));
-        sprintf(ssid_info, "SSID: %s RSSI:%d IP:%s", new_ap_info.ssid, new_ap_info.rssi, ip_address  );
+        snprintf(ip_address, 16, IPSTR, IP2STR(&ip.ip));
+        snprintf(ssid_info, size, "SSID: %s RSSI:%d IP:%s", new_ap_info.ssid, new_ap_info.rssi, ip_address  );
     }
     else{
-        sprintf(ssid_info, "Error Not Connected");
+        snprintf(ssid_info, 20, "Error Not Connected");
     }
     
 }

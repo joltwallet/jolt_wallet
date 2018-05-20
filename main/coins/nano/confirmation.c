@@ -82,7 +82,7 @@ bool nano_confirm_block(menu8g2_t *prev_menu, nl_block_t *head_block, nl_block_t
      ***************/
     uint64_t button;
     for(;;){
-        button = menu8g2_display_text_title(&menu, buf, "Confirm Action")
+        button = menu8g2_display_text_title(&menu, buf, "Confirm Action");
         if((1ULL << EASY_INPUT_BACK) & button){
             result = false;
             goto exit;
