@@ -29,8 +29,8 @@ void menu_nano_balance(menu8g2_t *prev){
     vault_rpc_t rpc;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
+    double display_amount;
 
-    
     /******************
      * Get My Address *
      ******************/
@@ -71,40 +71,39 @@ void menu_nano_balance(menu8g2_t *prev){
         
         if( get_block(frontier_hash, &frontier_block) != E_SUCCESS ){
             ESP_LOGI(TAG, "Error retrieving frontier block.");
+            menu8g2_display_text_title(&menu, 
+                    "Error Connecting To Server.", TITLE);
             goto exit;
         }
 
+        /*****************
+         * Check Balance *
+         *****************/
+        if( E_SUCCESS != nl_mpi_to_nano_double(&(frontier_block.balance),
+                    &display_amount) ){
+            // Error
+            goto exit;
+        }
+        ESP_LOGI(TAG, "Approximate Account Balance: %0.3lf", display_amount);
     }
     else {
         //To send requires a previous Open Block
         ESP_LOGI(TAG, "Account not open.");
-        goto exit;
+        display_amount = 0;
     }
 
-    /*****************
-     * Check Balance *
-     *****************/
-    loading_disable();
-    double display_amount;
-    if( E_SUCCESS != nl_mpi_to_nano_double(&(frontier_block.balance),
-                &display_amount) ){
-        // Error
-        goto exit;
-    }
-
-    ESP_LOGI(TAG, "Approximate Account Balance: %0.3lf", display_amount);
-    
     char buf[100];
     snprintf(buf, sizeof(buf), "%0.3lf Nano", display_amount);
 
+    loading_disable();
     for(;;){
         if(menu8g2_display_text_title(&menu, buf, TITLE)
-                == (1ULL << EASY_INPUT_BACK)){
+                & (1ULL << EASY_INPUT_BACK)){
             goto exit;
         }
     }
 
     exit:
+        loading_disable();
         return;
-
 }
