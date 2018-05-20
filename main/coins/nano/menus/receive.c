@@ -80,7 +80,7 @@ void menu_nano_receive(menu8g2_t *prev){
     #if LOG_LOCAL_LEVEL >= ESP_LOG_INFO
     {
     //char amount[BALANCE_DEC_BUF_LEN];
-    char amount[64];
+    char amount[66];
     size_t olen;
     if(mbedtls_mpi_write_string(&transaction_amount, 10, amount, sizeof(amount), &olen)){
         ESP_LOGE(TAG, "Unable to write string from mbedtls_mpi; olen: %d", olen);
@@ -153,7 +153,7 @@ void menu_nano_receive(menu8g2_t *prev){
 
     #if LOG_LOCAL_LEVEL >= ESP_LOG_INFO
     {
-    char amount[64];
+    char amount[66];
     size_t olen;
     mbedtls_mpi_write_string(&(frontier_block.balance), 10, amount, sizeof(amount), &olen);
     ESP_LOGI(TAG, "Frontier Amount: %s", amount);

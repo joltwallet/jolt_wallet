@@ -241,7 +241,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
 
     #if LOG_LOCAL_LEVEL >= ESP_LOG_INFO
     {
-    char amount[64];
+    char amount[66];
     size_t olen;
     mbedtls_mpi_write_string(&(frontier_block.balance), 10, amount, sizeof(amount), &olen);
     ESP_LOGI(TAG, "Frontier Amount: %s", amount);
