@@ -3,13 +3,9 @@
 
 #include "u8g2.h"
 
-#define GRAPHIC_NANO_LOGO_SMALL_H 22
-#define GRAPHIC_NANO_LOGO_SMALL_W 50
-extern const unsigned char graphic_nano_logo_small[];
-
-#define GRAPHIC_NANO_RAY_H 22
-#define GRAPHIC_NANO_RAY_W 62
-extern const unsigned char graphic_nano_ray[];
+#define GRAPHIC_JOLT_H 48
+#define GRAPHIC_JOLT_W 120
+extern const unsigned char graphic_jolt[];
 
 #define GRAPHIC_WIFI_H 7
 #define GRAPHIC_WIFI_W 9
