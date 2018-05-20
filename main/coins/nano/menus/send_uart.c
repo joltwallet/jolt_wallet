@@ -128,30 +128,13 @@ void menu_nano_send_uart(menu8g2_t *prev){
     printf("\nEnter a destination address: ");
     get_serial_input(dest_address, sizeof(dest_address));
 
-	uint8_t size = strlen(dest_address);
-    // Check prefix and exclude it from the buffer
-    if ((dest_address[0] == 'n' || dest_address[0] == 'N') &&
-        (dest_address[1] == 'a' || dest_address[1] == 'A') &&
-        (dest_address[2] == 'n' || dest_address[2] == 'N') &&
-        (dest_address[3] == 'o' || dest_address[3] == 'O') &&
-        (dest_address[4] == '-' || dest_address[4] == '_')) {
-        if (size != ADDRESS_DATA_LEN + 5) {
-            return E_INVALID_ADDRESS;
-        }
-    } else if ((dest_address[0] == 'x' || dest_address[0] == 'X') &&
-               (dest_address[1] == 'r' || dest_address[1] == 'R') &&
-               (dest_address[2] == 'b' || dest_address[2] == 'B') &&
-               (dest_address[3] == '-' || dest_address[3] == '_')) {
-        if (size != ADDRESS_DATA_LEN + 4) {
-            return E_INVALID_ADDRESS;
-        }
-    } else if (size == ADDRESS_DATA_LEN){
-        // continue; assumes address doesn't have a prefix
-    } else {
+    // Verify Destination Address
+    uint256_t dest_public_key;
+    if(E_SUCCESS != nl_address_to_public(dest_public_key, dest_address)){
         loading_disable();
-        menu8g2_display_text_title(&menu, "Incorrect Address", TITLE);
-        ESP_LOGE(TAG, "\nIncorrect Address %s\n", dest_address);
-        return E_INVALID_ADDRESS;
+        menu8g2_display_text_title(&menu, "Invalid Address", TITLE); \
+        ESP_LOGE(TAG, "\nInvalid Address %s\n", dest_address); \
+        goto exit;
     }
 
     flush_uart();
@@ -168,7 +151,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
     /******************
      * Get My Address *
      ******************/
-    loading_disable();
+    //loading_disable();
     nvs_handle nvs_h;
     init_nvm_namespace(&nvs_h, "nano");
     if(ESP_OK != nvs_get_u32(nvs_h, "index", &(rpc.nano_public_key.index))){
@@ -195,7 +178,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
     // Assumes State Blocks Only
     // Outcome:
     //     * frontier_hash, frontier_block
-    loading_enable();
+    //loading_enable();
     loading_text_title("Getting Block Details", TITLE);
     
     hex256_t frontier_hash = { 0 };
@@ -207,25 +190,25 @@ void menu_nano_send_uart(menu8g2_t *prev){
         ESP_LOGI(TAG, "Creating SEND Block");
 
         if( get_block(frontier_hash, &frontier_block) != E_SUCCESS ){
-            loading_disable();
             ESP_LOGI(TAG, "Error retrieving frontier block.");
-            return;
+            goto exit;
         }
 
         // Get SEND work
         loading_text_title("Fetching Work", TITLE);
         if( E_SUCCESS != get_work( frontier_hash, &proof_of_work ) ){
-            loading_disable();
             ESP_LOGI(TAG, "Invalid Work (SEND) Response.");
-            return;
+            loading_disable();
+            menu8g2_display_text_title(&menu, "Failed Fetching Work", TITLE); \
+            goto exit;
         }
-
     }
     else {
         //To send requires a previous Open Block
-        loading_disable();
         ESP_LOGI(TAG, "Account not open.");
-        return;
+        loading_disable();
+        menu8g2_display_text_title(&menu, "Account Not Open", TITLE); \
+        goto exit;
     }
 
     /*****************
@@ -235,13 +218,12 @@ void menu_nano_send_uart(menu8g2_t *prev){
         loading_disable();
         ESP_LOGI(TAG, "Insufficent Funds.");
         menu8g2_display_text_title(&menu, "Insufficent Funds", TITLE);
-        return;
+        goto exit;
     }
     
     /*********************
      * Create send block *
      *********************/
-    
     loading_text_title("Creating Send Block", TITLE);
     
     sodium_memzero(&rpc, sizeof(rpc));
@@ -253,7 +235,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
             frontier_hash, sizeof(frontier_hash), NULL, NULL, NULL);
     memcpy(new_block->account, my_public_key, sizeof(my_public_key));
     nl_address_to_public(new_block->representative, my_address); //todo: default rep
-    nl_address_to_public(new_block->link, dest_address);
+    memcpy(new_block->link, dest_public_key, sizeof(dest_public_key));
     mbedtls_mpi_sub_abs(&(new_block->balance), &(frontier_block.balance), &transaction_amount);
     new_block->work = proof_of_work;
 
@@ -282,10 +264,13 @@ void menu_nano_send_uart(menu8g2_t *prev){
     }
 
     loading_enable();
-    
     loading_text_title("Broadcasting Transaction", TITLE);
     process_block(new_block);
     
     loading_disable();
     menu8g2_display_text_title(&menu, "Transaction Sent", TITLE);
+
+    exit:
+        loading_disable();
+        return;
 }
