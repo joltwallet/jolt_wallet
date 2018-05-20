@@ -122,7 +122,7 @@ uint8_t get_wifi_strength(){
     }
 }
 
-void get_ap_info(char * ssid_info){
+void get_ap_info(char * ssid_info, size_t size){
     
     tcpip_adapter_ip_info_t ip;
     memset(&ip, 0, sizeof(tcpip_adapter_ip_info_t));
@@ -133,10 +133,10 @@ void get_ap_info(char * ssid_info){
     if (tcpip_adapter_get_ip_info(ESP_IF_WIFI_STA, &ip) == 0) {
         char ip_address[16];
         snprintf(ip_address, 16, IPSTR, IP2STR(&ip.ip));
-        snprintf(ssid_info, strlen(ssid_info)-1, "SSID: %s RSSI:%d IP:%s", new_ap_info.ssid, new_ap_info.rssi, ip_address  );
+        snprintf(ssid_info, size, "SSID: %s RSSI:%d IP:%s", new_ap_info.ssid, new_ap_info.rssi, ip_address  );
     }
     else{
-        snprintf(ssid_info, strlen(ssid_info)-1, "Error Not Connected");
+        snprintf(ssid_info, 20, "Error Not Connected");
     }
     
 }
