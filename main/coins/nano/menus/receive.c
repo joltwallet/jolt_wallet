@@ -100,7 +100,7 @@ void menu_nano_receive(menu8g2_t *prev){
     nl_block_init(&frontier_block);
     uint64_t proof_of_work;
 
-    loading_text_title("Checking Account Frontier", TITLE);
+    loading_text_title("Checking Account", TITLE);
     if( get_frontier(my_address, frontier_hash) == E_SUCCESS ){
         ESP_LOGI(TAG, "Creating RECEIVE Block");
 
@@ -135,7 +135,7 @@ void menu_nano_receive(menu8g2_t *prev){
     /********************************
      * Create open or receive block *
      ********************************/
-    loading_text_title("Creating Receive", TITLE);
+    loading_text_title("Creating Block", TITLE);
     sodium_memzero(&rpc, sizeof(rpc));
     rpc.type = NANO_BLOCK_SIGN;
     nl_block_t *new_block = &(rpc.nano_block_sign.block);
@@ -170,7 +170,7 @@ void menu_nano_receive(menu8g2_t *prev){
         goto exit;
     }
     
-    loading_text_title("Broadcasting Transaction", TITLE);
+    loading_text_title("Broadcasting", TITLE);
     process_block(new_block);
     
     loading_disable();

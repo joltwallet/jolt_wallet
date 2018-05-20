@@ -15,7 +15,6 @@
 #include "../../vault.h"
 #include "../../globals.h"
 
-#define NANO_DISP_DECIMAL 2
 
 bool nano_confirm_block(menu8g2_t *prev_menu, nl_block_t *head_block, nl_block_t *new_block){
     /* Prompts user to confirm transaction information before signing
@@ -70,7 +69,7 @@ bool nano_confirm_block(menu8g2_t *prev_menu, nl_block_t *head_block, nl_block_t
         }
 
         /* Write out display string */
-        snprintf(buf, sizeof(buf), "Send %.2lf NANO to %s ?", display_amount, address);
+        snprintf(buf, sizeof(buf), "Send %.3lf NANO to %s ?", display_amount, address);
     }
     else{
         // Receive

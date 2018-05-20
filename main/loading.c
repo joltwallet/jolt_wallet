@@ -26,7 +26,7 @@
 #include "loading.h"
 
 #define N_LOADING_FRAMES GRAPHIC_NANO_LOAD_F
-#define LOADING_FRAME_TIME_MS 40
+#define LOADING_FRAME_TIME_MS 50
 #define LOADING_TEXT_Y 22
 
 bool loading_draw_enable;
@@ -45,7 +45,7 @@ void loading_init(menu8g2_t *menu){
     loading_draw_enable = false;
     loading_queue = xQueueCreate( 1, sizeof(loading_text_t) );
     xTaskCreate(loading_task, "LoadingTask", 8192,
-            (void *) menu, 19, NULL);
+            (void *) menu, 6, NULL);
 }
 
 void loading_enable( void ){

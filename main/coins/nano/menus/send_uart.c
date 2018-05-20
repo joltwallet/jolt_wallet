@@ -151,7 +151,6 @@ void menu_nano_send_uart(menu8g2_t *prev){
     /******************
      * Get My Address *
      ******************/
-    //loading_disable();
     nvs_handle nvs_h;
     init_nvm_namespace(&nvs_h, "nano");
     if(ESP_OK != nvs_get_u32(nvs_h, "index", &(rpc.nano_public_key.index))){
@@ -161,9 +160,11 @@ void menu_nano_send_uart(menu8g2_t *prev){
 
     sodium_memzero(&rpc, sizeof(rpc));
     rpc.type = NANO_PUBLIC_KEY;
+    loading_disable();
     if(vault_rpc(&rpc) != RPC_SUCCESS){
-        return;
+        goto exit;
     }
+    loading_enable();
     uint256_t my_public_key;
     memcpy(my_public_key, rpc.nano_public_key.block.account, sizeof(my_public_key));
 
@@ -179,7 +180,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
     // Outcome:
     //     * frontier_hash, frontier_block
     //loading_enable();
-    loading_text_title("Getting Block Details", TITLE);
+    loading_text_title("Connecting", TITLE);
     
     hex256_t frontier_hash = { 0 };
     nl_block_t frontier_block;
@@ -224,7 +225,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
     /*********************
      * Create send block *
      *********************/
-    loading_text_title("Creating Send Block", TITLE);
+    loading_text_title("Creating Block", TITLE);
     
     sodium_memzero(&rpc, sizeof(rpc));
     rpc.type = NANO_BLOCK_SIGN;
@@ -264,7 +265,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
     }
 
     loading_enable();
-    loading_text_title("Broadcasting Transaction", TITLE);
+    loading_text_title("Broadcasting", TITLE);
     process_block(new_block);
     
     loading_disable();
