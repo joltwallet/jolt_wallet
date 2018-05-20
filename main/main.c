@@ -40,15 +40,15 @@ void app_main(){
     // Initialize the OLED Display
     setup_screen(&u8g2);
     disp_mutex = xSemaphoreCreateMutex();
-
-    // Initialize Wireless
-    wifi_connect();
     
     // Allocate space for the vault and see if a copy exists in NVS
     vault_t vault;
     if (E_FAILURE == vault_init(&vault)){
         first_boot_menu(&vault);
     }
+    
+    // Initialize Wireless
+    wifi_connect();
 
     xTaskCreate(vault_task,
             "VaultTask", 32000,
