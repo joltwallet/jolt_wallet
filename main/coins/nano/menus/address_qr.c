@@ -53,7 +53,7 @@ void menu_nano_address_qr(menu8g2_t *prev){
     display_qr_center(&menu, &qrcode, CONFIG_JOLT_QR_SCALE);
     for(;;){
 		if(xQueueReceive(menu.input_queue, &input_buf, portMAX_DELAY)) {
-            if(input_buf == (1ULL << EASY_INPUT_BACK)){
+            if(input_buf & (1ULL << EASY_INPUT_BACK)){
                 // todo: Restore User's Brightness Here
                 goto exit;
             }

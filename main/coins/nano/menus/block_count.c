@@ -22,7 +22,7 @@ void menu_nano_block_count(menu8g2_t *prev){
 
     for(;;){
         if(menu8g2_display_text_title(&menu, block_count, TITLE) 
-                == (1ULL << EASY_INPUT_BACK)){
+                & (1ULL << EASY_INPUT_BACK)){
             goto exit;
         }
     }

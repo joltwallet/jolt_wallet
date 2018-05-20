@@ -41,7 +41,7 @@ void menu_nano_address_text(menu8g2_t *prev){
 
     for(;;){
         if(menu8g2_display_text_title(&menu, address, TITLE)
-                == (1ULL << EASY_INPUT_BACK)){
+                & (1ULL << EASY_INPUT_BACK)){
             goto exit;
         }
     }

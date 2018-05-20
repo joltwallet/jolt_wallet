@@ -74,7 +74,7 @@ bool loading_check_cancel(menu8g2_t *menu){
 	uint64_t input_buf;
 
     while(xQueueReceive(menu->input_queue, &input_buf, 0)) {
-        if(input_buf == 1ULL << EASY_INPUT_BACK){
+        if(input_buf & 1ULL << EASY_INPUT_BACK){
             return true;
         }
     }

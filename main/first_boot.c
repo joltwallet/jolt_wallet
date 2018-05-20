@@ -26,10 +26,10 @@ static bool display_welcome(menu8g2_t *menu){
         response = menu8g2_display_text_title(menu,
                 "Welcome to Jolt, please backup the following secret mnemonic.",
                 "First Startup");
-        if (1ULL << EASY_INPUT_ENTER == response){
+        if ((1ULL << EASY_INPUT_ENTER) & response){
             return 1;
         }
-        else if (1ULL << EASY_INPUT_BACK == response){
+        else if ((1ULL << EASY_INPUT_BACK) & response){
             return 0;
         }
     }

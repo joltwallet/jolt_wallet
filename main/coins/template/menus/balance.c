@@ -33,7 +33,7 @@ void menu_nano_balance(menu8g2_t *prev){
     menu.post_draw = NULL;
     for(;;){
         if(menu8g2_display_text_title(&menu, balance_string, "temp action")
-                == (1ULL << EASY_INPUT_BACK)){
+                & (1ULL << EASY_INPUT_BACK)){
             statusbar_draw_enable = statusbar_draw_original;
             return;
         }

@@ -80,16 +80,16 @@ bool nano_confirm_block(menu8g2_t *prev_menu, nl_block_t *head_block, nl_block_t
     /***************
      * Draw Screen *
      ***************/
+    uint64_t button;
     for(;;){
-        switch(menu8g2_display_text_title(&menu, buf, "Confirm Action")){
-            case(1ULL << EASY_INPUT_BACK):
-                result = false;
-                goto exit;
-            case(1ULL << EASY_INPUT_ENTER):
-                result = true;
-                goto exit;
-            default:
-                break;
+        button = menu8g2_display_text_title(&menu, buf, "Confirm Action")
+        if((1ULL << EASY_INPUT_BACK) & button){
+            result = false;
+            goto exit;
+        }
+        else if((1ULL << EASY_INPUT_ENTER) & button){
+            result = true;
+            goto exit;
         }
     }
 
