@@ -12,6 +12,7 @@
 #include "submenus.h"
 #include "../../../globals.h"
 #include "../../../gui.h"
+#include "../../../loading.h"
 
 #include "nano_lws.h"
 #include "nano_parse.h"
@@ -28,6 +29,7 @@ void menu_nano_balance(menu8g2_t *prev){
     vault_rpc_t rpc;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
+
     
     /******************
      * Get My Address *
@@ -58,6 +60,9 @@ void menu_nano_balance(menu8g2_t *prev){
     // Assumes State Blocks Only
     // Outcome:
     //     * frontier_hash, frontier_block
+    loading_enable();
+    loading_text_title("Getting Frontier", TITLE);
+
     hex256_t frontier_hash = { 0 };
     nl_block_t frontier_block;
     nl_block_init(&frontier_block);
@@ -79,18 +84,21 @@ void menu_nano_balance(menu8g2_t *prev){
     /*****************
      * Check Balance *
      *****************/
+    loading_disable();
+    double display_amount;
+    if( E_SUCCESS != nl_mpi_to_nano_double(&(frontier_block.balance),
+                &display_amount) ){
+        // Error
+        goto exit;
+    }
+
+    ESP_LOGI(TAG, "Approximate Account Balance: %0.3lf", display_amount);
     
-    char amount[64];
-    size_t olen;
-    mbedtls_mpi_write_string(&(frontier_block.balance), 10, amount, sizeof(amount), &olen);
-    
-    ESP_LOGI(TAG, "Frontier Amount: %s", amount);
-    
-    char balance_string[75];
-    snprintf(balance_string, 64, "%s Raw Nano", amount);
+    char buf[100];
+    snprintf(buf, sizeof(buf), "%0.3lf Nano", display_amount);
 
     for(;;){
-        if(menu8g2_display_text_title(&menu, balance_string, TITLE)
+        if(menu8g2_display_text_title(&menu, buf, TITLE)
                 == (1ULL << EASY_INPUT_BACK)){
             goto exit;
         }
