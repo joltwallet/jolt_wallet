@@ -1,5 +1,5 @@
-#ifndef __NANORAY_GRAPHICS_H__
-#define __NANORAY_GRAPHICS_H__
+#ifndef __JOLT_GRAPHICS_H__
+#define __JOLT_GRAPHICS_H__
 
 #include "u8g2.h"
 

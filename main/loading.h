@@ -1,5 +1,5 @@
-#ifndef __NANORAY_LOADING_H__
-#define __NANORAY_LOADING_H__
+#ifndef __JOLT_LOADING_H__
+#define __JOLT_LOADING_H__
 
 void loading_init(menu8g2_t *menu);
 void loading_disable();

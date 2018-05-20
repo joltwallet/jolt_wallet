@@ -1,5 +1,5 @@
-#ifndef __NANORAY_GLOBALS_H__
-#define __NANORAY_GLOBALS_H__
+#ifndef __JOLT_GLOBALS_H__
+#define __JOLT_GLOBALS_H__
 
 #include "u8g2.h"
 #include "freertos/FreeRTOS.h"

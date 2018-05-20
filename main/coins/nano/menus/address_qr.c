@@ -20,7 +20,7 @@ void menu_nano_address_qr(menu8g2_t *prev){
     vault_rpc_t rpc;
     vault_rpc_response_t res;
     QRCode qrcode;
-    uint8_t qrcode_bytes[qrcode_getBufferSize(CONFIG_NANORAY_QR_VERSION)];
+    uint8_t qrcode_bytes[qrcode_getBufferSize(CONFIG_JOLT_QR_VERSION)];
     uint64_t input_buf;
     nl_err_t err;
 
@@ -50,7 +50,7 @@ void menu_nano_address_qr(menu8g2_t *prev){
     }
 
     //u8g2_SetContrast(u8g2, 1); // Phones have trouble with bright displays
-    display_qr_center(&menu, &qrcode, CONFIG_NANORAY_QR_SCALE);
+    display_qr_center(&menu, &qrcode, CONFIG_JOLT_QR_SCALE);
     for(;;){
 		if(xQueueReceive(menu.input_queue, &input_buf, portMAX_DELAY)) {
             if(input_buf == (1ULL << EASY_INPUT_BACK)){

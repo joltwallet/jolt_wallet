@@ -1,28 +1,28 @@
 menu "NanoRay Config"
 
     menu "Display"
-        config NANORAY_DISPLAY_PIN_SDA
+        config JOLT_DISPLAY_PIN_SDA
             int
             prompt "Display SDA GPIO PIN"
             default 4
             help
                 help text here
 
-        config NANORAY_DISPLAY_PIN_SCL
+        config JOLT_DISPLAY_PIN_SCL
             int
             prompt "Display SCL GPIO PIN"
             default 15
             help
                 help text here
 
-        config NANORAY_DISPLAY_PIN_RST
+        config JOLT_DISPLAY_PIN_RST
             int
             prompt "Display RST GPIO PIN"
             default 16
             help
                 help text here
 
-        config NANORAY_DISPLAY_ADDRESS
+        config JOLT_DISPLAY_ADDRESS
             hex
             prompt "Display RST GPIO PIN"
             default 0x78
@@ -30,21 +30,21 @@ menu "NanoRay Config"
                 help text here
     endmenu
 
-    config NANORAY_DEFAULT_TIMEOUT_S
+    config JOLT_DEFAULT_TIMEOUT_S
         int
         prompt "Default idle time in seconds before wiping vault from memory."
         default 300
         help
             help text here
 
-    config NANORAY_DEFAULT_BOOT_SPLASH_ENABLE
+    config JOLT_DEFAULT_BOOT_SPLASH_ENABLE
         bool
         prompt "Enable boot splash screen"
         default y
         help
             help text here
 
-    config NANORAY_DEFAULT_MAX_ATTEMPT
+    config JOLT_DEFAULT_MAX_ATTEMPT
         int
         prompt "Number of pin attempts before wiping NVS"
         default 10
@@ -53,22 +53,22 @@ menu "NanoRay Config"
 
     choice
         prompt "Select QR Encoding Method"
-        config NANORAY_QR_TYPE_SIMPLE
+        config JOLT_QR_TYPE_SIMPLE
             bool "simple address encoding xrb_"
-        config NANORAY_QR_TYPE_STANDARD
+        config JOLT_QR_TYPE_STANDARD
             bool "Follows the Nano QR URI standard"
-        config NANORAY_QR_TYPE_SHORT
+        config JOLT_QR_TYPE_SHORT
             bool "Encodes using QR alphanumeric XRB-"
     endchoice
 
-    config NANORAY_QR_VERSION
+    config JOLT_QR_VERSION
         int
         prompt "QR Version"
         default 6
         help
             Determines QR Code size
 
-    config NANORAY_QR_SCALE
+    config JOLT_QR_SCALE
         int
         prompt "Pixel-wise QR code scale multiplier"
         default 1

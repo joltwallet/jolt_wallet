@@ -1,5 +1,5 @@
-#ifndef __NANORAY_NANO_QR_H__
-#define __NANORAY_NANO_QR_H__
+#ifndef __JOLT_NANO_QR_H__
+#define __JOLT_NANO_QR_H__
 
 #include "menu8g2.h"
 #include "nano_lib.h"

@@ -1,5 +1,5 @@
-#ifndef __NANORAY_NANO_CONFIRMATION_H__
-#define __NANORAY_NANO_CONFIRMATION_H__
+#ifndef __JOLT_NANO_CONFIRMATION_H__
+#define __JOLT_NANO_CONFIRMATION_H__
 
 #include "nano_lib.h"
 

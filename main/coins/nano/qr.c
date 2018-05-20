@@ -29,12 +29,12 @@ nl_err_t public_to_qr(QRCode *qrcode, uint8_t *qrcode_bytes,
                 amount_str, sizeof(amount_str), &olen);
     }
 
-    #if CONFIG_NANORAY_QR_TYPE_SIMPLE
+    #if CONFIG_JOLT_QR_TYPE_SIMPLE
     strcpy(buf, address);
     strlower(buf);
     #endif
 
-    #if CONFIG_NANORAY_QR_TYPE_STANDARD
+    #if CONFIG_JOLT_QR_TYPE_STANDARD
     char *buf_moving = buf;
     strncpy(buf, CONFIG_NANO_LIB_ADDRESS_PREFIX,
             strlen(CONFIG_NANO_LIB_ADDRESS_PREFIX)-1);
@@ -53,7 +53,7 @@ nl_err_t public_to_qr(QRCode *qrcode, uint8_t *qrcode_bytes,
     buf_moving += strlen(str_amount);
     #endif
 
-    #if CONFIG_NANORAY_QR_TYPE_SHORT
+    #if CONFIG_JOLT_QR_TYPE_SHORT
     strcpy(buf, toupper(address));
     if(buf[0]=='x' || buf[0]=='X'){
         buf[3] = '-';
@@ -63,7 +63,7 @@ nl_err_t public_to_qr(QRCode *qrcode, uint8_t *qrcode_bytes,
     }
     #endif
 
-    qrcode_initText(qrcode, qrcode_bytes, CONFIG_NANORAY_QR_VERSION,
+    qrcode_initText(qrcode, qrcode_bytes, CONFIG_JOLT_QR_VERSION,
             ECC_LOW, buf);
     return E_SUCCESS;
 }
