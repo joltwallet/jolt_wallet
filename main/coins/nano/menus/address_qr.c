@@ -12,6 +12,7 @@
 #include "../../../globals.h"
 #include "../../../helpers.h"
 #include "../../../qr.h"
+#include "../qr.h"
 #include "../../../statusbar.h"
 #include "../../../gui.h"
 

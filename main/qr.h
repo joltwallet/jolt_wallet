@@ -10,7 +10,4 @@ void display_qr(menu8g2_t *menu, uint8_t x_offset, uint8_t y_offset,
         QRCode *qrcode, uint8_t scale);
 void display_qr_center(menu8g2_t *menu, QRCode *qrcode, uint8_t scale);
 
-nl_err_t public_to_qr(QRCode *qrcode, uint8_t *qrcode_bytes, 
-        uint256_t public_key, mbedtls_mpi *amount);
-
 #endif
