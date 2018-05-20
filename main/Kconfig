@@ -1,4 +1,4 @@
-menu "NanoRay Config"
+menu "Jolt Wallet Config"
 
     menu "Display"
         config JOLT_DISPLAY_PIN_SDA

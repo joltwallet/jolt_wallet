@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := nanoray
+PROJECT_NAME := joltwallet
 
 #EXTRA_COMPONENT_DIRS := $(IDF_PATH)/../third-party-components
 
