@@ -69,7 +69,9 @@ static void menu_factory_reset_confirm(menu8g2_t *prev){
     vault_rpc(&rpc);
 }
 
+
 static void wifi_details(menu8g2_t *prev){
+    const char title[] = "WiFi Details";
     bool res;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
@@ -77,13 +79,15 @@ static void wifi_details(menu8g2_t *prev){
     char new_ap_info[45];
     get_ap_info(new_ap_info);
     for(;;){
-        if(menu8g2_display_text(&menu, new_ap_info) == (1ULL << EASY_INPUT_BACK)){
+        if(menu8g2_display_text_title(&menu, new_ap_info, title)
+                & (1ULL << EASY_INPUT_BACK)){
             return;
         }
     }
 }
 
 static void wifi_update(menu8g2_t *prev){
+    const char title[] = "WiFi Update";
     bool res;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);

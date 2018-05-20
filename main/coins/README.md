@@ -38,7 +38,7 @@ This will forward the command and the vault to your coin's RPC definitions (next
 
 In `main/coins/${coin}/rpc.h`, change the include guard to
 ```
-#ifndef __NANORAY_${COIN}_RPC_H__
+#ifndef __JOLT_${COIN}_RPC_H__
 ```
 
 Similarly, change the coin-specific rpc function definition to
@@ -103,7 +103,7 @@ Because we added an element, we must increment the constant indicating the numbe
 ### Coin-specific sub-menuing
 In `main/coins/${coin}/menu.h`, change the include guard to
 ```
-#ifndef __NANORAY_${COIN}_MENU_H__
+#ifndef __JOLT_${COIN}_MENU_H__
 ```
 
 Similarly, change the coin-specific menu function definition to

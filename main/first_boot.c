@@ -23,11 +23,13 @@ static bool array_match(unsigned char *arr1, unsigned char *arr2, uint8_t len){
 static bool display_welcome(menu8g2_t *menu){
     uint64_t response;
     for(;;){
-        response = menu8g2_display_text(menu, "Welcome!");
-        if (1ULL << EASY_INPUT_ENTER == response){
+        response = menu8g2_display_text_title(menu,
+                "Welcome to Jolt, please backup the following secret mnemonic.",
+                "First Startup");
+        if ((1ULL << EASY_INPUT_ENTER) & response){
             return 1;
         }
-        else if (1ULL << EASY_INPUT_BACK == response){
+        else if ((1ULL << EASY_INPUT_BACK) & response){
             return 0;
         }
     }
@@ -127,7 +129,9 @@ void first_boot_menu(vault_t *vault){
 						break;
 					}
 					else{
-						menu8g2_display_text(&menu, "Pin mismatch");
+						menu8g2_display_text_title(&menu,
+                                "Pin Mismatch! Please try again.",
+                                "Pin Setup");
 					}
 				}
 				break;

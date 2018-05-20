@@ -145,17 +145,17 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
     init_nvm_namespace(&nvs_secret, "secret");
 
     err = nvs_get_u8(nvs_secret, "pin_attempts", &pin_attempts);
-    if(ESP_OK != err || pin_attempts >= CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT){
+    if(ESP_OK != err || pin_attempts >= CONFIG_JOLT_DEFAULT_MAX_ATTEMPT){
         factory_reset();
     }
     err = nvs_get_blob(nvs_secret, "mnemonic", enc_mnemonic, &required_size);
 
     for(;;){
-        if(pin_attempts >= CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT){
+        if(pin_attempts >= CONFIG_JOLT_DEFAULT_MAX_ATTEMPT){
             factory_reset();
         }
         sprintf(title, "Enter Pin (%d/%d)", pin_attempts+1,
-                CONFIG_NANORAY_DEFAULT_MAX_ATTEMPT);
+                CONFIG_JOLT_DEFAULT_MAX_ATTEMPT);
         if(!pin_entry(menu, pin_hash, title)){
             // User cancelled vault operation
             nvs_close(nvs_secret);
@@ -211,7 +211,7 @@ void vault_task(void *vault_in){
 
     for(;;){
     	if( xQueueReceive(vault_queue, &cmd,
-                pdMS_TO_TICKS(CONFIG_NANORAY_DEFAULT_TIMEOUT_S * 1000)) ){
+                pdMS_TO_TICKS(CONFIG_JOLT_DEFAULT_TIMEOUT_S * 1000)) ){
             sodium_mprotect_readonly(vault);
 
             // Prompt user for Pin if necessary

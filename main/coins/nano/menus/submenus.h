@@ -1,5 +1,5 @@
-#ifndef __NANORAY_NANO_SUBMENUS_H__
-#define __NANORAY_NANO_SUBMENUS_H__
+#ifndef __JOLT_NANO_SUBMENUS_H__
+#define __JOLT_NANO_SUBMENUS_H__
 
 //void menu_nano_settings(menu8g2_t *prev);
 void menu_nano_block_count(menu8g2_t *prev);

@@ -12,12 +12,14 @@
 #include "submenus.h"
 #include "../../../globals.h"
 #include "../../../loading.h"
+#include "../../../gui.h"
 
 #include "nano_lws.h"
 #include "nano_parse.h"
 
 
 static const char TAG[] = "nano_receive";
+static const char TITLE[] = "Receive Nano";
 
 void menu_nano_receive(menu8g2_t *prev){
     /*
@@ -30,7 +32,6 @@ void menu_nano_receive(menu8g2_t *prev){
     vault_rpc_t rpc;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
-    menu.post_draw = NULL;
     
     /******************
      * Get My Address *
@@ -63,7 +64,7 @@ void menu_nano_receive(menu8g2_t *prev){
     // Returns if no pending blocks. Pending_amount doesn't need to be verified
     // since nothing malicious can be done with a wrong pending_amount.
     loading_enable();
-    loading_text("Checking Pending");
+    loading_text_title("Checking Pending", TITLE);
     hex256_t pending_hash;
     
     /* Search for pending block(s) */
@@ -71,15 +72,15 @@ void menu_nano_receive(menu8g2_t *prev){
     mbedtls_mpi_init(&transaction_amount);
     if (get_pending(my_address, pending_hash, &transaction_amount) != E_SUCCESS) {
         loading_disable();
-        menu8g2_display_text(&menu, "No Pending Blocks Found");
-        return;
+        menu8g2_display_text_title(&menu, "No Pending Blocks Found", TITLE);
+        goto exit;
     }
 
     ESP_LOGI(TAG, "Pending Hash: %s", pending_hash);
     #if LOG_LOCAL_LEVEL >= ESP_LOG_INFO
     {
     //char amount[BALANCE_DEC_BUF_LEN];
-    char amount[64];
+    char amount[66];
     size_t olen;
     if(mbedtls_mpi_write_string(&transaction_amount, 10, amount, sizeof(amount), &olen)){
         ESP_LOGE(TAG, "Unable to write string from mbedtls_mpi; olen: %d", olen);
@@ -99,22 +100,22 @@ void menu_nano_receive(menu8g2_t *prev){
     nl_block_init(&frontier_block);
     uint64_t proof_of_work;
 
-    loading_text("Checking Account Frontier");
+    loading_text_title("Checking Account", TITLE);
     if( get_frontier(my_address, frontier_hash) == E_SUCCESS ){
         ESP_LOGI(TAG, "Creating RECEIVE Block");
 
         if( get_block(frontier_hash, &frontier_block) != E_SUCCESS ){
             ESP_LOGI(TAG, "Error retrieving frontier block.");
             loading_disable();
-            return;
+            goto exit;
         }
 
         // Get RECEIVE work
-        loading_text("Fetching Work");
+        loading_text_title("Fetching Work", TITLE);
         if( E_SUCCESS != get_work( frontier_hash, &proof_of_work ) ){
             ESP_LOGI(TAG, "Invalid Work (RECEIVE) Response.");
             loading_disable();
-            return;
+            goto exit;
         }
 
     }
@@ -123,18 +124,18 @@ void menu_nano_receive(menu8g2_t *prev){
         ESP_LOGI(TAG, "Creating OPEN Block");
         hex256_t work_hex;
         sodium_bin2hex(work_hex, sizeof(work_hex), my_public_key, sizeof(my_public_key));
-        loading_text("Fetching Work");
+        loading_text_title("Fetching Work", TITLE);
         if( E_SUCCESS != get_work( work_hex, &proof_of_work ) ){
             ESP_LOGI(TAG, "Invalid Work (OPEN) Response.");
             loading_disable();
-            return;
+            goto exit;
         }
     }
 
     /********************************
      * Create open or receive block *
      ********************************/
-    loading_text("Creating Receive");
+    loading_text_title("Creating Block", TITLE);
     sodium_memzero(&rpc, sizeof(rpc));
     rpc.type = NANO_BLOCK_SIGN;
     nl_block_t *new_block = &(rpc.nano_block_sign.block);
@@ -146,12 +147,13 @@ void menu_nano_receive(menu8g2_t *prev){
     nl_address_to_public(new_block->representative, my_address); //todo: default rep
     sodium_hex2bin(new_block->link, sizeof(new_block->link),
             pending_hash, sizeof(pending_hash), NULL, NULL, NULL);
+    // Unsigned addition so this could never accidentilly become a send
     mbedtls_mpi_add_abs(&(new_block->balance), &transaction_amount, &(frontier_block.balance));
     new_block->work = proof_of_work;
 
     #if LOG_LOCAL_LEVEL >= ESP_LOG_INFO
     {
-    char amount[64];
+    char amount[66];
     size_t olen;
     mbedtls_mpi_write_string(&(frontier_block.balance), 10, amount, sizeof(amount), &olen);
     ESP_LOGI(TAG, "Frontier Amount: %s", amount);
@@ -163,15 +165,18 @@ void menu_nano_receive(menu8g2_t *prev){
     #endif
 
     // Sign block
-    loading_text("Signing Receive");
+    loading_text_title("Signing Receive", TITLE);
     if(vault_rpc(&rpc) != RPC_SUCCESS){
-        loading_disable();
-        return;
+        goto exit;
     }
     
-    loading_text("Broadcasting Transaction");
+    loading_text_title("Broadcasting", TITLE);
     process_block(new_block);
     
     loading_disable();
-    menu8g2_display_text(&menu, "Blocks Processed");
+    menu8g2_display_text_title(&menu, "Blocks Processed", TITLE);
+
+    exit:
+        loading_disable();
+        return;
 }

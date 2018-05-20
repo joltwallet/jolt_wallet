@@ -1,5 +1,5 @@
-#ifndef __NANORAY_HELPERS_H__
-#define __NANORAY_HELPERS_H__
+#ifndef __JOLT_HELPERS_H__
+#define __JOLT_HELPERS_H__
 
 #include "u8g2.h"
 
