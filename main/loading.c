@@ -69,11 +69,22 @@ void loading_text_title(const char *text, const char *title){
     xQueueOverwrite( loading_queue, &payload );
 }
 
+bool loading_check_cancel(menu8g2_t *menu){
+    /* Returns true if a back input press is on the queue */
+	uint64_t input_buf;
+
+    while(xQueueReceive(menu->input_queue, &input_buf, 0)) {
+        if(input_buf == 1ULL << EASY_INPUT_BACK){
+            return true;
+        }
+    }
+    return false;
+}
+
 void loading_task(void *menu_in){
     menu8g2_t *prev = (menu8g2_t *) menu_in;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
-    menu.post_draw = NULL;
 
     loading_text_t payload;
     const unsigned char *graphic = NULL;
