@@ -32,6 +32,11 @@ extern const unsigned char graphic_battery_3[];
 #define GRAPHIC_PENDING_W 9
 extern const unsigned char graphic_pending[];
 
+#define GRAPHIC_NANO_LOAD_H 32
+#define GRAPHIC_NANO_LOAD_W 70
+#define GRAPHIC_NANO_LOAD_F 44
+extern const unsigned char graphic_nano_load[GRAPHIC_NANO_LOAD_F][288];
+
 
 void boot_splash(u8g2_t *u8g2);
 

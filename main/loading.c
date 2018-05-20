@@ -25,8 +25,8 @@
 #include "helpers.h"
 #include "loading.h"
 
-#define N_LOADING_FRAMES 4
-#define LOADING_FRAME_TIME_MS 700
+#define N_LOADING_FRAMES GRAPHIC_NANO_LOAD_F
+#define LOADING_FRAME_TIME_MS 40
 #define LOADING_TEXT_Y 22
 
 bool loading_draw_enable;
@@ -94,9 +94,11 @@ void loading_task(void *menu_in){
                 pdMS_TO_TICKS(LOADING_FRAME_TIME_MS))) % N_LOADING_FRAMES){
 
         if(!loading_draw_enable){
+            i = 0;
             continue;
         }
-
+        graphic = graphic_nano_load[i];
+#if 0
         // todo: use actual loading graphic
         switch(i){
             case 0:
@@ -115,14 +117,17 @@ void loading_task(void *menu_in){
                 graphic = graphic_battery_0;
                 break;
         }
+#endif
 
         MENU8G2_BEGIN_DRAW(&menu)
             menu8g2_buf_header(&menu, payload.title);
 
             u8g2_SetDrawColor(menu.u8g2, 1);
-            u8g2_DrawXBM( menu.u8g2, 100, 40, // todo: better location
-                    GRAPHIC_BATTERY_W,
-                    GRAPHIC_BATTERY_H,
+            u8g2_DrawXBM( menu.u8g2, 
+                    (u8g2_GetDisplayWidth(menu.u8g2) - GRAPHIC_NANO_LOAD_W) / 2,
+                    32,
+                    GRAPHIC_NANO_LOAD_W,
+                    GRAPHIC_NANO_LOAD_H,
                     graphic);
 
             u8g2_SetFont(menu.u8g2, u8g2_font_profont12_tf);
