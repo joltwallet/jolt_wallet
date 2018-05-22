@@ -67,8 +67,9 @@ void gui_task(){
 
     /* MAIN MENU CONSTRUCTION */
     menu8g2_elements_t elements;
-    menu8g2_elements_init(&elements, 2);
+    menu8g2_elements_init(&elements, 3);
     menu8g2_set_element(&elements, "Nano", &menu_nano);
+    menu8g2_set_element(&elements, "Console", &menu_console);
     menu8g2_set_element(&elements, "Settings", &menu_settings);
 
     for(;;){
