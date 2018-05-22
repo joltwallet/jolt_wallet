@@ -150,7 +150,8 @@ void menu_nano_receive(menu8g2_t *prev){
     sodium_hex2bin(new_block->previous, sizeof(new_block->previous),
             frontier_hash, sizeof(frontier_hash), NULL, NULL, NULL);
     memcpy(new_block->account, my_public_key, sizeof(my_public_key));
-    nl_address_to_public(new_block->representative, my_address); //todo: default rep
+    nl_address_to_public(new_block->representative, 
+            CONFIG_JOLT_NANO_DEFAULT_REPRESENTATIVE);
     sodium_hex2bin(new_block->link, sizeof(new_block->link),
             pending_hash, sizeof(pending_hash), NULL, NULL, NULL);
     // Unsigned addition so this could never accidentilly become a send
