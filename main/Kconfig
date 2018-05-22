@@ -75,6 +75,13 @@ menu "Jolt Wallet Config"
         help
             help text here
 
+    config JOLT_VAULT_RPC_QUEUE_LEN
+        int
+        prompt "Vault RPC queue length"
+        default 4
+        help
+            help text here
+
     config AP_TARGET_SSID
         string
         prompt "WiFi SSID"

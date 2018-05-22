@@ -215,7 +215,7 @@ void vault_task(void *vault_in){
      * by the producer task. Results are directly modified on that object.
      * A response status is sent back on the queue in the vault_rpc_t stating
      * the RPC error code. */
-    vault_queue = xQueueCreate( 4, sizeof( vault_rpc_t* ) );
+    vault_queue = xQueueCreate( CONFIG_JOLT_VAULT_RPC_QUEUE_LEN, sizeof( vault_rpc_t* ) );
 
     for(;;){
     	if( xQueueReceive(vault_queue, &cmd,
