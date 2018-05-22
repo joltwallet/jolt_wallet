@@ -78,7 +78,7 @@ menu "Jolt Wallet Config"
     config JOLT_VAULT_RPC_QUEUE_LEN
         int
         prompt "Vault RPC queue length"
-        default 4
+        default 8
         help
             help text here
 
