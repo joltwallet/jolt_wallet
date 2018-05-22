@@ -41,7 +41,6 @@ void menu_nano_balance(menu8g2_t *prev){
     }
     nvs_close(nvs_h);
 
-    sodium_memzero(&rpc, sizeof(rpc));
     rpc.type = NANO_PUBLIC_KEY;
     if(vault_rpc(&rpc) != RPC_SUCCESS){
         return;
