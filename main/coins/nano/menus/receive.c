@@ -42,8 +42,8 @@ void menu_nano_receive(menu8g2_t *prev){
         rpc.nano_public_key.index = 0;
     }
     nvs_close(nvs_h);
+    ESP_LOGI(TAG, "Index: %d", rpc.nano_public_key.index);
 
-    sodium_memzero(&rpc, sizeof(rpc));
     rpc.type = NANO_PUBLIC_KEY;
     if(vault_rpc(&rpc) != RPC_SUCCESS){
         return;

@@ -38,6 +38,7 @@ typedef enum vault_rpc_response_t {
 
 typedef struct vault_rpc_t {
     enum vault_rpc_type_t type;
+    uint64_t timestamp;
     QueueHandle_t response_queue;
     union{
         struct{
