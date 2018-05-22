@@ -18,12 +18,14 @@
 #include "vault.h"
 #include "globals.h"
 #include "statusbar.h"
+#include "loading.h"
 #include "helpers.h"
 
 #include "coins/nano/rpc.h"
 
 /* Two main NVS Namespaces: ("secret", "user") */
 static const char* TAG = "vault";
+static const char* TITLE = "Vault Access";
 
 vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
     /* Sets up rpc queue, blocks until vault responds. */
@@ -165,11 +167,14 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
         nvs_set_u8(nvs_secret, "pin_attempts", pin_attempts);
         nvs_commit(nvs_secret);
 
+        loading_enable();
+        loading_text_title("Decrypting", TITLE);
         sodium_mprotect_readwrite(vault);
         decrypt_result = crypto_secretbox_open_easy(
                 (unsigned char *)(vault->mnemonic),
                 enc_mnemonic, required_size, nonce, pin_hash);
         sodium_mprotect_readonly(vault);
+        loading_disable();
 
         if(decrypt_result == 0){ //success
             sodium_memzero(enc_mnemonic, sizeof(enc_mnemonic));
@@ -180,6 +185,9 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
             vault->valid = true;
             ESP_LOGI(TAG, "Mnemonic successfully decrypted.");
             break;
+        }
+        else{
+            menu8g2_display_text_title(menu, "Wrong PIN", TITLE);
         }
     }
     nvs_close(nvs_secret);
