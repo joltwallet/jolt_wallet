@@ -46,6 +46,8 @@ void menu_nano_balance(menu8g2_t *prev){
     if(vault_rpc(&rpc) != RPC_SUCCESS){
         return;
     }
+
+#if LOG_LOCAL_LEVEL >= ESP_LOG_INFO
     uint256_t my_public_key;
     memcpy(my_public_key, rpc.nano_public_key.block.account, sizeof(my_public_key));
 
@@ -53,6 +55,7 @@ void menu_nano_balance(menu8g2_t *prev){
     nl_public_to_address(my_address, sizeof(my_address), my_public_key);
     
     ESP_LOGI(TAG, "My Address: %s\n", my_address);
+#endif
 
     /********************************************
      * Get My Account's Frontier Block *
@@ -63,33 +66,21 @@ void menu_nano_balance(menu8g2_t *prev){
     loading_enable();
     loading_text_title("Getting Frontier", TITLE);
 
-    hex256_t frontier_hash = { 0 };
     nl_block_t frontier_block;
     nl_block_init(&frontier_block);
+    memcpy(frontier_block.account, rpc.nano_public_key.block.account, BIN_256);
 
-    if( get_frontier(my_address, frontier_hash) == E_SUCCESS ){
-        
-        if( get_block(frontier_hash, &frontier_block) != E_SUCCESS ){
-            ESP_LOGI(TAG, "Error retrieving frontier block.");
-            menu8g2_display_text_title(&menu, 
-                    "Error Connecting To Server.", TITLE);
-            goto exit;
-        }
-
-        /*****************
-         * Check Balance *
-         *****************/
-        if( E_SUCCESS != nl_mpi_to_nano_double(&(frontier_block.balance),
-                    &display_amount) ){
-            // Error
-            goto exit;
-        }
-        ESP_LOGI(TAG, "Approximate Account Balance: %0.3lf", display_amount);
-    }
-    else {
-        //To send requires a previous Open Block
-        ESP_LOGI(TAG, "Account not open.");
-        display_amount = 0;
+    switch( nanoparse_lws_frontier_block(&frontier_block) ){
+        case E_SUCCESS:
+            if( E_SUCCESS != nl_mpi_to_nano_double(&(frontier_block.balance),
+                        &display_amount) ){
+                goto exit;
+            }
+            ESP_LOGI(TAG, "Approximate Account Balance: %0.3lf", display_amount);
+            break;
+        default:
+            display_amount = 0;
+            break;
     }
 
     char buf[100];

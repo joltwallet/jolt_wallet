@@ -16,7 +16,7 @@ static const char TITLE[] = "Block Count";
 
 void menu_nano_block_count(menu8g2_t *prev){
     char block_count[12];
-    sprintf(block_count, "%d", get_block_count());
+    sprintf(block_count, "%d", nanoparse_lws_block_count());
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
 

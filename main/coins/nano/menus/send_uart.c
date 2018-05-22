@@ -182,34 +182,34 @@ void menu_nano_send_uart(menu8g2_t *prev){
     //loading_enable();
     loading_text_title("Connecting", TITLE);
     
-    hex256_t frontier_hash = { 0 };
+    hex256_t frontier_hash;
     nl_block_t frontier_block;
     nl_block_init(&frontier_block);
+    memcpy(frontier_block.account, my_public_key, BIN_256);
     uint64_t proof_of_work;
 
-    if( get_frontier(my_address, frontier_hash) == E_SUCCESS ){
-        ESP_LOGI(TAG, "Creating SEND Block");
-
-        if( get_block(frontier_hash, &frontier_block) != E_SUCCESS ){
-            ESP_LOGI(TAG, "Error retrieving frontier block.");
-            goto exit;
-        }
-
-        // Get SEND work
-        loading_text_title("Fetching Work", TITLE);
-        if( E_SUCCESS != get_work( frontier_hash, &proof_of_work ) ){
-            ESP_LOGI(TAG, "Invalid Work (SEND) Response.");
+    switch( nanoparse_lws_frontier_block(&frontier_block) ){
+        case E_SUCCESS:
+            ESP_LOGI(TAG, "Creating SEND Block");
+            // Get RECEIVE work
+            loading_text_title("Fetching Work", TITLE);
+            uint256_t frontier_hash_bin;
+            ESP_ERROR_CHECK(nl_block_compute_hash(&frontier_block, frontier_hash_bin));
+            sodium_bin2hex(frontier_hash, sizeof(frontier_hash),
+                    frontier_hash_bin, sizeof(frontier_hash_bin));
+            if( E_SUCCESS != nanoparse_lws_work( frontier_hash, &proof_of_work ) ){
+                ESP_LOGI(TAG, "Invalid Work (RECEIVE) Response.");
+                loading_disable();
+                menu8g2_display_text_title(&menu, "Failed Fetching Work", TITLE); \
+                goto exit;
+            }
+            break;
+        default:
+            //To send requires a previous Open Block
+            ESP_LOGI(TAG, "Couldn't fetch frontier.");
             loading_disable();
-            menu8g2_display_text_title(&menu, "Failed Fetching Work", TITLE); \
+            menu8g2_display_text_title(&menu, "Could not fetch frontier", TITLE); \
             goto exit;
-        }
-    }
-    else {
-        //To send requires a previous Open Block
-        ESP_LOGI(TAG, "Account not open.");
-        loading_disable();
-        menu8g2_display_text_title(&menu, "Account Not Open", TITLE); \
-        goto exit;
     }
 
     /*****************
@@ -266,7 +266,15 @@ void menu_nano_send_uart(menu8g2_t *prev){
 
     loading_enable();
     loading_text_title("Broadcasting", TITLE);
-    process_block(new_block);
+    switch(nanoparse_lws_process(new_block)){
+        case E_SUCCESS:
+            break;
+        default:
+            loading_disable();
+            menu8g2_display_text_title(&menu, "Error Broadcasting", TITLE);
+            goto exit;
+    }
+
     
     loading_disable();
     menu8g2_display_text_title(&menu, "Transaction Sent", TITLE);
