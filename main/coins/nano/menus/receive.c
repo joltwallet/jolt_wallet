@@ -70,13 +70,17 @@ void menu_nano_receive(menu8g2_t *prev){
     /* Search for pending block(s) */
     mbedtls_mpi transaction_amount;
     mbedtls_mpi_init(&transaction_amount);
-    if (get_pending(my_address, pending_hash, &transaction_amount) != E_SUCCESS) {
-        loading_disable();
-        menu8g2_display_text_title(&menu, "No Pending Blocks Found", TITLE);
-        goto exit;
+    switch(nanoparse_lws_pending_hash(my_address, pending_hash, &transaction_amount)){
+        case E_SUCCESS:
+            break;
+        default:
+            loading_disable();
+            menu8g2_display_text_title(&menu, "No Pending Blocks Found", TITLE);
+            goto exit;
     }
 
     ESP_LOGI(TAG, "Pending Hash: %s", pending_hash);
+
     #if LOG_LOCAL_LEVEL >= ESP_LOG_INFO
     {
     //char amount[BALANCE_DEC_BUF_LEN];
@@ -98,38 +102,40 @@ void menu_nano_receive(menu8g2_t *prev){
     hex256_t frontier_hash = { 0 };
     nl_block_t frontier_block;
     nl_block_init(&frontier_block);
+    memcpy(frontier_block.account, my_public_key, BIN_256);
     uint64_t proof_of_work;
 
     loading_text_title("Checking Account", TITLE);
-    if( get_frontier(my_address, frontier_hash) == E_SUCCESS ){
-        ESP_LOGI(TAG, "Creating RECEIVE Block");
-
-        if( get_block(frontier_hash, &frontier_block) != E_SUCCESS ){
-            ESP_LOGI(TAG, "Error retrieving frontier block.");
-            loading_disable();
-            goto exit;
-        }
-
-        // Get RECEIVE work
-        loading_text_title("Fetching Work", TITLE);
-        if( E_SUCCESS != get_work( frontier_hash, &proof_of_work ) ){
-            ESP_LOGI(TAG, "Invalid Work (RECEIVE) Response.");
-            loading_disable();
-            goto exit;
-        }
-
-    }
-    else {
-        // Get OPEN work
-        ESP_LOGI(TAG, "Creating OPEN Block");
-        hex256_t work_hex;
-        sodium_bin2hex(work_hex, sizeof(work_hex), my_public_key, sizeof(my_public_key));
-        loading_text_title("Fetching Work", TITLE);
-        if( E_SUCCESS != get_work( work_hex, &proof_of_work ) ){
-            ESP_LOGI(TAG, "Invalid Work (OPEN) Response.");
-            loading_disable();
-            goto exit;
-        }
+    switch( nanoparse_lws_frontier_block(&frontier_block) ){
+        case E_SUCCESS:
+            ESP_LOGI(TAG, "Creating RECEIVE Block");
+            // Get RECEIVE work
+            loading_text_title("Fetching Work", TITLE);
+            uint256_t frontier_hash_bin;
+            ESP_ERROR_CHECK(nl_block_compute_hash(&frontier_block, frontier_hash_bin));
+            sodium_bin2hex(frontier_hash, sizeof(frontier_hash),
+                    frontier_hash_bin, sizeof(frontier_hash_bin));
+            if( E_SUCCESS != nanoparse_lws_work( frontier_hash, &proof_of_work ) ){
+                ESP_LOGI(TAG, "Invalid Work (RECEIVE) Response.");
+                loading_disable();
+                menu8g2_display_text_title(&menu, "Failed Fetching Work", TITLE);
+                goto exit;
+            }
+            break;
+        default:
+            // Get OPEN work
+            ESP_LOGI(TAG, "Creating OPEN Block");
+            hex256_t work_hex;
+            sodium_bin2hex(work_hex, sizeof(work_hex),
+                    my_public_key, sizeof(my_public_key));
+            loading_text_title("Fetching Work", TITLE);
+            if( E_SUCCESS != nanoparse_lws_work( work_hex, &proof_of_work ) ){
+                ESP_LOGI(TAG, "Invalid Work (OPEN) Response.");
+                loading_disable();
+                menu8g2_display_text_title(&menu, "Failed Fetching Work", TITLE);
+                goto exit;
+            }
+            break;
     }
 
     /********************************
@@ -171,7 +177,14 @@ void menu_nano_receive(menu8g2_t *prev){
     }
     
     loading_text_title("Broadcasting", TITLE);
-    process_block(new_block);
+    switch(nanoparse_lws_process(new_block)){
+        case E_SUCCESS:
+            break;
+        default:
+            loading_disable();
+            menu8g2_display_text_title(&menu, "Error Broadcasting", TITLE);
+            goto exit;
+    }
     
     loading_disable();
     menu8g2_display_text_title(&menu, "Blocks Processed", TITLE);
