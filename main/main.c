@@ -3,6 +3,7 @@
 #include <string.h>
 #include <esp_system.h>
 #include "nvs.h"
+#include "esp_log.h"
 
 #include "u8g2.h"
 #include "u8g2_esp32_hal.h"

@@ -1,3 +1,4 @@
+#include "esp_log.h"
 #include "menu8g2.h"
 #include "../vault.h"
 #include "submenus.h"
@@ -92,7 +93,8 @@ static void wifi_update(menu8g2_t *prev){
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
     menu.post_draw = NULL;
-    
+   
+    esp_log_level_set("*", ESP_LOG_ERROR);
     loading_enable();
     loading_text("Enter WiFi Credentials via UART");
     
@@ -107,7 +109,7 @@ static void wifi_update(menu8g2_t *prev){
     
     printf("\nWiFi Password: ");
     get_serial_input(wifi_pass, sizeof(wifi_pass));
-    
+   
     nvs_handle wifi_nvs_handle;
     init_nvm_namespace(&wifi_nvs_handle, "user");
     nvs_set_str(wifi_nvs_handle, "wifi_ssid", wifi_ssid);
@@ -117,12 +119,13 @@ static void wifi_update(menu8g2_t *prev){
     nvs_close(wifi_nvs_handle);
     
     loading_disable();
+    esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
     
     if (err != ESP_OK) {
-        menu8g2_display_text(&menu, "Error Updating WiFi Settings");
+        menu8g2_display_text_title(&menu, "Error Updating WiFi Settings", title);
     }
     else {
-        menu8g2_display_text(&menu, "Updated WiFi Settings - Click to Reset");
+        menu8g2_display_text_title(&menu, "Updated WiFi Settings - Click to Reset", title);
         esp_restart();
     }
 }

@@ -69,7 +69,6 @@ void wifi_connect(){
         nvs_set_str(wifi_nvs_handle, "wifi_ssid", CONFIG_AP_TARGET_SSID);
         nvs_set_str(wifi_nvs_handle, "wifi_pass", CONFIG_AP_TARGET_PASSWORD);
         err = nvs_commit(wifi_nvs_handle);
-        
     }
 
     ESP_LOGI(TAG, "WiFi SSID found, loading up");
@@ -89,11 +88,29 @@ void wifi_connect(){
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 
-    strncpy((char *)sta_config.sta.ssid, (char *)wifi_ssid, strlen(wifi_ssid));
+    strcpy((char *)sta_config.sta.ssid, (char *)wifi_ssid);
+    strcpy((char *)sta_config.sta.password, (char *)wifi_pass);
     
-    strncpy((char *)sta_config.sta.password, (char *)wifi_pass, strlen(wifi_pass));
-    
-    //ESP_LOGI(TAG, "%s %s %d %d %d %d %s %s %d %d", wifi_ssid, wifi_pass, strlen(wifi_ssid), strlen(wifi_pass), string_size_ssid, string_size_pass, sta_config.sta.ssid, sta_config.sta.password, sizeof(sta_config.sta.ssid), sizeof(sta_config.sta.password));
+    ESP_LOGI(TAG, "wifi_ssid: %s\n"
+            "wifi_pass: %s\n"
+            "strlen(wifi_ssid): %d\n"
+            "strlen(wifi_pass): %d\n"
+            "string_size_ssid: %d\n"
+            "string_size_pass: %d\n"
+            "sta_config.sta.ssid: %s\n"
+            "sta_config.sta.password: %s\n"
+            "sizeof(sta_config.sta.ssid): %d\n"
+            "sizeof(sta_config.sta.pass): %d\n", 
+            wifi_ssid, 
+            wifi_pass, 
+            strlen(wifi_ssid), 
+            strlen(wifi_pass), 
+            string_size_ssid, 
+            string_size_pass, 
+            sta_config.sta.ssid, 
+            sta_config.sta.password, 
+            sizeof(sta_config.sta.ssid), 
+            sizeof(sta_config.sta.password));
     
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
     ESP_ERROR_CHECK(esp_wifi_start());
