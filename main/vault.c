@@ -232,7 +232,7 @@ void vault_task(void *vault_in){
                         factory_reset();
                         break;
                     case NANO_START ... NANO_END:
-                        response = rpc_nano(vault, cmd);
+                        response = rpc_nano(vault, cmd, &menu);
                         break;
                     default:
                         response = RPC_UNDEFINED;

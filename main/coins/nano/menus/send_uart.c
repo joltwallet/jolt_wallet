@@ -124,9 +124,11 @@ void menu_nano_send_uart(menu8g2_t *prev){
     loading_text_title("Enter Send Details", TITLE);
     
     char dest_address[ADDRESS_BUF_LEN];
+    esp_log_level_set("*", ESP_LOG_ERROR);
     flush_uart();
     printf("\nEnter a destination address: ");
     get_serial_input(dest_address, sizeof(dest_address));
+    esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
 
     // Verify Destination Address
     uint256_t dest_public_key;
@@ -137,12 +139,13 @@ void menu_nano_send_uart(menu8g2_t *prev){
         goto exit;
     }
 
+    esp_log_level_set("*", ESP_LOG_ERROR);
     flush_uart();
-    printf("destination address: %s\n", dest_address);
     
     char dest_amount_buf[40];
     printf("\nEnter amount (raw): ");
     get_serial_input_int(dest_amount_buf, sizeof(dest_amount_buf)); //This only accepts numbers
+    esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
     
     mbedtls_mpi transaction_amount;
     mbedtls_mpi_init(&transaction_amount);
@@ -151,12 +154,14 @@ void menu_nano_send_uart(menu8g2_t *prev){
     /******************
      * Get My Address *
      ******************/
+    uint32_t index;
     nvs_handle nvs_h;
     init_nvm_namespace(&nvs_h, "nano");
-    if(ESP_OK != nvs_get_u32(nvs_h, "index", &(rpc.nano_public_key.index))){
-        rpc.nano_public_key.index = 0;
+    if(ESP_OK != nvs_get_u32(nvs_h, "index", &(index))){
+        index = 0;
     }
     nvs_close(nvs_h);
+    rpc.nano_public_key.index = index;
 
     rpc.type = NANO_PUBLIC_KEY;
     loading_disable();
@@ -172,9 +177,9 @@ void menu_nano_send_uart(menu8g2_t *prev){
     
     ESP_LOGI(TAG, "My Address: %s\n", my_address);
 
-    /********************************************
-     * Get My Account's Frontier Block and Work *
-     ********************************************/
+    /***********************************
+     * Get My Account's Frontier Block *
+     ***********************************/
     // Assumes State Blocks Only
     // Outcome:
     //     * frontier_hash, frontier_block
@@ -189,19 +194,11 @@ void menu_nano_send_uart(menu8g2_t *prev){
 
     switch( nanoparse_lws_frontier_block(&frontier_block) ){
         case E_SUCCESS:
-            ESP_LOGI(TAG, "Creating SEND Block");
-            // Get RECEIVE work
-            loading_text_title("Fetching Work", TITLE);
+            ESP_LOGI(TAG, "Frontier Block Found");
             uint256_t frontier_hash_bin;
             ESP_ERROR_CHECK(nl_block_compute_hash(&frontier_block, frontier_hash_bin));
             sodium_bin2hex(frontier_hash, sizeof(frontier_hash),
                     frontier_hash_bin, sizeof(frontier_hash_bin));
-            if( E_SUCCESS != nanoparse_lws_work( frontier_hash, &proof_of_work ) ){
-                ESP_LOGI(TAG, "Invalid Work (RECEIVE) Response.");
-                loading_disable();
-                menu8g2_display_text_title(&menu, "Failed Fetching Work", TITLE); \
-                goto exit;
-            }
             break;
         default:
             //To send requires a previous Open Block
@@ -228,16 +225,17 @@ void menu_nano_send_uart(menu8g2_t *prev){
     
     sodium_memzero(&rpc, sizeof(rpc));
     rpc.type = NANO_BLOCK_SIGN;
+    rpc.nano_block_sign.index = index;
+    rpc.nano_block_sign.frontier = frontier_block;
     nl_block_t *new_block = &(rpc.nano_block_sign.block);
 
     new_block->type = STATE;
     sodium_hex2bin(new_block->previous, sizeof(new_block->previous),
             frontier_hash, sizeof(frontier_hash), NULL, NULL, NULL);
     memcpy(new_block->account, my_public_key, sizeof(my_public_key));
-    nl_address_to_public(new_block->representative, my_address); //todo: default rep
+    memcpy(new_block->representative, frontier_block.representative, BIN_256);
     memcpy(new_block->link, dest_public_key, sizeof(dest_public_key));
     mbedtls_mpi_sub_abs(&(new_block->balance), &(frontier_block.balance), &transaction_amount);
-    new_block->work = proof_of_work;
 
     #if LOG_LOCAL_LEVEL >= ESP_LOG_INFO
     {
@@ -252,18 +250,23 @@ void menu_nano_send_uart(menu8g2_t *prev){
     }
     #endif
 
-    // Sign block
+    // Prompt and Sign block
     loading_disable();
-    if( nano_confirm_block(&menu, &frontier_block, new_block) ){
-        if(vault_rpc(&rpc) != RPC_SUCCESS){
-            return;
-        }
-    }
-    else{
+    if(vault_rpc(&rpc) != RPC_SUCCESS){
         return;
     }
-
     loading_enable();
+
+    // Get RECEIVE work
+    loading_text_title("Fetching Work", TITLE);
+    if( E_SUCCESS != nanoparse_lws_work( frontier_hash, &proof_of_work ) ){
+        ESP_LOGI(TAG, "Invalid Work (RECEIVE) Response.");
+        loading_disable();
+        menu8g2_display_text_title(&menu, "Failed Fetching Work", TITLE); \
+        goto exit;
+    }
+    new_block->work = proof_of_work;
+
     loading_text_title("Broadcasting", TITLE);
     switch(nanoparse_lws_process(new_block)){
         case E_SUCCESS:
