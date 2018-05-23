@@ -48,6 +48,14 @@ void menu_nano_select_account(menu8g2_t *prev){
     }
     nvs_close(nvs_h);
 
+    // Dummy RPC command to prime vault cache
+    vault_rpc_t rpc;
+    rpc.type = NANO_PUBLIC_KEY;
+    rpc.nano_public_key.index = 0;
+    if(vault_rpc(&rpc) != RPC_SUCCESS){
+        return;
+    }
+
     if(menu8g2_create_vertical_menu(&menu, TITLE, NULL,
             (void *)&get_nano_address, UINT32_MAX)){
         // Enter
