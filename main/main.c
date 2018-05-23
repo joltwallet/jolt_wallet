@@ -52,7 +52,7 @@ void app_main(){
     wifi_connect();
 
     xTaskCreate(vault_task,
-            "VaultTask", 32000,
+            "VaultTask", 50000,
             (void *) &vault, 14,
             NULL);
 

@@ -48,7 +48,7 @@ typedef struct vault_rpc_t {
         struct{
             struct nl_block_t block;
             uint32_t index;
-            struct nl_block_t head;
+            struct nl_block_t frontier;
         } nano_block_sign;
     };
 } vault_rpc_t;
