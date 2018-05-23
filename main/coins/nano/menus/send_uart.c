@@ -124,9 +124,11 @@ void menu_nano_send_uart(menu8g2_t *prev){
     loading_text_title("Enter Send Details", TITLE);
     
     char dest_address[ADDRESS_BUF_LEN];
+    esp_log_level_set("*", ESP_LOG_ERROR);
     flush_uart();
     printf("\nEnter a destination address: ");
     get_serial_input(dest_address, sizeof(dest_address));
+    esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
 
     // Verify Destination Address
     uint256_t dest_public_key;
@@ -137,12 +139,14 @@ void menu_nano_send_uart(menu8g2_t *prev){
         goto exit;
     }
 
+    esp_log_level_set("*", ESP_LOG_ERROR);
     flush_uart();
     printf("destination address: %s\n", dest_address);
     
     char dest_amount_buf[40];
     printf("\nEnter amount (raw): ");
     get_serial_input_int(dest_amount_buf, sizeof(dest_amount_buf)); //This only accepts numbers
+    esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
     
     mbedtls_mpi transaction_amount;
     mbedtls_mpi_init(&transaction_amount);
