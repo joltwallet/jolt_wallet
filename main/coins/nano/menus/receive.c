@@ -36,12 +36,14 @@ void menu_nano_receive(menu8g2_t *prev){
     /******************
      * Get My Address *
      ******************/
+    uint32_t index;
     nvs_handle nvs_h;
     init_nvm_namespace(&nvs_h, "nano");
-    if(ESP_OK != nvs_get_u32(nvs_h, "index", &(rpc.nano_public_key.index))){
-        rpc.nano_public_key.index = 0;
+    if(ESP_OK != nvs_get_u32(nvs_h, "index", &index)){
+        index = 0;
     }
     nvs_close(nvs_h);
+    rpc.nano_public_key.index = index;
     ESP_LOGI(TAG, "Index: %d", rpc.nano_public_key.index);
 
     rpc.type = NANO_PUBLIC_KEY;
@@ -144,6 +146,7 @@ void menu_nano_receive(menu8g2_t *prev){
     loading_text_title("Creating Block", TITLE);
     sodium_memzero(&rpc, sizeof(rpc));
     rpc.type = NANO_BLOCK_SIGN;
+    rpc.nano_block_sign.index = index;
     nl_block_t *new_block = &(rpc.nano_block_sign.block);
 
     new_block->type = STATE;
