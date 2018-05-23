@@ -1266,5 +1266,5 @@ void boot_splash(u8g2_t *u8g2){
                 GRAPHIC_JOLT_H,
                 graphic_jolt);
 	} while(u8g2_NextPage(u8g2));
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
 }
