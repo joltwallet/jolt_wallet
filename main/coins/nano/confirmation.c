@@ -46,6 +46,13 @@ bool nano_confirm_block(menu8g2_t *prev_menu, nl_block_t *head_block, nl_block_t
     mbedtls_mpi_init(&transaction_amount);
 
     if(head_block->type == STATE){
+        // Make sure the new_block's prev is the head_block
+        uint256_t head_block_hash;
+        nl_block_compute_hash(head_block, head_block_hash);
+        if(0 != memcmp(head_block_hash, new_block->previous, BIN_256)){
+            goto exit;
+        }
+
         // Reject Invalid negative balances
         if(-1 == new_block->balance.s || -1 == head_block->balance.s){
             goto exit;
