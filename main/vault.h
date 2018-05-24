@@ -17,7 +17,6 @@ typedef struct vault_t{
  * between dummy commands "COIN_START" and "COIN_END". */
 typedef enum vault_rpc_type_t {
     SYSCORE_START = 0,
-    SYSCORE_MNEMONIC_RESTORE,
     SYSCORE_END,
 
     NANO_START,

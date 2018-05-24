@@ -118,15 +118,7 @@ void menu_mnemonic_restore(menu8g2_t *prev){
     }
     mnemonic[offset - 1] = '\0'; //null-terminate, remove last space
 
-    // Send off rpc command
-    vault_rpc_t rpc = {
-        .type = SYSCORE_MNEMONIC_RESTORE,
-        .syscore_mnemonic_restore.mnemonic = mnemonic
-    };
-    if(vault_rpc(&rpc) != RPC_SUCCESS){
-        goto exit;
-    }
+    store_mnemonic_reboot(&menu, mnemonic);
 
-    exit:
-        sodium_memzero(mnemonic, sizeof(mnemonic));
+    sodium_memzero(mnemonic, sizeof(mnemonic));
 }
