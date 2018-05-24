@@ -1,12 +1,12 @@
-<h1 align="center"> NanoRay </h1> <br>
+<h1 align="center"> Jolt </h1> <br>
 <p align="center">
-  <a href="https://nano.org/">
-    <img alt="NanoRay" title="NanoRay" src="https://image.ibb.co/esrSkS/nano.png" width="800">
+  <a href="https://joltwallet.com/">
+    <img alt="Jolt" title="Jolt" src="https://image.ibb.co/kFhkJ8/logo_wallet_readme.png" width="800">
   </a>
 </p>
 
 <p align="center">
-  Nano in your pocket.
+  Crypto in your pocket.
 </p>
 
 ## Table of Contents
@@ -19,7 +19,7 @@
 
 ## Introduction
 
-NanoRay is a hardware wallet built on [Espressif's IoT Development Framework](https://github.com/espressif/esp-idf) for the ESP32 chip. For
+Jolt is a hardware wallet built on [Espressif's IoT Development Framework](https://github.com/espressif/esp-idf) for the ESP32 chip. For
 more information about ESP32, see the [ESP32 Website](https://www.espressif.com/en/products/hardware/esp32/overview).
 
 ## Build
@@ -29,12 +29,12 @@ more information about ESP32, see the [ESP32 Website](https://www.espressif.com/
 It's important to recursively clone our repository:
 
 ```bash
-$ git clone --recursive https://github.com/NanoRay/NanoRay.git
+$ git clone --recursive https://github.com/joltwallet/jolt_wallet.git
 ```
 
 ### Dependencies
 
-NanoRay depends on a few external tools that must be properly setup before we can run.
+Jolt depends on a few external tools that must be properly setup before we can run.
 
 **CMake**
 
@@ -50,7 +50,7 @@ For other users, please follow this tutorial: https://cmake.org/cmake-tutorial/
 
 There is an excellent guide on how to setup the framework here: http://esp-idf.readthedocs.io/en/latest/get-started/macos-setup.html
 
-Once you've completed the setup, be sure to move your `esp-idf` and `xtensa-esp32-elf` folders to the same directory you downloaded the NanoRay repository.
+Once you've completed the setup, be sure to move your `esp-idf` and `xtensa-esp32-elf` folders to the same directory you downloaded the Jolt repository.
 
 **CP210x Driver**
 
@@ -61,7 +61,7 @@ Please download and run the drivers for your Operating System here: https://www.
 Open up your local bash profile configuration and be sure to add the following:
 
 ```bash
-  export NANOHOME=/your/root/path/where/NanoRay/and/ESP/folders/are
+  export NANOHOME=/your/root/path/where/Jolt/and/ESP/folders/are
   export PATH=$PATH:$NANOHOME/xtensa-esp32-elf/bin
   export IDF_PATH=$NANOHOME/esp-idf
   export MSYS_FLAGS=""
@@ -185,7 +185,7 @@ This project wouldn't have been possible without the hard work and dedication of
 
 * http://esp-idf.readthedocs.io
 * https://www.silabs.com
-* https://nano.org
+* https://joltwallet.com
 * https://leanpub.com/kolban-ESP32
 
 **Useful Commands**
