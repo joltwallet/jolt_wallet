@@ -1,7 +1,7 @@
 <h1 align="center"> Jolt </h1> <br>
 <p align="center">
   <a href="https://joltwallet.com/">
-    <img alt="Jolt" title="Jolt" src="https://image.ibb.co/kFhkJ8/logo_wallet_readme.png" width="800">
+    <img alt="Jolt" title="Jolt" src="https://image.ibb.co/bTiHy8/logo_wallet_readme.png" width="800">
   </a>
 </p>
 
