@@ -16,10 +16,8 @@ typedef struct vault_t{
 /* Add RPC command types here. If they are coin specific, it must be specified
  * between dummy commands "COIN_START" and "COIN_END". */
 typedef enum vault_rpc_type_t {
-    FACTORY_RESET = 0, // Wipe all NVS
-    SETTINGS_CHANGE, // Change a setting
-    BLUETOOTH_PAIR,
-    BLUETOOTH_UNPAIR,
+    SYSCORE_START = 0,
+    SYSCORE_END,
 
     NANO_START,
     NANO_BLOCK_SIGN, // Signs passed in block

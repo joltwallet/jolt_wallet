@@ -5,6 +5,7 @@
 #include "../globals.h"
 #include "../wifi.h"
 #include "../loading.h"
+#include "../helpers.h"
 
 static void get_serial_input(char *serial_rx, int buffersize){
     
@@ -50,26 +51,6 @@ static void flush_uart(){
         getchar();
     };
 }
-
-static void menu_factory_reset_confirm(menu8g2_t *prev){
-    bool res;
-    vault_rpc_t rpc;
-    menu8g2_t menu;
-    menu8g2_copy(&menu, prev);
-
-    const char title[] = "Are you sure?";
-
-    const char *options[] = {"No", "Yes"};
-    res = menu8g2_create_simple(&menu, title, options, 2);
-
-    if(res==false || menu.index==0){ //Pressed Back
-        return;
-    }
-
-    rpc.type = FACTORY_RESET;
-    vault_rpc(&rpc);
-}
-
 
 static void wifi_details(menu8g2_t *prev){
     const char title[] = "WiFi Details";
@@ -130,6 +111,23 @@ static void wifi_update(menu8g2_t *prev){
     }
 }
 
+static void menu_factory_reset(menu8g2_t *prev){
+    bool res;
+    menu8g2_t menu;
+    menu8g2_copy(&menu, prev);
+
+    const char title[] = "Factory Reset?";
+
+    const char *options[] = {"No", "Yes"};
+    res = menu8g2_create_simple(&menu, title, options, 2);
+
+    if(res==false || menu.index==0){ //Pressed Back
+        return;
+    }
+
+    factory_reset();
+}
+
 void menu_settings(menu8g2_t *prev){
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
@@ -141,8 +139,7 @@ void menu_settings(menu8g2_t *prev){
     menu8g2_set_element(&elements, "WiFi Details", &wifi_details);
     menu8g2_set_element(&elements, "WiFi Update (uart)", &wifi_update);
     menu8g2_set_element(&elements, "Bluetooth", NULL);
-    menu8g2_set_element(&elements, "Charge PoW", NULL);
-    menu8g2_set_element(&elements, "Factory Reset", &menu_factory_reset_confirm);
+    menu8g2_set_element(&elements, "Factory Reset", &menu_factory_reset);
     menu8g2_create_vertical_element_menu(&menu, title, &elements);
     menu8g2_elements_free(&elements);
 }

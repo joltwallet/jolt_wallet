@@ -40,3 +40,24 @@ nl_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace){
     }
 }
 
+void factory_reset(){
+    nvs_handle h;
+
+    init_nvm_namespace(&h, "secret");
+    nvs_erase_all(h);
+    nvs_commit(h);
+    nvs_close(h);
+
+    init_nvm_namespace(&h, "user");
+    nvs_erase_all(h);
+    nvs_commit(h);
+    nvs_close(h);
+
+    init_nvm_namespace(&h, "nano");
+    nvs_erase_all(h);
+    nvs_commit(h);
+    nvs_close(h);
+
+    esp_restart();
+
+}

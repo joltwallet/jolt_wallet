@@ -21,9 +21,10 @@
 #include "loading.h"
 #include "helpers.h"
 
+// Coin RPCs
+#include "rpc_syscore.h"
 #include "coins/nano/rpc.h"
 
-/* Two main NVS Namespaces: ("secret", "user") */
 static const char* TAG = "vault";
 static const char* TITLE = "Vault Access";
 
@@ -54,24 +55,6 @@ vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
     ESP_LOGI(TAG, "Response Queue Deleted; ID: %d\n", id);
     return res;
 }
-
-static void factory_reset(){
-    /* Erases all NVM and resets device */
-    nvs_handle h;
-
-    init_nvm_namespace(&h, "secret");
-    nvs_erase_all(h);
-    nvs_commit(h);
-    nvs_close(h);
-
-    init_nvm_namespace(&h, "user");
-    nvs_erase_all(h);
-    nvs_commit(h);
-    nvs_close(h);
-
-    esp_restart();
-}
-
 
 nl_err_t vault_init(vault_t *vault){
     /* Secure allocates space for vault, and checks if it exists in NVS
@@ -227,10 +210,8 @@ void vault_task(void *vault_in){
                 // Perform RPC command
                 /* MASTER RPC SWITCH STATEMENT */
                 switch(cmd->type){
-                    case(FACTORY_RESET):
-                        ESP_LOGI(TAG, "Executing FACTORY_RESET RPC.");
-                        factory_reset();
-                        break;
+                    case SYSCORE_START ... SYSCORE_END:
+                        response = rpc_syscore(vault, cmd, &menu);
                     case NANO_START ... NANO_END:
                         response = rpc_nano(vault, cmd, &menu);
                         break;
