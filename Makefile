@@ -10,7 +10,7 @@ PROJECT_NAME := joltwallet
 #COMPONENT_ADD_INCLUDEDIRS += main/menus
 #COMPONENT_ADD_SRCDIRS += main/menus
 
-CFLAGS += -Wno-unknown-pragmas \
+CFLAGS +=  \
 	 -I$(BUILD_DIR_BASE)/libwebsockets/include \
 	 -I$(PROJECT_PATH)/components/libwebsockets/lib \
 	 -D U8G2_16BIT

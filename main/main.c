@@ -45,7 +45,7 @@ void app_main(){
     // Allocate space for the vault and see if a copy exists in NVS
     vault_t vault;
     if (E_FAILURE == vault_init(&vault)){
-        first_boot_menu(&vault);
+        first_boot_menu();
     }
     
     // Initialize Wireless
