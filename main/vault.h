@@ -17,6 +17,7 @@ typedef struct vault_t{
  * between dummy commands "COIN_START" and "COIN_END". */
 typedef enum vault_rpc_type_t {
     SYSCORE_START = 0,
+    SYSCORE_MNEMONIC_RESTORE,
     SYSCORE_END,
 
     NANO_START,
@@ -40,6 +41,10 @@ typedef struct vault_rpc_t {
     QueueHandle_t response_queue;
     union{
         struct{
+            char *mnemonic;
+        } syscore_mnemonic_restore;
+        /* NANO START */
+        struct{
             struct nl_block_t block;
             uint32_t index;
         } nano_public_key;
@@ -48,6 +53,7 @@ typedef struct vault_rpc_t {
             uint32_t index;
             struct nl_block_t frontier;
         } nano_block_sign;
+        /* NANO END */
     };
 } vault_rpc_t;
 

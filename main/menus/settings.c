@@ -80,14 +80,14 @@ static void wifi_update(menu8g2_t *prev){
     loading_text("Enter WiFi Credentials via UART");
     
     char wifi_ssid[32];
+
     flush_uart();
-    
     printf("\nWiFi SSID: ");
     get_serial_input(wifi_ssid, sizeof(wifi_ssid));
     
     char wifi_pass[64];
+
     flush_uart();
-    
     printf("\nWiFi Password: ");
     get_serial_input(wifi_pass, sizeof(wifi_pass));
    
@@ -134,11 +134,12 @@ void menu_settings(menu8g2_t *prev){
     const char title[] = "Settings";
 
     menu8g2_elements_t elements;
-    menu8g2_elements_init(&elements, 5);
+    menu8g2_elements_init(&elements, 6);
     menu8g2_set_element(&elements, "Screen Brightness", NULL);
     menu8g2_set_element(&elements, "WiFi Details", &wifi_details);
     menu8g2_set_element(&elements, "WiFi Update (uart)", &wifi_update);
     menu8g2_set_element(&elements, "Bluetooth", NULL);
+    menu8g2_set_element(&elements, "Mnemonic Restore", &menu_mnemonic_restore);
     menu8g2_set_element(&elements, "Factory Reset", &menu_factory_reset);
     menu8g2_create_vertical_element_menu(&menu, title, &elements);
     menu8g2_elements_free(&elements);
