@@ -19,6 +19,7 @@ static const char *TAG = "nano_conf";
 
 
 static bool draw_screen(menu8g2_t *menu, char *buf){
+    /* Draws screen for yes/no action */
     uint64_t button;
     for(;;){
         button = menu8g2_display_text_title(menu, buf, "Confirm Action");
@@ -29,6 +30,33 @@ static bool draw_screen(menu8g2_t *menu, char *buf){
             return true;
         }
     }
+}
+
+bool nano_confirm_contact_update(const menu8g2_t *prev_menu, const char *name, const uint256_t public, const uint8_t index){
+    menu8g2_t menu;
+    menu8g2_copy(&menu, prev_menu);
+
+    char buf[200];
+    snprintf(buf, sizeof(buf), "Update Index: %d ?", index);
+    if ( !draw_screen(&menu, buf) ){
+        return false;
+    }
+
+    snprintf(buf, sizeof(buf), "Name: %s", name);
+    if ( !draw_screen(&menu, buf) ){
+        return false;
+    }
+
+    char address[ADDRESS_BUF_LEN];
+    if( E_SUCCESS != nl_public_to_address(address, sizeof(address), public) ){
+        return false;
+    }
+    snprintf(buf, sizeof(buf), "Address: %s", address);
+    if ( !draw_screen(&menu, buf) ){
+        return false;
+    }
+
+    return true;
 }
 
 bool nano_confirm_block(menu8g2_t *prev_menu, nl_block_t *head_block, nl_block_t *new_block){

@@ -89,6 +89,20 @@ menu "Jolt Wallet Config"
         help
             Default representative for new Nano Accounts
 
+    config JOLT_NANO_CONTACTS_MAX
+        int
+        prompt "Maximum number of stored nano contacts"
+        default 10
+        help
+            Default representative for new Nano Accounts
+
+    config JOLT_NANO_CONTACTS_NAME_LEN
+        int
+        prompt "Maximum length of nickname"
+        default 18
+        help
+            help text here
+
     config AP_TARGET_SSID
         string
         prompt "WiFi SSID"

@@ -22,6 +22,7 @@ typedef enum vault_rpc_type_t {
     NANO_START,
     NANO_BLOCK_SIGN, // Signs passed in block
     NANO_PUBLIC_KEY, // Derive public key at index
+    NANO_CONTACT_UPDATE, // Update stored contact
     NANO_END
 
 } vault_rpc_type_t;
@@ -52,6 +53,11 @@ typedef struct vault_rpc_t {
             uint32_t index;
             struct nl_block_t frontier;
         } nano_block_sign;
+        struct{
+            char *name;
+            uint8_t index;
+            uint8_t *public; // pointer to public key
+        } nano_contact_update;
         /* NANO END */
     };
 } vault_rpc_t;

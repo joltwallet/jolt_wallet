@@ -14,96 +14,21 @@
 #include "../../../loading.h"
 #include "../confirmation.h"
 #include "../../../gui.h"
+#include "../../../number_entry.h"
+#include "../contacts.h"
 
 #include "nano_lws.h"
 #include "nano_parse.h"
 
-static const char TAG[] = "nano_send";
+static const char TAG[] = "nano_send_contact";
 static const char TITLE[] = "Send Nano";
 
-static void get_serial_input(char *serial_rx, int buffersize){
-    
-    int line_pos = 0;
-    
-    while(1){
-        int c = getchar();
-        
-        if(c < 0) {
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-            continue;
-        }
-        if(c == '\r') continue;
-        if(c == '\n') {
-            
-            // terminate the string
-            serial_rx[line_pos] = '\0';
-            printf("\n");
-            break;
-        }
-        else {
-            putchar(c);
-            serial_rx[line_pos] = c;
-            line_pos++;
-            
-            // buffer full!
-            if(line_pos == buffersize) {
-                
-                printf("\nCommand buffer full!\n");
-                serial_rx[line_pos] = '\0';
-                
-                break;
-            }
-        }
-        
-        
+static void namer(char buf[], size_t buf_len, const char *options[], const uint32_t index){
+    if( !nano_get_contact_name(buf, buf_len, index) ){
+        strlcpy(buf, "", buf_len);
     }
 }
-
-static void get_serial_input_int(char *serial_rx, const int buffersize){
-    // fills up serial_rx with an ascii string where all characters must be ints
-    
-    int line_pos = 0;
-    
-    while(1){
-        int c = getchar();
-        
-        if(c < 0) {
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-            continue;
-        }
-        if(c == '\r') continue;
-        if(c == '\n') {
-            // terminate the string
-            serial_rx[line_pos] = '\0';
-            printf("\n");
-            break;
-        }
-        else {
-            if( c >= '0' && c <= '9' ){
-                putchar(c);
-                serial_rx[line_pos] = c;
-                line_pos++;
-                
-                // buffer full!
-                if(line_pos == buffersize) {
-                    printf("\nCommand buffer full!\n");
-                    serial_rx[line_pos] = '\0';
-                    break;
-                }
-            }
-        }
-    }
-}
-
-static void flush_uart(){
-    //This is a terrible hack to flush the uarts buffer, a far better option would be rewrite all uart related code
-    // to use proper uart code from driver/uart.h
-    for(int bad_hack = 0; bad_hack <= 10; bad_hack++){
-        getchar();
-    };
-}
-
-void menu_nano_send_uart(menu8g2_t *prev){
+void menu_nano_send_contact(menu8g2_t *prev){
     /*
      * Blocks involved:
      * new_block - block we are creating
@@ -118,32 +43,39 @@ void menu_nano_send_uart(menu8g2_t *prev){
     /**************************************
      * Get Destination Address and Amount *
      **************************************/
-    loading_enable();
-    loading_text_title("Enter Send Details", TITLE);
-    
-    char dest_address[ADDRESS_BUF_LEN];
-    esp_log_level_set("*", ESP_LOG_ERROR);
-    flush_uart();
-    printf("\nEnter a destination address: ");
-    get_serial_input(dest_address, sizeof(dest_address));
-    esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
-
-    // Verify Destination Address
+    /* prompt user to select contact address here */
     uint256_t dest_public_key;
-    if(E_SUCCESS != nl_address_to_public(dest_public_key, dest_address)){
-        loading_disable();
-        menu8g2_display_text_title(&menu, "Invalid Address", TITLE); \
-        ESP_LOGE(TAG, "\nInvalid Address %s\n", dest_address); \
+    char dest_address[ADDRESS_BUF_LEN];
+    if( !menu8g2_create_vertical_menu(&menu, "Send Contact", NULL,
+                        (void *)&namer, CONFIG_JOLT_NANO_CONTACTS_MAX) ){
+        ESP_LOGE(TAG, "User Cancelled at Contact Book");
+        goto exit;
+    }
+    uint32_t contact_index = menu.index;
+    if( !nano_get_contact_public(dest_public_key, contact_index) ){
+        ESP_LOGE(TAG, "Contact %d public key doesn't exist.", contact_index);
         goto exit;
     }
 
-    esp_log_level_set("*", ESP_LOG_ERROR);
-    flush_uart();
-    
     char dest_amount_buf[40];
-    printf("\nEnter amount (raw): ");
-    get_serial_input_int(dest_amount_buf, sizeof(dest_amount_buf)); //This only accepts numbers
-    esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
+#define N_DIGITS 10
+#define N_DECIMALS 3
+    int8_t user_entry[N_DIGITS];
+    /* user enter send amount in nano */
+    if( !number_entry_arr(&menu, user_entry, N_DIGITS, N_DECIMALS, "Enter Amount") ){
+        ESP_LOGE(TAG, "User cancelled at amount entry.");
+        goto exit;
+    }
+    uint8_t i;
+    for(i = 0; i < sizeof(user_entry); i++){
+        dest_amount_buf[i] = user_entry[i] + '0';
+    }
+    for( uint8_t j = N_DECIMALS; j < 30 ; i++, j++ ){
+        dest_amount_buf[i] = '0';
+    }
+    dest_amount_buf[i] = '\0';
+#undef N_DIGITS
+#undef N_DECIMALS
     
     mbedtls_mpi transaction_amount;
     mbedtls_mpi_init(&transaction_amount);
@@ -181,7 +113,7 @@ void menu_nano_send_uart(menu8g2_t *prev){
     // Assumes State Blocks Only
     // Outcome:
     //     * frontier_hash, frontier_block
-    //loading_enable();
+    loading_enable();
     loading_text_title("Connecting", TITLE);
     
     hex256_t frontier_hash;
