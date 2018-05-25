@@ -21,7 +21,7 @@
 
 static const char* TAG = "number_entry";
 
-#define NUMBER_ENTRY_SPACING 13
+#define NUMBER_ENTRY_SPACING 10
 
 
 #if 0
@@ -56,7 +56,7 @@ bool number_entry_arr(menu8g2_t *prev, int8_t* output, uint8_t n_digit, uint8_t 
     menu8g2_t *menu = &local_menu;
     menu8g2_copy(menu, prev);
 
-    double res;
+    bool res;
 
     u8g2_t *u8g2 = menu->u8g2;
     u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
@@ -114,7 +114,7 @@ bool number_entry_arr(menu8g2_t *prev, int8_t* output, uint8_t n_digit, uint8_t 
                 }
                 else{
                     ESP_LOGI(TAG, "User exiting (back) pin entry screen.");
-                    res = -1;
+                    res = false;
                     goto exit;
 
                 }
@@ -137,6 +137,7 @@ bool number_entry_arr(menu8g2_t *prev, int8_t* output, uint8_t n_digit, uint8_t 
                 else{
                     ESP_LOGI(TAG, "User finished entering number.");
                     memcpy(output, num_entries, n_digit);
+                    res = true;
                     goto exit;
                 }
             }
