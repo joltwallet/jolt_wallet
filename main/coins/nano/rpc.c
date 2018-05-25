@@ -12,9 +12,36 @@
 #include "../../vault.h"
 #include "rpc.h"
 #include "confirmation.h"
+#include "contacts.h"
 
 static const char* TAG = "vault_nano";
 
+
+static vault_rpc_response_t rpc_nano_contact_update(vault_t *vault, vault_rpc_t *cmd, menu8g2_t *menu){
+    vault_rpc_response_t response;
+
+    if( nano_confirm_contact_update(menu,
+            cmd->nano_contact_update.name, 
+            cmd->nano_contact_update.public,
+            cmd->nano_contact_update.index) ){
+        if( !nano_set_contact_public(cmd->nano_contact_update.public,
+                    cmd->nano_contact_update.index) ){
+            response = RPC_FAILURE;
+        }
+        else if( !nano_set_contact_name(cmd->nano_contact_update.name,
+                    cmd->nano_contact_update.index) ){
+            nano_erase_contact(cmd->nano_contact_update.index);
+            response = RPC_FAILURE;
+        }
+        else{
+            response = RPC_SUCCESS;
+        }
+    }
+    else {
+        response = RPC_FAILURE;
+    }
+    return response;
+}
 
 static vault_rpc_response_t rpc_nano_public_key(vault_t *vault, vault_rpc_t *cmd, menu8g2_t *menu){
     // Derive private key from mnemonic
@@ -71,6 +98,10 @@ vault_rpc_response_t rpc_nano(vault_t *vault, vault_rpc_t *cmd, menu8g2_t *menu)
         case(NANO_PUBLIC_KEY):
             ESP_LOGI(TAG, "Executing NANO_PUBLIC_KEY RPC.");
             response = rpc_nano_public_key(vault, cmd, menu);
+            break;
+        case(NANO_CONTACT_UPDATE):
+            ESP_LOGI(TAG, "Executing NANO_CONTACT_UPDATE RPC.");
+            response = rpc_nano_contact_update(vault, cmd, menu);
             break;
         default:
             response = RPC_UNDEFINED;
