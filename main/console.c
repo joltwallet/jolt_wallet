@@ -254,6 +254,8 @@ void menu_console(menu8g2_t *prev){
         /* linenoise allocates line buffer on the heap, so need to free it */
         linenoiseFree(line);
     }
+    
+    esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
 
 }
 
