@@ -6,6 +6,7 @@
 #include "../wifi.h"
 #include "../loading.h"
 #include "../helpers.h"
+#include "../uart.h"
 #include "sodium.h"
 #include <string.h>
 
@@ -21,51 +22,6 @@ static void shuffle_arr(uint8_t *arr, int arr_len) {
         arr[i] = tmp;
     }
     sodium_memzero(&tmp, sizeof(uint8_t));
-}
-
-static void get_serial_input(char *serial_rx, int buffersize){
-    
-    int line_pos = 0;
-    
-    while(1){
-        int c = getchar();
-        
-        if(c < 0) {
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-            continue;
-        }
-        if(c == '\n' || c == '\r') {
-            
-            // terminate the string
-            serial_rx[line_pos] = '\0';
-            printf("\n");
-            break;
-        }
-        else {
-            putchar(c);
-            serial_rx[line_pos] = c;
-            line_pos++;
-            
-            // buffer full!
-            if(line_pos == buffersize) {
-                
-                printf("\nCommand buffer full!\n");
-                serial_rx[line_pos] = '\0';
-                
-                break;
-            }
-        }
-        
-        
-    }
-}
-
-static void flush_uart(){
-    //This is a terrible hack to flush the uarts buffer, a far better option would be rewrite all uart related code
-    // to use proper uart code from driver/uart.h
-    for(int bad_hack = 0; bad_hack <= 10; bad_hack++){
-        getchar();
-    };
 }
 
 void menu_mnemonic_restore(menu8g2_t *prev){
