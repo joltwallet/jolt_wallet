@@ -10,6 +10,7 @@ typedef struct backend_rpc_t {
     uint64_t timestamp;
     QueueHandle_t response_queue;
     uint32_t block_count;
+    double balance;
 } backend_rpc_t;
 
 /* Add RPC command types here. If they are coin specific, it must be specified
@@ -20,6 +21,7 @@ typedef enum backend_rpc_type_t {
     
     NANO_CMD_START,
     NANO_BLOCK_COUNT,
+    NANO_BALANCE,
     NANO_CMD_END
     
 } backend_rpc_type_t;
