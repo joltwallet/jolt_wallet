@@ -32,14 +32,14 @@ volatile SemaphoreHandle_t disp_mutex;
 
 void app_main(){
     // Setup Input Button Debouncing Code
-    easy_input_queue_init(&input_queue);
+    easy_input_queue_init((QueueHandle_t *)&input_queue);
     xTaskCreate(easy_input_push_button_task,
             "ButtonDebounce", 4096,
             (void *)&input_queue, 17,
             NULL);
 
     // Initialize the OLED Display
-    setup_screen(&u8g2);
+    setup_screen((u8g2_t *) &u8g2);
     disp_mutex = xSemaphoreCreateMutex();
     
     // Allocate space for the vault and see if a copy exists in NVS

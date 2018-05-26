@@ -12,7 +12,6 @@
 
 static void wifi_details(menu8g2_t *prev){
     const char title[] = "WiFi Details";
-    bool res;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
 
@@ -28,7 +27,6 @@ static void wifi_details(menu8g2_t *prev){
 
 static void wifi_update(menu8g2_t *prev){
     const char title[] = "WiFi Update";
-    bool res;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
     menu.post_draw = NULL;

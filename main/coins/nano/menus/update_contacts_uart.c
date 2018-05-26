@@ -11,7 +11,6 @@
 
 void menu_nano_update_contact_uart(menu8g2_t *prev){
     const char title[] = "Nano Contacts";
-    bool res;
     char buf[100] ;
 
     menu8g2_t menu;

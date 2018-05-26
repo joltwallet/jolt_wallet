@@ -122,6 +122,8 @@ void statusbar_update(menu8g2_t *menu){
 void statusbar_task(void *menu_in){
     menu8g2_t *menu = (menu8g2_t *) menu_in;
 
+    ESP_LOGI(TAG, "Starting StatusBar Task");
+
     for(;; vTaskDelay(pdMS_TO_TICKS(STATUSBAR_UPDATE_PERIOD_MS))) {
         // Not a mutex or taskSuspend to prevent deadlock where statusbar_task 
         // is suspended while taking disp_mutex.
