@@ -25,7 +25,7 @@ bool statusbar_draw_enable = true;
 static void statusbar_pending(menu8g2_t *menu){
     const uint16_t x = STATUSBAR_ANCHOR_X;
     const uint16_t y = 1;
-    bool pending_status = true; // todo: check websocket
+    bool pending_status = false; // todo: check websocket
 
     if (pending_status){
         u8g2_SetDrawColor(menu->u8g2, 0);
@@ -92,7 +92,7 @@ static void statusbar_battery(menu8g2_t *menu){
             + GRAPHIC_BLUETOOTH_W + 3 * STATUSBAR_PAD;
     const uint16_t y = 1;
     const unsigned char *graphic;
-    uint8_t battery_strength = 0; //todo: read battery voltage
+    uint8_t battery_strength = 3; //todo: read battery voltage
     switch(battery_strength){
         case 1:
             graphic = graphic_battery_1;
