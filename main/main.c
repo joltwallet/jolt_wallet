@@ -23,12 +23,15 @@
 #include "wifi.h"
 #include "nano_lws.h"
 
+#include "console.h"
+
 
 // Definitions for variables in globals.h
 volatile u8g2_t u8g2;
 volatile QueueHandle_t input_queue;
 volatile QueueHandle_t vault_queue;
 volatile SemaphoreHandle_t disp_mutex;
+QueueHandle_t backend_queue;
 
 void app_main(){
     // Setup Input Button Debouncing Code
@@ -50,11 +53,19 @@ void app_main(){
     
     // Initialize Wireless
     wifi_connect();
+    
+    // Initiate Console
+    initialize_console();
 
     xTaskCreate(vault_task,
             "VaultTask", 50000,
             (void *) &vault, 14,
             NULL);
+    
+    xTaskCreate(backend_task,
+                "BackendTask", 32000,
+                NULL, 11,
+                NULL);
 
     xTaskCreate(gui_task,
             "GuiTask", 32000,
