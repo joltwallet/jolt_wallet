@@ -69,7 +69,7 @@ static menu8g2_err_t get_nth_word(char buf[], size_t buf_len,
 void first_boot_menu(){
 
     menu8g2_t menu;
-    menu8g2_init(&menu, &u8g2, input_queue, disp_mutex, NULL, NULL);
+    menu8g2_init(&menu, (u8g2_t *)&u8g2, input_queue, disp_mutex, NULL, NULL);
 
     // Generate Mnemonic
     CONFIDENTIAL char mnemonic[MNEMONIC_BUF_LEN];

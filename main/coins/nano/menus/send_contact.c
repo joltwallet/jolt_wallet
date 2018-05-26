@@ -38,14 +38,12 @@ void menu_nano_send_contact(menu8g2_t *prev){
     vault_rpc_t rpc;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
-    menu.post_draw = NULL;
 
     /**************************************
      * Get Destination Address and Amount *
      **************************************/
     /* prompt user to select contact address here */
     uint256_t dest_public_key;
-    char dest_address[ADDRESS_BUF_LEN];
     if( !menu8g2_create_vertical_menu(&menu, "Send Contact", NULL,
                         (void *)&namer, CONFIG_JOLT_NANO_CONTACTS_MAX) ){
         ESP_LOGE(TAG, "User Cancelled at Contact Book");

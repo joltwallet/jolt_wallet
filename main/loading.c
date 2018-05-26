@@ -29,12 +29,10 @@
 #define LOADING_FRAME_TIME_MS 50
 #define LOADING_TEXT_Y 22
 
-bool loading_draw_enable;
 
 /* Globals */
-QueueHandle_t loading_queue;
-
-static bool previous_statusbar_draw_enable;
+volatile QueueHandle_t loading_queue;
+volatile bool loading_draw_enable;
 
 typedef struct loading_text_t{
     const char *title;
@@ -50,13 +48,10 @@ void loading_init(menu8g2_t *menu){
 
 void loading_enable( void ){
     loading_draw_enable = true;
-    previous_statusbar_draw_enable = statusbar_draw_enable;
-    statusbar_draw_enable = false;
 }
 
 void loading_disable( void ){
     loading_draw_enable = false;
-    statusbar_draw_enable = previous_statusbar_draw_enable;
 }
 
 void loading_text(const char *text){
@@ -131,7 +126,7 @@ void loading_task(void *menu_in){
                     graphic);
 
             u8g2_SetFont(menu.u8g2, u8g2_font_profont12_tf);
-            u8g2_DrawStr(menu.u8g2, get_center_x(menu.u8g2, payload.text),
+            u8g2_DrawStr(menu.u8g2, menu8g2_get_center_x(&menu, payload.text),
                     LOADING_TEXT_Y, payload.text);
         MENU8G2_END_DRAW(&menu)
     }

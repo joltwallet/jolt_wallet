@@ -7,54 +7,11 @@
 #include "../loading.h"
 #include "../helpers.h"
 
-static void get_serial_input(char *serial_rx, int buffersize){
-    
-    int line_pos = 0;
-    
-    while(1){
-        int c = getchar();
-        
-        if(c < 0) {
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-            continue;
-        }
-        if(c == '\n' || c == '\r') {
-            
-            // terminate the string
-            serial_rx[line_pos] = '\0';
-            printf("\n");
-            break;
-        }
-        else {
-            putchar(c);
-            serial_rx[line_pos] = c;
-            line_pos++;
-            
-            // buffer full!
-            if(line_pos == buffersize) {
-                
-                printf("\nCommand buffer full!\n");
-                serial_rx[line_pos] = '\0';
-                
-                break;
-            }
-        }
-        
-        
-    }
-}
+#include "../uart.h"
 
-static void flush_uart(){
-    //This is a terrible hack to flush the uarts buffer, a far better option would be rewrite all uart related code
-    // to use proper uart code from driver/uart.h
-    for(int bad_hack = 0; bad_hack <= 10; bad_hack++){
-        getchar();
-    };
-}
 
 static void wifi_details(menu8g2_t *prev){
     const char title[] = "WiFi Details";
-    bool res;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
 
@@ -70,7 +27,6 @@ static void wifi_details(menu8g2_t *prev){
 
 static void wifi_update(menu8g2_t *prev){
     const char title[] = "WiFi Update";
-    bool res;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
     menu.post_draw = NULL;

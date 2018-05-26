@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "u8g2.h"
+#include "menu8g2.h"
 #include "qrcode.h"
 #include "qr.h"
 #include "nano_lib.h"
@@ -11,10 +11,8 @@
 void display_qr(menu8g2_t *menu, uint8_t x_offset, uint8_t y_offset,
         QRCode *qrcode, uint8_t scale){
 	// Displays a fully formed QR Code to the OLED display
-    
-    xSemaphoreTake(menu->disp_mutex, portMAX_DELAY);
-    u8g2_FirstPage(menu->u8g2);
-    do{
+   
+    MENU8G2_BEGIN_DRAW(menu)
 		for (uint8_t y = 0; y < qrcode->size; y++) {
 			for (uint8_t x = 0; x < qrcode->size; x++) {
 				if(scale==1){
@@ -32,8 +30,7 @@ void display_qr(menu8g2_t *menu, uint8_t x_offset, uint8_t y_offset,
                 }
 			}
 		}
-    } while(u8g2_NextPage(menu->u8g2));
-    xSemaphoreGive(menu->disp_mutex);
+    MENU8G2_END_DRAW(menu)
 }
 
 void display_qr_center(menu8g2_t *menu, QRCode *qrcode, uint8_t scale){

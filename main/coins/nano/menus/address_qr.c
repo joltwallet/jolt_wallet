@@ -26,7 +26,6 @@ void menu_nano_address_qr(menu8g2_t *prev){
 
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
-    FULLSCREEN_ENTER(&menu);
 
     //get public key
     nvs_handle nvs_h;
@@ -49,18 +48,19 @@ void menu_nano_address_qr(menu8g2_t *prev){
         goto exit;
     }
 
+    FULLSCREEN_ENTER(&menu)
     //u8g2_SetContrast(u8g2, 1); // Phones have trouble with bright displays
     display_qr_center(&menu, &qrcode, CONFIG_JOLT_QR_SCALE);
     for(;;){
 		if(xQueueReceive(menu.input_queue, &input_buf, portMAX_DELAY)) {
             if(input_buf & (1ULL << EASY_INPUT_BACK)){
                 // todo: Restore User's Brightness Here
+                FULLSCREEN_EXIT(&menu)
                 goto exit;
             }
         }
     }
 
     exit:
-        FULLSCREEN_EXIT(&menu);
         return;
 }

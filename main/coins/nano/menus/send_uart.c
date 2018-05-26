@@ -14,6 +14,7 @@
 #include "../../../loading.h"
 #include "../confirmation.h"
 #include "../../../gui.h"
+#include "../../../uart.h"
 
 #include "nano_lws.h"
 #include "nano_parse.h"
@@ -21,87 +22,6 @@
 static const char TAG[] = "nano_send";
 static const char TITLE[] = "Send Nano";
 
-static void get_serial_input(char *serial_rx, int buffersize){
-    
-    int line_pos = 0;
-    
-    while(1){
-        int c = getchar();
-        
-        if(c < 0) {
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-            continue;
-        }
-        if(c == '\r') continue;
-        if(c == '\n') {
-            
-            // terminate the string
-            serial_rx[line_pos] = '\0';
-            printf("\n");
-            break;
-        }
-        else {
-            putchar(c);
-            serial_rx[line_pos] = c;
-            line_pos++;
-            
-            // buffer full!
-            if(line_pos == buffersize) {
-                
-                printf("\nCommand buffer full!\n");
-                serial_rx[line_pos] = '\0';
-                
-                break;
-            }
-        }
-        
-        
-    }
-}
-
-static void get_serial_input_int(char *serial_rx, const int buffersize){
-    // fills up serial_rx with an ascii string where all characters must be ints
-    
-    int line_pos = 0;
-    
-    while(1){
-        int c = getchar();
-        
-        if(c < 0) {
-            vTaskDelay(10 / portTICK_PERIOD_MS);
-            continue;
-        }
-        if(c == '\r') continue;
-        if(c == '\n') {
-            // terminate the string
-            serial_rx[line_pos] = '\0';
-            printf("\n");
-            break;
-        }
-        else {
-            if( c >= '0' && c <= '9' ){
-                putchar(c);
-                serial_rx[line_pos] = c;
-                line_pos++;
-                
-                // buffer full!
-                if(line_pos == buffersize) {
-                    printf("\nCommand buffer full!\n");
-                    serial_rx[line_pos] = '\0';
-                    break;
-                }
-            }
-        }
-    }
-}
-
-static void flush_uart(){
-    //This is a terrible hack to flush the uarts buffer, a far better option would be rewrite all uart related code
-    // to use proper uart code from driver/uart.h
-    for(int bad_hack = 0; bad_hack <= 10; bad_hack++){
-        getchar();
-    };
-}
 
 void menu_nano_send_uart(menu8g2_t *prev){
     /*
@@ -113,7 +33,6 @@ void menu_nano_send_uart(menu8g2_t *prev){
     vault_rpc_t rpc;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
-    menu.post_draw = NULL;
 
     /**************************************
      * Get Destination Address and Amount *

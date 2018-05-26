@@ -60,14 +60,12 @@ bool number_entry_arr(menu8g2_t *prev, int8_t* output, uint8_t n_digit, uint8_t 
 
     u8g2_t *u8g2 = menu->u8g2;
     u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
-    u8g2_uint_t title_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) +
-            CONFIG_MENU8G2_BORDER_SIZE;
+    u8g2_uint_t title_height = u8g2_GetAscent(u8g2) + CONFIG_MENU8G2_BORDER_SIZE;
     u8g2_SetFont(u8g2, u8g2_font_profont17_tf);
-    u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) +
-            CONFIG_MENU8G2_BORDER_SIZE;
     int8_t entry_pos = 0; // which element the user is currently entering
+    uint16_t num_height = u8g2_GetAscent(u8g2);
     uint8_t border = (u8g2_GetDisplayWidth(u8g2) - 
-            (NUMBER_ENTRY_SPACING * n_digit)) / 2;
+            (NUMBER_ENTRY_SPACING * (n_digit+1))) / 2;
 
 	uint64_t input_buf;
     char buf[24];
@@ -77,14 +75,22 @@ bool number_entry_arr(menu8g2_t *prev, int8_t* output, uint8_t n_digit, uint8_t 
     for(;;){
         MENU8G2_BEGIN_DRAW(menu)
             u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
-            u8g2_DrawStr(u8g2, get_center_x(u8g2, title), title_height,
+            u8g2_DrawStr(u8g2, menu8g2_get_center_x(menu, title), title_height,
                     title);
-            u8g2_DrawHLine(u8g2, 0, line_height, u8g2_GetDisplayWidth(u8g2));
+            u8g2_DrawHLine(u8g2, 0, title_height+1, u8g2_GetDisplayWidth(u8g2));
+
             u8g2_SetFont(u8g2, u8g2_font_profont17_tf);
 
             for(int i = 0; i < n_digit; i++){
                 // Set Background color for position selection
                 if(i==entry_pos){
+                    u8g2_SetDrawColor(u8g2, 1);
+                    u8g2_DrawBox(u8g2,
+                            border + ((i + (i>=n_digit-n_decimal)) * NUMBER_ENTRY_SPACING) - 1,
+                            ((u8g2_GetDisplayHeight(u8g2) - num_height)/2) - 1,
+                            u8g2_GetStrWidth(u8g2, "0") + 2,
+                            num_height + 2
+                            );
                     u8g2_SetDrawColor(u8g2, 0);
                 }
                 else{
@@ -92,14 +98,14 @@ bool number_entry_arr(menu8g2_t *prev, int8_t* output, uint8_t n_digit, uint8_t 
                 }
                 sprintf(buf, "%d", num_entries[i]);
                 u8g2_DrawStr(u8g2, border + 
-                            ((i + (i>=(n_digit-n_decimal))) * NUMBER_ENTRY_SPACING),
-                        (u8g2_GetDisplayHeight(u8g2) + line_height)/2 ,
+                            ((i + (i>=n_digit-n_decimal)) * NUMBER_ENTRY_SPACING),
+                        (u8g2_GetDisplayHeight(u8g2) + num_height)/2 ,
                         buf);
             }
             // Draw decimal point
             u8g2_SetDrawColor(u8g2, 1);
             u8g2_DrawStr(u8g2, border + ((n_digit-n_decimal) * NUMBER_ENTRY_SPACING),
-                    (u8g2_GetDisplayHeight(u8g2) + line_height)/2 ,
+                    (u8g2_GetDisplayHeight(u8g2) + num_height)/2 ,
                     ".");
 
         MENU8G2_END_DRAW(menu)
