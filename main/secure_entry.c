@@ -38,8 +38,7 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
     u8g2_uint_t title_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) +
             CONFIG_MENU8G2_BORDER_SIZE;
     u8g2_SetFont(u8g2, u8g2_font_profont17_tf);
-    u8g2_uint_t line_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) +
-            CONFIG_MENU8G2_BORDER_SIZE;
+    u8g2_uint_t line_height = u8g2_GetAscent(u8g2);
     int8_t entry_pos = 0; // which element the user is currently entering
     uint8_t border = (u8g2_GetDisplayWidth(u8g2) - 
             (PIN_SPACING * max_pos)) / 2;
@@ -60,6 +59,13 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
             for(int i = 0; i < max_pos; i++){
                 // Set Background color for position selection
                 if(i==entry_pos){
+                    u8g2_SetDrawColor(u8g2, 1);
+                    u8g2_DrawBox(u8g2,
+                            border + (i * PIN_SPACING) - 1,
+                            ((u8g2_GetDisplayHeight(u8g2) - line_height)/2) - 1,
+                            u8g2_GetStrWidth(u8g2, "0") + 2,
+                            line_height + 2
+                            );
                     u8g2_SetDrawColor(u8g2, 0);
                 }
                 else{
