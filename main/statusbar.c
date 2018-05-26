@@ -111,7 +111,7 @@ static void statusbar_battery(menu8g2_t *menu, uint16_t *x, uint16_t *y){
 
 void statusbar_update(menu8g2_t *menu){
     uint16_t x = u8g2_GetDisplayWidth(menu->u8g2);
-    uint16_t y = 1;
+    uint16_t y = 2;
     // Graphical order right to left
     statusbar_battery(menu, &x, &y);
     statusbar_bluetooth(menu, &x, &y);
