@@ -35,10 +35,8 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
     u8g2_t *u8g2 = menu->u8g2;
     uint8_t max_pos = MAX_PIN_DIGITS;
     u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
-    u8g2_uint_t title_height = u8g2_GetAscent(u8g2) - u8g2_GetDescent(u8g2) +
-            CONFIG_MENU8G2_BORDER_SIZE;
+    u8g2_uint_t title_height = u8g2_GetAscent(u8g2) + CONFIG_MENU8G2_BORDER_SIZE;
     u8g2_SetFont(u8g2, u8g2_font_profont17_tf);
-    u8g2_uint_t line_height = u8g2_GetAscent(u8g2);
     int8_t entry_pos = 0; // which element the user is currently entering
     uint8_t border = (u8g2_GetDisplayWidth(u8g2) - 
             (PIN_SPACING * max_pos)) / 2;
@@ -53,8 +51,10 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
             u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
             u8g2_DrawStr(u8g2, menu8g2_get_center_x(menu, title), title_height,
                     title);
-            u8g2_DrawHLine(u8g2, 0, line_height, u8g2_GetDisplayWidth(u8g2));
+            u8g2_DrawHLine(u8g2, 0, title_height+1, u8g2_GetDisplayWidth(u8g2));
+
             u8g2_SetFont(u8g2, u8g2_font_profont17_tf);
+            uint16_t num_height = u8g2_GetAscent(u8g2);
 
             for(int i = 0; i < max_pos; i++){
                 // Set Background color for position selection
@@ -62,9 +62,9 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
                     u8g2_SetDrawColor(u8g2, 1);
                     u8g2_DrawBox(u8g2,
                             border + (i * PIN_SPACING) - 1,
-                            ((u8g2_GetDisplayHeight(u8g2) - line_height)/2) - 1,
+                            ((u8g2_GetDisplayHeight(u8g2) - num_height)/2) - 1,
                             u8g2_GetStrWidth(u8g2, "0") + 2,
-                            line_height + 2
+                            num_height + 2
                             );
                     u8g2_SetDrawColor(u8g2, 0);
                 }
@@ -73,7 +73,7 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
                 }
                 sprintf(buf, "%d", pin_entries[i]);
                 u8g2_DrawStr(u8g2, border + (i * PIN_SPACING),
-                        (u8g2_GetDisplayHeight(u8g2) + line_height)/2 ,
+                        (u8g2_GetDisplayHeight(u8g2) + num_height)/2 ,
                         buf);
             }
         MENU8G2_END_DRAW(menu)
