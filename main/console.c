@@ -101,6 +101,95 @@ static void register_nano_count()
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
 
+static int nano_balance(int argc, char** argv)
+{
+    printf("nano_balance\n");
+    backend_rpc_t rpc;
+    rpc.type = NANO_BALANCE;
+    if(backend_rpc(&rpc) != RPC_CMD_SUCCESS){
+        return 0;
+    }
+    
+    char buf[100];
+    snprintf(buf, sizeof(buf), "%0.3lf Nano", rpc.balance);
+    printf("Returned: %s\n", buf);
+    
+    return 0;
+}
+
+static void register_nano_balance()
+{
+    const esp_console_cmd_t cmd = {
+        .command = "nano_balance",
+        .help = "Get the current Nano Balance",
+        .hint = NULL,
+        .func = &nano_balance,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+}
+
+double nano_rpc_balance(){
+    static const char TITLE[] = "Nano Balance";
+    
+    /*
+     * Blocks involved:
+     * prev_block - frontier of our account chain
+     */
+    
+    vault_rpc_t rpc;
+    double display_amount;
+    
+    /******************
+     * Get My Address *
+     ******************/
+    nvs_handle nvs_h;
+    init_nvm_namespace(&nvs_h, "nano");
+    if(ESP_OK != nvs_get_u32(nvs_h, "index", &(rpc.nano_public_key.index))){
+        rpc.nano_public_key.index = 0;
+    }
+    nvs_close(nvs_h);
+    
+    rpc.type = NANO_PUBLIC_KEY;
+    if(vault_rpc(&rpc) != RPC_SUCCESS){
+        return 0;
+    }
+    
+    /********************************************
+     * Get My Account's Frontier Block *
+     ********************************************/
+    // Assumes State Blocks Only
+    // Outcome:
+    //     * frontier_hash, frontier_block
+    loading_enable();
+    loading_text_title("Getting Frontier", TITLE);
+    
+    nl_block_t frontier_block;
+    nl_block_init(&frontier_block);
+    memcpy(frontier_block.account, rpc.nano_public_key.block.account, BIN_256);
+    
+    switch( nanoparse_lws_frontier_block(&frontier_block) ){
+        case E_SUCCESS:
+            if( E_SUCCESS != nl_mpi_to_nano_double(&(frontier_block.balance),
+                                                   &display_amount) ){
+                goto exit;
+            }
+            ESP_LOGI(TAG, "Approximate Account Balance: %0.3lf", display_amount);
+            break;
+        default:
+            display_amount = 0;
+            break;
+    }
+    
+    loading_disable();
+    
+    return display_amount;
+    
+exit:
+    loading_disable();
+    return;
+
+}
+
 void menu_console(menu8g2_t *prev){
     
     esp_log_level_set("*", ESP_LOG_NONE);
@@ -112,6 +201,7 @@ void menu_console(menu8g2_t *prev){
     esp_console_register_help_command();
     register_free();
     register_nano_count();
+    register_nano_balance();
     
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
@@ -196,13 +286,6 @@ backend_rpc_response_t backend_rpc(backend_rpc_t *rpc){
 }
 
 void backend_task(void *backend_in){
-    /* This task should be ran at HIGHEST PRIORITY
-     * This task is essentially a daemon that is the only activity that should
-     * be accessing the vault. This task will respond to commands that
-     * request some task to be complete
-     *
-     * vault must already be initialized before starting this task
-     * */
     
     backend_t *backend_task = (backend_t *)backend_in;
     
@@ -225,6 +308,11 @@ void backend_task(void *backend_in){
                     case(FREE):
                         ESP_LOGI(TAG, "Executing FREE RPC.");
                         printf("%d\n", esp_get_free_heap_size());
+                        break;
+                    case NANO_BALANCE:
+                        ESP_LOGI(TAG, "Executing RESPONSE RPC.");
+                        cmd->balance = nano_rpc_balance();
+                        response = RPC_CMD_SUCCESS;
                         break;
                     case NANO_BLOCK_COUNT:
                         ESP_LOGI(TAG, "Executing RESPONSE RPC.");
