@@ -77,7 +77,7 @@ bool number_entry_arr(menu8g2_t *prev, int8_t* output, uint8_t n_digit, uint8_t 
     for(;;){
         MENU8G2_BEGIN_DRAW(menu)
             u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
-            u8g2_DrawStr(u8g2, get_center_x(u8g2, title), title_height,
+            u8g2_DrawStr(u8g2, menu8g2_get_center_x(menu, title), title_height,
                     title);
             u8g2_DrawHLine(u8g2, 0, line_height, u8g2_GetDisplayWidth(u8g2));
             u8g2_SetFont(u8g2, u8g2_font_profont17_tf);

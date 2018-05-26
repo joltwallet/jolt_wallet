@@ -15,12 +15,6 @@
 
 static const char* TAG = "helpers";
 
-uint8_t get_center_x(u8g2_t *u8g2, const char *text){
-    // Computes X position to print text in center of screen
-    u8g2_uint_t width = u8g2_GetStrWidth(u8g2, text);
-    return (u8g2_GetDisplayWidth(u8g2)-width)/2 ;
-}
-
 nl_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace){
     // Initialize NVS
     esp_err_t err = nvs_flash_init();

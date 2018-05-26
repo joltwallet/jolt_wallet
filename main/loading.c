@@ -131,7 +131,7 @@ void loading_task(void *menu_in){
                     graphic);
 
             u8g2_SetFont(menu.u8g2, u8g2_font_profont12_tf);
-            u8g2_DrawStr(menu.u8g2, get_center_x(menu.u8g2, payload.text),
+            u8g2_DrawStr(menu.u8g2, menu8g2_get_center_x(&menu, payload.text),
                     LOADING_TEXT_Y, payload.text);
         MENU8G2_END_DRAW(&menu)
     }
