@@ -26,7 +26,6 @@ void menu_nano_address_qr(menu8g2_t *prev){
 
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
-    FULLSCREEN_ENTER(&menu);
 
     //get public key
     nvs_handle nvs_h;
@@ -61,6 +60,5 @@ void menu_nano_address_qr(menu8g2_t *prev){
     }
 
     exit:
-        FULLSCREEN_EXIT(&menu);
         return;
 }
