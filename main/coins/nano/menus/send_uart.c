@@ -33,7 +33,6 @@ void menu_nano_send_uart(menu8g2_t *prev){
     vault_rpc_t rpc;
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
-    menu.post_draw = NULL;
 
     /**************************************
      * Get Destination Address and Amount *

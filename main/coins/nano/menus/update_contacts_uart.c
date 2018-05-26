@@ -15,38 +15,46 @@ void menu_nano_update_contact_uart(menu8g2_t *prev){
 
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
-    menu.post_draw = NULL;
    
     esp_log_level_set("*", ESP_LOG_ERROR);
 
     loading_enable();
-    loading_text("Contact Slot");
+    loading_text_title("Contact Slot", title);
     flush_uart();
     printf("\nEnter Nano Contact Addres Slot (int >=0): ");
     get_serial_input_int(buf, sizeof(buf));
+    loading_disable();
     uint8_t contact_index = atoi(buf);
     if( contact_index >= CONFIG_JOLT_NANO_CONTACTS_MAX ){
         snprintf(buf, sizeof(buf), "Contact index must be smaller than %d.",
                 CONFIG_JOLT_NANO_CONTACTS_MAX);
         menu8g2_display_text_title(&menu, buf, title);
+        esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
         return;
     }
 
+    loading_enable();
+    loading_text_title("Contact Name", title);
     char name[CONFIG_JOLT_NANO_CONTACTS_NAME_LEN];
     flush_uart();
     printf("\nContact Name: ");
     get_serial_input(name, sizeof(name));
+    loading_disable();
 
+    loading_enable();
+    loading_text_title("Contact Address", title);
     uint256_t contact_public_key;
     flush_uart();
     printf("\nNano Address: ");
     get_serial_input(buf, sizeof(buf));
+    loading_disable();
+
     if( E_SUCCESS != nl_address_to_public(contact_public_key, buf) ){
         menu8g2_display_text_title(&menu, "Invalid Address", title);
+        esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
         return;
     }
    
-    loading_disable();
     esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
 
     vault_rpc_t rpc = {

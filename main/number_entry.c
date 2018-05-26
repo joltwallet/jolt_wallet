@@ -86,7 +86,7 @@ bool number_entry_arr(menu8g2_t *prev, int8_t* output, uint8_t n_digit, uint8_t 
                 if(i==entry_pos){
                     u8g2_SetDrawColor(u8g2, 1);
                     u8g2_DrawBox(u8g2,
-                            border + (i * NUMBER_ENTRY_SPACING) - 1,
+                            border + ((i + (i>=n_digit-n_decimal)) * NUMBER_ENTRY_SPACING) - 1,
                             ((u8g2_GetDisplayHeight(u8g2) - num_height)/2) - 1,
                             u8g2_GetStrWidth(u8g2, "0") + 2,
                             num_height + 2
@@ -98,7 +98,7 @@ bool number_entry_arr(menu8g2_t *prev, int8_t* output, uint8_t n_digit, uint8_t 
                 }
                 sprintf(buf, "%d", num_entries[i]);
                 u8g2_DrawStr(u8g2, border + 
-                            ((i + (i>=(n_digit-n_decimal))) * NUMBER_ENTRY_SPACING),
+                            ((i + (i>=n_digit-n_decimal)) * NUMBER_ENTRY_SPACING),
                         (u8g2_GetDisplayHeight(u8g2) + num_height)/2 ,
                         buf);
             }
