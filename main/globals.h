@@ -13,6 +13,7 @@ extern volatile u8g2_t u8g2;
 extern volatile QueueHandle_t vault_queue;
 extern volatile QueueHandle_t input_queue;
 extern volatile SemaphoreHandle_t disp_mutex;
+extern QueueHandle_t backend_queue;
 
 extern volatile bool statusbar_draw_enable;
 
