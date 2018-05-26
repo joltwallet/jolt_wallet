@@ -19,7 +19,7 @@
 static const char* TAG = "StatusBar";
 
 /* Globals */
-bool statusbar_draw_enable = true;
+volatile bool statusbar_draw_enable = true;
 
 static void statusbar_pending(menu8g2_t *menu, uint16_t *x, uint16_t *y){
     bool pending_status = false; // todo: check websocket

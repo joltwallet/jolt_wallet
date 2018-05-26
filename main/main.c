@@ -25,10 +25,10 @@
 
 
 // Definitions for variables in globals.h
-u8g2_t u8g2;
-QueueHandle_t input_queue;
-QueueHandle_t vault_queue;
-SemaphoreHandle_t disp_mutex;
+volatile u8g2_t u8g2;
+volatile QueueHandle_t input_queue;
+volatile QueueHandle_t vault_queue;
+volatile SemaphoreHandle_t disp_mutex;
 
 void app_main(){
     // Setup Input Button Debouncing Code
