@@ -38,5 +38,6 @@ void initialize_console();
 void menu_console(menu8g2_t *prev);
 backend_rpc_response_t backend_rpc(backend_rpc_t *rpc);
 void backend_task(void *backend_in);
+void start_console();
 
 #endif
