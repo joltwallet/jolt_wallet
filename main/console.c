@@ -69,39 +69,13 @@ static void register_nano_count()
 
 static int nano_balance(int argc, char** argv)
 {
+    size_t disp_buffer_size = 8 * u8g2_GetBufferTileHeight(&u8g2) *
+            u8g2_GetBufferTileWidth(&u8g2);
+    uint8_t *old_disp_buffer = malloc(disp_buffer_size);
+    memcpy(old_disp_buffer, u8g2_GetBufferPtr(&u8g2), disp_buffer_size);
+
     printf("nano_balance\n");
-    backend_rpc_t rpc;
-    rpc.type = NANO_BALANCE;
-    if(backend_rpc(&rpc) != RPC_CMD_SUCCESS){
-        return 0;
-    }
-    
-    char buf[100];
-    snprintf(buf, sizeof(buf), "%0.3lf Nano", rpc.balance);
-    printf("Returned: %s\n", buf);
-    
-    return 0;
-}
 
-static void register_nano_balance()
-{
-    const esp_console_cmd_t cmd = {
-        .command = "nano_balance",
-        .help = "Get the current Nano Balance",
-        .hint = NULL,
-        .func = &nano_balance,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-}
-
-double nano_rpc_balance(){
-    static const char TITLE[] = "Nano Balance";
-    
-    /*
-     * Blocks involved:
-     * prev_block - frontier of our account chain
-     */
-    
     vault_rpc_t rpc;
     double display_amount;
     
@@ -117,7 +91,9 @@ double nano_rpc_balance(){
     
     rpc.type = NANO_PUBLIC_KEY;
     if(vault_rpc(&rpc) != RPC_SUCCESS){
-        return 0;
+        printf("User cancelled.\n");
+        display_amount = -1;
+        goto exit;
     }
     
     /********************************************
@@ -126,9 +102,6 @@ double nano_rpc_balance(){
     // Assumes State Blocks Only
     // Outcome:
     //     * frontier_hash, frontier_block
-    loading_enable();
-    loading_text_title("Getting Frontier", TITLE);
-    
     nl_block_t frontier_block;
     nl_block_init(&frontier_block);
     memcpy(frontier_block.account, rpc.nano_public_key.block.account, BIN_256);
@@ -137,28 +110,51 @@ double nano_rpc_balance(){
         case E_SUCCESS:
             if( E_SUCCESS != nl_mpi_to_nano_double(&(frontier_block.balance),
                                                    &display_amount) ){
-                goto exit;
+                display_amount = -1;
             }
-            ESP_LOGI(TAG, "Approximate Account Balance: %0.3lf", display_amount);
             break;
         default:
             display_amount = 0;
             break;
     }
-    
-exit:
-    loading_disable();
-    return display_amount;
 
+    char buf[100];
+    if( display_amount >= 0 ){
+        snprintf(buf, sizeof(buf), "%0.3lf Nano", display_amount);
+        printf("Returned: %s\n", buf);
+    }
+    else{
+        printf("Error");
+    }
+
+    exit:
+        memcpy(u8g2_GetBufferPtr(&u8g2), old_disp_buffer, disp_buffer_size);
+        free(old_disp_buffer);
+        return display_amount;
+}
+
+static void register_nano_balance()
+{
+    const esp_console_cmd_t cmd = {
+        .command = "nano_balance",
+        .help = "Get the current Nano Balance",
+        .hint = NULL,
+        .func = &nano_balance,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+}
+
+double nano_rpc_balance(){
+    return 0;
 }
 
 void console_task(){
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
      */
+    esp_log_level_set("*", ESP_LOG_NONE);
     const char* prompt = "esp32> ";
 
-    esp_log_level_set("*", ESP_LOG_NONE);
     printf("\n"
            "Welcome to the Jolt Console.\n"
            "Type 'help' to get the list of commands.\n"
@@ -214,7 +210,7 @@ void console_task(){
 void start_console(){
     xTaskCreate(console_task,
                 "ConsoleTask", 32000,
-                NULL, 11,
+                NULL, 15,
                 (TaskHandle_t *) &console_h);
 }
 
