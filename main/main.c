@@ -56,6 +56,7 @@ void app_main(){
     
     // Initiate Console
     initialize_console();
+    start_console();
 
     xTaskCreate(vault_task,
             "VaultTask", 50000,
