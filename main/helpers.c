@@ -76,7 +76,7 @@ void store_mnemonic_reboot(menu8g2_t *menu, char *mnemonic){
 
         // Verify the pins match
         if( 0 == memcmp(pin_hash, pin_hash_verify, 32) ){
-	        uint256_t nonce = {0};
+            uint256_t nonce = {0};
             sodium_memzero(pin_hash_verify, 32);
             // encrypt; only purpose is to reduce mnemonic redundancy to make a
             // frozen data remanence attack infeasible. Also convenient pin

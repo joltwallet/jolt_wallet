@@ -1259,12 +1259,12 @@ void boot_splash(u8g2_t *u8g2){
             GRAPHIC_JOLT_W) / 2;
     int16_t logo_y = (u8g2_GetDisplayHeight(u8g2)-GRAPHIC_JOLT_H)/2;
 
-	u8g2_FirstPage(u8g2);
-	do{
-		u8g2_DrawXBM( u8g2, logo_x, logo_y,
+    u8g2_FirstPage(u8g2);
+    do{
+        u8g2_DrawXBM( u8g2, logo_x, logo_y,
                 GRAPHIC_JOLT_W,
                 GRAPHIC_JOLT_H,
                 graphic_jolt);
-	} while(u8g2_NextPage(u8g2));
+    } while(u8g2_NextPage(u8g2));
     vTaskDelay(1000 / portTICK_PERIOD_MS);
 }

@@ -66,7 +66,7 @@ void loading_text_title(const char *text, const char *title){
 
 bool loading_check_cancel(menu8g2_t *menu){
     /* Returns true if a back input press is on the queue */
-	uint64_t input_buf;
+    uint64_t input_buf;
 
     while(xQueueReceive(menu->input_queue, &input_buf, 0)) {
         if(input_buf & 1ULL << EASY_INPUT_BACK){
@@ -85,7 +85,7 @@ void loading_task(void *menu_in){
     const unsigned char *graphic = NULL;
 
     for(uint8_t i = 0;; i = (i+
-    	    !xQueueReceive(loading_queue, &payload, 
+            !xQueueReceive(loading_queue, &payload, 
                 pdMS_TO_TICKS(LOADING_FRAME_TIME_MS))) % N_LOADING_FRAMES){
 
         if(!loading_draw_enable){

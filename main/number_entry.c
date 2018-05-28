@@ -67,7 +67,7 @@ bool number_entry_arr(menu8g2_t *prev, int8_t* output, uint8_t n_digit, uint8_t 
     uint8_t border = (u8g2_GetDisplayWidth(u8g2) - 
             (NUMBER_ENTRY_SPACING * (n_digit+1))) / 2;
 
-	uint64_t input_buf;
+    uint64_t input_buf;
     char buf[24];
     int8_t *num_entries = calloc( n_digit, sizeof(int8_t) );
 
@@ -113,7 +113,7 @@ bool number_entry_arr(menu8g2_t *prev, int8_t* output, uint8_t n_digit, uint8_t 
         u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
         u8g2_SetDrawColor(u8g2, 1); // Set it back to default background
 
-		if(xQueueReceive(menu->input_queue, &input_buf, portMAX_DELAY)) {
+        if(xQueueReceive(menu->input_queue, &input_buf, portMAX_DELAY)) {
             if(input_buf & (1ULL << EASY_INPUT_BACK)){
                 if(entry_pos>0){
                     entry_pos--;

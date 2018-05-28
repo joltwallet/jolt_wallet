@@ -6,21 +6,21 @@ menu "Jolt Wallet Config"
             prompt "Display SDA GPIO PIN"
             default 4
             help
-                help text here
+                I2C Display's SDA
 
         config JOLT_DISPLAY_PIN_SCL
             int
             prompt "Display SCL GPIO PIN"
             default 15
             help
-                help text here
+                I2C Display's SCL
 
         config JOLT_DISPLAY_PIN_RST
             int
             prompt "Display RST GPIO PIN"
             default 16
             help
-                help text here
+                I2C Display's RST
 
         config JOLT_DISPLAY_ADDRESS
             hex
@@ -28,6 +28,7 @@ menu "Jolt Wallet Config"
             default 0x78
             help
                 help text here
+                I2C Display's Address
     endmenu
 
     config JOLT_DEFAULT_TIMEOUT_S
@@ -73,14 +74,14 @@ menu "Jolt Wallet Config"
         prompt "Pixel-wise QR code scale multiplier"
         default 1
         help
-            help text here
+            Integer dimension multipler. Leave as 1 for 1 pixel per square
 
     config JOLT_VAULT_RPC_QUEUE_LEN
         int
         prompt "Vault RPC queue length"
         default 8
         help
-            help text here
+            Length of queue for Vault RPC commands
 
     config JOLT_NANO_DEFAULT_REPRESENTATIVE
         string
@@ -98,23 +99,24 @@ menu "Jolt Wallet Config"
 
     config JOLT_NANO_CONTACTS_NAME_LEN
         int
-        prompt "Maximum length of nickname"
+        prompt "Maximum length of Nano contact alias"
         default 18
         help
-            help text here
+            Maximum number of characters (including null-term) to store for a
+            Nano contact alias
 
     config AP_TARGET_SSID
         string
         prompt "WiFi SSID"
         default "SSID"
         help
-            help text here
+            Factory reset WiFi ssid
 
     config AP_TARGET_PASSWORD
         string
         prompt "WiFi Password"
         default "Password"
         help
-        help text here
+            Factory reset WiFi pass
 
 endmenu

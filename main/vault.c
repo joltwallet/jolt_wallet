@@ -66,9 +66,9 @@ nl_err_t vault_init(vault_t *vault){
      *          - Prevents a malicious person from reseting the counter via
      *            page wipe. However, a missing attempt counter should trigger
      *            a factory reset. A page can hold 126*32 bytes
-	 *     * Increment attempt counter in NVS before testing
+     *     * Increment attempt counter in NVS before testing
      */
-	nvs_handle nvs_secret;
+    nvs_handle nvs_secret;
     esp_err_t err;
     nl_err_t res;
     size_t required_size;
@@ -98,7 +98,7 @@ nl_err_t vault_init(vault_t *vault){
         res = E_FAILURE;
     }
     
-	nvs_close(nvs_secret);
+    nvs_close(nvs_secret);
     return res;
 }
 
@@ -201,7 +201,7 @@ void vault_task(void *vault_in){
     vault_queue = xQueueCreate( CONFIG_JOLT_VAULT_RPC_QUEUE_LEN, sizeof( vault_rpc_t* ) );
 
     for(;;){
-    	if( xQueueReceive(vault_queue, &cmd,
+        if( xQueueReceive(vault_queue, &cmd,
                 pdMS_TO_TICKS(CONFIG_JOLT_DEFAULT_TIMEOUT_S * 1000)) ){
             sodium_mprotect_readonly(vault);
 

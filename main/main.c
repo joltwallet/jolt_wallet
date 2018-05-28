@@ -62,9 +62,9 @@ void app_main(){
             NULL);
 
     xTaskCreate(network_task,
-			"NetworkTask", 4800,
-			NULL, 10,
-			NULL);
+            "NetworkTask", 4800,
+            NULL, 10,
+            NULL);
 
-	vTaskSuspend(NULL);
+    vTaskSuspend(NULL);
 }

@@ -75,13 +75,13 @@ void first_boot_menu(){
     CONFIDENTIAL char mnemonic[MNEMONIC_BUF_LEN];
     nl_mnemonic_generate(mnemonic, MNEMONIC_BUF_LEN, 256);
 
-	for(int8_t current_screen =0;;){
-		current_screen = (current_screen<0) ? 0 : current_screen;
-		switch(current_screen){
-			case(0):
-				current_screen += display_welcome(&menu);
-				break;
-			case(1):{
+    for(int8_t current_screen =0;;){
+        current_screen = (current_screen<0) ? 0 : current_screen;
+        switch(current_screen){
+            case(0):
+                current_screen += display_welcome(&menu);
+                break;
+            case(1):{
                 const char title[] = "Write Down Mnemonic!";
                 if( menu8g2_create_vertical_menu(&menu, title, mnemonic,
                         (void *)&get_nth_word, 25) ){
@@ -92,14 +92,14 @@ void first_boot_menu(){
                 else{
                     current_screen--;
                 }
-				break;
-			}
-			case(2):
+                break;
+            }
+            case(2):
                 store_mnemonic_reboot(&menu, mnemonic);
                 current_screen--;
                 break;
-			default:
-				break;
-		}
-	}
+            default:
+                break;
+        }
+    }
 }

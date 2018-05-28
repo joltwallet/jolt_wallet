@@ -41,7 +41,7 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
     uint8_t border = (u8g2_GetDisplayWidth(u8g2) - 
             (PIN_SPACING * max_pos)) / 2;
 
-	uint64_t input_buf;
+    uint64_t input_buf;
     char buf[24];
     int8_t pin_entries[MAX_PIN_DIGITS] = { 0 };
 
@@ -81,7 +81,7 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
         u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
         u8g2_SetDrawColor(u8g2, 1); // Set it back to default background
 
-		if(xQueueReceive(menu->input_queue, &input_buf, portMAX_DELAY)) {
+        if(xQueueReceive(menu->input_queue, &input_buf, portMAX_DELAY)) {
             if(input_buf & (1ULL << EASY_INPUT_BACK)){
                 if(entry_pos>0){
                     entry_pos--;
