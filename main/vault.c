@@ -20,6 +20,7 @@
 #include "statusbar.h"
 #include "loading.h"
 #include "helpers.h"
+#include "gui.h"
 
 // Coin RPCs
 #include "rpc_syscore.h"
@@ -39,6 +40,7 @@ vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
     rpc->response_queue = xQueueCreate( 1, sizeof(res) );
     
     ESP_LOGI(TAG, "Attempting Vault RPC Send %d; ID: %d", rpc->type, id);
+    SCREEN_SAVE;
     if(xQueueSend( vault_queue, (void *) &rpc, 0)){
         ESP_LOGI(TAG, "Success: Vault RPC Send %d; ID: %d", rpc->type, id);
         ESP_LOGI(TAG, "Awaiting Vault RPC Send %d response; ID: %d", rpc->type, id);
@@ -50,6 +52,7 @@ vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
         ESP_LOGI(TAG, "Vault RPC Send %d failed; ID: %d", rpc->type, id);
         res = RPC_QUEUE_FULL;
     }
+    SCREEN_RESTORE;
 
     vQueueDelete(rpc->response_queue);
     ESP_LOGI(TAG, "Response Queue Deleted; ID: %d\n", id);

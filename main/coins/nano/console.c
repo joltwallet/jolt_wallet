@@ -37,8 +37,6 @@ static int nano_sign_block(int argc, char** argv) {
         return 1;
     }
 
-    SCREEN_SAVE;
-
     int response = -1;
 
     nl_block_t head, new;
@@ -91,7 +89,6 @@ static int nano_sign_block(int argc, char** argv) {
     response = 0;
 
     exit:
-        SCREEN_RESTORE;
         nl_block_free(&head);
         nl_block_free(&new);
         return response;
@@ -113,8 +110,6 @@ static int nano_address(int argc, char ** argv){
     if( !console_check_range_argc(argc, 1, 3) ){
         return 1;
     }
-
-    SCREEN_SAVE;
 
     if( 1 == argc ){
         lower = get_nvs_index();
@@ -146,7 +141,6 @@ static int nano_address(int argc, char ** argv){
     }
     response = 0;
     exit:
-        SCREEN_RESTORE;
         return response;
 }
 
@@ -158,8 +152,6 @@ static int nano_balance(int argc, char** argv) {
     if( !console_check_range_argc(argc, 1, 2) ){
         return 1;
     }
-
-    SCREEN_SAVE;
 
     double display_amount;
     
@@ -226,7 +218,6 @@ static int nano_balance(int argc, char** argv) {
     }
 
     exit:
-        SCREEN_RESTORE;
         return response;
 }
 

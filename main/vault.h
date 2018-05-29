@@ -28,7 +28,8 @@ typedef enum vault_rpc_type_t {
 } vault_rpc_type_t;
 
 typedef enum vault_rpc_response_t {
-    RPC_SUCCESS = 0,
+    RPC_UNLOCK = -1,
+    RPC_SUCCESS = 0, // Anything below RPC_SUCCESS is considered a success
     RPC_FAILURE,
     RPC_CANCELLED,
     RPC_UNDEFINED,
