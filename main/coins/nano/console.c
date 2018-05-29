@@ -12,42 +12,100 @@
 #include "nano_parse.h"
 #include "../../globals.h"
 #include "../../vault.h"
-#include "../../loading.h"
+#include "../../console.h"
 
 
 static const char* TAG = "console_nano";
 
+static int nano_process(int argc, char** argv) {
+    return 0;
+}
+
 static int nano_count(int argc, char** argv) {
+    /* Gets Nano Server's Block Count */
     uint32_t block_count = nanoparse_lws_block_count();
     printf("%d Blocks\n", block_count);
     return 0;
 }
 
+static int nano_address(int argc, char ** argv){
+    /* Return The Addresses of given index
+     * Optionally takes a second argument to return the range */
+
+    if( !console_check_argc(argc, 3) ){
+        return 1;
+    }
+
+    uint8_t lower, upper;
+    lower = atoi( argv[1] );
+    if( 3 == argc ){
+        upper = atoi(argv[2]);
+    }
+    else {
+        upper = lower;
+    }
+    for(uint32_t index=lower; index<=upper; index++ ){
+        vault_rpc_t rpc;
+        rpc.nano_public_key.index = index;
+        rpc.type = NANO_PUBLIC_KEY;
+        if(vault_rpc(&rpc) != RPC_SUCCESS){
+            printf("User cancelled.\n");
+            return 2;
+        }
+        char address[ADDRESS_BUF_LEN];
+        nl_public_to_address(address, sizeof(address),
+                rpc.nano_public_key.block.account);
+        printf("Index: %d; Address: %s\n", index, address);
+    }
+    return 0;
+}
+
 static int nano_balance(int argc, char** argv) {
+    /* Gets currently selected Nano account's balance.
+     * Takes optional 1 argument: integer index */
+    int response = -1;
+
+    if( !console_check_argc(argc, 2) ){
+        return 1;
+    }
+
     size_t disp_buffer_size = 8 * u8g2_GetBufferTileHeight(&u8g2) *
             u8g2_GetBufferTileWidth(&u8g2);
     uint8_t *old_disp_buffer = malloc(disp_buffer_size);
     memcpy(old_disp_buffer, u8g2_GetBufferPtr(&u8g2), disp_buffer_size);
 
-    vault_rpc_t rpc;
     double display_amount;
     
     /******************
      * Get My Address *
      ******************/
-    nvs_handle nvs_h;
-    init_nvm_namespace(&nvs_h, "nano");
-    if(ESP_OK != nvs_get_u32(nvs_h, "index", &(rpc.nano_public_key.index))){
-        rpc.nano_public_key.index = 0;
+    uint32_t index;
+    if( argc == 2 ){
+        index = atoi( argv[1] );
+        if( 0 == index && '0' != argv[1][0]) {
+            printf("Invalid Index");
+            response = 2;
+            goto exit;
+        }
     }
-    nvs_close(nvs_h);
-    
+    else{
+        nvs_handle nvs_h;
+        init_nvm_namespace(&nvs_h, "nano");
+        if(ESP_OK != nvs_get_u32(nvs_h, "index", &index)){
+            index = 0;
+        }
+        nvs_close(nvs_h);
+    }
+
+    vault_rpc_t rpc;
+    rpc.nano_public_key.index = index;
     rpc.type = NANO_PUBLIC_KEY;
     if(vault_rpc(&rpc) != RPC_SUCCESS){
         printf("User cancelled.\n");
-        display_amount = -1;
+        response = 3;
         goto exit;
     }
+
     char address[ADDRESS_BUF_LEN];
     nl_public_to_address(address, sizeof(address),
             rpc.nano_public_key.block.account);
@@ -66,8 +124,9 @@ static int nano_balance(int argc, char** argv) {
     switch( nanoparse_lws_frontier_block(&frontier_block) ){
         case E_SUCCESS:
             if( E_SUCCESS != nl_mpi_to_nano_double(&(frontier_block.balance),
-                                                   &display_amount) ){
-                display_amount = -1;
+                    &display_amount) ){
+                display_amount = 4;
+                goto exit;
             }
             break;
         default:
@@ -77,15 +136,17 @@ static int nano_balance(int argc, char** argv) {
 
     if( display_amount >= 0 ){
         printf("Balance: %0.4lf Nano\n", display_amount);
+        response = 0;
     }
     else{
         printf("Error\n");
+        response = 5;
     }
 
     exit:
         memcpy(u8g2_GetBufferPtr(&u8g2), old_disp_buffer, disp_buffer_size);
         free(old_disp_buffer);
-        return display_amount;
+        return response;
 }
 
 void console_nano_register() {
@@ -104,6 +165,14 @@ void console_nano_register() {
         .help = "Get the current Nano Balance",
         .hint = NULL,
         .func = &nano_balance,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "nano_address",
+        .help = "Get the Nano Address at derivation index or index range",
+        .hint = NULL,
+        .func = &nano_address,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }

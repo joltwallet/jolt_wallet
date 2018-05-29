@@ -172,3 +172,10 @@ void initialize_console() {
     console_register_commands();
 }
 
+bool console_check_argc(uint8_t argc, uint8_t limit){
+    if ( argc > limit) {
+        printf("Too many input arguments; max %d args\n", limit);
+        return false;
+    }
+    return true;
+}
