@@ -1,3 +1,7 @@
+/* No Licence in file itself however in original directory licence file is GPL3
+ From https://github.com/pcbreflux/espressif/blob/master/esp32/app/ESP32_int_hall_sensor/main/u8g2_esp32_hal.c
+ */
+
 #include <stdio.h>
 #include <string.h>
 
