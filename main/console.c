@@ -16,7 +16,7 @@
 #include <libwebsockets.h>
 #include "nano_lws.h"
 #include "nano_parse.h"
-
+#include "globals.h"
 #include "console.h"
 
 static const char* TAG = "console";
@@ -24,57 +24,23 @@ static const char* TAG = "console";
 volatile TaskHandle_t console_h = NULL;
 
 
-
-static int free_mem(int argc, char** argv)
-{
-    printf("%d\n", esp_get_free_heap_size());
+static int free_mem(int argc, char** argv) {
+    printf("Free: %d bytes\n", esp_get_free_heap_size());
     return 0;
 }
 
-static void register_free()
-{
-    const esp_console_cmd_t cmd = {
-        .command = "free",
-        .help = "Get the total size of heap memory available",
-        .hint = NULL,
-        .func = &free_mem,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-}
-
-static int nano_count(int argc, char** argv)
-{
+static int nano_count(int argc, char** argv) {
     printf("nano_count\n");
-    backend_rpc_t rpc;
-    rpc.type = NANO_BLOCK_COUNT;
-    if(backend_rpc(&rpc) != RPC_CMD_SUCCESS){
-        return 0;
-    }
-    
-    printf("Returned: %d\n", rpc.block_count);
-    
+    uint32_t block_count = nanoparse_lws_block_count();
+    printf("Returned: %d\n", block_count);
     return 0;
 }
 
-static void register_nano_count()
-{
-    const esp_console_cmd_t cmd = {
-        .command = "nano_count",
-        .help = "Get the current Nano block count",
-        .hint = NULL,
-        .func = &nano_count,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-}
-
-static int nano_balance(int argc, char** argv)
-{
+static int nano_balance(int argc, char** argv) {
     size_t disp_buffer_size = 8 * u8g2_GetBufferTileHeight(&u8g2) *
             u8g2_GetBufferTileWidth(&u8g2);
     uint8_t *old_disp_buffer = malloc(disp_buffer_size);
     memcpy(old_disp_buffer, u8g2_GetBufferPtr(&u8g2), disp_buffer_size);
-
-    printf("nano_balance\n");
 
     vault_rpc_t rpc;
     double display_amount;
@@ -95,6 +61,10 @@ static int nano_balance(int argc, char** argv)
         display_amount = -1;
         goto exit;
     }
+    char address[ADDRESS_BUF_LEN];
+    nl_public_to_address(address, sizeof(address),
+            rpc.nano_public_key.block.account);
+    printf("Address: %s\n", address);
     
     /********************************************
      * Get My Account's Frontier Block *
@@ -118,13 +88,11 @@ static int nano_balance(int argc, char** argv)
             break;
     }
 
-    char buf[100];
     if( display_amount >= 0 ){
-        snprintf(buf, sizeof(buf), "%0.3lf Nano", display_amount);
-        printf("Returned: %s\n", buf);
+        printf("Balance: %0.4lf Nano\n", display_amount);
     }
     else{
-        printf("Error");
+        printf("Error\n");
     }
 
     exit:
@@ -133,22 +101,7 @@ static int nano_balance(int argc, char** argv)
         return display_amount;
 }
 
-static void register_nano_balance()
-{
-    const esp_console_cmd_t cmd = {
-        .command = "nano_balance",
-        .help = "Get the current Nano Balance",
-        .hint = NULL,
-        .func = &nano_balance,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-}
-
-double nano_rpc_balance(){
-    return 0;
-}
-
-void console_task(){
+void console_task() {
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
      */
@@ -207,14 +160,16 @@ void console_task(){
     vTaskDelete( NULL );
 }
 
-void start_console(){
+volatile TaskHandle_t *start_console(){
     xTaskCreate(console_task,
                 "ConsoleTask", 32000,
                 NULL, 15,
                 (TaskHandle_t *) &console_h);
+    return  &console_h;
 }
 
 void menu_console(menu8g2_t *prev){
+    /* On-Device GUI for Starting Console */
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
 
@@ -231,76 +186,34 @@ void menu_console(menu8g2_t *prev){
     }
 }
 
-backend_rpc_response_t backend_rpc(backend_rpc_t *rpc){
-    /* Sets up rpc queue, blocks until vault responds. */
-    backend_rpc_response_t res;
-    
-#if LOG_LOCAL_LEVEL >= ESP_LOG_INFO
-    int32_t id = randombytes_random();
-#endif
-    
-    rpc->response_queue = xQueueCreate( 1, sizeof(res) );
-    
-    ESP_LOGI(TAG, "Attempting Backend RPC Send %d; ID: %d", rpc->type, id);
-    if(xQueueSend( backend_queue, (void *) &rpc, 0)){
-        ESP_LOGI(TAG, "Success: Backend RPC Send %d; ID: %d", rpc->type, id);
-        ESP_LOGI(TAG, "Awaiting Backend RPC Send %d response; ID: %d", rpc->type, id);
-        xQueueReceive(rpc->response_queue, (void *) &res, portMAX_DELAY);
-        ESP_LOGI(TAG, "Success: Backend RPC Send %d response %d; ID: %d",
-                 rpc->type, res, id);
-    }
-    else{
-        ESP_LOGI(TAG, "Vault RPC Send %d failed; ID: %d", rpc->type, id);
-        res = RPC_QUEUE_FULL;
-    }
-    
-    vQueueDelete(rpc->response_queue);
-    ESP_LOGI(TAG, "Response Queue Deleted; ID: %d\n", id);
-    return res;
-}
+static void console_register_commands(){
+    esp_console_cmd_t cmd;
 
-void backend_task(void *backend_in){
-    
-    backend_t *backend_task = (backend_t *)backend_in;
-    
-    backend_rpc_t *cmd;
-    backend_rpc_response_t response;
-    
-    /* The vault_queue holds a pointer to the vault_rpc_t object declared
-     * by the producer task. Results are directly modified on that object.
-     * A response status is sent back on the queue in the vault_rpc_t stating
-     * the RPC error code. */
-    backend_queue = xQueueCreate( CONFIG_JOLT_VAULT_RPC_QUEUE_LEN, sizeof( backend_rpc_t* ) );
-    
-    for(;;){
-        if( xQueueReceive(backend_queue, &cmd,
-                          pdMS_TO_TICKS(CONFIG_JOLT_DEFAULT_TIMEOUT_S * 1000)) ){
-            
-                // Perform RPC command
-                /* MASTER RPC SWITCH STATEMENT */
-                switch(cmd->type){
-                    case(FREE):
-                        ESP_LOGI(TAG, "Executing FREE RPC.");
-                        printf("%d\n", esp_get_free_heap_size());
-                        break;
-                    case NANO_BALANCE:
-                        ESP_LOGI(TAG, "Executing RESPONSE RPC.");
-                        cmd->balance = nano_rpc_balance();
-                        response = RPC_CMD_SUCCESS;
-                        break;
-                    case NANO_BLOCK_COUNT:
-                        ESP_LOGI(TAG, "Executing RESPONSE RPC.");
-                        cmd->block_count = nanoparse_lws_block_count();
-                        response = RPC_CMD_SUCCESS;
-                        break;
-                    default:
-                        response = RPC_UNDEFINED;
-                        break;
-                }
-            // Send back response
-            xQueueOverwrite(cmd->response_queue, &response);
-        }
-    }
+    esp_console_register_help_command();
+
+    cmd = (esp_console_cmd_t) {
+        .command = "nano_count",
+        .help = "Get the current Nano block count",
+        .hint = NULL,
+        .func = &nano_count,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "nano_balance",
+        .help = "Get the current Nano Balance",
+        .hint = NULL,
+        .func = &nano_balance,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "free",
+        .help = "Get the total size of heap memory available",
+        .hint = NULL,
+        .func = &free_mem,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
 
 void initialize_console() {
@@ -341,9 +254,6 @@ void initialize_console() {
     linenoiseHistorySetMaxLen(20);
 
     /* Register commands */
-    esp_console_register_help_command();
-    register_free();
-    register_nano_count();
-    register_nano_balance();
+    console_register_commands();
 }
 

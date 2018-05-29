@@ -59,15 +59,10 @@ void app_main(){
     start_console();
 
     xTaskCreate(vault_task,
-            "VaultTask", 50000,
+            "VaultTask", 32000,
             (void *) &vault, 14,
             NULL);
     
-    xTaskCreate(backend_task,
-                "BackendTask", 32000,
-                NULL, 11,
-                NULL);
-
     xTaskCreate(gui_task,
             "GuiTask", 32000,
             NULL, 10,
