@@ -9,3 +9,7 @@ They are not complete guides, but include notes on the necessary libraries, comp
 - [OS X Build Notes](build-osx.md)
 - [Linux Build Notes](build-linux.md)
 - [Windows Build Notes](build-windows.md)
+
+Setting Up A Dev Board
+---------------------
+- [HowTo Dev Board](howto-dev-board.md)
