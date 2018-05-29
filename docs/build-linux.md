@@ -12,6 +12,7 @@ Install Dependencies
 Install Compiler
 ---------------------
 `mkdir esp/`
+
 `cd esp/`
 
 `tar -xzf ../xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz`
@@ -57,4 +58,4 @@ In menuconfig the minimum you need to set:
 Flash to Device
 ---------------------
 
-`make flash`
+`make flash monitor`
