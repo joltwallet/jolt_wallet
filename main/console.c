@@ -91,7 +91,7 @@ void console_task() {
 volatile TaskHandle_t *start_console(){
     xTaskCreate(console_task,
                 "ConsoleTask", 32000,
-                NULL, 15,
+                NULL, 19,
                 (TaskHandle_t *) &console_h);
     return  &console_h;
 }
@@ -151,7 +151,7 @@ void initialize_console() {
     /* Initialize the console */
     esp_console_config_t console_config = {
         .max_cmdline_args = 8,
-        .max_cmdline_length = 256,
+        .max_cmdline_length = 4096,
     };
     ESP_ERROR_CHECK( esp_console_init(&console_config) );
     
@@ -172,9 +172,23 @@ void initialize_console() {
     console_register_commands();
 }
 
-bool console_check_argc(uint8_t argc, uint8_t limit){
-    if ( argc > limit) {
-        printf("Too many input arguments; max %d args\n", limit);
+bool console_check_range_argc(uint8_t argc, uint8_t min, uint8_t max){
+    if ( argc > max) {
+        printf("Too many input arguments; max %d args\n", max);
+        return false;
+    }
+    if ( argc < min) {
+        printf("Too few input arguments; min %d args\n", min);
+        return false;
+    }
+
+    return true;
+}
+
+bool console_check_equal_argc(uint8_t argc, uint8_t expected){
+    if ( argc != expected) {
+        printf("Incorrect number of input arguments; expected %d args\n",
+                expected);
         return false;
     }
     return true;
