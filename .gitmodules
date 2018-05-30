@@ -9,7 +9,7 @@
 	url = https://github.com/joltwallet/easy_input.git
 [submodule "components/u8g2"]
 	path = components/u8g2
-	url = https://github.com/olikraus/u8g2.git
+	url = https://github.com/joltwallet/u8g2.git
 [submodule "components/zlib"]
 	path = components/zlib
 	url = https://github.com/joltwallet/nano_zlib.git
@@ -21,7 +21,7 @@
 	url = https://github.com/joltwallet/nano_parse.git
 [submodule "components/libwebsockets"]
 	path = components/libwebsockets
-	url = https://github.com/warmcat/libwebsockets.git
+	url = https://github.com/joltwallet/libwebsockets.git
 [submodule "components/QRCode"]
 	path = components/QRCode
-	url = https://github.com/phildubach/QRCode.git
+	url = https://github.com/joltwallet/QRCode.git
