@@ -15,7 +15,6 @@
 - [Development](#development)
 - [Features](#features)
 - [Contributors](#contributors)
-- [Additional Resources](#additional-resources)
 
 ## Introduction
 
