@@ -58,9 +58,9 @@ If you'd like to develop, build, and/or run Jolt please follow the guide that be
 
 This project wouldn't have been possible without the hard work and dedication of these fellow members.
 
-* [jamescoxon](https://github.com/jamescoxon) -
+* [@jamescoxon](https://github.com/jamescoxon) -
 **James Coxon**
-* [brianpugh](https://github.com/brianpugh) -
+* [@brianpugh](https://github.com/brianpugh) -
 **Brian Pugh**
-* [smaili](https://github.com/smaili) -
+* [@smaili](https://github.com/smaili) -
 **Michael Smaili**
