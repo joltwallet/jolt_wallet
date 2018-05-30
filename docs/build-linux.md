@@ -40,7 +40,7 @@ Due to an issue with the latest esp-idf and libwebsockets it is necessary to rol
 
 Install Jolt Wallet
 ---------------------
-`git clone https://github.com/joltwallet/jolt_wallet.git --recursive`
+`git clone --recursive https://github.com/joltwallet/jolt_wallet.git`
 
 `cd jolt_wallet`
 
