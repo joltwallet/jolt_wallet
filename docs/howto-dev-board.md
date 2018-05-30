@@ -16,10 +16,10 @@ Hardware Setup
 ---------------------
 * Solder the header pins to the Development Board
 * Lay out the devices on the protoboard
-<img src="/docs/proto1.jpg" width="500">
+<img src="/docs/images/proto1.jpg" width="500">
 
 * Wire up your buttons, each button needs to be connected to a pin and on the other side of the button connected to ground (GND). In this example: Up - 13, Down - 12, Back - 14, Enter - 27 
-<img src="/docs/proto2.jpg" width="500">
+<img src="/docs/images/proto2.jpg" width="500">
 
 Software Setup
 ---------------------

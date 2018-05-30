@@ -3,23 +3,15 @@ Roadmap and Features
 
 **Completed**
 
-* Generate random seed
-* Create private key
-* Convert to XRB address
-* Display QR Code
-* Buttons
+* Generate random seed, securely store private keys
+* [Nano] Generate on the fly public key and nano address
+* UART interface
+* Wifi
+* [Nano] Send, Receive, Balance, Block Count
 
 **Coming Soon**
 
-* Connect to Wifi
-* Check for Pending Blocks
-* Display Result
-* If pending block then generate a receive block (will need to get work from the server)
-* Sweep to merchant main account
-
-**Ideas**
-
-* Solar charging
-* Battery
-* USB step up - could use the charging chip to charge a mobile phone
-* Need to be ruggard
+* UART Console
+* Bluetooth iOS companion app
+* Addition of other currencies
+* Custom hardware with case
