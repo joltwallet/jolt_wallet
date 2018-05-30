@@ -132,4 +132,3 @@ $ make monitor
 $ make flash monitor
 $ make erase_flash
 ```
-

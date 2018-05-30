@@ -13,7 +13,7 @@
 
 - [Introduction](#introduction)
 - [Development](#development)
-- [Features](#features)
+- [Roadmap](#roadmap)
 - [Contributors](#contributors)
 
 ## Introduction
@@ -29,30 +29,9 @@ If you'd like to develop, build, and/or run Jolt please follow the guide that be
 - [Linux Build Notes](docs/build-linux.md)
 - [Windows Build Notes](docs/build-windows.md)
 
-## Features
+## Roadmap
 
-**Completed**
-
-* Generate random seed
-* Create private key
-* Convert to XRB address
-* Display QR Code
-* Buttons
-
-**Coming Soon**
-
-* Connect to Wifi
-* Check for Pending Blocks
-* Display Result
-* If pending block then generate a receive block (will need to get work from the server)
-* Sweep to merchant main account
-
-**Ideas**
-
-* Solar charging
-* Battery
-* USB step up - could use the charging chip to charge a mobile phone
-* Need to be ruggard
+To see the latest on what we've done, what we're planning, and where we're headed click [here](docs/roadmap.md).
 
 ## Contributors
 
