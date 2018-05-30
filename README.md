@@ -26,9 +26,9 @@ more information about ESP32, see the [ESP32 Website](https://www.espressif.com/
 
 If you'd like to develop, build, and/or run Jolt please follow the guide that best matches your native platform.
 
-- [OS X Build Notes](build-osx.md)
-- [Linux Build Notes](build-linux.md)
-- [Windows Build Notes](build-windows.md)
+- [OS X Build Notes](docs/build-osx.md)
+- [Linux Build Notes](docs/build-linux.md)
+- [Windows Build Notes](docs/build-windows.md)
 
 ## Features
 
