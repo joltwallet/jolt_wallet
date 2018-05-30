@@ -13,6 +13,7 @@
 
 - [Introduction](#introduction)
 - [Development](#development)
+- [FAQs](#faqs)
 - [Roadmap](#roadmap)
 - [Contributors](#contributors)
 
@@ -28,6 +29,10 @@ If you'd like to develop, build, and/or run Jolt please follow the guide that be
 - [OS X Build Notes](docs/build-osx.md)
 - [Linux Build Notes](docs/build-linux.md)
 - [Windows Build Notes](docs/build-windows.md)
+
+## FAQs
+
+Checkout our extensive FAQs for more information - [FAQs](docs/faq.md)
 
 ## Roadmap
 
