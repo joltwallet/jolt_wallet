@@ -1,27 +1,27 @@
 [submodule "components/nano_lib"]
 	path = components/nano_lib
-	url = git@github.com:joltwallet/nano_lib.git
+	url = https://github.com/joltwallet/nano_lib.git
 [submodule "components/menu8g2"]
 	path = components/menu8g2
-	url = git@github.com:joltwallet/menu8g2.git
+	url = https://github.com/joltwallet/menu8g2.git
 [submodule "components/easy_input"]
 	path = components/easy_input
-	url = git@github.com:joltwallet/easy_input.git
+	url = https://github.com/joltwallet/easy_input.git
 [submodule "components/u8g2"]
 	path = components/u8g2
-	url = https://github.com/olikraus/u8g2.git
+	url = https://github.com/joltwallet/u8g2.git
 [submodule "components/zlib"]
 	path = components/zlib
-	url = git@github.com:joltwallet/nano_zlib.git
+	url = https://github.com/joltwallet/nano_zlib.git
 [submodule "components/nano_lws"]
 	path = components/nano_lws
-	url = git@github.com:joltwallet/nano_lws.git
+	url = https://github.com/joltwallet/nano_lws.git
 [submodule "components/nano_parse"]
 	path = components/nano_parse
-	url = git@github.com:joltwallet/nano_parse.git
+	url = https://github.com/joltwallet/nano_parse.git
 [submodule "components/libwebsockets"]
 	path = components/libwebsockets
-	url = git@github.com:warmcat/libwebsockets.git
+	url = https://github.com/joltwallet/libwebsockets.git
 [submodule "components/QRCode"]
 	path = components/QRCode
-	url = https://github.com/phildubach/QRCode.git
+	url = https://github.com/joltwallet/QRCode.git
