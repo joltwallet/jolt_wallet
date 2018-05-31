@@ -11,7 +11,12 @@ Roadmap and Features
 
 **Coming Soon**
 
-* UART Console
+* Robust UART Console
 * Bluetooth iOS companion app
-* Addition of other currencies
+* Protocol and Documentation allowing the addition of other currencies
+* APIs
+* Password Manager
+* PGP
+* Encrypted Storage
+* Secure Boot
 * Custom hardware with case
