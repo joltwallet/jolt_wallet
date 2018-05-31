@@ -90,7 +90,7 @@ Comparison with other hardware wallets
 | WiFi 802.11BGN | Yes | No | No |
 | Bluetooth | Yes | No | No |
 | Performance | 600 DMIPS | 150DMIPS | ??? |
-| Screen | 128x64 OLED | 128x64 OLED | 128x64 OLED |
+| Screen | 128x64 OLED | 128x64 OLED | 128x32 OLED |
 | Open Source | Yes | Yes | Mostly Not |
-| microSD | Yes | No | No |
+| microSD | Yes | On Model T | No |
 
