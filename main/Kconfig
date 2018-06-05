@@ -38,6 +38,43 @@ menu "Jolt Wallet Config"
         help
             help text here
 
+    menu "Console"
+        config JOLT_CONSOLE_UART_RX_BUF_LEN
+            int
+            prompt "Buffer length for receiving console commands"
+            default 4096
+            help
+                help text here
+
+        config JOLT_CONSOLE_UART_TX_BUF_LEN
+            int
+            prompt "Buffer length for transmitting back console drawing"
+            default 0
+            help
+                Set to 0 to block until command sent
+
+        config JOLT_CONSOLE_MAX_ARGS
+            int
+            prompt "Maximum number of arguments to parse"
+            default 8
+            help
+                help text here
+
+        config JOLT_CONSOLE_MAX_CMD_LEN
+            int
+            prompt "Maximum length in characters of a command"
+            default 4096
+            help
+                help text here
+
+        config JOLT_CONSOLE_HISTORY
+            int
+            prompt "Number of previous commands to keep in history"
+            default 20
+            help
+                help text here
+    endmenu
+
     config JOLT_DEFAULT_BOOT_SPLASH_ENABLE
         bool
         prompt "Enable boot splash screen"
@@ -52,29 +89,31 @@ menu "Jolt Wallet Config"
         help
             help text here
 
-    choice
-        prompt "Select QR Encoding Method"
-        config JOLT_QR_TYPE_SIMPLE
-            bool "simple address encoding xrb_"
-        config JOLT_QR_TYPE_STANDARD
-            bool "Follows the Nano QR URI standard"
-        config JOLT_QR_TYPE_SHORT
-            bool "Encodes using QR alphanumeric XRB-"
-    endchoice
+    menu "QR"
+        choice
+            prompt "Select QR Encoding Method"
+            config JOLT_QR_TYPE_SIMPLE
+                bool "simple address encoding xrb_"
+            config JOLT_QR_TYPE_STANDARD
+                bool "Follows the Nano QR URI standard"
+            config JOLT_QR_TYPE_SHORT
+                bool "Encodes using QR alphanumeric XRB-"
+        endchoice
 
-    config JOLT_QR_VERSION
-        int
-        prompt "QR Version"
-        default 6
-        help
-            Determines QR Code size
+        config JOLT_QR_VERSION
+            int
+            prompt "QR Version"
+            default 6
+            help
+                Determines QR Code size
 
-    config JOLT_QR_SCALE
-        int
-        prompt "Pixel-wise QR code scale multiplier"
-        default 1
-        help
-            Integer dimension multipler. Leave as 1 for 1 pixel per square
+        config JOLT_QR_SCALE
+            int
+            prompt "Pixel-wise QR code scale multiplier"
+            default 1
+            help
+                Integer dimension multipler. Leave as 1 for 1 pixel per square
+    endmenu
 
     config JOLT_VAULT_RPC_QUEUE_LEN
         int
@@ -83,40 +122,46 @@ menu "Jolt Wallet Config"
         help
             Length of queue for Vault RPC commands
 
-    config JOLT_NANO_DEFAULT_REPRESENTATIVE
-        string
-        prompt "Default Nano Account Representative"
-        default "xrb_1cwswatjifmjnmtu5toepkwca64m7qtuukizyjxsghujtpdr9466wjmn89d8"
-        help
-            Default representative for new Nano Accounts
+    menu "Coins"
+        menu "Nano"
+            config JOLT_NANO_DEFAULT_REPRESENTATIVE
+                string
+                prompt "Default Nano Account Representative"
+                default "xrb_1cwswatjifmjnmtu5toepkwca64m7qtuukizyjxsghujtpdr9466wjmn89d8"
+                help
+                    Default representative for new Nano Accounts
 
-    config JOLT_NANO_CONTACTS_MAX
-        int
-        prompt "Maximum number of stored nano contacts"
-        default 10
-        help
-            Default representative for new Nano Accounts
+            config JOLT_NANO_CONTACTS_MAX
+                int
+                prompt "Maximum number of stored nano contacts"
+                default 10
+                help
+                    Default representative for new Nano Accounts
 
-    config JOLT_NANO_CONTACTS_NAME_LEN
-        int
-        prompt "Maximum length of Nano contact alias"
-        default 18
-        help
-            Maximum number of characters (including null-term) to store for a
-            Nano contact alias
+            config JOLT_NANO_CONTACTS_NAME_LEN
+                int
+                prompt "Maximum length of Nano contact alias"
+                default 18
+                help
+                    Maximum number of characters (including null-term) to store for a
+                    Nano contact alias
+        endmenu
+    endmenu
 
-    config AP_TARGET_SSID
-        string
-        prompt "WiFi SSID"
-        default "SSID"
-        help
-            Factory reset WiFi ssid
+    menu "WiFi"
+        config AP_TARGET_SSID
+            string
+            prompt "WiFi SSID"
+            default "SSID"
+            help
+                Factory reset WiFi ssid
 
-    config AP_TARGET_PASSWORD
-        string
-        prompt "WiFi Password"
-        default "Password"
-        help
-            Factory reset WiFi pass
+        config AP_TARGET_PASSWORD
+            string
+            prompt "WiFi Password"
+            default "Password"
+            help
+                Factory reset WiFi pass
+    endmenu
 
 endmenu

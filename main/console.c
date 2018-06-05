@@ -143,22 +143,22 @@ void initialize_console() {
     
     /* Install UART driver for interrupt-driven reads and writes */
     ESP_ERROR_CHECK( uart_driver_install(CONFIG_CONSOLE_UART_NUM,
-                                         256, 0, 0, NULL, 0) );
+            CONFIG_JOLT_CONSOLE_UART_RX_BUF_LEN,
+            CONFIG_JOLT_CONSOLE_UART_TX_BUF_LEN,
+            0, NULL, 0) );
     
     /* Tell VFS to use UART driver */
     esp_vfs_dev_uart_use_driver(CONFIG_CONSOLE_UART_NUM);
     
     /* Initialize the console */
     esp_console_config_t console_config = {
-        .max_cmdline_args = 8,
-        .max_cmdline_length = 4096,
+        .max_cmdline_args = CONFIG_JOLT_CONSOLE_MAX_ARGS,
+        .max_cmdline_length = CONFIG_JOLT_CONSOLE_MAX_CMD_LEN,
     };
     ESP_ERROR_CHECK( esp_console_init(&console_config) );
     
     /* Configure linenoise line completion library */
-    /* Enable multiline editing. If not set, long commands will scroll within
-     * single line.
-     */
+    /* Enable multiline editing. */
     linenoiseSetMultiLine(1);
     
     /* Tell linenoise where to get command completions and hints */
@@ -166,7 +166,7 @@ void initialize_console() {
     linenoiseSetHintsCallback((linenoiseHintsCallback*) &esp_console_get_hint);
     
     /* Set command history size */
-    linenoiseHistorySetMaxLen(20);
+    linenoiseHistorySetMaxLen(CONFIG_JOLT_CONSOLE_HISTORY);
 
     /* Register commands */
     console_register_commands();
