@@ -580,7 +580,8 @@ int linenoiseEditInsert(struct linenoiseState *l, char c) {
                  * trivial case. */
                 if (fwrite(&c,1,1,stdout) == -1) return -1;
             } else {
-                refreshLine(l);
+                //refreshLine(l);
+                if (fwrite(&c,1,1,stdout) == -1) return -1;
             }
         } else {
             memmove(l->buf+l->pos+1,l->buf+l->pos,l->len-l->pos);
