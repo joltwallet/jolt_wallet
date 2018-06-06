@@ -7,7 +7,7 @@ This guide is distilled from the official [ESP-IDF Guide](https://esp-idf.readth
 [Download the windows all-in-one toolchain](https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20180110.zip) and unzip the contents to `C:\`
 
 # Install Espressif IoT Development Framework
-Double click `C:\msys32\mingw32.exe` and run
+Double click `C:\msys32\mingw32.exe` and run the command
 ```
 mkdir -p ~/esp
 ```
@@ -20,10 +20,10 @@ Download the Espressif IoT Development Framework:
 cd ~/esp
 git clone --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
-git checkout 8c307
+git checkout 8c307a57
 git submodule update --init --recursive
 ```
-
+We checkout a specific commit (ignore any responded warnings) because recent esp-idf broke some stuff. This will be fixed later.
 With a text editor, create the file
 ```
 C:/msys32/etc/profile.d/export_idf_path.sh
