@@ -33,7 +33,7 @@ void console_task() {
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
      */
-    esp_log_level_set("*", ESP_LOG_NONE);
+    //esp_log_level_set("*", ESP_LOG_NONE);
     const char* prompt = "esp32> ";
 
     printf("\n"
@@ -83,7 +83,7 @@ void console_task() {
         linenoiseFree(line);
     }
     
-    esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
+    //esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
     console_h = NULL;
     vTaskDelete( NULL );
 }
@@ -174,11 +174,13 @@ void initialize_console() {
 
 bool console_check_range_argc(uint8_t argc, uint8_t min, uint8_t max){
     if ( argc > max) {
-        printf("Too many input arguments; max %d args\n", max);
+        printf("Too many input arguments; max %d args, got %d\n",
+                max, argc);
         return false;
     }
     if ( argc < min) {
-        printf("Too few input arguments; min %d args\n", min);
+        printf("Too few input arguments; min %d args, got %d\n",
+                min, argc);
         return false;
     }
 
@@ -187,8 +189,8 @@ bool console_check_range_argc(uint8_t argc, uint8_t min, uint8_t max){
 
 bool console_check_equal_argc(uint8_t argc, uint8_t expected){
     if ( argc != expected) {
-        printf("Incorrect number of input arguments; expected %d args\n",
-                expected);
+        printf("Incorrect number of input arguments; expected %d args, got %d\n",
+                expected, argc);
         return false;
     }
     return true;
