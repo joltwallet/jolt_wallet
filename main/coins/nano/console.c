@@ -27,7 +27,6 @@ static uint32_t get_nvs_index(){
     }
     nvs_close(nvs_h);
     return index;
-
 }
 
 static int nano_sign_block(int argc, char** argv) {
