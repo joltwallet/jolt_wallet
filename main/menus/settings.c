@@ -25,8 +25,6 @@
 #include "../loading.h"
 #include "../helpers.h"
 
-#include "../uart.h"
-
 
 static void wifi_details(menu8g2_t *prev){
     const char title[] = "WiFi Details";
@@ -40,48 +38,6 @@ static void wifi_details(menu8g2_t *prev){
                 & (1ULL << EASY_INPUT_BACK)){
             return;
         }
-    }
-}
-
-static void wifi_update(menu8g2_t *prev){
-    const char title[] = "WiFi Update";
-    menu8g2_t menu;
-    menu8g2_copy(&menu, prev);
-    menu.post_draw = NULL;
-   
-    esp_log_level_set("*", ESP_LOG_ERROR);
-    loading_enable();
-    loading_text("Enter WiFi Credentials via UART");
-    
-    char wifi_ssid[32];
-
-    flush_uart();
-    printf("\nWiFi SSID: ");
-    get_serial_input(wifi_ssid, sizeof(wifi_ssid));
-    
-    char wifi_pass[64];
-
-    flush_uart();
-    printf("\nWiFi Password: ");
-    get_serial_input(wifi_pass, sizeof(wifi_pass));
-   
-    nvs_handle wifi_nvs_handle;
-    init_nvm_namespace(&wifi_nvs_handle, "user");
-    nvs_set_str(wifi_nvs_handle, "wifi_ssid", wifi_ssid);
-    nvs_set_str(wifi_nvs_handle, "wifi_pass", wifi_pass);
-    esp_err_t err = nvs_commit(wifi_nvs_handle);
-    
-    nvs_close(wifi_nvs_handle);
-    
-    loading_disable();
-    esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
-    
-    if (err != ESP_OK) {
-        menu8g2_display_text_title(&menu, "Error Updating WiFi Settings", title);
-    }
-    else {
-        menu8g2_display_text_title(&menu, "Updated WiFi Settings - Click to Reset", title);
-        esp_restart();
     }
 }
 
@@ -108,10 +64,9 @@ void menu_settings(menu8g2_t *prev){
     const char title[] = "Settings";
 
     menu8g2_elements_t elements;
-    menu8g2_elements_init(&elements, 6);
+    menu8g2_elements_init(&elements, 5);
     menu8g2_set_element(&elements, "Screen Brightness", NULL);
     menu8g2_set_element(&elements, "WiFi Details", &wifi_details);
-    menu8g2_set_element(&elements, "WiFi Update (uart)", &wifi_update);
     menu8g2_set_element(&elements, "Bluetooth", NULL);
     menu8g2_set_element(&elements, "Mnemonic Restore", &menu_mnemonic_restore);
     menu8g2_set_element(&elements, "Factory Reset", &menu_factory_reset);
