@@ -16,6 +16,7 @@
 #include "globals.h"
 #include "console.h"
 #include "vault.h"
+#include "gui.h"
 
 #include "coins/nano/console.h"
 
@@ -48,6 +49,41 @@ static int cpu_status(int argc, char** argv) {
     vTaskGetRunTimeStats( pcWriteBuffer );
     printf( pcWriteBuffer );
     return 0;
+}
+
+static int wifi_update(int argc, char** argv) {
+    int return_code = 0;
+    vault_rpc_t rpc;
+    SCREEN_SAVE;
+    rpc.type = SYSCORE_WIFI_UPDATE;
+
+    if( !console_check_range_argc(argc, 2, 3) ) {
+        return_code = 1;
+        goto exit;
+    }
+
+    if( 3 == argc ) {
+        rpc.syscore_wifi_update.pass = argv[2];
+    }
+    else {
+        rpc.syscore_wifi_update.pass = "";
+    }
+
+    rpc.syscore_wifi_update.ssid = argv[1];
+
+    vault_rpc_response_t res = vault_rpc(&rpc);
+    if( RPC_SUCCESS != res ){
+        printf("Error Updating WiFi Settings\n");
+        return_code = res;
+        goto exit;
+    }
+
+    printf("Wifi Settings Updated. Restarting");
+    esp_restart();
+
+    exit:
+        SCREEN_RESTORE;
+        return return_code;
 }
 
 void console_task() {
@@ -124,7 +160,7 @@ void menu_console(menu8g2_t *prev){
 
     if(console_h){
         menu8g2_display_text_title(&menu,
-                "Console is alread running.",
+                "Console is already running.",
                 "Console");
     }
     else{
@@ -161,6 +197,14 @@ static void console_register_commands(){
         .help = "CPU-Usage of Tasks.",
         .hint = NULL,
         .func = &cpu_status,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "wifi_update",
+        .help = "Update WiFi SSID and Pass.",
+        .hint = NULL,
+        .func = &wifi_update,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 

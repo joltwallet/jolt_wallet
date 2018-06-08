@@ -232,6 +232,7 @@ void vault_task(void *vault_in){
                 switch(cmd->type){
                     case SYSCORE_START ... SYSCORE_END:
                         response = rpc_syscore(vault, cmd, &menu);
+                        break;
                     case NANO_START ... NANO_END:
                         response = rpc_nano(vault, cmd, &menu);
                         break;
