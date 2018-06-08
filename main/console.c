@@ -160,6 +160,9 @@ void initialize_console() {
     /* Configure linenoise line completion library */
     /* Enable multiline editing. */
     linenoiseSetMultiLine(1);
+
+    /* Clear the screen */
+    linenoiseClearScreen();
     
     /* Tell linenoise where to get command completions and hints */
     linenoiseSetCompletionCallback(&esp_console_get_completion);
