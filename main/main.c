@@ -54,7 +54,7 @@ void app_main(){
     // Setup Input Button Debouncing Code
     easy_input_queue_init((QueueHandle_t *)&input_queue);
     xTaskCreate(easy_input_push_button_task,
-            "ButtonDebounce", 4096,
+            "ButtonDebounce", 2500,
             (void *)&input_queue, 15,
             NULL);
 
@@ -76,17 +76,17 @@ void app_main(){
     start_console();
 
     xTaskCreate(vault_task,
-            "VaultTask", 32000,
+            "VaultTask", 16000,
             (void *) &vault, 16,
             NULL);
     
     xTaskCreate(gui_task,
-            "GuiTask", 32000,
+            "GuiTask", 16000,
             NULL, 10,
             NULL);
 
     xTaskCreate(network_task,
-            "NetworkTask", 4800,
+            "NetworkTask", 3200,
             NULL, 5,
             NULL);
 

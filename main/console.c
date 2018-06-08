@@ -29,6 +29,27 @@ static int free_mem(int argc, char** argv) {
     return 0;
 }
 
+static int task_status(int argc, char** argv) {
+    /* Get Task Memory Usage */
+    char pcWriteBuffer[1024];
+    vTaskList( pcWriteBuffer );
+    printf("B - Blocked | R - Ready | D - Deleted | S - Suspended\n"
+           "Task            Status Priority High    Task #\n"
+           "**********************************************\n");
+    printf( pcWriteBuffer );
+    return 0;
+}
+
+static int cpu_status(int argc, char** argv) {
+    /* Gets Task CPU usage statistics */
+    char pcWriteBuffer[1024];
+    printf("Task            Abs Time (uS)           %%Time\n"
+           "*********************************************\n");
+    vTaskGetRunTimeStats( pcWriteBuffer );
+    printf( pcWriteBuffer );
+    return 0;
+}
+
 void console_task() {
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
@@ -90,7 +111,7 @@ void console_task() {
 
 volatile TaskHandle_t *start_console(){
     xTaskCreate(console_task,
-                "ConsoleTask", 32000,
+                "ConsoleTask", 28000,
                 NULL, 19,
                 (TaskHandle_t *) &console_h);
     return  &console_h;
@@ -124,6 +145,22 @@ static void console_register_commands(){
         .help = "Get the total size of heap memory available",
         .hint = NULL,
         .func = &free_mem,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "task_status",
+        .help = "Memory usage of all running tasks.",
+        .hint = NULL,
+        .func = &task_status,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "top",
+        .help = "CPU-Usage of Tasks.",
+        .hint = NULL,
+        .func = &cpu_status,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
