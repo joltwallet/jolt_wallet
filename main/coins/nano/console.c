@@ -214,6 +214,53 @@ static int nano_send(int argc, char** argv) {
         return return_code;
 }
 
+static int nano_contact_update(int argc, char** argv) {
+    /* Updates a nano contact.
+     * (contact index, contact name, contact address)
+     */
+
+    int return_code = 0;
+    if( !console_check_equal_argc(argc, 4) ){
+        return_code = -1;
+        goto exit;
+    }
+
+    uint8_t contact_index = atoi(argv[1]);
+    if( contact_index >= CONFIG_JOLT_NANO_CONTACTS_MAX ){
+        printf("Contact index must be smaller than %d.\n",
+                CONFIG_JOLT_NANO_CONTACTS_MAX);
+        return_code = 1;
+        goto exit;
+    }
+
+    if( strlen(argv[2]) >= CONFIG_JOLT_NANO_CONTACTS_NAME_LEN ) {
+        printf("Shortening Name.\n");
+        argv[2][CONFIG_JOLT_NANO_CONTACTS_NAME_LEN] = '\0';
+    }
+
+    uint256_t contact_public_key;
+    if( E_SUCCESS != nl_address_to_public(contact_public_key, argv[3]) ){
+        printf("Invalid Address.\n");
+        return_code = 2;
+        goto exit;
+    }
+
+    vault_rpc_t rpc = {
+        .type = NANO_CONTACT_UPDATE,
+        .nano_contact_update.index = contact_index,
+        .nano_contact_update.name = argv[2],
+        .nano_contact_update.public = contact_public_key
+    };
+
+    if(vault_rpc(&rpc) != RPC_SUCCESS){
+        return_code = 3;
+        goto exit;
+    }
+
+    exit:
+        return return_code;
+}
+
 static int nano_sign_block(int argc, char** argv) {
     /* Given the index, head block, and the block to be signed,
      * prompt user to sign */
@@ -447,6 +494,13 @@ void console_nano_register() {
         .help = "WiFi send. Inputs: account index, dest address, amount (raw)",
         .hint = NULL,
         .func = &nano_send,
+    };
+
+    cmd = (esp_console_cmd_t) {
+        .command = "nano_contact_update",
+        .help = "Update Nano Contact (index, name, address)",
+        .hint = NULL,
+        .func = &nano_contact_update,
     };
 
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
