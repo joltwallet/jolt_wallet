@@ -38,6 +38,7 @@ void gui_task();
 
 #define SCREEN_RESTORE \
     memcpy(u8g2_GetBufferPtr(&u8g2), old_disp_buffer, disp_buffer_size); \
+    u8g2_SendBuffer(&u8g2); \
     free(old_disp_buffer);
 
 #endif

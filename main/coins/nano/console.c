@@ -14,6 +14,8 @@
 #include "../../vault.h"
 #include "../../console.h"
 #include "../../gui.h"
+#include "../../statusbar.h"
+#include "../../loading.h"
 
 
 static const char* TAG = "console_nano";
@@ -27,6 +29,189 @@ static uint32_t get_nvs_index(){
     }
     nvs_close(nvs_h);
     return index;
+}
+
+static int nano_send(int argc, char** argv) {
+    /*
+     * Account Index, Dest Address, Amount (raw)
+     */
+
+    if( !console_check_equal_argc(argc, 4) ){
+        return -1;
+    }
+    SCREEN_SAVE;
+
+    vault_rpc_t rpc;
+    menu8g2_t menu;
+    menu8g2_init(&menu, (u8g2_t *) &u8g2, input_queue, disp_mutex, NULL, statusbar_update);
+    int return_code = 0;
+    const char *TITLE = "Nano Send";
+
+    /**************************************
+     * Get Destination Address and Amount *
+     **************************************/
+    loading_enable();
+    
+    // Verify Destination Address
+    uint256_t dest_public_key;
+    if(E_SUCCESS != nl_address_to_public(dest_public_key, argv[2])){
+        loading_disable();
+        menu8g2_display_text_title(&menu, "Invalid Address", TITLE);
+        ESP_LOGE(TAG, "\nInvalid Address %s\n", argv[2]);
+        return_code = 1;
+        goto exit;
+    }
+
+    mbedtls_mpi transaction_amount;
+    mbedtls_mpi_init(&transaction_amount);
+    if( 0 != mbedtls_mpi_read_string(&transaction_amount, 10, argv[3]) ) {
+        loading_disable();
+        menu8g2_display_text_title(&menu, "Invalid Amount", TITLE);
+        ESP_LOGE(TAG, "\nInvalid Amount %s\n", argv[2]);
+        return_code = 2;
+        goto exit;
+    }
+    
+    /******************
+     * Get My Address *
+     ******************/
+    uint32_t index;
+    nvs_handle nvs_h;
+    init_nvm_namespace(&nvs_h, "nano");
+    if(ESP_OK != nvs_get_u32(nvs_h, "index", &(index))){
+        index = 0;
+    }
+    nvs_close(nvs_h);
+    rpc.nano_public_key.index = index;
+
+    rpc.type = NANO_PUBLIC_KEY;
+    loading_disable();
+    if(vault_rpc(&rpc) != RPC_SUCCESS){
+        return_code = 3;
+        goto exit;
+    }
+    loading_enable();
+    uint256_t my_public_key;
+    memcpy(my_public_key, rpc.nano_public_key.block.account, sizeof(my_public_key));
+
+    char my_address[ADDRESS_BUF_LEN];
+    nl_public_to_address(my_address, sizeof(my_address), my_public_key);
+    
+    ESP_LOGI(TAG, "My Address: %s\n", my_address);
+
+    /***********************************
+     * Get My Account's Frontier Block *
+     ***********************************/
+    // Assumes State Blocks Only
+    // Outcome:
+    //     * frontier_hash, frontier_block
+    //loading_enable();
+    loading_text_title("Connecting", TITLE);
+    
+    hex256_t frontier_hash;
+    nl_block_t frontier_block;
+    nl_block_init(&frontier_block);
+    memcpy(frontier_block.account, my_public_key, BIN_256);
+    uint64_t proof_of_work;
+
+    switch( nanoparse_lws_frontier_block(&frontier_block) ){
+        case E_SUCCESS:
+            ESP_LOGI(TAG, "Frontier Block Found");
+            uint256_t frontier_hash_bin;
+            ESP_ERROR_CHECK(nl_block_compute_hash(&frontier_block, frontier_hash_bin));
+            sodium_bin2hex(frontier_hash, sizeof(frontier_hash),
+                    frontier_hash_bin, sizeof(frontier_hash_bin));
+            break;
+        default:
+            //To send requires a previous Open Block
+            ESP_LOGI(TAG, "Couldn't fetch frontier.");
+            loading_disable();
+            menu8g2_display_text_title(&menu, "Could not fetch frontier", TITLE);
+            return_code = 4;
+            goto exit;
+    }
+
+    /*****************
+     * Check Balance *
+     *****************/
+    if (mbedtls_mpi_cmp_mpi(&(frontier_block.balance), &transaction_amount) == -1) {
+        loading_disable();
+        ESP_LOGI(TAG, "Insufficent Funds.");
+        menu8g2_display_text_title(&menu, "Insufficent Funds", TITLE);
+        return_code = 5;
+        goto exit;
+    }
+    
+    /*********************
+     * Create send block *
+     *********************/
+    loading_text_title("Creating Block", TITLE);
+    
+    sodium_memzero(&rpc, sizeof(rpc));
+    rpc.type = NANO_BLOCK_SIGN;
+    rpc.nano_block_sign.index = index;
+    rpc.nano_block_sign.frontier = frontier_block;
+    nl_block_t *new_block = &(rpc.nano_block_sign.block);
+
+    new_block->type = STATE;
+    sodium_hex2bin(new_block->previous, sizeof(new_block->previous),
+            frontier_hash, sizeof(frontier_hash), NULL, NULL, NULL);
+    memcpy(new_block->account, my_public_key, sizeof(my_public_key));
+    memcpy(new_block->representative, frontier_block.representative, BIN_256);
+    memcpy(new_block->link, dest_public_key, sizeof(dest_public_key));
+    mbedtls_mpi_sub_abs(&(new_block->balance), &(frontier_block.balance), &transaction_amount);
+
+    #if LOG_LOCAL_LEVEL >= ESP_LOG_INFO
+    {
+    char amount[66];
+    size_t olen;
+    mbedtls_mpi_write_string(&(frontier_block.balance), 10, amount, sizeof(amount), &olen);
+    ESP_LOGI(TAG, "Frontier Amount: %s", amount);
+    mbedtls_mpi_write_string(&(new_block->balance), 10, amount, sizeof(amount), &olen);
+    ESP_LOGI(TAG, "New Block Amount: %s", amount);
+    mbedtls_mpi_write_string(&transaction_amount, 10, amount, sizeof(amount), &olen);
+    ESP_LOGI(TAG, "Transaction Amount: %s", amount);
+    }
+    #endif
+
+    // Prompt and Sign block
+    loading_disable();
+    if(vault_rpc(&rpc) != RPC_SUCCESS){
+        return_code = 6;
+        goto exit;
+    }
+    loading_enable();
+
+    // Get RECEIVE work
+    loading_text_title("Fetching Work", TITLE);
+    if( E_SUCCESS != nanoparse_lws_work( frontier_hash, &proof_of_work ) ){
+        ESP_LOGI(TAG, "Invalid Work (RECEIVE) Response.");
+        loading_disable();
+        menu8g2_display_text_title(&menu, "Failed Fetching Work", TITLE);
+        return_code = 7;
+        goto exit;
+    }
+    new_block->work = proof_of_work;
+
+    loading_text_title("Broadcasting", TITLE);
+    switch(nanoparse_lws_process(new_block)){
+        case E_SUCCESS:
+            break;
+        default:
+            loading_disable();
+            menu8g2_display_text_title(&menu, "Error Broadcasting", TITLE);
+            return_code = 8;
+            goto exit;
+    }
+
+    
+    loading_disable();
+    menu8g2_display_text_title(&menu, "Transaction Sent", TITLE);
+
+    exit:
+        loading_disable();
+        SCREEN_RESTORE;
+        return return_code;
 }
 
 static int nano_sign_block(int argc, char** argv) {
@@ -256,5 +441,13 @@ void console_nano_register() {
         .hint = NULL,
         .func = &nano_sign_block,
     };
+
+    cmd = (esp_console_cmd_t) {
+        .command = "nano_send",
+        .help = "WiFi send. Inputs: account index, dest address, amount (raw)",
+        .hint = NULL,
+        .func = &nano_send,
+    };
+
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
