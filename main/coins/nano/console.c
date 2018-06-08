@@ -203,7 +203,9 @@ static int nano_balance(int argc, char** argv) {
             }
             break;
         default:
-            display_amount = 0;
+            printf("Unable to get account's frontier.\n");
+            response = 6;
+            goto exit;
             break;
     }
 
