@@ -33,7 +33,7 @@ void console_task() {
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
      */
-    //esp_log_level_set("*", ESP_LOG_NONE);
+    esp_log_level_set("*", ESP_LOG_NONE);
     const char* prompt = "esp32> ";
 
     printf("\n"
@@ -83,7 +83,7 @@ void console_task() {
         linenoiseFree(line);
     }
     
-    //esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
+    esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
     console_h = NULL;
     vTaskDelete( NULL );
 }
