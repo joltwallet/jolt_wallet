@@ -73,17 +73,17 @@ void app_main(){
     start_console();
 
     xTaskCreate(vault_task,
-            "VaultTask", 16000,
+            "Vault", 16000,
             (void *) &vault, 16,
             NULL);
     
     xTaskCreate(gui_task,
-            "GuiTask", 16000,
+            "GUI", 16000,
             NULL, 10,
             NULL);
 
     xTaskCreate(network_task,
-            "NetworkTask", 3200,
+            "Network", 3200,
             NULL, 5,
             NULL);
 
