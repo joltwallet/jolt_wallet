@@ -20,6 +20,7 @@
 #include "helpers.h"
 #include "loading.h"
 #include "statusbar.h"
+#include "confirmation.h"
 
 #include "coins/nano/console.h"
 
@@ -100,6 +101,11 @@ static int mnemonic_restore(int argc, char** argv) {
     menu8g2_init(&menu, (u8g2_t *) &u8g2, input_queue, disp_mutex, NULL, statusbar_update);
     SCREEN_SAVE;
 
+    if( !menu_confirm_action(&menu, "Begin mnemonic restore?") ) {
+        return_code = -1;
+        goto exit;
+    }
+
     // Generate Random Order for user to input mnemonic
     for(uint8_t i=0; i< sizeof(index); i++){
         index[i] = i;
@@ -159,6 +165,11 @@ static int mnemonic_restore(int argc, char** argv) {
     }
     mnemonic[offset - 1] = '\0'; //null-terminate, remove last space
 
+    if( !menu_confirm_action(&menu, "Save restored mnemonic and reboot? CAN NOT BE UNDONE.") ) {
+        return_code = -1;
+        goto exit;
+    }
+
     store_mnemonic_reboot(&menu, mnemonic);
 
     exit:
@@ -173,7 +184,7 @@ void console_task() {
      * This can be customized, made dynamic, etc.
      */
     esp_log_level_set("*", ESP_LOG_NONE);
-    const char* prompt = "esp32> ";
+    const char* prompt = "jolt> ";
 
     printf("\n"
            "Welcome to the Jolt Console.\n"
