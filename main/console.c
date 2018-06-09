@@ -17,6 +17,9 @@
 #include "console.h"
 #include "vault.h"
 #include "gui.h"
+#include "helpers.h"
+#include "loading.h"
+#include "statusbar.h"
 
 #include "coins/nano/console.h"
 
@@ -82,6 +85,85 @@ static int wifi_update(int argc, char** argv) {
     esp_restart();
 
     exit:
+        SCREEN_RESTORE;
+        return return_code;
+}
+
+static int mnemonic_restore(int argc, char** argv) {
+    const char title[] = "Restore";
+    const char prompt[] = "Enter Mnemonic Word: ";
+    int return_code = 0;
+    char *line;
+    CONFIDENTIAL char user_words[24][11];
+    CONFIDENTIAL uint8_t index[24];
+    menu8g2_t menu;
+    menu8g2_init(&menu, (u8g2_t *) &u8g2, input_queue, disp_mutex, NULL, statusbar_update);
+    SCREEN_SAVE;
+
+    // Generate Random Order for user to input mnemonic
+    for(uint8_t i=0; i< sizeof(index); i++){
+        index[i] = i;
+    }
+    shuffle_arr(index, sizeof(index));
+
+    loading_enable();
+    for(uint8_t i=0; i < sizeof(index); i++){
+        uint8_t j = index[i];
+        // Humans like 1-indexing
+        char buf[10];
+        snprintf(buf, sizeof(buf), "Word %d", j + 1);
+        loading_text_title(buf, title);
+
+        line = linenoise(prompt);
+        if (line == NULL) { /* Ignore empty lines */
+            continue;
+        }
+        if (strcmp(line, "exit_restore") == 0){
+            printf("Aborting mnemonic restore\n");
+            linenoiseFree(line);
+            return_code = 1;
+            goto exit;
+        }
+
+        strlcpy(user_words[j], line, sizeof(user_words[j]));
+        linenoiseFree(line);
+
+        // verify its a word in the word list
+        while(-1 == nl_search_wordlist(user_words[j], strlen(user_words[j]))) {
+            printf("Invalid word\n");
+            line = linenoise(prompt);
+            if (line == NULL) { /* Ignore empty lines */
+                continue;
+            }
+            if (strcmp(line, "exit_restore") == 0){
+                printf("Aborting mnemonic restore\n");
+                linenoiseFree(line);
+                return_code = 1;
+                goto exit;
+            }
+
+            strlcpy(user_words[j], line, sizeof(user_words[j]));
+            linenoiseFree(line);
+        }
+    }
+    sodium_memzero(index, sizeof(index));
+    loading_disable();
+
+    // Join Mnemonic into single buffer
+    CONFIDENTIAL char mnemonic[MNEMONIC_BUF_LEN];
+    size_t offset=0;
+    for(uint8_t i=0; i < sizeof(index); i++){
+        strlcpy(mnemonic + offset, user_words[i], sizeof(mnemonic) - offset);
+        offset += strlen(user_words[i]);
+        mnemonic[offset++] = ' ';
+    }
+    mnemonic[offset - 1] = '\0'; //null-terminate, remove last space
+
+    store_mnemonic_reboot(&menu, mnemonic);
+
+    exit:
+        sodium_memzero(index, sizeof(index));
+        sodium_memzero(mnemonic, sizeof(mnemonic));
         SCREEN_RESTORE;
         return return_code;
 }
@@ -205,6 +287,14 @@ static void console_register_commands(){
         .help = "Update WiFi SSID and Pass.",
         .hint = NULL,
         .func = &wifi_update,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "mnemonic_restore",
+        .help = "Restore mnemonic seed.",
+        .hint = NULL,
+        .func = &mnemonic_restore,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 

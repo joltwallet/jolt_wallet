@@ -29,17 +29,6 @@
 
 #include "nano_lib.h"
 
-static void shuffle_arr(uint8_t *arr, int arr_len) {
-    /* Fisher Yates random shuffling */
-    uint8_t tmp;
-    for(int i=arr_len-1; i>0; i--) {
-        uint32_t idx = randombytes_random() % (i+1);
-        tmp = arr[idx];
-        arr[idx] = arr[i];
-        arr[i] = tmp;
-    }
-    sodium_memzero(&tmp, sizeof(uint8_t));
-}
 
 void menu_mnemonic_restore(menu8g2_t *prev){
     const char title[] = "Restore";

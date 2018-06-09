@@ -75,6 +75,18 @@ void factory_reset(){
 
 }
 
+void shuffle_arr(uint8_t *arr, int arr_len) {
+    /* Fisher Yates random shuffling */
+    uint8_t tmp;
+    for(int i=arr_len-1; i>0; i--) {
+        uint32_t idx = randombytes_random() % (i+1);
+        tmp = arr[idx];
+        arr[idx] = arr[i];
+        arr[i] = tmp;
+    }
+    sodium_memzero(&tmp, sizeof(uint8_t));
+}
+
 void store_mnemonic_reboot(menu8g2_t *menu, char *mnemonic){
     /* Confirms pin, encrypts mnemonic into enc .
      * Returns if user cancels, restarts esp on success*/

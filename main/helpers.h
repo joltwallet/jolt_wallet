@@ -25,5 +25,6 @@
 void nvs_log_err(esp_err_t err);
 void factory_reset();
 bool store_mnemonic_reboot(menu8g2_t *menu, char *mnemonic);
+void shuffle_arr(uint8_t *arr, int arr_len);
 
 #endif
