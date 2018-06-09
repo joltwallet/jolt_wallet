@@ -2,4 +2,5 @@
 COMPONENT_SRCDIRS := . \
 	coins/nano \
 	coins/nano/menus \
-	menus
+	menus \
+	syscore
