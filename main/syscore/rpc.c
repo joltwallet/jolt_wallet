@@ -26,10 +26,10 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
-#include "helpers.h"
-#include "vault.h"
-#include "rpc_syscore.h"
-#include "confirmation.h"
+#include "rpc.h"
+#include "../helpers.h"
+#include "../vault.h"
+#include "../gui/confirmation.h"
 
 static const char* TAG = "vault_syscore";
 

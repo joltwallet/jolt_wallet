@@ -28,10 +28,10 @@
 #include "submenus.h"
 #include "../../../globals.h"
 #include "../../../helpers.h"
-#include "../../../qr.h"
 #include "../qr.h"
-#include "../../../statusbar.h"
-#include "../../../gui.h"
+#include "../../../gui/qr.h"
+#include "../../../gui/statusbar.h"
+#include "../../../gui/gui.h"
 
 void menu_nano_address_qr(menu8g2_t *prev){
     vault_rpc_t rpc;

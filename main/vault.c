@@ -21,30 +21,31 @@
 #include <esp_system.h>
 #include "esp_log.h"
 #include "sodium.h"
+#include "nvs_flash.h"
+#include "nvs.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
 #include "menu8g2.h"
-
-#include "nvs_flash.h"
-#include "nvs.h"
 #include "nano_lib.h"
-#include "secure_entry.h"
-#include "vault.h"
-#include "globals.h"
-#include "statusbar.h"
-#include "loading.h"
+
 #include "helpers.h"
-#include "gui.h"
+#include "globals.h"
+#include "vault.h"
+#include "gui/gui.h"
+#include "gui/entry.h"
+#include "gui/statusbar.h"
+#include "gui/loading.h"
 
 // Coin RPCs
-#include "rpc_syscore.h"
+#include "syscore/rpc.h"
 #include "coins/nano/rpc.h"
 
 static const char* TAG = "vault";
 static const char* TITLE = "Vault Access";
+
 
 vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
     /* Sets up rpc queue, blocks until vault responds. */
@@ -161,7 +162,7 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
         }
         sprintf(title, "Enter Pin (%d/%d)", pin_attempts+1,
                 CONFIG_JOLT_DEFAULT_MAX_ATTEMPT);
-        if(!pin_entry(menu, pin_hash, title)){
+        if(!entry_pin(menu, pin_hash, title)){
             // User cancelled vault operation
             nvs_close(nvs_secret);
             return false;

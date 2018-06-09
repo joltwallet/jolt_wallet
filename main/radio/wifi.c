@@ -26,13 +26,15 @@
 #include "nvs_flash.h"
 #include "tcpip_adapter.h"
 #include "esp_smartconfig.h"
-#include "wifi.h"
 #include "lwip/err.h"
 #include "nvs_flash.h"
 #include "nvs.h"
-#include "vault.h"
+
+#include "wifi.h"
+#include "../helpers.h"
 
 static const char *TAG = "wifi_task";
+
 
 esp_err_t event_handler(void *ctx, system_event_t *event)
 {

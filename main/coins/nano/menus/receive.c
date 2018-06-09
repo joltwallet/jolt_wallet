@@ -23,20 +23,19 @@
 #include "esp_log.h"
 
 #include "nano_lib.h"
-
-#include "menu8g2.h"
-#include "../../../vault.h"
-#include "submenus.h"
-#include "../../../globals.h"
-#include "../../../loading.h"
-#include "../../../gui.h"
-
 #include "nano_lws.h"
 #include "nano_parse.h"
+#include "menu8g2.h"
 
+#include "submenus.h"
+#include "../../../vault.h"
+#include "../../../globals.h"
+#include "../../../gui/loading.h"
+#include "../../../gui/gui.h"
 
 static const char TAG[] = "nano_receive";
 static const char TITLE[] = "Receive Nano";
+
 
 void menu_nano_receive(menu8g2_t *prev){
     /*

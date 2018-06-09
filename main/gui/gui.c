@@ -15,22 +15,21 @@
  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-#include "nvs.h"
 
 #include "u8g2.h"
-#include "u8g2_esp32_hal.h"
 #include "menu8g2.h"
+#include "nvs.h"
 
-#include "globals.h"
 #include "graphics.h"
 #include "gui.h"
-#include "vault.h"
-
 #include "statusbar.h"
 #include "loading.h"
+#include "../vault.h"
+#include "../globals.h"
+#include "../hal/u8g2_esp32.h"
 
 #include "menus/submenus.h"
-#include "coins/nano/menu.h"
+#include "../coins/nano/menu.h"
 
 
 void setup_screen(u8g2_t *u8g2){

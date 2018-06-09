@@ -32,7 +32,7 @@
 
 #include "../../vault.h"
 #include "../../globals.h"
-#include "../../confirmation.h"
+#include "../../gui/confirmation.h"
 
 static const char *TAG = "nano_conf";
 

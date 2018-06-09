@@ -22,24 +22,21 @@
 #include "nvs.h"
 #include "esp_log.h"
 
-#include "u8g2.h"
-#include "u8g2_esp32_hal.h"
-#include "menu8g2.h"
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
+#include "u8g2.h"
+#include "menu8g2.h"
 #include "easy_input.h"
-#include "gui.h"
-#include "globals.h"
-
-#include "vault.h"
 #include "nano_lib.h"
-#include "first_boot.h"
-#include "wifi.h"
 #include "nano_lws.h"
 
+#include "gui/gui.h"
+#include "radio/wifi.h"
+#include "gui/first_boot.h"
+#include "vault.h"
+#include "globals.h"
 #include "console.h"
 
 

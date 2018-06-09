@@ -16,11 +16,11 @@
 #include "globals.h"
 #include "console.h"
 #include "vault.h"
-#include "gui.h"
 #include "helpers.h"
-#include "loading.h"
-#include "statusbar.h"
-#include "confirmation.h"
+#include "gui/gui.h"
+#include "gui/loading.h"
+#include "gui/statusbar.h"
+#include "gui/confirmation.h"
 
 #include "syscore/console.h"
 #include "coins/nano/console.h"
@@ -34,8 +34,11 @@ void console_task() {
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
      */
-    esp_log_level_set("*", ESP_LOG_NONE);
     const char* prompt = "jolt> ";
+
+    #if CONFIG_JOLT_CONSOLE_OVERRIDE_LOGGING
+    esp_log_level_set("*", ESP_LOG_NONE);
+    #endif
 
     printf("\n"
            "Welcome to the Jolt Console.\n"
@@ -84,7 +87,10 @@ void console_task() {
         linenoiseFree(line);
     }
     
+    #if CONFIG_JOLT_CONSOLE_OVERRIDE_LOGGING
     esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
+    #endif
+
     console_h = NULL;
     vTaskDelete( NULL );
 }

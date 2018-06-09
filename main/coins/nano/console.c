@@ -13,9 +13,9 @@
 #include "../../globals.h"
 #include "../../vault.h"
 #include "../../console.h"
-#include "../../gui.h"
-#include "../../statusbar.h"
-#include "../../loading.h"
+#include "../../gui/gui.h"
+#include "../../gui/statusbar.h"
+#include "../../gui/loading.h"
 
 
 static const char* TAG = "console_nano";

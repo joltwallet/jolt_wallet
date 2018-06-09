@@ -15,15 +15,16 @@
  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-
 #include "esp_log.h"
+
 #include "menu8g2.h"
-#include "../vault.h"
 #include "submenus.h"
-#include "../globals.h"
-#include "../wifi.h"
+
 #include "../loading.h"
-#include "../helpers.h"
+#include "../../globals.h"
+#include "../../helpers.h"
+#include "../../vault.h"
+#include "../../radio/wifi.h"
 
 
 static void wifi_details(menu8g2_t *prev){

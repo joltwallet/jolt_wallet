@@ -1,4 +1,5 @@
 #include "menu8g2.h"
+#include <libwebsockets.h>
 #include "sodium.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -10,21 +11,21 @@
 #include "esp_log.h"
 #include "linenoise/linenoise.h"
 
-#include <libwebsockets.h>
 #include "nano_lws.h"
 #include "nano_parse.h"
+
 #include "../globals.h"
 #include "../console.h"
 #include "../vault.h"
-#include "../gui.h"
 #include "../helpers.h"
-#include "../loading.h"
-#include "../statusbar.h"
-#include "../confirmation.h"
+#include "../gui/gui.h"
+#include "../gui/loading.h"
+#include "../gui/statusbar.h"
+#include "../gui/confirmation.h"
 
 #include "../console.h"
 
-static const char* TAG = "syscore_console";
+static const char* TAG = "console_syscore";
 
 
 static int free_mem(int argc, char** argv) {

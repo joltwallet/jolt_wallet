@@ -16,32 +16,12 @@
  */
 
 
-#ifndef __JOLT_GUI_H__
-#define __JOLT_GUI_H__
+#ifndef __JOLT_SYSCORE_RPC_H__
+#define __JOLT_SYSCORE_RPC_H__
 
-#include "globals.h"
-#include "u8g2.h"
+#include "menu8g2.h"
+#include "../vault.h"
 
-void setup_screen(u8g2_t *u8g2);
-void gui_task();
-
-#define FULLSCREEN_ENTER(menu) \
-    (menu)->post_draw = NULL; \
-    bool statusbar_draw_original = statusbar_draw_enable; \
-    statusbar_draw_enable = false;
-
-#define FULLSCREEN_EXIT(menu) \
-    statusbar_draw_enable = statusbar_draw_original;
-
-#define SCREEN_SAVE \
-    size_t disp_buffer_size = 8 * u8g2_GetBufferTileHeight(&u8g2) * \
-            u8g2_GetBufferTileWidth((u8g2_t *)&u8g2);\
-    uint8_t *old_disp_buffer = malloc(disp_buffer_size);\
-    memcpy(old_disp_buffer, u8g2_GetBufferPtr((u8g2_t *)&u8g2), disp_buffer_size);
-
-#define SCREEN_RESTORE \
-    memcpy(u8g2_GetBufferPtr((u8g2_t *)&u8g2), old_disp_buffer, disp_buffer_size); \
-    u8g2_SendBuffer((u8g2_t *)&u8g2); \
-    free(old_disp_buffer);
+vault_rpc_response_t rpc_syscore(vault_t *vault, vault_rpc_t *cmd, menu8g2_t *menu);
 
 #endif

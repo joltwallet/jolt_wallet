@@ -24,7 +24,7 @@
 
 #include "u8g2.h"
 #include "menu8g2.h"
-#include "secure_entry.h"
+#include "gui/entry.h"
 #include "nano_lib.h"
 #include "nvs_flash.h"
 #include "nvs.h"
@@ -95,11 +95,11 @@ void store_mnemonic_reboot(menu8g2_t *menu, char *mnemonic){
 
     while(true){
         CONFIDENTIAL uint256_t pin_hash;
-        if( !pin_entry(menu, pin_hash, "Set PIN") ){
+        if( !entry_pin(menu, pin_hash, "Set PIN") ){
             return false;
         }
         CONFIDENTIAL uint256_t pin_hash_verify;
-        if( !pin_entry(menu, pin_hash_verify, "Verify PIN")){
+        if( !entry_pin(menu, pin_hash_verify, "Verify PIN")){
             continue;
         }
 
