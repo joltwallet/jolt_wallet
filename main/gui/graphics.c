@@ -15,15 +15,13 @@
  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-#include "graphics.h"
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
-#include "wifi.h"
+#include "graphics.h"
 #include "u8g2.h"
-#include "globals.h"
+#include "../globals.h"
 
 
 const unsigned char graphic_jolt[] = {

@@ -25,11 +25,11 @@
 #include "nano_lib.h"
 
 #include "menu8g2.h"
-#include "../../../vault.h"
 #include "submenus.h"
 #include "../../../globals.h"
-#include "../../../gui.h"
-#include "../../../loading.h"
+#include "../../../vault.h"
+#include "../../../gui/gui.h"
+#include "../../../gui/loading.h"
 
 #include "nano_lws.h"
 #include "nano_parse.h"

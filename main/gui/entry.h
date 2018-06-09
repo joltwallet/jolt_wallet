@@ -16,11 +16,12 @@
  */
 
 
-#ifndef __JOLT_SECURE_ENTRY_H__
-#define __JOLT_SECURE_ENTRY_H__
+#ifndef __JOLT_ENTRY_H__
+#define __JOLT_ENTRY_H__
 
 #define MAX_PIN_DIGITS 9
 
-bool pin_entry(menu8g2_t *menu, unsigned char *pin_hash, const char *title);
+bool entry_pin(menu8g2_t *menu, unsigned char *pin_hash, const char *title);
+bool entry_number_arr(menu8g2_t *prev, int8_t* num_entries, uint8_t n_digit, uint8_t n_decimal, const char *title);
 
 #endif

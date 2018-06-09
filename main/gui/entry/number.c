@@ -22,27 +22,53 @@
 #include "esp_log.h"
 #include "sodium.h"
 #include "easy_input.h"
-#include "menu8g2.h"
 #include "u8g2.h"
-#include "vault.h"
-#include "secure_entry.h"
-#include "helpers.h"
-#include "statusbar.h"
-#include "globals.h"
+#include "menu8g2.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
-#include "gui.h"
+#include "../gui.h"
+#include "../statusbar.h"
+#include "../entry.h"
+#include "../../vault.h"
+#include "../../helpers.h"
+#include "../../globals.h"
 
-static const char* TAG = "secure_entry";
+static const char* TAG = "entry_number";
 
-#define PIN_SPACING 13
+#define NUMBER_ENTRY_SPACING 10
 
-bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
-    /* Screen for Pin Entry 
-     * Saves results into pin_entries*/
+
+#if 0
+double number_entry_double(menu8g2_t *prev, uint8_t n_digit, uint8_t n_decimal, const char *title){
+    /* Returns the user entered double; promps with n_digit digits with the
+     * decimal point n_decimal from the right */
+
+    // Convert entries into a double
+    // Compute Decimal; Starts at digit right of decimal
+    double j = 0.1;
+    for(int i = n_digit-n_decimal+1; i <= n_digit; i++, j*=0.1){
+
+
+    }
+    // Compute integer; Starts at digit right of decimal
+    for(int i = 0; i < n_digit; i++){
+        // Set Background color for position selection
+        if( i == n_digit - n_decimal ){
+            continue
+            u8g2_SetDrawColor(u8g2, 1);
+            strlcpy(buf, ".", sizeof(buf));
+        }
+    }
+
+}
+#endif
+
+bool entry_number_arr(menu8g2_t *prev, int8_t* output, uint8_t n_digit, uint8_t n_decimal, const char *title){
+    /* Fills in output with user entries.
+     * decimal point n_decimal from the right */
     menu8g2_t local_menu;
     menu8g2_t *menu = &local_menu;
     menu8g2_copy(menu, prev);
@@ -50,17 +76,17 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
     bool res;
 
     u8g2_t *u8g2 = menu->u8g2;
-    uint8_t max_pos = MAX_PIN_DIGITS;
     u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
     u8g2_uint_t title_height = u8g2_GetAscent(u8g2) + CONFIG_MENU8G2_BORDER_SIZE;
     u8g2_SetFont(u8g2, u8g2_font_profont17_tf);
     int8_t entry_pos = 0; // which element the user is currently entering
+    uint16_t num_height = u8g2_GetAscent(u8g2);
     uint8_t border = (u8g2_GetDisplayWidth(u8g2) - 
-            (PIN_SPACING * max_pos)) / 2;
+            (NUMBER_ENTRY_SPACING * (n_digit+1))) / 2;
 
     uint64_t input_buf;
     char buf[24];
-    int8_t pin_entries[MAX_PIN_DIGITS] = { 0 };
+    int8_t *num_entries = calloc( n_digit, sizeof(int8_t) );
 
     FULLSCREEN_ENTER(menu);
     for(;;){
@@ -71,14 +97,13 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
             u8g2_DrawHLine(u8g2, 0, title_height+1, u8g2_GetDisplayWidth(u8g2));
 
             u8g2_SetFont(u8g2, u8g2_font_profont17_tf);
-            uint16_t num_height = u8g2_GetAscent(u8g2);
 
-            for(int i = 0; i < max_pos; i++){
+            for(int i = 0; i < n_digit; i++){
                 // Set Background color for position selection
                 if(i==entry_pos){
                     u8g2_SetDrawColor(u8g2, 1);
                     u8g2_DrawBox(u8g2,
-                            border + (i * PIN_SPACING) - 1,
+                            border + ((i + (i>=n_digit-n_decimal)) * NUMBER_ENTRY_SPACING) - 1,
                             ((u8g2_GetDisplayHeight(u8g2) - num_height)/2) - 1,
                             u8g2_GetStrWidth(u8g2, "0") + 2,
                             num_height + 2
@@ -88,11 +113,18 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
                 else{
                     u8g2_SetDrawColor(u8g2, 1);
                 }
-                sprintf(buf, "%d", pin_entries[i]);
-                u8g2_DrawStr(u8g2, border + (i * PIN_SPACING),
+                sprintf(buf, "%d", num_entries[i]);
+                u8g2_DrawStr(u8g2, border + 
+                            ((i + (i>=n_digit-n_decimal)) * NUMBER_ENTRY_SPACING),
                         (u8g2_GetDisplayHeight(u8g2) + num_height)/2 ,
                         buf);
             }
+            // Draw decimal point
+            u8g2_SetDrawColor(u8g2, 1);
+            u8g2_DrawStr(u8g2, border + ((n_digit-n_decimal) * NUMBER_ENTRY_SPACING),
+                    (u8g2_GetDisplayHeight(u8g2) + num_height)/2 ,
+                    ".");
+
         MENU8G2_END_DRAW(menu)
 
         u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
@@ -111,30 +143,23 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
                 }
             }
             else if(input_buf & (1ULL << EASY_INPUT_UP)){
-                if(++pin_entries[entry_pos]>9){
-                    pin_entries[entry_pos] = 0;
+                if(++num_entries[entry_pos]>9){
+                    num_entries[entry_pos] = 0;
                 }
 
             }
             else if(input_buf & (1ULL << EASY_INPUT_DOWN)){
-                if(--pin_entries[entry_pos]<0){
-                    pin_entries[entry_pos] = 9;
+                if(--num_entries[entry_pos]<0){
+                    num_entries[entry_pos] = 9;
                 }
             }
             else if(input_buf & (1ULL << EASY_INPUT_ENTER)){
-                if(entry_pos < max_pos-1){
+                if(entry_pos < n_digit-1){
                     entry_pos++;
                 }
                 else{
-                    ESP_LOGI(TAG, "User entered pin; processing...");
-
-                    // Convert pin into a 256-bit key
-                    crypto_generichash_blake2b_state hs;
-                    crypto_generichash_init(&hs, NULL, 32, 32);
-                    crypto_generichash_update(&hs, 
-                            (unsigned char *) pin_entries, MAX_PIN_DIGITS);
-                    crypto_generichash_final(&hs, pin_hash, 32);
-
+                    ESP_LOGI(TAG, "User finished entering number.");
+                    memcpy(output, num_entries, n_digit);
                     res = true;
                     goto exit;
                 }
@@ -148,6 +173,7 @@ bool pin_entry(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
         MENU8G2_END_DRAW(menu)
 
         FULLSCREEN_EXIT(menu);
+        free(num_entries);
         return res;
 }
 

@@ -30,8 +30,8 @@
 #include "menu8g2.h"
 #include "nano_lib.h"
 
-#include "vault.h"
-#include "globals.h"
+#include "../vault.h"
+#include "../globals.h"
 
 static const char *TAG = "nano_conf";
 

@@ -21,26 +21,23 @@
 #include <esp_system.h>
 #include "nvs.h"
 
-#include "u8g2.h"
-#include "u8g2_esp32_hal.h"
-#include "menu8g2.h"
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
+#include "u8g2.h"
+#include "menu8g2.h"
 #include "easy_input.h"
-#include "gui.h"
-#include "globals.h"
-
-#include "vault.h"
 #include "nano_lib.h"
-#include "first_boot.h"
-#include "wifi.h"
 #include "nano_lws.h"
+
+#include "gui.h"
+#include "first_boot.h"
 #include "graphics.h"
-#include "helpers.h"
 #include "loading.h"
+#include "../globals.h"
+#include "../vault.h"
+#include "../helpers.h"
 
 #define N_LOADING_FRAMES GRAPHIC_NANO_LOAD_F
 #define LOADING_FRAME_TIME_MS 50

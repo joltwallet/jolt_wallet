@@ -20,13 +20,13 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 #include <string.h>
 #include <esp_system.h>
 #include "sodium.h"
-
 #include "easy_input.h"
 #include "menu8g2.h"
-#include "vault.h"
-#include "helpers.h"
-#include "secure_entry.h"
-#include "globals.h"
+
+#include "entry.h"
+#include "../helpers.h"
+#include "../globals.h"
+#include "../vault.h"
 
 
 static bool display_welcome(menu8g2_t *menu){

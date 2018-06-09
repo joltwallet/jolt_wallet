@@ -19,17 +19,18 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
-#include "menu8g2.h"
-#include "submenus.h"
-#include "../../../globals.h"
-#include "../../../statusbar.h"
-#include "../../../gui.h"
-
 #include <libwebsockets.h>
 #include "nano_lws.h"
 #include "nano_parse.h"
+#include "menu8g2.h"
+
+#include "submenus.h"
+#include "../../../globals.h"
+#include "../../../gui/statusbar.h"
+#include "../../../gui/gui.h"
 
 static const char TITLE[] = "Block Count";
+
 
 void menu_nano_block_count(menu8g2_t *prev){
     char block_count[12];

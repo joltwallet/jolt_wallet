@@ -15,8 +15,6 @@
  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-#include "graphics.h"
-
 #include "esp_log.h"
 
 #include "freertos/FreeRTOS.h"
@@ -24,16 +22,19 @@
 #include "freertos/task.h"
 #include "freertos/portmacro.h"
 
-#include "wifi.h"
-#include "menu8g2.h"
 #include "u8g2.h"
-#include "globals.h"
+#include "menu8g2.h"
+#include "graphics.h"
+
 #include "statusbar.h"
+#include "../radio/wifi.h"
+#include "../globals.h"
 
 #define STATUSBAR_UPDATE_PERIOD_MS 2000
 #define STATUSBAR_PAD 2
 
 static const char* TAG = "StatusBar";
+
 
 /* Globals */
 volatile bool statusbar_draw_enable = true;

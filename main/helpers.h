@@ -21,8 +21,11 @@
 
 #include "u8g2.h"
 #include "menu8g2.h"
+#include "nano_lib.h"
+#include "nvs.h"
 
 void nvs_log_err(esp_err_t err);
+nl_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace);
 void factory_reset();
 bool store_mnemonic_reboot(menu8g2_t *menu, char *mnemonic);
 void shuffle_arr(uint8_t *arr, int arr_len);

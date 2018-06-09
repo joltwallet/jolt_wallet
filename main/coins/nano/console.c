@@ -13,9 +13,9 @@
 #include "../../globals.h"
 #include "../../vault.h"
 #include "../../console.h"
-#include "../../gui.h"
-#include "../../statusbar.h"
-#include "../../loading.h"
+#include "../../gui/gui.h"
+#include "../../gui/statusbar.h"
+#include "../../gui/loading.h"
 
 
 static const char* TAG = "console_nano";
@@ -488,6 +488,7 @@ void console_nano_register() {
         .hint = NULL,
         .func = &nano_sign_block,
     };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
     cmd = (esp_console_cmd_t) {
         .command = "nano_send",
@@ -495,6 +496,7 @@ void console_nano_register() {
         .hint = NULL,
         .func = &nano_send,
     };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
     cmd = (esp_console_cmd_t) {
         .command = "nano_contact_update",
@@ -502,6 +504,5 @@ void console_nano_register() {
         .hint = NULL,
         .func = &nano_contact_update,
     };
-
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }

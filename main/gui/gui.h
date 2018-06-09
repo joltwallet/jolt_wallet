@@ -19,7 +19,7 @@
 #ifndef __JOLT_GUI_H__
 #define __JOLT_GUI_H__
 
-#include "globals.h"
+#include "../globals.h"
 #include "u8g2.h"
 
 void setup_screen(u8g2_t *u8g2);

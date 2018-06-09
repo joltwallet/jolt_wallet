@@ -73,6 +73,13 @@ menu "Jolt Wallet Config"
             default 20
             help
                 help text here
+
+        config JOLT_CONSOLE_OVERRIDE_LOGGING
+            bool
+            prompt "Disable ESP_LOG while console is running"
+            default y
+            help
+                help text here
     endmenu
 
     config JOLT_DEFAULT_BOOT_SPLASH_ENABLE
