@@ -79,7 +79,7 @@ bool entry_number_arr(menu8g2_t *prev, int8_t* output, uint8_t n_digit, uint8_t 
     u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
     u8g2_uint_t title_height = u8g2_GetAscent(u8g2) + CONFIG_MENU8G2_BORDER_SIZE;
     u8g2_SetFont(u8g2, u8g2_font_profont17_tf);
-    int8_t entry_pos = 0; // which element the user is currently entering
+    int8_t entry_pos = n_digit-n_decimal-1; // which element the user is currently entering
     uint16_t num_height = u8g2_GetAscent(u8g2);
     uint8_t border = (u8g2_GetDisplayWidth(u8g2) - 
             (NUMBER_ENTRY_SPACING * (n_digit+1))) / 2;
