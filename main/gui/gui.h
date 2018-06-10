@@ -21,6 +21,7 @@
 
 #include "../globals.h"
 #include "u8g2.h"
+#include "menu8g2.h"
 
 void setup_screen(u8g2_t *u8g2);
 void gui_task();
@@ -40,8 +41,10 @@ void gui_task();
     memcpy(old_disp_buffer, u8g2_GetBufferPtr((u8g2_t *)&u8g2), disp_buffer_size);
 
 #define SCREEN_RESTORE \
+    xSemaphoreTake(disp_mutex, portMAX_DELAY); \
     memcpy(u8g2_GetBufferPtr((u8g2_t *)&u8g2), old_disp_buffer, disp_buffer_size); \
     u8g2_SendBuffer((u8g2_t *)&u8g2); \
+    xSemaphoreGive(disp_mutex); \
     free(old_disp_buffer);
 
 #endif
