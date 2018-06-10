@@ -26,6 +26,7 @@
 #include "../../helpers.h"
 #include "../../vault.h"
 #include "../../radio/wifi.h"
+#include "../../gui/gui.h"
 
 
 static void wifi_details(menu8g2_t *prev){
@@ -62,9 +63,9 @@ static void menu_factory_reset(menu8g2_t *prev){
 
 #define SCREEN_BRIGHTNESS_DELTA 25
 static void screen_brightness_callback(uint8_t brightness){
-    xSemaphoreTake(disp_mutex, portMAX_DELAY);
+    SCREEN_MUTEX_TAKE;
     u8g2_SetContrast(&u8g2, brightness);
-    xSemaphoreGive(disp_mutex);
+    SCREEN_MUTEX_GIVE;
 }
 
 static void screen_brightness(menu8g2_t *menu) {

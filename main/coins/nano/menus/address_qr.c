@@ -24,14 +24,14 @@
 #include "qrcode.h"
 
 #include "menu8g2.h"
-#include "../../../vault.h"
 #include "submenus.h"
-#include "../../../globals.h"
-#include "../../../helpers.h"
 #include "../qr.h"
+#include "../../../helpers.h"
+#include "../../../globals.h"
 #include "../../../gui/qr.h"
 #include "../../../gui/statusbar.h"
 #include "../../../gui/gui.h"
+#include "../../../vault.h"
 
 void menu_nano_address_qr(menu8g2_t *prev){
     vault_rpc_t rpc;
@@ -65,13 +65,21 @@ void menu_nano_address_qr(menu8g2_t *prev){
         goto exit;
     }
 
-    FULLSCREEN_ENTER(&menu)
-    //u8g2_SetContrast(u8g2, 1); // Phones have trouble with bright displays
+    FULLSCREEN_ENTER(&menu);
+
+    SCREEN_MUTEX_TAKE;
+    u8g2_SetContrast(menu.u8g2, 1); // Phones have trouble with bright displays
+    SCREEN_MUTEX_GIVE;
+
     display_qr_center(&menu, &qrcode, CONFIG_JOLT_QR_SCALE);
     for(;;){
         if(xQueueReceive(menu.input_queue, &input_buf, portMAX_DELAY)) {
             if(input_buf & (1ULL << EASY_INPUT_BACK)){
-                // todo: Restore User's Brightness Here
+                // Restore User's Brightness
+                SCREEN_MUTEX_TAKE;
+                u8g2_SetContrast(menu.u8g2, get_display_brightness());
+                SCREEN_MUTEX_GIVE;
+
                 FULLSCREEN_EXIT(&menu)
                 goto exit;
             }

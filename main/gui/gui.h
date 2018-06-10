@@ -47,4 +47,10 @@ void gui_task();
     xSemaphoreGive(disp_mutex); \
     free(old_disp_buffer);
 
+#define SCREEN_MUTEX_TAKE \
+    xSemaphoreTake(disp_mutex, portMAX_DELAY);
+#define SCREEN_MUTEX_GIVE \
+    xSemaphoreGive(disp_mutex);
+
+
 #endif
