@@ -68,6 +68,7 @@ void app_main(){
     }
     
     // Initialize Wireless
+    set_jolt_cast();
     wifi_connect();
     
     // Initiate Console

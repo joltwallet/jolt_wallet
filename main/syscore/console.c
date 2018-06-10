@@ -178,6 +178,72 @@ static int mnemonic_restore(int argc, char** argv) {
         return return_code;
 }
 
+static int jolt_cast(int argc, char** argv) {
+    /* (url, path, port) */
+    nvs_handle nvs_user;
+    int return_code;
+    char buf[100];
+    menu8g2_t menu;
+    menu8g2_init(&menu, (u8g2_t *) &u8g2, input_queue, disp_mutex, NULL, statusbar_update);
+    SCREEN_SAVE;
+
+    // Check if number of inputs is correct
+    if( !console_check_equal_argc(argc, 4) ) {
+        return_code = 1;
+        goto exit;
+    }
+    uint16_t port = atoi(argv[3]);
+
+    // Confirm Inputs
+    snprintf(buf, sizeof(buf), "Update jolt_cast server domain to:\n%s", argv[1]);
+    if( !menu_confirm_action(&menu, buf) ) {
+        return_code = -1;
+        goto exit;
+    }
+    snprintf(buf, sizeof(buf), "Update jolt_cast server path to:\n%s", argv[2]);
+    if( !menu_confirm_action(&menu, buf) ) {
+        return_code = -1;
+        goto exit;
+    }
+    snprintf(buf, sizeof(buf), "Update jolt_cast server port to:\n%d", port);
+    if( !menu_confirm_action(&menu, buf) ) {
+        return_code = -1;
+        goto exit;
+    }
+
+    // Store User Values
+    if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){
+        nvs_set_str(nvs_user, "jc_domain", argv[1]);
+        nvs_close(nvs_user);
+    }
+    else {
+        return_code = 2;
+        goto exit;
+    }
+    if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){
+        nvs_set_str(nvs_user, "jc_path", argv[2]);
+        nvs_close(nvs_user);
+    }
+    else {
+        return_code = 3;
+        goto exit;
+    }
+    if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){
+        nvs_set_u16(nvs_user, "jc_port", port);
+        nvs_close(nvs_user);
+    }
+    else {
+        return_code = 4;
+        goto exit;
+    }
+    
+    esp_restart();
+
+    exit:
+        SCREEN_RESTORE;
+        return return_code;
+}
+
 void console_syscore_register() {
     esp_console_cmd_t cmd;
 
@@ -218,6 +284,14 @@ void console_syscore_register() {
         .help = "Restore mnemonic seed.",
         .hint = NULL,
         .func = &mnemonic_restore,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "jolt_cast",
+        .help = "Update jolt_cast (domain, path, port).",
+        .hint = NULL,
+        .func = &jolt_cast,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }

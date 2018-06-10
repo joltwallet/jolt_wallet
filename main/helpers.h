@@ -31,5 +31,6 @@ void store_mnemonic_reboot(menu8g2_t *menu, char *mnemonic);
 void shuffle_arr(uint8_t *arr, int arr_len);
 uint8_t get_display_brightness();
 void save_display_brightness(uint8_t brightness);
+void set_jolt_cast();
 
 #endif

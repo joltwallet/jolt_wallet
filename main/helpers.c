@@ -21,6 +21,7 @@
 #include <esp_system.h>
 #include "esp_log.h"
 #include "sodium.h"
+#include "nano_lws.h"
 
 #include "u8g2.h"
 #include "menu8g2.h"
@@ -32,6 +33,64 @@
 
 
 static const char* TAG = "helpers";
+
+static void reset_jolt_cast_param() {
+    nano_lws_set_remote_domain(NULL);
+    nano_lws_set_remote_path(NULL);
+    nano_lws_set_remote_port(0);
+}
+
+void set_jolt_cast() {
+    /* Sets Jolt Cast Server Params */
+    nvs_handle nvs_user;
+    if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){
+        size_t required_size;
+        char *tmp = NULL;
+        if( ESP_OK != nvs_get_str(nvs_user, "jc_domain", NULL, &required_size) ) {
+            reset_jolt_cast_param();
+            return;
+        }
+        tmp = malloc(required_size);
+        nvs_get_str(nvs_user, "jc_domain", tmp, &required_size);
+        nvs_close(nvs_user);
+        nano_lws_set_remote_domain(tmp);
+        free(tmp);
+    }
+    else {
+        reset_jolt_cast_param();
+        return;
+    }
+    if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){
+        size_t required_size;
+        char *tmp = NULL;
+        if( ESP_OK != nvs_get_str(nvs_user, "jc_path", NULL, &required_size) ) {
+            reset_jolt_cast_param();
+            return;
+        }
+        tmp = malloc(required_size);
+        nvs_get_str(nvs_user, "jc_path", tmp, &required_size);
+        nvs_close(nvs_user);
+        nano_lws_set_remote_path(tmp);
+        free(tmp);
+    }
+    else {
+        reset_jolt_cast_param();
+        return;
+    }
+    if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){
+        uint16_t port;
+        if( ESP_OK != nvs_get_u16(nvs_user, "jc_port", &port) ){
+            reset_jolt_cast_param();
+            return;
+        }
+        nvs_close(nvs_user);
+        nano_lws_set_remote_port(port);
+    }
+    else {
+        reset_jolt_cast_param();
+        return;
+    }
+}
 
 uint8_t get_display_brightness(){
     /* Returns saved brightness or default */
