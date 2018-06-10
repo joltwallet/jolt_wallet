@@ -16,10 +16,12 @@
  */
 
 
-#ifndef __JOLT_SUBMENUS_H__
-#define __JOLT_SUBMENUS_H__
+#ifndef __JOLT_SYSCORE_RPC_H__
+#define __JOLT_SYSCORE_RPC_H__
 
-void menu_settings(menu8g2_t *prev);
-void menu_mnemonic_restore(menu8g2_t *prev);
+#include "menu8g2.h"
+#include "../vault.h"
+
+vault_rpc_response_t rpc_syscore(vault_t *vault, vault_rpc_t *cmd, menu8g2_t *menu);
 
 #endif

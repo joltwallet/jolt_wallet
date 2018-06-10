@@ -15,22 +15,21 @@
  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-#include "nvs.h"
 
 #include "u8g2.h"
-#include "u8g2_esp32_hal.h"
 #include "menu8g2.h"
+#include "nvs.h"
 
-#include "globals.h"
 #include "graphics.h"
 #include "gui.h"
-#include "vault.h"
-
 #include "statusbar.h"
 #include "loading.h"
+#include "../vault.h"
+#include "../globals.h"
+#include "../hal/u8g2_esp32.h"
 
 #include "menus/submenus.h"
-#include "coins/nano/menu.h"
+#include "../coins/nano/menu.h"
 
 
 void setup_screen(u8g2_t *u8g2){
@@ -71,7 +70,6 @@ void gui_task(){
         nvs_get_u8(nvs_user, "boot_splash", &boot_splash_enable);
         nvs_close(nvs_user);
     }
-    nvs_close(nvs_user);
     if(boot_splash_enable){
         boot_splash( menu.u8g2 );
     }
@@ -84,8 +82,9 @@ void gui_task(){
 
     /* MAIN MENU CONSTRUCTION */
     menu8g2_elements_t elements;
-    menu8g2_elements_init(&elements, 2);
+    menu8g2_elements_init(&elements, 3);
     menu8g2_set_element(&elements, "Nano", &menu_nano);
+    menu8g2_set_element(&elements, "Console", &menu_console);
     menu8g2_set_element(&elements, "Settings", &menu_settings);
 
     for(;;){

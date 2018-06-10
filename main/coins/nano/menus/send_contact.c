@@ -23,22 +23,22 @@
 #include "esp_log.h"
 
 #include "nano_lib.h"
-
 #include "menu8g2.h"
-#include "../../../vault.h"
-#include "submenus.h"
-#include "../../../globals.h"
-#include "../../../loading.h"
-#include "../confirmation.h"
-#include "../../../gui.h"
-#include "../../../number_entry.h"
-#include "../contacts.h"
-
 #include "nano_lws.h"
 #include "nano_parse.h"
 
+#include "submenus.h"
+#include "../confirmation.h"
+#include "../contacts.h"
+#include "../../../globals.h"
+#include "../../../vault.h"
+#include "../../../gui/entry.h"
+#include "../../../gui/gui.h"
+#include "../../../gui/loading.h"
+
 static const char TAG[] = "nano_send_contact";
 static const char TITLE[] = "Send Nano";
+
 
 static void namer(char buf[], size_t buf_len, const char *options[], const uint32_t index){
     if( !nano_get_contact_name(buf, buf_len, index) ){
@@ -77,7 +77,7 @@ void menu_nano_send_contact(menu8g2_t *prev){
 #define N_DECIMALS 3
     int8_t user_entry[N_DIGITS];
     /* user enter send amount in nano */
-    if( !number_entry_arr(&menu, user_entry, N_DIGITS, N_DECIMALS, "Enter Amount") ){
+    if( !entry_number_arr(&menu, user_entry, N_DIGITS, N_DECIMALS, "Enter Amount") ){
         ESP_LOGE(TAG, "User cancelled at amount entry.");
         goto exit;
     }

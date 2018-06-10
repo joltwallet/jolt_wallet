@@ -23,19 +23,19 @@
 #include "esp_log.h"
 
 #include "nano_lib.h"
-
 #include "menu8g2.h"
-#include "../../../vault.h"
-#include "submenus.h"
-#include "../../../globals.h"
-#include "../../../gui.h"
-#include "../../../loading.h"
-
 #include "nano_lws.h"
 #include "nano_parse.h"
 
+#include "submenus.h"
+#include "../../../vault.h"
+#include "../../../globals.h"
+#include "../../../gui/gui.h"
+#include "../../../gui/loading.h"
+
 static const char TAG[] = "nano_sel_acc";
 static const char TITLE[] = "Nano Account";
+
 
 static menu8g2_err_t get_nano_address(char buf[], size_t buf_len, const char *options[], const uint32_t index){
     char address[ADDRESS_BUF_LEN];

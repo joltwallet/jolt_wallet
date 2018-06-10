@@ -16,18 +16,16 @@
  */
 
 
-#ifndef __JOLT_GUI_H__
-#define __JOLT_GUI_H__
+#ifndef __JOLT_ENTRY_H__
+#define __JOLT_ENTRY_H__
 
-void setup_screen(u8g2_t *u8g2);
-void gui_task();
+#define MAX_PIN_DIGITS 9
 
-#define FULLSCREEN_ENTER(menu) \
-    (menu)->post_draw = NULL; \
-    bool statusbar_draw_original = statusbar_draw_enable; \
-    statusbar_draw_enable = false;
+bool entry_pin(menu8g2_t *menu, unsigned char *pin_hash, const char *title);
+bool entry_number_arr(menu8g2_t *prev, int8_t* num_entries, uint8_t n_digit, uint8_t n_decimal, const char *title);
 
-#define FULLSCREEN_EXIT(menu) \
-    statusbar_draw_enable = statusbar_draw_original;
+bool entry_slider_callback(menu8g2_t *prev, uint8_t *output, uint8_t delta,
+        const char *title, void (*callback)(uint8_t output) );
+bool entry_slider(menu8g2_t *prev, uint8_t *output, uint8_t delta, const char *title);
 
 #endif

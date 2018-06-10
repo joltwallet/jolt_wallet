@@ -15,12 +15,12 @@
  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
+#ifndef __JOLT_CONFIRMATION_H__
+#define __JOLT_CONFIRMATION_H__
 
-#ifndef __JOLT_UART_H__
-#define __JOLT_UART_H__
+#include "menu8g2.h"
 
-void get_serial_input(char *serial_rx, const int buffersize);
-void get_serial_input_int(char *serial_rx, const int buffersize);
-void flush_uart();
+bool menu_confirm_action(menu8g2_t *menu, char *buf);
+bool syscore_confirm_wifi_update(menu8g2_t *prev_menu, const char *ssid, const char *pass);
 
 #endif

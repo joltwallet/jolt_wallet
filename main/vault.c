@@ -21,29 +21,31 @@
 #include <esp_system.h>
 #include "esp_log.h"
 #include "sodium.h"
+#include "nvs_flash.h"
+#include "nvs.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
 #include "menu8g2.h"
-
-#include "nvs_flash.h"
-#include "nvs.h"
 #include "nano_lib.h"
-#include "secure_entry.h"
-#include "vault.h"
-#include "globals.h"
-#include "statusbar.h"
-#include "loading.h"
+
 #include "helpers.h"
+#include "globals.h"
+#include "vault.h"
+#include "gui/gui.h"
+#include "gui/entry.h"
+#include "gui/statusbar.h"
+#include "gui/loading.h"
 
 // Coin RPCs
-#include "rpc_syscore.h"
+#include "syscore/rpc.h"
 #include "coins/nano/rpc.h"
 
 static const char* TAG = "vault";
 static const char* TITLE = "Vault Access";
+
 
 vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
     /* Sets up rpc queue, blocks until vault responds. */
@@ -56,6 +58,7 @@ vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
     rpc->response_queue = xQueueCreate( 1, sizeof(res) );
     
     ESP_LOGI(TAG, "Attempting Vault RPC Send %d; ID: %d", rpc->type, id);
+    SCREEN_SAVE;
     if(xQueueSend( vault_queue, (void *) &rpc, 0)){
         ESP_LOGI(TAG, "Success: Vault RPC Send %d; ID: %d", rpc->type, id);
         ESP_LOGI(TAG, "Awaiting Vault RPC Send %d response; ID: %d", rpc->type, id);
@@ -67,6 +70,7 @@ vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
         ESP_LOGI(TAG, "Vault RPC Send %d failed; ID: %d", rpc->type, id);
         res = RPC_QUEUE_FULL;
     }
+    SCREEN_RESTORE;
 
     vQueueDelete(rpc->response_queue);
     ESP_LOGI(TAG, "Response Queue Deleted; ID: %d\n", id);
@@ -158,7 +162,7 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
         }
         sprintf(title, "Enter Pin (%d/%d)", pin_attempts+1,
                 CONFIG_JOLT_DEFAULT_MAX_ATTEMPT);
-        if(!pin_entry(menu, pin_hash, title)){
+        if(!entry_pin(menu, pin_hash, title)){
             // User cancelled vault operation
             nvs_close(nvs_secret);
             return false;
@@ -229,6 +233,7 @@ void vault_task(void *vault_in){
                 switch(cmd->type){
                     case SYSCORE_START ... SYSCORE_END:
                         response = rpc_syscore(vault, cmd, &menu);
+                        break;
                     case NANO_START ... NANO_END:
                         response = rpc_nano(vault, cmd, &menu);
                         break;

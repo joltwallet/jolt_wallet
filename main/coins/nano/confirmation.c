@@ -32,23 +32,10 @@
 
 #include "../../vault.h"
 #include "../../globals.h"
+#include "../../gui/confirmation.h"
 
 static const char *TAG = "nano_conf";
 
-
-static bool draw_screen(menu8g2_t *menu, char *buf){
-    /* Draws screen for yes/no action */
-    uint64_t button;
-    for(;;){
-        button = menu8g2_display_text_title(menu, buf, "Confirm Action");
-        if((1ULL << EASY_INPUT_BACK) & button){
-            return false;
-        }
-        else if((1ULL << EASY_INPUT_ENTER) & button){
-            return true;
-        }
-    }
-}
 
 bool nano_confirm_contact_update(const menu8g2_t *prev_menu, const char *name, const uint256_t public, const uint8_t index){
     menu8g2_t menu;
@@ -56,12 +43,12 @@ bool nano_confirm_contact_update(const menu8g2_t *prev_menu, const char *name, c
 
     char buf[200];
     snprintf(buf, sizeof(buf), "Update Index: %d ?", index);
-    if ( !draw_screen(&menu, buf) ){
+    if ( !menu_confirm_action(&menu, buf) ){
         return false;
     }
 
     snprintf(buf, sizeof(buf), "Name: %s", name);
-    if ( !draw_screen(&menu, buf) ){
+    if ( !menu_confirm_action(&menu, buf) ){
         return false;
     }
 
@@ -70,7 +57,7 @@ bool nano_confirm_contact_update(const menu8g2_t *prev_menu, const char *name, c
         return false;
     }
     snprintf(buf, sizeof(buf), "Address: %s", address);
-    if ( !draw_screen(&menu, buf) ){
+    if ( !menu_confirm_action(&menu, buf) ){
         return false;
     }
 
@@ -122,7 +109,7 @@ bool nano_confirm_block(menu8g2_t *prev_menu, nl_block_t *head_block, nl_block_t
                 goto exit;
             }
             snprintf(buf, sizeof(buf), "Change Rep to %s ?", address);
-            if( draw_screen(&menu, buf) ){
+            if( menu_confirm_action(&menu, buf) ){
                 result = true;
             }
             else{
@@ -138,7 +125,7 @@ bool nano_confirm_block(menu8g2_t *prev_menu, nl_block_t *head_block, nl_block_t
             }
 
             snprintf(buf, sizeof(buf), "Send %.3lf NANO to %s ?", display_amount, address);
-            if( draw_screen(&menu, buf) ){
+            if( menu_confirm_action(&menu, buf) ){
                 result = true;
             }
             else{

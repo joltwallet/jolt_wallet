@@ -34,6 +34,7 @@ typedef struct vault_t{
  * between dummy commands "COIN_START" and "COIN_END". */
 typedef enum vault_rpc_type_t {
     SYSCORE_START = 0,
+    SYSCORE_WIFI_UPDATE,
     SYSCORE_END,
 
     NANO_START,
@@ -45,7 +46,8 @@ typedef enum vault_rpc_type_t {
 } vault_rpc_type_t;
 
 typedef enum vault_rpc_response_t {
-    RPC_SUCCESS = 0,
+    RPC_UNLOCK = -1,
+    RPC_SUCCESS = 0, // Anything below RPC_SUCCESS is considered a success
     RPC_FAILURE,
     RPC_CANCELLED,
     RPC_UNDEFINED,
@@ -57,9 +59,16 @@ typedef struct vault_rpc_t {
     uint64_t timestamp;
     QueueHandle_t response_queue;
     union{
+        /* SYSCORE START */
         struct{
             char *mnemonic;
         } syscore_mnemonic_restore;
+        struct{
+            char *ssid;
+            char *pass;
+        } syscore_wifi_update;
+        /* SYSCORE END */
+
         /* NANO START */
         struct{
             struct nl_block_t block;

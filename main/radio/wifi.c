@@ -26,13 +26,15 @@
 #include "nvs_flash.h"
 #include "tcpip_adapter.h"
 #include "esp_smartconfig.h"
-#include "wifi.h"
 #include "lwip/err.h"
 #include "nvs_flash.h"
 #include "nvs.h"
-#include "vault.h"
+
+#include "wifi.h"
+#include "../helpers.h"
 
 static const char *TAG = "wifi_task";
+
 
 esp_err_t event_handler(void *ctx, system_event_t *event)
 {
@@ -47,7 +49,7 @@ esp_err_t event_handler(void *ctx, system_event_t *event)
             break;
         case SYSTEM_EVENT_STA_GOT_IP:
             err = esp_wifi_get_channel(&primary, &second);
-            printf("channel=%d err=%d\n", primary, err);
+            ESP_LOGI(TAG, "channel=%d err=%d\n", primary, err);
             ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
             ESP_LOGI(TAG, "got ip:%s\n",
                      ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
@@ -107,7 +109,8 @@ void wifi_connect(){
 
     strcpy((char *)sta_config.sta.ssid, (char *)wifi_ssid);
     strcpy((char *)sta_config.sta.password, (char *)wifi_pass);
-    
+   
+#if 0
     ESP_LOGI(TAG, "wifi_ssid: %s\n"
             "wifi_pass: %s\n"
             "strlen(wifi_ssid): %d\n"
@@ -128,7 +131,7 @@ void wifi_connect(){
             sta_config.sta.password, 
             sizeof(sta_config.sta.ssid), 
             sizeof(sta_config.sta.password));
-    
+#endif
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
     ESP_ERROR_CHECK(esp_wifi_start());
     //ESP_ERROR_CHECK(esp_wifi_connect());
