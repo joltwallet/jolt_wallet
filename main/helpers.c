@@ -28,9 +28,30 @@
 #include "nano_lib.h"
 #include "nvs_flash.h"
 #include "nvs.h"
+#include "helpers.h"
 
 
 static const char* TAG = "helpers";
+
+uint8_t get_display_brightness(){
+    /* Returns saved brightness or default */
+    uint8_t brightness = CONFIG_JOLT_DISPLAY_BRIGHTNESS;
+    nvs_handle nvs_user;
+    if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){
+        nvs_get_u8(nvs_user, "disp_bright", &brightness);
+        nvs_close(nvs_user);
+    }
+    return brightness;
+}
+
+void save_display_brightness(uint8_t brightness){
+    /* Returns saved brightness or default */
+    nvs_handle nvs_user;
+    if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){
+        nvs_set_u8(nvs_user, "disp_bright", brightness);
+        nvs_close(nvs_user);
+    }
+}
 
 nl_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace){
     // Initialize NVS

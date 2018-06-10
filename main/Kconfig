@@ -1,6 +1,13 @@
 menu "Jolt Wallet Config"
 
     menu "Display"
+        config JOLT_DISPLAY_BRIGHTNESS
+            int
+            prompt "Default display brightness"
+            default 200
+            help
+                Value from [0-255] indicating screen brightness
+
         config JOLT_DISPLAY_PIN_SDA
             int
             prompt "Display SDA GPIO PIN"

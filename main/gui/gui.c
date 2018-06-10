@@ -70,7 +70,6 @@ void gui_task(){
         nvs_get_u8(nvs_user, "boot_splash", &boot_splash_enable);
         nvs_close(nvs_user);
     }
-    nvs_close(nvs_user);
     if(boot_splash_enable){
         boot_splash( menu.u8g2 );
     }

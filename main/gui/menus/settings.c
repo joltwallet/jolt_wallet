@@ -21,6 +21,7 @@
 #include "submenus.h"
 
 #include "../loading.h"
+#include "../entry.h"
 #include "../../globals.h"
 #include "../../helpers.h"
 #include "../../vault.h"
@@ -59,6 +60,21 @@ static void menu_factory_reset(menu8g2_t *prev){
     factory_reset();
 }
 
+#define SCREEN_BRIGHTNESS_DELTA 10
+static void screen_brightness_callback(uint8_t brightness){
+    u8g2_SetContrast(&u8g2, brightness);
+}
+
+static void screen_brightness(menu8g2_t *menu) {
+    const char title[] = "Brightness";
+    uint8_t brightness = get_display_brightness();
+
+    if( entry_slider_callback(menu, &brightness, SCREEN_BRIGHTNESS_DELTA, title,
+                &screen_brightness_callback) ) {
+        save_display_brightness(brightness);
+    }
+}
+
 void menu_settings(menu8g2_t *prev){
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);
@@ -66,7 +82,7 @@ void menu_settings(menu8g2_t *prev){
 
     menu8g2_elements_t elements;
     menu8g2_elements_init(&elements, 4);
-    menu8g2_set_element(&elements, "Screen Brightness", NULL);
+    menu8g2_set_element(&elements, "Screen Brightness", &screen_brightness);
     menu8g2_set_element(&elements, "WiFi Details", &wifi_details);
     menu8g2_set_element(&elements, "Bluetooth", NULL);
     menu8g2_set_element(&elements, "Factory Reset", &menu_factory_reset);

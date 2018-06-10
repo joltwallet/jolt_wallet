@@ -38,6 +38,7 @@
 #include "vault.h"
 #include "globals.h"
 #include "console.h"
+#include "helpers.h"
 
 
 // Definitions for variables in globals.h
@@ -57,6 +58,7 @@ void app_main(){
 
     // Initialize the OLED Display
     setup_screen((u8g2_t *) &u8g2);
+    u8g2_SetContrast( &u8g2, get_display_brightness() );
     disp_mutex = xSemaphoreCreateMutex();
     
     // Allocate space for the vault and see if a copy exists in NVS
