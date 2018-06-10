@@ -7,7 +7,7 @@ Jolt is a cryptocurrency hardware wallet. A hardware wallet is a device that sec
 
 Why would I want to use a Jolt Wallet instead of another hardware wallet?
 --------------------------------------------------------------------------
-We recognise there are some excellent, well established hardware wallets already on the market; however, they are not accessible to everyone due to their high costs. Furthermore, we believe that current hardware wallets take up too much time and effort to be used for everyday transactions. Jolt is based on the inexpensive ESP32 chipset, providing a rich feature set like onboard wifi and bluetooth. These wireless communications allows Jolt to directly communicate with servers and cryptocurrency networks rather than requiring a desktop/laptop. It has also been designed from the ground up to work with Nano and take advantage of feeless and near instant transactions.
+We recognise there are some excellent, well established hardware wallets already on the market; however, they are not accessible to everyone due to their high costs. Furthermore, we believe that current hardware wallets take up too much time and effort to be used for everyday transactions. Jolt is based on the affordable ESP32 chipset, providing a rich feature set like onboard wifi and bluetooth. These wireless communications allows Jolt to directly communicate with servers and cryptocurrency networks rather than requiring a desktop/laptop. It has also been designed from the ground up to work with Nano and take advantage of feeless and near instant transactions.
 Jolt has both open source software and will have reference open source hardware which allows for further innovation and development, we look forward to releasing some additional products.
 
 How do I get a Jolt Wallet?
@@ -77,10 +77,6 @@ Where did this come from?
 --------------------------
 The first prototype for a Nano based embedded hardware wallet started in December 2017 and was based on using an e-ink screen and a raspberry pi zero running a version of the RetroXRBWallet. This version was overkill and we recognized that we could use a simpler, low cost, low powered microprocessor instead. Work started on the ESP32 version at the end of January 2018 and we have already worked through a number of iterations. 
 
-What is NanoRay?
------------------
-NanoRay was the original project code name however due to other available hardware wallets its not appropriate to continue using that name. We are in the process of changing any reference of NanoRay to Jolt.
-
 Comparison with other hardware wallets
 ----------------------------------------
 
@@ -94,7 +90,7 @@ Comparison with other hardware wallets
 | WiFi 802.11BGN | Yes | No | No |
 | Bluetooth | Yes | No | No |
 | Performance | 600 DMIPS | 150DMIPS | ??? |
-| Screen | 128x64 OLED | 128x64 OLED | 128x64 OLED |
+| Screen | 128x64 OLED | 128x64 OLED | 128x32 OLED |
 | Open Source | Yes | Yes | Mostly Not |
-| microSD | Yes | No | No |
+| microSD | Yes | On Model T | No |
 

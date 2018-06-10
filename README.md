@@ -16,6 +16,7 @@
 - [FAQs](#faqs)
 - [Roadmap](#roadmap)
 - [Contributors](#contributors)
+- [Support](#support)
 
 ## Introduction
 
@@ -29,6 +30,8 @@ If you'd like to develop, build, and/or run Jolt please follow the guide that be
 - [OS X Build Notes](docs/build-osx.md)
 - [Linux Build Notes](docs/build-linux.md)
 - [Windows Build Notes](docs/build-windows.md)
+
+<b>Disclaimer: </b> Just a friendly reminder to please note this project is still under continouus and heavy development, which means things may break or change from time to time.  But that doesn't mean we want it to break! So we ask if you do encounter any issues, to please file them and one of us will try to respond as quickly as possible. Additionally, not all security features are currently enabled, such as hardware encryption or secure boot; without these features, private keys could be extracted with physical access to the device.
 
 ## FAQs
 
@@ -48,3 +51,7 @@ This project wouldn't have been possible without the hard work and dedication of
 **Brian Pugh**
 * [@smaili](https://github.com/smaili) -
 **Michael Smaili**
+
+## Support
+
+If you would like to get in touch, please write to us at: [support@joltwallet.com](mailto:support@joltwallet.com)
