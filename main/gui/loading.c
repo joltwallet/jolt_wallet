@@ -102,6 +102,13 @@ void loading_task(void *menu_in){
             !xQueueReceive(loading_queue, &payload, 
                 pdMS_TO_TICKS(LOADING_FRAME_TIME_MS))) % N_LOADING_FRAMES){
 
+        // Clear any button presses on the loading screens
+        xQueueReset( menu.input_queue );
+#if 0
+        if(xQueueReceive(menu.input_queue, &input_buf, portMAX_DELAY)) {
+        }
+#endif
+
         if(!loading_draw_enable){
             i = 0;
             continue;
