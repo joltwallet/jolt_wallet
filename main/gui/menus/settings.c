@@ -60,19 +60,20 @@ static void menu_factory_reset(menu8g2_t *prev){
     factory_reset();
 }
 
-#define SCREEN_BRIGHTNESS_DELTA 10
+#define SCREEN_BRIGHTNESS_DELTA 25
 static void screen_brightness_callback(uint8_t brightness){
+    xSemaphoreTake(disp_mutex, portMAX_DELAY);
     u8g2_SetContrast(&u8g2, brightness);
+    xSemaphoreGive(disp_mutex);
 }
 
 static void screen_brightness(menu8g2_t *menu) {
     const char title[] = "Brightness";
     uint8_t brightness = get_display_brightness();
 
-    if( entry_slider_callback(menu, &brightness, SCREEN_BRIGHTNESS_DELTA, title,
-                &screen_brightness_callback) ) {
-        save_display_brightness(brightness);
-    }
+    entry_slider_callback(menu, &brightness, SCREEN_BRIGHTNESS_DELTA, title,
+                &screen_brightness_callback);
+    save_display_brightness(brightness);
 }
 
 void menu_settings(menu8g2_t *prev){

@@ -36,7 +36,7 @@
 #include "../../helpers.h"
 #include "../../globals.h"
 
-static const char* TAG = "entry_pin";
+static const char* TAG = "entry_slider";
 
 #define SLIDER_PADDING 10
 #define SLIDER_REL_HEIGHT 0.2
@@ -58,13 +58,14 @@ bool entry_slider_callback(menu8g2_t *prev, uint8_t *output, uint8_t delta,
     uint8_t maximum = 255  - ((255 - *output) % delta);
 
     for(;;){
+        ESP_LOGD(TAG, "slider value: %d", *output);
         MENU8G2_BEGIN_DRAW(menu)
             size_t slider_width = u8g2_GetDisplayWidth(u8g2) - 2*SLIDER_PADDING;
             size_t header_height = menu8g2_buf_header(menu, title);
             size_t active_height = u8g2_GetDisplayHeight(u8g2) - header_height;
             size_t slider_height = SLIDER_REL_HEIGHT * active_height;
 
-            size_t y = header_height + ((active_height + slider_height) / 2);
+            size_t y = header_height + ((active_height - slider_height) / 2);
 
             u8g2_DrawFrame(u8g2, SLIDER_PADDING, y, slider_width, slider_height);
             u8g2_DrawBox(u8g2, SLIDER_PADDING, y, 
@@ -78,13 +79,13 @@ bool entry_slider_callback(menu8g2_t *prev, uint8_t *output, uint8_t delta,
                 goto exit;
             }
             else if(input_buf & (1ULL << EASY_INPUT_UP)){
-                if(*output + delta > *output){
-                    output += delta;
+                if( *output + delta < UINT8_MAX ) {
+                    *output += delta;
                 }
             }
             else if(input_buf & (1ULL << EASY_INPUT_DOWN)){
-                if(*output - delta < *output){
-                    output -= delta;
+                if( *output - delta > 0 ) {
+                    *output -= delta;
                 }
             }
             else if(input_buf & (1ULL << EASY_INPUT_ENTER)){
