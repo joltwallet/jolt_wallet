@@ -1,3 +1,8 @@
+/* Jolt Wallet - Open Source Cryptocurrency Hardware Wallet
+ Copyright (C) 2018  Brian Pugh, James Coxon, Michael Smaili
+ https://www.joltwallet.com/
+ */
+
 #include "menu8g2.h"
 #include <libwebsockets.h>
 #include "sodium.h"

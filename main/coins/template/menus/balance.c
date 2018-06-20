@@ -1,3 +1,8 @@
+/* Jolt Wallet - Open Source Cryptocurrency Hardware Wallet
+ Copyright (C) 2018  Brian Pugh, James Coxon, Michael Smaili
+ https://www.joltwallet.com/
+ */
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
