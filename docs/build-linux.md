@@ -21,7 +21,8 @@ Add Compiler to PATH
 ---------------------
 Edit `~/.profile` and add
 
-`export PATH="$PATH:$HOME/esp/xtensa-esp32-elf/bin”` and 
+`export PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin` 
+
 `export IDF_PATH=~/esp/esp-idf`
 
 Install Espressif IoT Development Framework
@@ -36,7 +37,7 @@ Due to an issue with the latest esp-idf and libwebsockets it is necessary to rol
 
 `git submodule update --init --recursive`
 
-`cd..`
+`cd ..`
 
 Install Jolt Wallet
 ---------------------
@@ -46,11 +47,11 @@ Install Jolt Wallet
 
 `make menuconfig`
 
-In menuconfig the minimum you need to set:
-* Easy_Input_Config -> Push Buttons -> Set pins
-* ESP32-specific -> Main XTAL Frequency -> 26MHz
-* Nano ESP32 Library Config -> Enable the Nano Library
-* nano_parse -> Build with LWS helpers
+In menuconfig the minimum you need to set (move using key arrows and toggle using spacebar):
+* Component_config -> Easy_Input_Config -> Push Buttons -> Set pins
+* Component_config -> ESP32-specific -> Main XTAL Frequency -> 26MHz
+* Component_config -> Nano ESP32 Library Config -> Enable the Nano Library
+* Component_config -> nano_parse -> Build with LWS helpers
 
 
 `make`
