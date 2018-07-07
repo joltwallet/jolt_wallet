@@ -19,6 +19,7 @@
 #include "nano_lws.h"
 #include "nano_parse.h"
 
+#include "filesystem.h"
 #include "../globals.h"
 #include "../console.h"
 #include "../vault.h"
@@ -299,4 +300,6 @@ void console_syscore_register() {
         .func = &jolt_cast,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    console_syscore_fs_register();
 }

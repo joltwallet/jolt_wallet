@@ -27,6 +27,7 @@
 #include "globals.h"
 #include "console.h"
 #include "helpers.h"
+#include "syscore/filesystem.h"
 
 
 // Definitions for variables in globals.h
@@ -35,6 +36,8 @@ volatile QueueHandle_t input_queue;
 volatile QueueHandle_t vault_queue;
 volatile SemaphoreHandle_t disp_mutex;
 QueueHandle_t backend_queue;
+
+const char TAG[] = "main";
 
 void app_main(){
     // Setup Input Button Debouncing Code
@@ -58,10 +61,6 @@ void app_main(){
     // Initialize Wireless
     set_jolt_cast();
     wifi_connect();
-    
-    // Initiate Console
-    initialize_console();
-    start_console();
 
     xTaskCreate(vault_task,
             "Vault", 16000,
@@ -78,5 +77,10 @@ void app_main(){
             NULL, 5,
             NULL);
 
-    vTaskSuspend(NULL);
+    // ==== Initialize the file system ====
+    filesystem_init();
+
+    // Initiate Console
+    initialize_console();
+    start_console();
 }
