@@ -68,27 +68,42 @@ void filesystem_init() {
 }
 
 static int check_file_exists(char *fname) {
-	if (!esp_spiffs_mounted( NULL )) {
+    if (!esp_spiffs_mounted( NULL )) {
         return -1;
     }
 
-	struct stat sb;
-	if (stat(fname, &sb) == 0) {
+    struct stat sb;
+    if (stat(fname, &sb) == 0) {
         return 1;
     }
-	return 0;
+    return 0;
 }
 
+static size_t get_file_size(char *fname) {
+    if (!esp_spiffs_mounted( NULL )) {
+        return -1;
+    }
+
+    struct stat sb;
+    if (stat(fname, &sb) == 0) {
+        return sb.st_size;
+    }
+    else{
+        return -1;
+    }
+}
+
+
 static uint32_t fs_free() {
-	uint32_t tot, used;
+    uint32_t tot, used;
     esp_err_t ret = esp_spiffs_info(NULL, &tot, &used);
-	return (tot-used-16384);
+    return (tot-used-16384);
 }
 
 static int file_upload(int argc, char** argv) {
 
     FILE *ffd = NULL;
-    int rec_res = -1, trans_res=-1;
+    int rec_res = -1;
     char tmp_fname[128] = SPIFFS_BASE_PATH;
     int32_t max_fsize = fs_free();
 
@@ -99,7 +114,9 @@ static int file_upload(int argc, char** argv) {
     }
     ffd = fopen(tmp_fname, "wb");
     if (ffd) {
-        printf("\r\nReceiving file, please start YModem transfer on host ...\r\n");
+        printf("Send file from host over YModem using a command like:\n");
+        printf("sz --ymodem cat.jpg > /dev/ttyUSB0 < /dev/ttyUSB0\n");
+        printf("\r\nReady to receive file, please start YModem transfer on host ...\r\n");
         char orig_name[128] = SPIFFS_BASE_PATH;
         strcat(orig_name, "/");
         rec_res = Ymodem_Receive(ffd, max_fsize, orig_name + strlen(orig_name));
@@ -122,8 +139,44 @@ static int file_upload(int argc, char** argv) {
 }
 
 static int file_download(int argc, char** argv) {
-    // not implemented yet
-    return 0;
+    int return_code;
+    if( !console_check_equal_argc(argc, 2) ) {
+        return_code = 1;
+        goto exit;
+    }
+
+    char fname[128] = SPIFFS_BASE_PATH;
+    strcat(fname, "/");
+    strncat(fname, argv[1], sizeof(fname)-strlen(fname)-1);
+
+    FILE *ffd = fopen(fname, "rb");
+    int trans_res=-1;
+    if (ffd) {
+        size_t fsize = get_file_size(fname);
+        printf("Receive file on host over YModem using a command like:\n");
+        printf("rz --ymodem > /dev/ttyUSB0 < /dev/ttyUSB0\n");
+        printf("\r\nReady to send %d byte file \"%s\", please start YModem receive on host ...\r\n", fsize, fname);
+        trans_res = Ymodem_Transmit(argv[1], fsize, ffd);
+        fclose(ffd);
+        printf("\r\n");
+        if (trans_res == 0) {
+            ESP_LOGI(TAG, "Transfer complete.");
+            return_code = 0;
+        }
+        else {
+            ESP_LOGE(TAG, "Transfer complete, Error=%d", trans_res);
+            return_code = 2;
+            goto exit;
+        }
+    }
+    else {
+        ESP_LOGE(TAG, "Error opening file \"%s\" for sending.", fname);
+        return_code = 3;
+        goto exit;
+    }
+
+exit:
+    return return_code;
 }
 
 static int file_rm(int argc, char** argv) {
@@ -177,7 +230,7 @@ static int file_ls(int argc, char** argv) {
     printf("T    Size      Date/Time         Name\r\n");
     printf("-----------------------------------\r\n");
     while ((ent = readdir(dir)) != NULL) {
-    	sprintf(tpath, path);
+        sprintf(tpath, path);
         if (path[strlen(path)-1] != '/') strcat(tpath,"/");
         strcat(tpath,ent->d_name);
         tbuffer[0] = '\0';
@@ -216,18 +269,18 @@ static int file_ls(int argc, char** argv) {
     }
     if (total) {
         printf("-----------------------------------\r\n");
-    	if (total < (1024*1024)) printf("   %8d", (int)total);
-    	else if ((total/1024) < (1024*1024)) printf("   %6dKB", (int)(total / 1024));
-    	else printf("   %6dMB", (int)(total / (1024 * 1024)));
-    	printf(" in %d file(s)\r\n", nfiles);
+        if (total < (1024*1024)) printf("   %8d", (int)total);
+        else if ((total/1024) < (1024*1024)) printf("   %6dKB", (int)(total / 1024));
+        else printf("   %6dMB", (int)(total / (1024 * 1024)));
+        printf(" in %d file(s)\r\n", nfiles);
     }
     printf("-----------------------------------\r\n");
 
     closedir(dir);
 
-	uint32_t tot, used;
+    uint32_t tot, used;
     esp_spiffs_info(NULL, &tot, &used);
-	printf("SPIFFS: free %d KB of %d KB\r\n", (tot-used) / 1024, tot / 1024);
+    printf("SPIFFS: free %d KB of %d KB\r\n", (tot-used) / 1024, tot / 1024);
     return 0;
 }
 
