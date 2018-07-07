@@ -67,45 +67,6 @@ void filesystem_init() {
     }
 }
 
-// Check free space on file system
-static uint32_t fs_free() {
-	uint32_t tot, used;
-    esp_err_t ret = esp_spiffs_info(NULL, &tot, &used);
-	return (tot-used-16384);
-}
-
-static int file_upload(int argc, char** argv) {
-
-    FILE *ffd = NULL;
-    int rec_res = -1, trans_res=-1;
-    char orig_name[256] = {'\0'};
-    char send_name[128] = {'\0'};
-    int nfile = 1;
-    char fname[128] = {'\0'};
-    int32_t max_fsize = fs_free();
-
-    sprintf(fname, "%s/yfile-%d.bin", SPIFFS_BASE_PATH, nfile);
-    // Open the file
-    ffd = fopen(fname, "wb");
-    if (ffd) {
-        printf("\r\nReceiving file, please start YModem transfer on host ...\r\n");
-        rec_res = Ymodem_Receive(ffd, max_fsize, orig_name);
-        fclose(ffd);
-        printf("\r\n");
-        if (rec_res > 0) {
-            ESP_LOGI(TAG, "Transfer complete, Size=%d, orig name: \"%s\"", rec_res, fname);
-        }
-        else {
-            ESP_LOGE(TAG, "Transfer complete, Error=%d", rec_res);
-            remove(fname);
-        }
-    }
-    else {
-        ESP_LOGE(TAG, "Error opening file \"%s\" for receive.", fname);
-    }
-    return 0;
-}
-
 static int check_file_exists(char *fname) {
 	if (!esp_spiffs_mounted( NULL )) {
         return -1;
@@ -118,14 +79,75 @@ static int check_file_exists(char *fname) {
 	return 0;
 }
 
-static int file_rm(int argc, char** argv) {
-    if( check_file_exists(argv[1]) ) {
-        remove(argv[1]);
-        return 0;
+static uint32_t fs_free() {
+	uint32_t tot, used;
+    esp_err_t ret = esp_spiffs_info(NULL, &tot, &used);
+	return (tot-used-16384);
+}
+
+static int file_upload(int argc, char** argv) {
+
+    FILE *ffd = NULL;
+    int rec_res = -1, trans_res=-1;
+    char tmp_fname[128] = SPIFFS_BASE_PATH;
+    int32_t max_fsize = fs_free();
+
+    // Open the file
+    strcat(tmp_fname, "/tmp");
+    if( check_file_exists(tmp_fname) ) {
+        remove(tmp_fname);
+    }
+    ffd = fopen(tmp_fname, "wb");
+    if (ffd) {
+        printf("\r\nReceiving file, please start YModem transfer on host ...\r\n");
+        char orig_name[128] = SPIFFS_BASE_PATH;
+        strcat(orig_name, "/");
+        rec_res = Ymodem_Receive(ffd, max_fsize, orig_name + strlen(orig_name));
+        fclose(ffd);
+        printf("\r\n");
+        if (rec_res > 0) {
+            printf("\"%s\" Transfer complete, Size=%d Bytes\n",
+                    orig_name+strlen(SPIFFS_BASE_PATH), rec_res);
+            rename(tmp_fname, orig_name);
+        }
+        else {
+            printf(TAG, "Transfer complete, Error=%d", rec_res);
+            remove(tmp_fname);
+        }
     }
     else {
-        return 1;
+        ESP_LOGE(TAG, "Error opening file \"%s\" for receive.", tmp_fname);
     }
+    return 0;
+}
+
+static int file_download(int argc, char** argv) {
+    // not implemented yet
+    return 0;
+}
+
+static int file_rm(int argc, char** argv) {
+    int return_code;
+
+    if( !console_check_range_argc(argc, 2, 32) ) {
+        return_code = 1;
+        goto exit;
+    }
+
+    for(uint8_t i=1; i<argc; i++){
+        char fn[128]=SPIFFS_BASE_PATH;
+        strcat(fn, "/");
+        strncat(fn, argv[i], sizeof(fn)-strlen(fn)-1);
+        if( check_file_exists(argv[i]) ) {
+            remove(argv[i]);
+        }
+        else {
+            printf("File %s doesn't exist!\n", argv[i]);
+        }
+    }
+    return_code = 0;
+exit:
+    return return_code;
 }
 
 static int file_ls(int argc, char** argv) {
@@ -139,7 +161,6 @@ static int file_ls(int argc, char** argv) {
     char tbuffer[80];
     struct stat sb;
     struct tm *tm_info;
-    char *lpath = NULL;
     int statok;
 
     printf("LIST of DIR [%s]\r\n", path);
@@ -204,8 +225,6 @@ static int file_ls(int argc, char** argv) {
 
     closedir(dir);
 
-    free(lpath);
-
 	uint32_t tot, used;
     esp_spiffs_info(NULL, &tot, &used);
 	printf("SPIFFS: free %d KB of %d KB\r\n", (tot-used) / 1024, tot / 1024);
@@ -218,9 +237,17 @@ void console_syscore_fs_register() {
 
     cmd = (esp_console_cmd_t) {
         .command = "upload",
-        .help = "Enters file upload mode",
+        .help = "Enters file UART ymodem upload mode",
         .hint = NULL,
         .func = &file_upload,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "download",
+        .help = "Transmit specified file over UART ymodem",
+        .hint = NULL,
+        .func = &file_download,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
