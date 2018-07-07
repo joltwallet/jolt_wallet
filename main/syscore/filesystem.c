@@ -138,11 +138,11 @@ static int file_rm(int argc, char** argv) {
         char fn[128]=SPIFFS_BASE_PATH;
         strcat(fn, "/");
         strncat(fn, argv[i], sizeof(fn)-strlen(fn)-1);
-        if( check_file_exists(argv[i]) ) {
-            remove(argv[i]);
+        if( check_file_exists(fn) ) {
+            remove(fn);
         }
         else {
-            printf("File %s doesn't exist!\n", argv[i]);
+            printf("File %s doesn't exist!\n", fn);
         }
     }
     return_code = 0;
