@@ -179,6 +179,26 @@ exit:
     return return_code;
 }
 
+static int file_mv(int argc, char** argv) {
+    int return_code;
+    if( !console_check_equal_argc(argc, 3) ) {
+        return_code = 1;
+        goto exit;
+    }
+    char src_fn[128] = SPIFFS_BASE_PATH;
+    strcat(src_fn, "/");
+    strncat(src_fn, argv[1], sizeof(src_fn)-strlen(src_fn)-1);
+
+    char dst_fn[128] = SPIFFS_BASE_PATH;
+    strcat(dst_fn, "/");
+    strncat(dst_fn, argv[2], sizeof(dst_fn)-strlen(dst_fn)-1);
+
+    return_code = rename(src_fn, dst_fn);
+
+exit:
+    return return_code;
+}
+
 static int file_rm(int argc, char** argv) {
     int return_code;
 
@@ -309,6 +329,14 @@ void console_syscore_fs_register() {
         .help = "List filesystem",
         .hint = NULL,
         .func = &file_ls,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "mv",
+        .help = "rename file (src, dst)",
+        .hint = NULL,
+        .func = &file_mv,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
