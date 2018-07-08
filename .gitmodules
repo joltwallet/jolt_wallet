@@ -25,3 +25,6 @@
 [submodule "components/QRCode"]
 	path = components/QRCode
 	url = https://github.com/joltwallet/QRCode.git
+[submodule "components/elfloader"]
+	path = components/elfloader
+	url = https://github.com/joltwallet/elfloader.git
