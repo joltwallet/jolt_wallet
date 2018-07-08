@@ -11,6 +11,9 @@
 #include "sodium.h"
 #include "nano_lws.h"
 
+#include "esp_vfs_dev.h"
+#include "esp_spiffs.h"
+
 #include "u8g2.h"
 #include "menu8g2.h"
 #include "gui/entry.h"
@@ -21,6 +24,38 @@
 
 
 static const char* TAG = "helpers";
+
+uint32_t fs_free() {
+    uint32_t tot, used;
+    esp_err_t ret = esp_spiffs_info(NULL, &tot, &used);
+    return (tot-used-16384);
+}
+
+size_t get_file_size(char *fname) {
+    if (!esp_spiffs_mounted( NULL )) {
+        return -1;
+    }
+
+    struct stat sb;
+    if (stat(fname, &sb) == 0) {
+        return sb.st_size;
+    }
+    else{
+        return -1;
+    }
+}
+
+int check_file_exists(char *fname) {
+    if (!esp_spiffs_mounted( NULL )) {
+        return -1;
+    }
+
+    struct stat sb;
+    if (stat(fname, &sb) == 0) {
+        return 1;
+    }
+    return 0;
+}
 
 static void reset_jolt_cast_param() {
     nano_lws_set_remote_domain(NULL);

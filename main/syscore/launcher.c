@@ -52,7 +52,13 @@ static int launcher_run(int argc, char** argv) {
 	strcat(fn, "/");
 	strncat(fn, argv[1], sizeof(fn)-strlen(fn)-1);
 
-    printf( "Reading %s\n", fn);
+    if( check_file_exists(fn) != 1 ){
+        return_code = 2;
+        printf("File doesn't exist\n");
+        goto exit;
+    }
+
+    ESP_LOGD(TAG, "Reading %s\n", fn);
     FILE *f = fopen(fn, "rb");
     int r = elfLoader(f, &env, "app_main", 0x10);
     fclose(f);
