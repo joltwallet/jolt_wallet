@@ -16,7 +16,6 @@
 #include "u8g2.h"
 #include "menu8g2.h"
 #include "easy_input.h"
-#include "nano_lib.h"
 #include "nano_lws.h"
 
 #include "gui.h"

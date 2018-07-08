@@ -8,7 +8,6 @@
 #define __JOLT_QR_H__
 
 #include "menu8g2.h"
-#include "nano_lib.h"
 #include "qrcode.h"
 #include "mbedtls/bignum.h"
 

@@ -16,8 +16,10 @@
 
 #include "u8g2.h"
 #include "menu8g2.h"
+#include "jolttypes.h"
+#include "bipmnemonic.h"
+
 #include "gui/entry.h"
-#include "nano_lib.h"
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "helpers.h"
@@ -135,7 +137,7 @@ void save_display_brightness(uint8_t brightness){
     }
 }
 
-nl_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace){
+jolt_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace){
     // Initialize NVS
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
@@ -194,7 +196,7 @@ void store_mnemonic_reboot(menu8g2_t *menu, char *mnemonic){
     /* Confirms pin, encrypts mnemonic into enc .
      * Returns if user cancels, restarts esp on success*/
     CONFIDENTIAL unsigned char enc_mnemonic[
-            crypto_secretbox_MACBYTES + MNEMONIC_BUF_LEN];
+            crypto_secretbox_MACBYTES + BM_MNEMONIC_BUF_LEN];
 
     while(true){
         CONFIDENTIAL uint256_t pin_hash;
@@ -214,7 +216,7 @@ void store_mnemonic_reboot(menu8g2_t *menu, char *mnemonic){
             // frozen data remanence attack infeasible. Also convenient pin
             // checking. Nonce is irrelevant for this encryption
             crypto_secretbox_easy(enc_mnemonic, (unsigned char *) mnemonic, 
-                    MNEMONIC_BUF_LEN, nonce, pin_hash);
+                    BM_MNEMONIC_BUF_LEN, nonce, pin_hash);
             sodium_memzero(pin_hash, 32);
             break;
         }

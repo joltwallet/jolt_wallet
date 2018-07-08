@@ -8,18 +8,19 @@
 #include <string.h>
 
 #include "u8g2.h"
+#include "jolttypes.h"
 #include "qrcode.h"
 #include "qr.h"
 #include "nano_lib.h"
 #include "mbedtls/bignum.h"
 
-nl_err_t public_to_qr(QRCode *qrcode, uint8_t *qrcode_bytes, 
+jolt_err_t public_to_qr(QRCode *qrcode, uint8_t *qrcode_bytes, 
         uint256_t public_key, mbedtls_mpi *amount){
     char buf[120];
     char address[ADDRESS_BUF_LEN];
     char amount_str[BALANCE_DEC_BUF_LEN];
     size_t olen;
-    nl_err_t err;
+    jolt_err_t err;
 
     err = nl_public_to_address(address, sizeof(address), public_key);
     if(err != E_SUCCESS){
@@ -36,7 +37,7 @@ nl_err_t public_to_qr(QRCode *qrcode, uint8_t *qrcode_bytes,
 
     #if CONFIG_JOLT_QR_TYPE_SIMPLE
     strcpy(buf, address);
-    strlower(buf);
+    strlwr(buf);
     #endif
 
     #if CONFIG_JOLT_QR_TYPE_STANDARD

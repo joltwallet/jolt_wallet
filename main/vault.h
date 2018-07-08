@@ -8,12 +8,14 @@
 
 #include "nvs.h"
 #include "nano_lib.h"
+#include "bipmnemonic.h"
+#include "jolttypes.h"
 
 /* Structure to store anything that if modified could perform something
  * malicious
  */
 typedef struct vault_t{
-    char mnemonic[MNEMONIC_BUF_LEN];
+    char mnemonic[BM_MNEMONIC_BUF_LEN];
     uint512_t master_seed;
     bool valid;
 } vault_t;
@@ -77,8 +79,8 @@ typedef struct vault_rpc_t {
 } vault_rpc_t;
 
 vault_rpc_response_t vault_rpc(vault_rpc_t *rpc);
-nl_err_t vault_init();
+jolt_err_t vault_init();
 void vault_task(void *vault_in);
-nl_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace);
+jolt_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace);
 
 #endif

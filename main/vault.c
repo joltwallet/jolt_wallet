@@ -17,7 +17,9 @@
 #include "freertos/task.h"
 
 #include "menu8g2.h"
-#include "nano_lib.h"
+#include "jolttypes.h"
+
+#include "bipmnemonic.h"
 
 #include "helpers.h"
 #include "globals.h"
@@ -65,7 +67,7 @@ vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
     return res;
 }
 
-nl_err_t vault_init(vault_t *vault){
+jolt_err_t vault_init(vault_t *vault){
     /* Secure allocates space for vault, and checks if it exists in NVS
      *   Returns E_SUCCESS if vault found in NVS
      *   Returns E_FAILURE if vault is not found in NVS
@@ -79,7 +81,7 @@ nl_err_t vault_init(vault_t *vault){
      */
     nvs_handle nvs_secret;
     esp_err_t err;
-    nl_err_t res;
+    jolt_err_t res;
     size_t required_size;
 
     // Allocate guarded space on the heap for the vault
@@ -124,7 +126,7 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
     uint256_t nonce = {0};
     int8_t decrypt_result;
     CONFIDENTIAL unsigned char enc_mnemonic[
-            crypto_secretbox_MACBYTES + MNEMONIC_BUF_LEN];
+            crypto_secretbox_MACBYTES + BM_MNEMONIC_BUF_LEN];
     size_t required_size = sizeof(enc_mnemonic);
 
     if( vault->valid ){
@@ -172,7 +174,7 @@ static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
             sodium_memzero(enc_mnemonic, sizeof(enc_mnemonic));
             nvs_set_u8(nvs_secret, "pin_attempts", 0);
             nvs_commit(nvs_secret);
-            nl_mnemonic_to_master_seed(vault->master_seed,
+            bm_mnemonic_to_master_seed(vault->master_seed,
                     vault->mnemonic, "");
             vault->valid = true;
             ESP_LOGI(TAG, "Mnemonic successfully decrypted.");

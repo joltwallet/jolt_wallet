@@ -27,7 +27,7 @@ void menu_nano_address_qr(menu8g2_t *prev){
     QRCode qrcode;
     uint8_t qrcode_bytes[qrcode_getBufferSize(CONFIG_JOLT_QR_VERSION)];
     uint64_t input_buf;
-    nl_err_t err;
+    jolt_err_t err;
 
     menu8g2_t menu;
     menu8g2_copy(&menu, prev);

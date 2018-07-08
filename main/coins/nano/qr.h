@@ -11,7 +11,7 @@
 #include "qrcode.h"
 #include "mbedtls/bignum.h"
 
-nl_err_t public_to_qr(QRCode *qrcode, uint8_t *qrcode_bytes, 
+jolt_err_t public_to_qr(QRCode *qrcode, uint8_t *qrcode_bytes, 
         uint256_t public_key, mbedtls_mpi *amount);
 
 #endif

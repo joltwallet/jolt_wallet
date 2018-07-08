@@ -16,7 +16,6 @@
 #include "freertos/task.h"
 
 #include "menu8g2.h"
-#include "nano_lib.h"
 
 #include "../vault.h"
 #include "../globals.h"
