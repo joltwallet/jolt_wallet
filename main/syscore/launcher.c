@@ -60,6 +60,7 @@ static int launcher_run(int argc, char** argv) {
 
     ESP_LOGD(TAG, "Reading %s\n", fn);
     FILE *f = fopen(fn, "rb");
+    /* Todo: Signature Check */
     int r = elfLoader(f, &env, "app_main", 0x10);
     fclose(f);
 

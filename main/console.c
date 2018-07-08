@@ -132,6 +132,8 @@ static void console_register_commands(){
     
     console_syscore_register();
 
+    /* Register app names */
+
     /* Register Coin Specific Commands */
     console_nano_register();
 }
