@@ -54,12 +54,6 @@ static int launcher_run(int argc, char** argv) {
 
     printf( "Reading %s\n", fn);
     FILE *f = fopen(fn, "rb");
-    uint32_t *fake_f = f;
-    for(int i=0; i<26; i++){
-        printf("%d: 0x%x\n", i, fake_f[i]);
-        //printf("sizeof(FILE): %d", sizeof(FILE));
-    }
-
     int r = elfLoader(f, &env, "app_main", 0x10);
     fclose(f);
 
