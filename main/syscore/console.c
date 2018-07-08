@@ -18,6 +18,7 @@
 
 #include "nano_lws.h"
 #include "nano_parse.h"
+#include "bipmnemonic.h"
 
 #include "filesystem.h"
 #include "launcher.h"
@@ -142,7 +143,7 @@ static int mnemonic_restore(int argc, char** argv) {
         linenoiseFree(line);
 
         // verify its a word in the word list
-        while(-1 == nl_search_wordlist(user_words[j], strlen(user_words[j]))) {
+        while(-1 == bm_search_wordlist(user_words[j], strlen(user_words[j]))) {
             printf("Invalid word\n");
             line = linenoise(prompt);
             if (line == NULL) { /* Ignore empty lines */
@@ -163,7 +164,7 @@ static int mnemonic_restore(int argc, char** argv) {
     loading_disable();
 
     // Join Mnemonic into single buffer
-    CONFIDENTIAL char mnemonic[MNEMONIC_BUF_LEN];
+    CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
     size_t offset=0;
     for(uint8_t i=0; i < sizeof(index); i++){
         strlcpy(mnemonic + offset, user_words[i], sizeof(mnemonic) - offset);

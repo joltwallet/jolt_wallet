@@ -10,6 +10,7 @@ https://www.joltwallet.com/
 #include "sodium.h"
 #include "easy_input.h"
 #include "menu8g2.h"
+#include "bipmnemonic.h"
 
 #include "entry.h"
 #include "../helpers.h"
@@ -77,8 +78,8 @@ void first_boot_menu(){
     menu8g2_init(&menu, (u8g2_t *)&u8g2, input_queue, disp_mutex, NULL, NULL);
 
     // Generate Mnemonic
-    CONFIDENTIAL char mnemonic[MNEMONIC_BUF_LEN];
-    nl_mnemonic_generate(mnemonic, MNEMONIC_BUF_LEN, 256);
+    CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
+    bm_mnemonic_generate(mnemonic, BM_MNEMONIC_BUF_LEN, 256);
 
     for(int8_t current_screen =0;;){
         current_screen = (current_screen<0) ? 0 : current_screen;
