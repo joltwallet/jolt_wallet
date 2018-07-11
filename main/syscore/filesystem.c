@@ -22,6 +22,7 @@
 #include "esp_spiffs.h"
 #include "ymodem.h"
 
+#include "filesystem.h"
 #include "../globals.h"
 #include "../console.h"
 #include "../vault.h"
@@ -34,9 +35,6 @@
 #include "../console.h"
 
 static const char* TAG = "console_syscore_fs";
-
-#define MAX_FILE_SIZE (1048576 - 0x2000)
-#define SPIFFS_BASE_PATH "/spiffs"
 
 
 void filesystem_init() {
@@ -65,6 +63,72 @@ void filesystem_init() {
     } else {
         ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
     }
+}
+
+uint32_t get_all_fns(char **fns, uint32_t fns_len, const char *ext, bool remove_ext){
+    /* Returns upto fns_len fns with extension ext and the number of files.
+     * If fns is NULL, just return the file count.
+     * If ext is NULL, return all files
+     * Uses malloc to reserve space for fns
+     */
+    DIR *dir;
+    uint32_t tot = 0;
+    struct dirent *ent;
+    char *ext_ptr;
+
+    dir = opendir(SPIFFS_BASE_PATH);
+    if (!dir) {
+        ESP_LOGE(TAG, "Failed to open filesystem.");
+        fns = NULL;
+        return 0;
+    }
+
+    // Get file count if fns is NULL
+    if(fns == NULL) {
+        while((ent = readdir(dir)) != NULL) {
+            //ent->d_name is a char array of form "cat.jpg"
+            // Check if the file has extension ".elf"
+            ext_ptr = ent->d_name + strlen(ent->d_name) - strlen(ext);
+            if( !ext || (strlen(ent->d_name)>strlen(ext)  && strcmp(ext_ptr, ext) == 0) ) {
+                tot++;
+            }
+        }
+        closedir(dir);
+        return tot;
+    }
+
+    while((ent = readdir(dir)) != NULL) {
+        // Check if the file has extension ".elf"
+        ext_ptr = ent->d_name + strlen(ent->d_name) - strlen(ext);
+        if( !ext || (strlen(ent->d_name)>strlen(ext)  && strcmp(ext_ptr, ext) == 0) ) {
+            uint8_t copy_len = strlen(ent->d_name)+1;
+            if( remove_ext ) {
+                copy_len -= strlen(ext);
+            }
+            fns[tot] = malloc(copy_len);
+            strlcpy(fns[tot], ent->d_name, copy_len);
+            tot++;
+            if(tot >= fns_len){
+                break;
+            }
+        }
+    }
+    closedir(dir);
+
+    return tot;
+}
+
+char **malloc_char_array(int n) {
+    /* Allocate the pointers for a string array */
+    return (char **) calloc(n, sizeof(char*));
+}
+
+void free_char_array(char **arr, int n) {
+    /* Frees the list created by get_all_fns(); */
+    for(uint32_t i=0; i<n; i++) {
+        free(arr[i]);
+    }
+    free(arr);
 }
 
 static int file_upload(int argc, char** argv) {
@@ -214,7 +278,7 @@ static int file_ls(int argc, char** argv) {
     // Read directory entries
     uint64_t total = 0;
     int nfiles = 0;
-    printf("T    Size      Date/Time         Name\r\n");
+    printf("T      Size    Date/Time         Name\r\n");
     printf("-----------------------------------\r\n");
     while ((ent = readdir(dir)) != NULL) {
         sprintf(tpath, path);
