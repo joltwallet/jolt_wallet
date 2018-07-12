@@ -68,9 +68,11 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
     // Make sure both files exist
     if( check_file_exists(exec_fn) != 1 ){
         ESP_LOGE(TAG, "Executable doesn't exist\n");
-        return_code = 1;
+        return_code = -100; // TODO: Better return code
         goto exit;
     }
+
+    // TODO: Verify File Signature Here
 #if 0
     if( check_file_exists(sig_fn) != 1 ){
         ESP_LOGE(TAG, "Signature doesn't exist\n");
@@ -78,13 +80,10 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         goto exit;
     }
 #endif
-
-    // TODO: Verify File Signature Here
     
     FILE *f = fopen(exec_fn, "rb");
-    int r = elfLoader(f, &env, func, app_argc, app_argv);
+    return_code = elfLoader(f, &env, func, app_argc, app_argv);
     fclose(f);
-    return_code = 0;
 
 exit:
     return return_code;

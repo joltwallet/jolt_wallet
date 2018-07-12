@@ -156,6 +156,9 @@ static int file_upload(int argc, char** argv) {
         if (rec_res > 0) {
             printf("\"%s\" Transfer complete, Size=%d Bytes\n",
                     orig_name+strlen(SPIFFS_BASE_PATH), rec_res);
+            if( check_file_exists(orig_name) ) {
+                remove(orig_name);
+            }
             rename(tmp_fname, orig_name);
         }
         else {
@@ -166,6 +169,10 @@ static int file_upload(int argc, char** argv) {
     else {
         ESP_LOGE(TAG, "Error opening file \"%s\" for receive.", tmp_fname);
     }
+    if( check_file_exists(tmp_fname) ) {
+        remove(tmp_fname);
+    }
+
     return 0;
 }
 

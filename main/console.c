@@ -28,6 +28,7 @@
 #include "gui/confirmation.h"
 
 #include "syscore/console.h"
+#include "syscore/launcher.h"
 #include "coins/nano/console.h"
 
 static const char* TAG = "console";
@@ -80,7 +81,14 @@ void console_task() {
         int ret;
         esp_err_t err = esp_console_run(line, &ret);
         if (err == ESP_ERR_NOT_FOUND) {
-            printf("Unrecognized command\n");
+            // The command could be an app to run console commands from
+            char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
+            // split_argv modifies line with NULL-terminators
+            size_t argc = esp_console_split_argv(line, argv, sizeof(argv));
+            printf("Line: %s\n", line);
+            if( launch_file(argv[0], "console", argc-1, argv+1) ) {
+                printf("Unsuccessful command\n");
+            }
         } else if (err == ESP_ERR_INVALID_ARG) {
             // command was empty
         } else if (err == ESP_OK && ret != ESP_OK) {
@@ -133,8 +141,10 @@ static void console_register_commands(){
     console_syscore_register();
 
     /* Register app names */
+    // TODO
 
     /* Register Coin Specific Commands */
+    // TODO deprecate this
     console_nano_register();
 }
 
