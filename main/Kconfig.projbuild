@@ -1,5 +1,36 @@
 menu "Jolt Wallet Config"
 
+    menu "I2C"
+         config JOLT_I2C_MASTER_NUM
+            int
+            prompt "Which I2C port to use"
+            default 1
+            help
+                Help Text Here
+
+         config JOLT_I2C_PIN_SDA
+            int
+            prompt "Display SDA GPIO PIN"
+            default 4
+            help
+                I2C Display's SDA
+
+        config JOLT_I2C_PIN_SCL
+            int
+            prompt "Display SCL GPIO PIN"
+            default 15
+            help
+                I2C Display's SCL
+
+        config JOLT_I2C_MASTER_FREQ_HZ
+            int
+            prompt "Master I2C Clock Freq"
+            default 800000
+            help
+                Help Text Here
+
+    endmenu
+
     menu "Display"
         config JOLT_DISPLAY_BRIGHTNESS
             int
@@ -15,20 +46,6 @@ menu "Jolt Wallet Config"
             help
                 Flip everything drawn to the display; used depending on how
                 your screen is mounted in your hardware setup.
-
-        config JOLT_DISPLAY_PIN_SDA
-            int
-            prompt "Display SDA GPIO PIN"
-            default 4
-            help
-                I2C Display's SDA
-
-        config JOLT_DISPLAY_PIN_SCL
-            int
-            prompt "Display SCL GPIO PIN"
-            default 15
-            help
-                I2C Display's SCL
 
         config JOLT_DISPLAY_PIN_RST
             int

@@ -29,6 +29,8 @@ void u8g2_esp32_hal_init(u8g2_esp32_hal_t u8g2_esp32_hal_param) {
 /*
  * HAL callback function as prescribed by the U8G2 library.  This callback is invoked
  * to handle SPI communications.
+ *
+ * Currently this is untested as we use the I2C version of the display
  */
 uint8_t u8g2_esp32_spi_byte_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr) {
 	ESP_LOGD(TAG, "spi_byte_cb: Received a msg: %d, arg_int: %d, arg_ptr: %p", msg, arg_int, arg_ptr);
@@ -109,26 +111,9 @@ uint8_t u8g2_esp32_i2c_byte_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void 
 		}
 
 		case U8X8_MSG_BYTE_INIT: {
-			if (u8g2_esp32_hal.sda == U8G2_ESP32_HAL_UNDEFINED ||
-					u8g2_esp32_hal.scl == U8G2_ESP32_HAL_UNDEFINED) {
-				break;
-			}
-
-		    i2c_config_t conf;
-		    conf.mode = I2C_MODE_MASTER;
-			ESP_LOGI(TAG, "sda_io_num %d", u8g2_esp32_hal.sda);
-		    conf.sda_io_num = u8g2_esp32_hal.sda;
-		    conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
-			ESP_LOGI(TAG, "scl_io_num %d", u8g2_esp32_hal.scl);
-		    conf.scl_io_num = u8g2_esp32_hal.scl;
-		    conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
-			ESP_LOGI(TAG, "clk_speed %d", I2C_MASTER_FREQ_HZ);
-		    conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
-			ESP_LOGI(TAG, "i2c_param_config %d", conf.mode);
-		    ESP_ERROR_CHECK(i2c_param_config(I2C_MASTER_NUM, &conf));
-			ESP_LOGI(TAG, "i2c_driver_install %d", I2C_MASTER_NUM);
-		    ESP_ERROR_CHECK(i2c_driver_install(I2C_MASTER_NUM, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0));
-			break;
+            /* Normally install the i2c driver here, but its been removed here
+             * since we assume the i2c driver has already been installed */
+            break;
 		}
 
 		case U8X8_MSG_BYTE_SEND: {
@@ -155,7 +140,7 @@ uint8_t u8g2_esp32_i2c_byte_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void 
 		case U8X8_MSG_BYTE_END_TRANSFER: {
 			ESP_LOGD(TAG, "End I2C transfer.");
 			ESP_ERROR_CHECK(i2c_master_stop(handle_i2c));
-			ESP_ERROR_CHECK(i2c_master_cmd_begin(I2C_MASTER_NUM, handle_i2c, I2C_TIMEOUT_MS / portTICK_RATE_MS));
+			ESP_ERROR_CHECK(i2c_master_cmd_begin(CONFIG_JOLT_I2C_MASTER_NUM, handle_i2c, I2C_TIMEOUT_MS / portTICK_RATE_MS));
 			i2c_cmd_link_delete(handle_i2c);
 			break;
 		}
@@ -208,20 +193,6 @@ uint8_t u8g2_esp32_gpio_and_delay_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int,
 		case U8X8_MSG_GPIO_CS:
 			if (u8g2_esp32_hal.cs != U8G2_ESP32_HAL_UNDEFINED) {
 				gpio_set_level(u8g2_esp32_hal.cs, arg_int);
-			}
-			break;
-	// Set the Software I²C pin to the value passed in through arg_int.
-		case U8X8_MSG_GPIO_I2C_CLOCK:
-			if (u8g2_esp32_hal.scl != U8G2_ESP32_HAL_UNDEFINED) {
-				gpio_set_level(u8g2_esp32_hal.scl, arg_int);
-//				printf("%c",(arg_int==1?'C':'c'));
-			}
-			break;
-	// Set the Software I²C pin to the value passed in through arg_int.
-		case U8X8_MSG_GPIO_I2C_DATA:
-			if (u8g2_esp32_hal.sda != U8G2_ESP32_HAL_UNDEFINED) {
-				gpio_set_level(u8g2_esp32_hal.sda, arg_int);
-//				printf("%c",(arg_int==1?'D':'d'));
 			}
 			break;
 
