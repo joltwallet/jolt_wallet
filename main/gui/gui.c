@@ -48,7 +48,9 @@ void setup_screen(u8g2_t *u8g2){
     u8g2_ClearDisplay(u8g2);
     u8g2_ClearBuffer(u8g2);
 
-    u8g2_SetFlipMode(u8g2, CONFIG_JOLT_DISPLAY_FLIP);
+#if CONFIG_JOLT_DISPLAY_FLIP
+    u8g2_SetFlipMode(u8g2, true);
+#endif
     u8g2_SetContrast(u8g2, 255);
 }
 

@@ -39,10 +39,9 @@ menu "Jolt Wallet Config"
 
         config JOLT_DISPLAY_ADDRESS
             hex
-            prompt "Display RST GPIO PIN"
+            prompt "Display I2C Address"
             default 0x78
             help
-                help text here
                 I2C Display's Address
     endmenu
 
