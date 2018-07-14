@@ -8,6 +8,14 @@ menu "Jolt Wallet Config"
             help
                 Value from [0-255] indicating screen brightness
 
+        config JOLT_DISPLAY_FLIP
+            bool
+            prompt "Rotate the display buffer 180 degrees"
+            default n
+            help
+                Flip everything drawn to the display; used depending on how
+                your screen is mounted in your hardware setup.
+
         config JOLT_DISPLAY_PIN_SDA
             int
             prompt "Display SDA GPIO PIN"
