@@ -10,7 +10,6 @@
 #include "u8g2_esp32.h"
 
 static const char *TAG = "u8g2_hal";
-static const unsigned int I2C_TIMEOUT_MS = 1000;
 
 static spi_device_handle_t handle_spi;      // SPI handle.
 static i2c_cmd_handle_t    handle_i2c;      // I2C handle.
@@ -18,6 +17,8 @@ static u8g2_esp32_hal_t    u8g2_esp32_hal;  // HAL state data.
 
 #undef ESP_ERROR_CHECK
 #define ESP_ERROR_CHECK(x)   do { esp_err_t rc = (x); if (rc != ESP_OK) { ESP_LOGE("err", "esp_err_t = %d", rc); assert(0 && #x);} } while(0);
+#define ACK_CHECK_EN   0x1                 //  I2C master will check ack from slave
+#define ACK_CHECK_DIS  0x0                 //  I2C master will not check ack from slave
 
 /*
  * Initialze the ESP32 HAL.
@@ -121,7 +122,7 @@ uint8_t u8g2_esp32_i2c_byte_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void 
 			ESP_LOG_BUFFER_HEXDUMP(TAG, data_ptr, arg_int, ESP_LOG_VERBOSE);
 
 			while( arg_int > 0 ) {
-			   ESP_ERROR_CHECK(i2c_master_write_byte(handle_i2c, *data_ptr, ACK_CHECK_EN));
+			   ESP_ERROR_CHECK(i2c_master_write_byte(handle_i2c, *data_ptr, ACK_CHECK_EN)); // TODO: Heap Poisoning was detected here
 			   data_ptr++;
 			   arg_int--;
 			}
@@ -140,7 +141,7 @@ uint8_t u8g2_esp32_i2c_byte_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void 
 		case U8X8_MSG_BYTE_END_TRANSFER: {
 			ESP_LOGD(TAG, "End I2C transfer.");
 			ESP_ERROR_CHECK(i2c_master_stop(handle_i2c));
-			ESP_ERROR_CHECK(i2c_master_cmd_begin(CONFIG_JOLT_I2C_MASTER_NUM, handle_i2c, I2C_TIMEOUT_MS / portTICK_RATE_MS));
+			ESP_ERROR_CHECK(i2c_master_cmd_begin(CONFIG_JOLT_I2C_MASTER_NUM, handle_i2c, CONFIG_JOLT_I2C_TIMEOUT_MS / portTICK_RATE_MS));
 			i2c_cmd_link_delete(handle_i2c);
 			break;
 		}

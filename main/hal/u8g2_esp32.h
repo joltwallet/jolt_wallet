@@ -14,9 +14,7 @@
 #include "driver/i2c.h"
 
 #define U8G2_ESP32_HAL_UNDEFINED (-1)
-
-#define ACK_CHECK_EN   0x1                 //  I2C master will check ack from slave
-#define ACK_CHECK_DIS  0x0                 //  I2C master will not check ack from slave
+#define U8G2_ESP32_HAL_DEFAULT {U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED }
 
 typedef struct {
     gpio_num_t clk;
@@ -25,8 +23,6 @@ typedef struct {
     gpio_num_t reset;
     gpio_num_t dc;
 } u8g2_esp32_hal_t ;
-
-#define U8G2_ESP32_HAL_DEFAULT {U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED }
 
 void u8g2_esp32_hal_init(u8g2_esp32_hal_t u8g2_esp32_hal_param);
 uint8_t u8g2_esp32_spi_byte_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr);
