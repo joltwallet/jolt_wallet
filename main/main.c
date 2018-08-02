@@ -14,7 +14,6 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
-//#include "driver/gpio.h"
 #include "driver/i2c.h"
 
 #include "u8g2.h"
@@ -39,7 +38,7 @@ volatile QueueHandle_t vault_queue;
 volatile SemaphoreHandle_t disp_mutex;
 QueueHandle_t backend_queue;
 
-const char TAG[] = "main";
+static const char TAG[] = "main";
 
 void app_main(){
     // Setup Input Button Debouncing Code
