@@ -11,7 +11,6 @@
 #include "bipmnemonic.h"
 #include "jolttypes.h"
 
-void setup_private_node();
 
 /* Structure to store anything that if modified could perform something
  * malicious
@@ -27,7 +26,11 @@ typedef struct vault_t {
     bool valid; // If key is valid (hasn't been wiped)
 } vault_t;
 
-void setup_vault();
-jolt_err_t init_nvm_namespace(nvs_handle *nvs_h, const char *namespace);
+void vault_sem_take();
+void vault_sem_give();
+bool vault_setup();
+void vault_clear();
+bool vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key);
+bool refresh_vault();
 
 #endif

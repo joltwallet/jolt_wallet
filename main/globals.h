@@ -11,9 +11,11 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "vault.h"
+
+extern vault_t *vault;
 
 extern volatile u8g2_t u8g2;
-extern volatile QueueHandle_t vault_queue;
 extern volatile QueueHandle_t input_queue;
 extern volatile SemaphoreHandle_t disp_mutex;
 extern volatile TaskHandle_t console_h;

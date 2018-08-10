@@ -32,7 +32,7 @@
 static const char* TAG = "vault";
 static const char* TITLE = "Vault Access";
 
-static vault_t *vault;
+vault_t *vault = NULL;
 /* The following semaphores are not part of the vault object so we can use
  * sodium_malloc() */
 static SemaphoreHandle_t vault_sem; // Used for general vault access
@@ -116,7 +116,7 @@ void vault_clear() {
     vault_sem_give();
 }
 
-bool vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key){
+bool vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key) {
     // To only be called before launching an app, or when changing firmware
     // settings.
     //
@@ -269,6 +269,7 @@ static bool get_master_seed(uint512_t master_seed) {
     nvs_close(nvs_secret);
     }
 #elif CONFIG_JOLT_STORE_ATAES132A
+    // todo: implement
 #endif
 
     // todo: fetch passphrase
