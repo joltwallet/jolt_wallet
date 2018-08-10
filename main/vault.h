@@ -7,7 +7,6 @@
 #define __JOLT_VAULT_H__
 
 #include "nvs.h"
-#include "nano_lib.h"
 #include "bipmnemonic.h"
 #include "jolttypes.h"
 

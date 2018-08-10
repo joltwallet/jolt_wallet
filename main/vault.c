@@ -18,9 +18,7 @@
 
 #include "menu8g2.h"
 #include "jolttypes.h"
-
 #include "bipmnemonic.h"
-
 #include "helpers.h"
 #include "globals.h"
 #include "vault.h"
