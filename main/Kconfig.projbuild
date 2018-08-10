@@ -88,6 +88,21 @@ menu "Jolt Wallet Config"
         help
             help text here
 
+    config JOLT_TIMEOUT_TIMEOUT_MS
+        int
+        prompt "Maximum number of time in milliseconds for Private Node Watchdog to wait to obtain private node mutex."
+        default 1000
+        help
+            help text here
+
+    choice
+        prompt "Select Mnemonic Storage Method"
+        config JOLT_STORE_INTERNAL
+            bool "Simple mnemonic storage on SPI Flash; Unsafe against replay attacks"
+        config JOLT_STORE_ATAES132A
+            bool "Not Yet Implemented"
+    endchoice
+
     menu "Console"
         config JOLT_CONSOLE_UART_RX_BUF_LEN
             int

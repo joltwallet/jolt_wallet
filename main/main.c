@@ -34,7 +34,6 @@
 // Definitions for variables in globals.h
 volatile u8g2_t u8g2;
 volatile QueueHandle_t input_queue;
-volatile QueueHandle_t vault_queue;
 volatile SemaphoreHandle_t disp_mutex;
 QueueHandle_t backend_queue;
 
@@ -70,19 +69,13 @@ void app_main(){
     disp_mutex = xSemaphoreCreateMutex();
     
     // Allocate space for the vault and see if a copy exists in NVS
-    vault_t vault;
-    if (E_FAILURE == vault_init(&vault)){
+    if( false == vault_setup()) {
         first_boot_menu();
     }
     
     // Initialize Wireless
     set_jolt_cast();
     wifi_connect();
-
-    xTaskCreate(vault_task,
-            "Vault", 16000,
-            (void *) &vault, 16,
-            NULL);
     
     xTaskCreate(gui_task,
             "GUI", 16000,
