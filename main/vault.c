@@ -191,84 +191,17 @@ static bool get_master_seed(uint512_t master_seed) {
     //
     // Returns True if user successfully entered PIN/Passphrase
     // Returns False if user cancels
-    bool pin_res;
-    bool passphrase_res;
     bool res;
     CONFIDENTIAL char passphrase[BM_PASSPHRASE_BUF_LEN] = "";
     CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
 
     SCREEN_SAVE;
     
-    // Populate mnemonic by prompting user for PIN
-#if CONFIG_JOLT_STORE_INTERNAL
-    {
-    /* This implementation requires no external components, but is vulnerable
-     * to having the ciphertext being restored on the SPI Flash, granting an
-     * attacker unlimited PIN attempts with minimal specialty tools.
-     *
-     * Todos:
-     *  * NVS currently doesn't use hardware encryption; either:
-     *      * Wait for NVS to support encryption
-     *      * Implement it ourselves
-     *  * Save 256-bits and convert it upon load instead of storing and loading 
-     *    the whole mnemonic string
-     */
-    jolt_err_t err;
-    CONFIDENTIAL unsigned char enc_mnemonic[
-            crypto_secretbox_MACBYTES + BM_MNEMONIC_BUF_LEN];
-    size_t required_size = sizeof(enc_mnemonic);
-
-    ESP_LOGI(TAG, "Opening SECRET namespace to load encrypted mnemonic.");
-    nvs_handle nvs_secret;
-    init_nvm_namespace(&nvs_secret, "secret");
-    uint8_t pin_attempts;
-    err = nvs_get_u8(nvs_secret, "pin_attempts", &pin_attempts);
-    if( ESP_OK != err || pin_attempts >= CONFIG_JOLT_DEFAULT_MAX_ATTEMPT ) {
-        factory_reset();
+    // storage_get_mnemonic prompts user for PIN
+    if( !storage_get_mnemonic(uint256_t mnemonic) ) {
+        res = false;
+        goto exit;
     }
-    err = nvs_get_blob(nvs_secret, "mnemonic", enc_mnemonic, &required_size);
-
-    for(;;) { // Loop will exit upon successful PIN or cancellation
-        if( pin_attempts >= CONFIG_JOLT_DEFAULT_MAX_ATTEMPT ) {
-            factory_reset();
-        }
-        char title[20];
-        sprintf(title, "Enter Pin (%d/%d)", pin_attempts+1,
-                CONFIG_JOLT_DEFAULT_MAX_ATTEMPT);
-        uint256_t pin_hash;
-        if( !entry_pin(menu, pin_hash, title) ) {
-            // User cancelled vault operation
-            nvs_close(nvs_secret);
-            res = false;
-            goto exit;
-        };
-        pin_attempts++;
-        nvs_set_u8(nvs_secret, "pin_attempts", pin_attempts);
-        nvs_commit(nvs_secret);
-
-        loading_enable();
-        loading_text_title("Decrypting", TITLE);
-        decrypt_result = crypto_secretbox_open_easy( (unsigned char *)mnemonic,
-                enc_mnemonic, required_size, nonce, pin_hash);
-        loading_disable();
-
-        if(decrypt_result == 0){ // Success
-            sodium_memzero(enc_mnemonic, sizeof(enc_mnemonic));
-            nvs_set_u8(nvs_secret, "pin_attempts", 0);
-            nvs_commit(nvs_secret);
-            res = true;
-            ESP_LOGI(TAG, "Mnemonic successfully decrypted.");
-            break;
-        }
-        else{
-            menu8g2_display_text_title(menu, "Wrong PIN", TITLE);
-        }
-    }
-    nvs_close(nvs_secret);
-    }
-#elif CONFIG_JOLT_STORE_ATAES132A
-    // todo: implement
-#endif
 
     // todo: fetch passphrase
     strlcpy(passphrase, "", sizeof(passphrase)); // dummy placeholder
