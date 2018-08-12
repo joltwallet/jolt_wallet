@@ -26,6 +26,40 @@
 static const char* TAG = "storage_hal";
 static const char* TITLE = "Storage Access";
 
+bool storage_internal_exists_mnemonic() {
+    /* Returens true if mnemonic exists, false otherwise */
+    size_t required_size;
+    nvs_handle nvs;
+    res = ESP_OK==nvs_get_blob(nvs, "mnemonic", NULL, &required_size);
+    nvs_close(nvs);
+    return res;
+}
+
+void storage_internal_set_mnemonic(uint256_t bin, uint256_t pin_hash) {
+    // encrypt; only purpose is to reduce mnemonic redundancy to make a
+    // frozen data remanence attack infeasible. Also convenient pin
+    // checking. Nonce is irrelevant for this encryption.
+    //
+    // Also resets the pin_attempts counter
+    CONFIDENTIAL unsigned char enc_bin[
+            crypto_secretbox_MACBYTES + sizeof(bin)];
+    uint256_t nonce = {0};
+
+    crypto_secretbox_easy(enc_bin, (unsigned char *) bin, 
+            sizeof(bin), nonce, pin_hash);
+
+    // Save everything to NVS
+    nvs_handle h;
+    init_nvm_namespace(&h, "secret");
+    nvs_erase_all(h);
+    nvs_set_blob(h, "mnemonic", enc_bin, sizeof(enc_bin));
+    nvs_set_u8(h, "pin_attempts", 0);
+    nvs_commit(h);
+    nvs_close(h);
+    sodium_memzero(enc_bin, sizeof(enc_bin));
+    return;
+}
+
 bool storage_internal_get_mnemonic(uint256_t mnemonic) {
     /* prompt user for pin, returns 256-bit mnemonic from storage 
      * Returns true if mnemonic is returned; false if user cancelled
@@ -121,19 +155,28 @@ void storage_internal_set_pin_last(uint32_t count) {
 }
 
 
-bool storage_internal_get(void *value, void *namespace, void *key, void *default_value ) {
+bool storage_internal_get_u8(uint8_t *value, char *namespace, char *key, uint8_t *default_value ) {
     /* Populates [value] from value in storage with [namespace] and [key].
      * If [key] is not found in storage, set [value] to [default_value]
      *
      * Returns true if key was found.
      */
     bool res;
+    nvs_handle nvs;
+    if( E_SUCCESS == init_nvm_namespace(&nvs, namespace) ) {
+        nvs_get_u8(nvs, key, &value);
+        nvs_close(nvs);
+    }
+    else {
+        res = false;
+        // should probably do more here
+    }
+
 exit:
     return res;
-
 }
 
-bool storage_internal_set(void* value, void *namespace, void *key) {
+bool storage_internal_set_u8(uint8_t value, char *namespace, char *key) {
     /* Stores [value] into [key]. Primarily used for settings.
      *
      * Returns true on success, false on failure.

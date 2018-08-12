@@ -61,16 +61,12 @@ static void launch_file_proxy(menu8g2_t *prev) {
 
 void gui_task(){
     /* Master GUI Task */
-    nvs_handle nvs_user;
-    uint8_t boot_splash_enable = CONFIG_JOLT_DEFAULT_BOOT_SPLASH_ENABLE;
+    uint8_t boot_splash_enable;
     menu8g2_t menu;
-    menu8g2_init(&menu, (u8g2_t *) &u8g2, input_queue, disp_mutex, NULL, statusbar_update);
+    setup_menu8g2(&menu);
 
     // display boot_splash if option is set
-    if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){
-        nvs_get_u8(nvs_user, "boot_splash", &boot_splash_enable);
-        nvs_close(nvs_user);
-    }
+    storage_get_u8(&boot_splash_enable, "user", "boot_splash", CONFIG_JOLT_DEFAULT_BOOT_SPLASH);
     if(boot_splash_enable){
         boot_splash( menu.u8g2 );
     }

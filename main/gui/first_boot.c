@@ -17,6 +17,7 @@ https://www.joltwallet.com/
 #include "../globals.h"
 #include "../vault.h"
 
+#define MNEMONIC_STRENGTH 256
 
 static bool display_welcome(menu8g2_t *menu){
     uint64_t response;
@@ -78,8 +79,13 @@ void first_boot_menu(){
     menu8g2_init(&menu, (u8g2_t *)&u8g2, input_queue, disp_mutex, NULL, NULL);
 
     // Generate Mnemonic
+    CONFIDENTIAL uint256_t mnemonic_bin
     CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
-    bm_mnemonic_generate(mnemonic, BM_MNEMONIC_BUF_LEN, 256);
+    bm_entropy256(mnemonic_bin);
+#if CONFIG_JOLT_STORE_ATAES132A
+    // todo: mix in entropy from ataes132a
+#endif
+    bm_bin_to_mnemonic(mnemonic, sizeof(mnemonic), mnemonic_bin, MNEMONIC_STRENGTH);
 
     for(int8_t current_screen =0;;){
         current_screen = (current_screen<0) ? 0 : current_screen;
@@ -100,10 +106,36 @@ void first_boot_menu(){
                 }
                 break;
             }
-            case(2):
-                store_mnemonic_reboot(&menu, mnemonic);
-                current_screen--;
+            case(2):{
+                // todo: get entropy
+                CONFIDENTIAL uint256_t pin_hash;
+                while(true){
+                    if( !entry_pin(menu, pin_hash, "Set PIN") ){
+                        return false;
+                    }
+                    CONFIDENTIAL uint256_t pin_hash_verify;
+                    if( !entry_pin(menu, pin_hash_verify, "Verify PIN")){
+                        continue;
+                    }
+
+                    // Verify the pins match
+                    if( 0 == memcmp(pin_hash, pin_hash_verify, sizeof(pin_hash)) ){
+                        sodium_memzero(pin_hash_verify, sizeof(pin_hash_verify));
+                        break;
+                    }
+                    else{
+                        menu8g2_display_text_title(menu,
+                                "Pin Mismatch! Please try again.",
+                                "Pin Setup");
+                    }
+                }
+                storage_set_mnemonic(mnemonic_bin, pin_hash);
+                sodium_memzero(pin_hash, sizeof(pin_hash));
+                sodium_memzero(mnemonic_bin, sizeof(mnemonic_bin));
+                sodium_memzero(menominc, sizeof(mnemonic));
+                esp_restart();
                 break;
+            }
             default:
                 break;
         }

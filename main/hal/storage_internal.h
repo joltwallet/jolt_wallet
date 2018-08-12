@@ -6,6 +6,10 @@
 #ifndef __JOLT_HAL_INTERNAL_STORAGE_H__
 #define __JOLT_HAL_INTERNAL_STORAGE_H__
 
+#include "jolttypes.h"
+
+bool storage_internal_exists_mnemonic();
+void storage_internal_set_mnemonic(uint256_t bin, uint256_t pin_hash);
 bool storage_internal_get_mnemonic(uint256_t mnemonic);
 uint32_t storage_internal_get_pin_count();
 void storage_internal_set_pin_count(uint32_t count);

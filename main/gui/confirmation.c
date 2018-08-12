@@ -20,7 +20,7 @@
 #include "../vault.h"
 #include "../globals.h"
 
-static const char *TAG = "nano_conf";
+static const char *TAG = "confirmation";
 
 
 bool menu_confirm_action(menu8g2_t *menu, char *buf){

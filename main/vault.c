@@ -27,6 +27,7 @@
 #include "gui/statusbar.h"
 #include "gui/loading.h"
 
+
 static const char* TAG = "vault";
 static const char* TITLE = "Vault Access";
 
@@ -82,19 +83,10 @@ bool vault_setup() {
     sodium_mprotect_readonly(vault);
     vault_sem = xSemaphoreCreateMutex();
     vault_watchdog_sem = xSemaphoreCreateBinary();
-    xTaskCreate(private_watchdog_task, "Vault", 32000, NULL, 16, NULL);
+    xTaskCreate(private_watchdog_task, "Vault", 32000, NULL, 16, NULL); // todo: tweak this memory value
 
     // Checks if stored secret exists
-    bool res;
-#if CONFIG_JOLT_STORE_INTERNAL
-    size_t required_size;
-    nvs_handle nvs_secret;
-    res = ESP_OK==nvs_get_blob(nvs_secret, "mnemonic", NULL, &required_size);
-    nvs_close(nvs_secret);
-#elif CONFIG_JOLT_STORE_ATAES132A
-    // todo: implement
-#endif
-    return res;
+    return storage_exists_mnemonic();
 }
 
 void vault_clear() {

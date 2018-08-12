@@ -192,52 +192,8 @@ void shuffle_arr(uint8_t *arr, int arr_len) {
     sodium_memzero(&tmp, sizeof(uint8_t));
 }
 
-void store_mnemonic_reboot(menu8g2_t *menu, char *mnemonic){
-    /* Confirms pin, encrypts mnemonic into enc .
-     * Returns if user cancels, restarts esp on success*/
-    CONFIDENTIAL unsigned char enc_mnemonic[
-            crypto_secretbox_MACBYTES + BM_MNEMONIC_BUF_LEN];
-
-    while(true){
-        CONFIDENTIAL uint256_t pin_hash;
-        if( !entry_pin(menu, pin_hash, "Set PIN") ){
-            return false;
-        }
-        CONFIDENTIAL uint256_t pin_hash_verify;
-        if( !entry_pin(menu, pin_hash_verify, "Verify PIN")){
-            continue;
-        }
-
-        // Verify the pins match
-        if( 0 == memcmp(pin_hash, pin_hash_verify, 32) ){
-            uint256_t nonce = {0};
-            sodium_memzero(pin_hash_verify, 32);
-            // encrypt; only purpose is to reduce mnemonic redundancy to make a
-            // frozen data remanence attack infeasible. Also convenient pin
-            // checking. Nonce is irrelevant for this encryption
-            crypto_secretbox_easy(enc_mnemonic, (unsigned char *) mnemonic, 
-                    BM_MNEMONIC_BUF_LEN, nonce, pin_hash);
-            sodium_memzero(pin_hash, 32);
-            break;
-        }
-        else{
-            menu8g2_display_text_title(menu,
-                    "Pin Mismatch! Please try again.",
-                    "Pin Setup");
-        }
-    }
-
-    // Save everything to NVS
-    nvs_handle h;
-    init_nvm_namespace(&h, "secret");
-    nvs_erase_all(h);
-    nvs_set_blob(h, "mnemonic", enc_mnemonic, sizeof(enc_mnemonic));
-    nvs_set_u8(h, "pin_attempts", 0);
-    nvs_commit(h);
-    nvs_close(h);
-    sodium_memzero(enc_mnemonic, sizeof(enc_mnemonic));
-
-    esp_restart();
+void setup_menu8g2(menu8g2_t *menu) {
+    // Usual menu8g2 initialization
+    menu8g2_init(menu, (u8g2_t *) &u8g2, input_queue, disp_mutex, NULL, statusbar_update);
 }
-
 

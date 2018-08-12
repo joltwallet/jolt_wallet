@@ -26,6 +26,9 @@
 static const char* TAG = "storage_hal";
 static const char* TITLE = "Storage Access";
 
+bool storage_ataes132a_exists_mnemonic() {
+}
+
 bool storage_ataes132a_get_mnemonic(uint256_t mnemonic) {
     /* prompt user for pin, returns 256-bit mnemonic from storage 
      * Returns true if mnemonic is returned; false if user cancelled
