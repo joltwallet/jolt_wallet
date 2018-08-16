@@ -42,9 +42,10 @@ static bool get_master_seed(uint512_t master_seed);
 
 void vault_sem_take() {
     /* Takes Vault semaphore; restarts device if timesout during take. */
-    if( xSemaphoreTake(vault_sem, pdMS_TO_TICKS(CONFIG_JOLT_TIMEOUT_TIMEOUT_MS) ) ) {
+    if( !xSemaphoreTake(vault_sem, pdMS_TO_TICKS(CONFIG_JOLT_TIMEOUT_TIMEOUT_MS) ) ) {
         // Timed out trying to take the semaphore; reset the device
         // And let the bootloader wipe the RAM
+        ESP_LOGI(TAG, "Failed taking vault semaphore. Rebooting...");
         esp_restart();
     }
 }
