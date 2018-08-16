@@ -29,7 +29,6 @@
 
 #include "syscore/console.h"
 #include "syscore/launcher.h"
-#include "coins/nano/console.h"
 
 static const char* TAG = "console";
 
@@ -122,11 +121,13 @@ void menu_console(menu8g2_t *prev){
     menu8g2_copy(&menu, prev);
 
     if(console_h){
+        ESP_LOGI(TAG, "Console already running.");
         menu8g2_display_text_title(&menu,
                 "Console is already running.",
                 "Console");
     }
     else{
+        ESP_LOGI(TAG, "Starting console.");
         start_console();
         menu8g2_display_text_title(&menu,
                 "Console Started.",
@@ -145,7 +146,6 @@ static void console_register_commands(){
 
     /* Register Coin Specific Commands */
     // TODO deprecate this
-    console_nano_register();
 }
 
 void initialize_console() {

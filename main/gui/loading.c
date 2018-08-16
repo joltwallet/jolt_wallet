@@ -40,11 +40,11 @@ typedef struct loading_text_t{
     const char *text;
 } loading_text_t;
 
-void loading_init(menu8g2_t *menu){
+void loading_init(){
     loading_draw_enable = false;
     loading_queue = xQueueCreate( 1, sizeof(loading_text_t) );
     xTaskCreate(loading_task, "LoadingTask", 8192,
-            (void *) menu, 6, NULL);
+            NULL, 6, NULL);
 }
 
 void loading_enable( void ){
@@ -65,7 +65,7 @@ void loading_text_title(const char *text, const char *title){
     xQueueOverwrite( loading_queue, &payload );
 }
 
-bool loading_check_cancel(menu8g2_t *menu){
+bool loading_check_cancel(){
     /* Returns true if a back input press is on the queue */
     uint64_t input_buf;
 
@@ -77,11 +77,7 @@ bool loading_check_cancel(menu8g2_t *menu){
     return false;
 }
 
-void loading_task(void *menu_in){
-    menu8g2_t *prev = (menu8g2_t *) menu_in;
-    menu8g2_t menu;
-    menu8g2_copy(&menu, prev);
-
+void loading_task(){
     loading_text_t payload;
     const unsigned char *graphic = NULL;
 
@@ -90,9 +86,9 @@ void loading_task(void *menu_in){
                 pdMS_TO_TICKS(LOADING_FRAME_TIME_MS))) % N_LOADING_FRAMES){
 
         // Clear any button presses on the loading screens
-        xQueueReset( menu.input_queue );
+        xQueueReset( menu->input_queue );
 #if 0
-        if(xQueueReceive(menu.input_queue, &input_buf, portMAX_DELAY)) {
+        if(xQueueReceive(menu->input_queue, &input_buf, portMAX_DELAY)) {
         }
 #endif
 
@@ -122,20 +118,20 @@ void loading_task(void *menu_in){
         }
 #endif
 
-        MENU8G2_BEGIN_DRAW(&menu)
-            menu8g2_buf_header(&menu, payload.title);
+        MENU8G2_BEGIN_DRAW(menu)
+            menu8g2_buf_header(menu, payload.title);
 
-            u8g2_SetDrawColor(menu.u8g2, 1);
-            u8g2_DrawXBM( menu.u8g2, 
-                    (u8g2_GetDisplayWidth(menu.u8g2) - GRAPHIC_NANO_LOAD_W) / 2,
+            u8g2_SetDrawColor(menu->u8g2, 1);
+            u8g2_DrawXBM( menu->u8g2, 
+                    (u8g2_GetDisplayWidth(menu->u8g2) - GRAPHIC_NANO_LOAD_W) / 2,
                     32,
                     GRAPHIC_NANO_LOAD_W,
                     GRAPHIC_NANO_LOAD_H,
                     graphic);
 
-            u8g2_SetFont(menu.u8g2, u8g2_font_profont12_tf);
-            u8g2_DrawStr(menu.u8g2, menu8g2_get_center_x(&menu, payload.text),
+            u8g2_SetFont(menu->u8g2, u8g2_font_profont12_tf);
+            u8g2_DrawStr(menu->u8g2, menu8g2_get_center_x(menu, payload.text),
                     LOADING_TEXT_Y, payload.text);
-        MENU8G2_END_DRAW(&menu)
+        MENU8G2_END_DRAW(menu)
     }
 }

@@ -12,6 +12,7 @@
 #include "easy_input.h"
 #include "u8g2.h"
 #include "menu8g2.h"
+#include "jolttypes.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -29,7 +30,7 @@ static const char* TAG = "entry_pin";
 #define PIN_SPACING 13
 
 
-bool entry_pin(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
+bool entry_pin(menu8g2_t *prev, uint256_t pin_hash, const char *title){
     /* Screen for Pin Entry 
      * Saves results into pin_entries*/
     menu8g2_t local_menu;
@@ -140,3 +141,31 @@ bool entry_pin(menu8g2_t *prev, unsigned char *pin_hash, const char *title){
         return res;
 }
 
+bool entry_verify_pin(menu8g2_t *prev, uint256_t pin_hash) {
+    /* Prompts and verifies PIN */
+    menu8g2_t menu;
+    menu8g2_copy(&menu, prev);
+
+    while(true){
+        if( !entry_pin(&menu, pin_hash, "Set PIN") ){
+            return false;
+        }
+        CONFIDENTIAL uint256_t pin_hash_verify;
+        if( !entry_pin(&menu, pin_hash_verify, "Verify PIN")){
+            continue;
+        }
+
+        // Verify the pins match
+        if( 0 == memcmp(pin_hash, pin_hash_verify, sizeof(pin_hash_verify)) ){
+            sodium_memzero(pin_hash_verify, sizeof(pin_hash_verify));
+            break;
+        }
+        else{
+            sodium_memzero(pin_hash_verify, sizeof(pin_hash_verify));
+            menu8g2_display_text_title(&menu,
+                    "Pin Mismatch! Please try again.",
+                    "Pin Setup");
+        }
+    }
+    return true;
+}

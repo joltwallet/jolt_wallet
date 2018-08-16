@@ -22,6 +22,7 @@ void gui_task();
 #define FULLSCREEN_EXIT(menu) \
     statusbar_draw_enable = statusbar_draw_original;
 
+// todo: should probably grab menu mutex here
 #define SCREEN_SAVE \
     size_t disp_buffer_size = 8 * u8g2_GetBufferTileHeight(&u8g2) * \
             u8g2_GetBufferTileWidth((u8g2_t *)&u8g2);\

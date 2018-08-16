@@ -22,6 +22,7 @@
 #include "helpers.h"
 #include "globals.h"
 #include "vault.h"
+#include "hal/storage.h"
 #include "gui/gui.h"
 #include "gui/entry.h"
 #include "gui/statusbar.h"
@@ -36,6 +37,8 @@ vault_t *vault = NULL;
  * sodium_malloc() */
 static SemaphoreHandle_t vault_sem; // Used for general vault access
 static SemaphoreHandle_t vault_watchdog_sem; // Used to kick the dog
+
+static bool get_master_seed(uint512_t master_seed);
 
 void vault_sem_take() {
     /* Takes Vault semaphore; restarts device if timesout during take. */
@@ -83,7 +86,7 @@ bool vault_setup() {
     sodium_mprotect_readonly(vault);
     vault_sem = xSemaphoreCreateMutex();
     vault_watchdog_sem = xSemaphoreCreateBinary();
-    xTaskCreate(private_watchdog_task, "Vault", 32000, NULL, 16, NULL); // todo: tweak this memory value
+    xTaskCreate(vault_watchdog_task, "VaultWatchDog", 20000, NULL, 16, NULL); // todo: tweak this memory value
 
     // Checks if stored secret exists
     return storage_exists_mnemonic();
@@ -100,7 +103,7 @@ void vault_clear() {
     ESP_LOGI(TAG, "Clearing Vault.");
     sodium_mprotect_readwrite(vault);
     vault->valid = false;
-    sodium_memzero(vault->node, sizeof(hd_node_t));
+    sodium_memzero(&(vault->node), sizeof(hd_node_t));
     sodium_mprotect_readonly(vault);
     ESP_LOGI(TAG, "Clearing Vault Complete.");
     vault_sem_give();
@@ -125,7 +128,7 @@ bool vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key) {
     strlcpy( vault->bip32_key, bip32_key, sizeof(vault->bip32_key) );
     vault->purpose = purpose;
     vault->coin_type = coin_type;
-    bm_master_seed_to_node(vault->node, master_seed, vault->bip32_key,
+    bm_master_seed_to_node(&(vault->node), master_seed, vault->bip32_key,
             2, vault->purpose, vault->coin_type);
     res = true;
 
@@ -136,7 +139,7 @@ exit:
 
 bool refresh_vault() {
     /* Kicks dog if vault is valid.
-     * Repopulates node (therefore prompting user for PIN/Passphrase otherwise
+     * Repopulates node (therefore prompting user for PIN otherwise
      *
      * To be called within an app right before a private key is to be used.
      *
@@ -166,7 +169,7 @@ bool refresh_vault() {
         // watchdog resets a just-set node.
         xSemaphoreGive(vault_watchdog_sem);
 
-        bm_master_seed_to_node(vault->node, master_seed, vault->bip32_key,
+        bm_master_seed_to_node(&(vault->node), master_seed, vault->bip32_key,
             2, vault->purpose, vault->coin_type);
         vault_sem_give();
         sodium_memzero(master_seed, sizeof(master_seed));
@@ -190,7 +193,7 @@ static bool get_master_seed(uint512_t master_seed) {
     SCREEN_SAVE;
     
     // storage_get_mnemonic prompts user for PIN
-    if( !storage_get_mnemonic(uint256_t mnemonic) ) {
+    if( !storage_get_mnemonic(mnemonic, sizeof(mnemonic)) ) {
         res = false;
         goto exit;
     }

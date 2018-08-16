@@ -15,6 +15,7 @@
 #include "../../vault.h"
 #include "../../radio/wifi.h"
 #include "../../gui/gui.h"
+#include "../../hal/storage.h"
 
 
 static void wifi_details(menu8g2_t *prev){
@@ -46,7 +47,7 @@ static void menu_factory_reset(menu8g2_t *prev){
         return;
     }
 
-    factory_reset();
+    storage_factory_reset();
 }
 
 #define SCREEN_BRIGHTNESS_DELTA 25

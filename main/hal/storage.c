@@ -15,14 +15,15 @@
 #include "menu8g2.h"
 #include "jolttypes.h"
 #include "bipmnemonic.h"
-#include "helpers.h"
-#include "globals.h"
-#include "vault.h"
-#include "gui/gui.h"
-#include "gui/entry.h"
-#include "gui/statusbar.h"
-#include "gui/loading.h"
+#include "../helpers.h"
+#include "../globals.h"
+#include "../vault.h"
+#include "../gui/gui.h"
+#include "../gui/entry.h"
+#include "../gui/statusbar.h"
+#include "../gui/loading.h"
 
+#include "storage.h"
 #if CONFIG_JOLT_STORE_INTERNAL
 #include "storage_internal.h"
 #elif CONFIG_JOLT_STORE_ATAES132A
@@ -59,25 +60,64 @@ bool storage_get_mnemonic(char *buf, const uint16_t buf_len) {
      * Returns true if mnemonic is returned; false if user cancelled
      * */
     bool res;
-    CONFIDENTIAL uint256_t bin;
+    CONFIDENTIAL uint256_t bin; // binary mnemonic
 
+    uint32_t pin_last = storage_get_pin_last();
+    uint32_t pin_count = storage_get_pin_count();
+    
+    SCREEN_SAVE;
+
+    for(;;) { // Loop will exit upon successful PIN or cancellation
+        uint32_t pin_attempts = pin_count - pin_last;
+        if( pin_attempts >= CONFIG_JOLT_DEFAULT_MAX_ATTEMPT ) {
+            storage_factory_reset();
+        }
+        char title[20];
+        sprintf(title, "Enter Pin (%d/%d)", pin_attempts+1,
+                CONFIG_JOLT_DEFAULT_MAX_ATTEMPT);
+        CONFIDENTIAL uint256_t pin_hash;
+        if( !entry_pin(menu, pin_hash, title) ) {
+            // User cancelled vault operation by pressing back
+            res = false;
+            goto exit;
+        }
+        pin_count++;
+        storage_set_pin_count(pin_count); // if this fails, it should reset device
+
+        loading_enable();
+        loading_text_title("Unlocking", TITLE);
+        bool unlock_success;
 #if CONFIG_JOLT_STORE_INTERNAL
-    res = storage_internal_get_mnemonic(bin);
+        unlock_success = storage_internal_get_mnemonic(bin, pin_hash);
 #elif CONFIG_JOLT_STORE_ATAES132A
-    res = storage_ataes132a_get_mnemonic(bin);
+        unlock_success = storage_ataes132a_get_mnemonic(bin, pin_hash);
 #endif
-    if( res ){
-        jolt_err_t err = bm_bin_to_mnemonic(buf, buf_len, bin, 256);
-        if( E_SUCCESS != err ){
-            esp_restart();
+        sodium_memzero(pin_hash, sizeof(pin_hash));
+        loading_disable();
+
+        if( unlock_success ){ // Success
+            storage_set_pin_last(pin_count);
+            if( E_SUCCESS != bm_bin_to_mnemonic(buf, buf_len, bin, 256) ) {
+                esp_restart();
+            }
+            sodium_memzero(bin, sizeof(bin));
+            ESP_LOGI(TAG, "Correct PIN.");
+            res = true;
+            goto exit;
+        }
+        else{
+            menu8g2_display_text_title(menu, "Wrong PIN", TITLE);
         }
     }
-    sodium_memzero(bin, sizeof(bin));
+exit:
+    SCREEN_RESTORE;
     return res;
 }
 
 uint32_t storage_get_pin_count() {
-    /* Gets the current PIN counter. This value is monotomicly increasing. */
+    /* Gets the current PIN counter. This value is monotomicly increasing. 
+     * Internally, each function should factory reset if the pin count
+     * cannot be obtained for some reason.*/
     uint32_t res;
 #if CONFIG_JOLT_STORE_INTERNAL
     res = storage_internal_get_pin_count();
@@ -118,7 +158,7 @@ void storage_set_pin_last(uint32_t count) {
 #endif
 }
 
-bool storage_get_u8(uint8_t *value, char *namespace, char *key, uint8_t *default_value ) {
+bool storage_get_u8(uint8_t *value, char *namespace, char *key, uint8_t default_value ) {
     /* Populates [value] from value in storage with [namespace] and [key].
      * If [key] is not found in storage, set [value] to [default_value]
      *
@@ -143,6 +183,35 @@ bool storage_set_u8(uint8_t value, char *namespace, char *key) {
     res = storage_internal_set_u8(value, namespace, key); 
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_set_u8(value, namespace, key); 
+#endif
+    return res;
+}
+
+bool storage_get_u16(uint16_t *value, char *namespace, char *key, uint16_t default_value ) {
+    /* Populates [value] from value in storage with [namespace] and [key].
+     * If [key] is not found in storage, set [value] to [default_value]
+     *
+     * Returns true if key was found.
+     */
+    bool res;
+#if CONFIG_JOLT_STORE_INTERNAL
+    res = storage_internal_get_u16(value, namespace, key, default_value);
+#elif CONFIG_JOLT_STORE_ATAES132A
+    res = storage_ataes132a_get_u16(value, namespace, key, default_value);
+#endif
+    return res;
+}
+
+bool storage_set_u16(uint16_t value, char *namespace, char *key) {
+    /* Stores [value] into [key]. Primarily used for settings.
+     *
+     * Returns true on success, false on failure.
+     * todo: MACRO and function for all types*/
+    bool res;
+#if CONFIG_JOLT_STORE_INTERNAL
+    res = storage_internal_set_u16(value, namespace, key); 
+#elif CONFIG_JOLT_STORE_ATAES132A
+    res = storage_ataes132a_set_u16(value, namespace, key); 
 #endif
     return res;
 }
@@ -176,7 +245,8 @@ bool storage_set_u32(uint32_t value, char *namespace, char *key) {
 #endif
     return res;
 }
-bool storage_get_blob(char *buf, size_t *required_size, char *namespace, char *key, char *default_value ) {
+
+bool storage_get_blob(unsigned char *buf, size_t *required_size, char *namespace, char *key) {
     /* Populates [value] from value in storage with [namespace] and [key].
      * If [key] is not found in storage, set [value] to [default_value]
      *
@@ -184,23 +254,62 @@ bool storage_get_blob(char *buf, size_t *required_size, char *namespace, char *k
      */
     bool res;
 #if CONFIG_JOLT_STORE_INTERNAL
-    res = storage_internal_get_blob(buf, required_size, namespace, key, default_value);
+    res = storage_internal_get_blob(buf, required_size, namespace, key);
 #elif CONFIG_JOLT_STORE_ATAES132A
-    res = storage_ataes132a_get_blob(buf, required_size, namespace, key, default_value);
+    res = storage_ataes132a_get_blob(buf, required_size, namespace, key);
 #endif
     return res;
 }
 
-bool storage_set_blob(char *value, size_t *required_size, char *namespace, char *key) {
+bool storage_set_blob(unsigned char *buf, size_t len, char *namespace, char *key) {
     /* Stores [value] into [key]. Primarily used for settings.
      *
      * Returns true on success, false on failure.
      * todo: MACRO and function for all types*/
     bool res;
 #if CONFIG_JOLT_STORE_INTERNAL
-    res = storage_internal_set_blob(value, required_size, namespace, key); 
+    res = storage_internal_set_blob(buf, len, namespace, key); 
 #elif CONFIG_JOLT_STORE_ATAES132A
-    res = storage_ataes132a_set_blob(value, required_size, namespace, key); 
+    res = storage_ataes132a_set_blob(buf, len, namespace, key); 
+#endif
+    return res;
+}
+
+bool storage_get_str(char *buf, size_t *required_size, char *namespace, char *key, char *default_value) {
+    bool res;
+#if CONFIG_JOLT_STORE_INTERNAL
+    res = storage_internal_get_str(buf, required_size, namespace, key, default_value);
+#elif CONFIG_JOLT_STORE_ATAES132A
+    res = storage_ataes132a_get_str(buf, required_size, namespace, key, default_value);
+#endif
+    return res;
+}
+
+bool storage_set_str(char *str, char *namespace, char *key) {
+    bool res;
+#if CONFIG_JOLT_STORE_INTERNAL
+    res = storage_internal_set_str(str, namespace, key);
+#elif CONFIG_JOLT_STORE_ATAES132A
+    res = storage_ataes132a_set_str(str, namespace, key);
+#endif
+    return res;
+}
+
+void storage_factory_reset() {
+#if CONFIG_JOLT_STORE_INTERNAL
+    storage_internal_factory_reset();
+#elif CONFIG_JOLT_STORE_ATAES132A
+    storage_ataes132a_factory_reset(); 
+#endif
+}
+
+
+bool storage_erase_key(char *namespace, char *key) {
+    bool res;
+#if CONFIG_JOLT_STORE_INTERNAL
+    res = storage_internal_erase_key(namespace, key);
+#elif CONFIG_JOLT_STORE_ATAES132A
+    res = storage_ataes132a_erase_key(namespace, key);
 #endif
     return res;
 }

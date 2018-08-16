@@ -19,7 +19,9 @@
 #include "nvs.h"
 
 #include "wifi.h"
+#include "../vault.h"
 #include "../helpers.h"
+#include "../hal/storage.h"
 
 static const char *TAG = "wifi_task";
 
@@ -66,29 +68,20 @@ void wifi_connect(){
     tcpip_adapter_init();
     
     //Check for WiFi credentials in NVS
-    init_nvm_namespace(&wifi_nvs_handle, "user");
-    
     size_t string_size_ssid;
-    size_t string_size_pass;
-    esp_err_t err = nvs_get_str(wifi_nvs_handle, "wifi_ssid", NULL, &string_size_ssid);
-    if (err == ESP_ERR_NVS_NOT_FOUND) {
-        ESP_LOGI(TAG, "WiFi SSID not found, setting default");
-        nvs_set_str(wifi_nvs_handle, "wifi_ssid", CONFIG_AP_TARGET_SSID);
-        nvs_set_str(wifi_nvs_handle, "wifi_pass", CONFIG_AP_TARGET_PASSWORD);
-        err = nvs_commit(wifi_nvs_handle);
-    }
-
-    ESP_LOGI(TAG, "WiFi SSID found, loading up");
+    storage_get_str(NULL, &string_size_ssid, "user", "wifi_ssid",
+            CONFIG_AP_TARGET_SSID);
     char* wifi_ssid = malloc(string_size_ssid);
-    err = nvs_get_str(wifi_nvs_handle, "wifi_ssid", wifi_ssid, &string_size_ssid);
-    
-    err = nvs_get_str(wifi_nvs_handle, "wifi_pass", NULL, &string_size_pass);
+    storage_get_str(wifi_ssid, &string_size_ssid, "user", "wifi_ssid",
+            CONFIG_AP_TARGET_SSID);
+
+    size_t string_size_pass;
+    storage_get_str(NULL, &string_size_pass, "user", "wifi_pass",
+            CONFIG_AP_TARGET_PASSWORD);
     char* wifi_pass = malloc(string_size_pass);
-    err = nvs_get_str(wifi_nvs_handle, "wifi_pass", wifi_pass, &string_size_pass);
-    
-    nvs_close(wifi_nvs_handle);
-    
-    
+    storage_get_str(wifi_pass, &string_size_pass, "user", "wifi_pass",
+            CONFIG_AP_TARGET_PASSWORD);
+  
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg) );
@@ -164,4 +157,15 @@ void get_ap_info(char * ssid_info, size_t size){
         snprintf(ssid_info, 20, "Error Not Connected");
     }
     
+}
+
+bool set_wifi_credentials(char *ssid, char *pass) {
+    /* Requires a reboot for credentials to take effect */
+    if( !refresh_vault() ) {
+        return false;
+    }
+    storage_set_str(ssid, "user", "wifi_ssid");
+    storage_set_str(pass, "user", "wifi_pass");
+
+    return true;
 }

@@ -39,6 +39,6 @@ extern const unsigned char graphic_pending[];
 extern const unsigned char graphic_nano_load[GRAPHIC_NANO_LOAD_F][288];
 
 
-void boot_splash(u8g2_t *u8g2);
+void boot_splash();
 
 #endif

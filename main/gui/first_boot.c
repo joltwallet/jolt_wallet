@@ -16,6 +16,7 @@ https://www.joltwallet.com/
 #include "../helpers.h"
 #include "../globals.h"
 #include "../vault.h"
+#include "../hal/storage.h"
 
 #define MNEMONIC_STRENGTH 256
 
@@ -74,12 +75,8 @@ static menu8g2_err_t get_nth_word(char buf[], size_t buf_len,
 }
 
 void first_boot_menu(){
-
-    menu8g2_t menu;
-    menu8g2_init(&menu, (u8g2_t *)&u8g2, input_queue, disp_mutex, NULL, NULL);
-
     // Generate Mnemonic
-    CONFIDENTIAL uint256_t mnemonic_bin
+    CONFIDENTIAL uint256_t mnemonic_bin;
     CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
     bm_entropy256(mnemonic_bin);
 #if CONFIG_JOLT_STORE_ATAES132A
@@ -91,13 +88,13 @@ void first_boot_menu(){
         current_screen = (current_screen<0) ? 0 : current_screen;
         switch(current_screen){
             case(0):
-                current_screen += display_welcome(&menu);
+                current_screen += display_welcome(menu);
                 break;
             case(1):{
                 const char title[] = "Write Down Mnemonic!";
-                if( menu8g2_create_vertical_menu(&menu, title, mnemonic,
+                if( menu8g2_create_vertical_menu(menu, title, mnemonic,
                         (void *)&get_nth_word, 25) ){
-                    if(menu.index == 24){
+                    if(menu->index == 24){
                         current_screen++;
                     }
                 }
@@ -107,33 +104,22 @@ void first_boot_menu(){
                 break;
             }
             case(2):{
-                // todo: get entropy
                 CONFIDENTIAL uint256_t pin_hash;
-                while(true){
-                    if( !entry_pin(menu, pin_hash, "Set PIN") ){
-                        return false;
-                    }
-                    CONFIDENTIAL uint256_t pin_hash_verify;
-                    if( !entry_pin(menu, pin_hash_verify, "Verify PIN")){
-                        continue;
-                    }
+                if( entry_verify_pin(menu, pin_hash) ) {
+                    storage_set_mnemonic(mnemonic_bin, pin_hash);
+                    storage_set_pin_count(0); // Only does something if pin_count is setable
+                    uint32_t pin_count = storage_get_pin_count();
+                    storage_set_pin_last(pin_count);
 
-                    // Verify the pins match
-                    if( 0 == memcmp(pin_hash, pin_hash_verify, sizeof(pin_hash)) ){
-                        sodium_memzero(pin_hash_verify, sizeof(pin_hash_verify));
-                        break;
-                    }
-                    else{
-                        menu8g2_display_text_title(menu,
-                                "Pin Mismatch! Please try again.",
-                                "Pin Setup");
-                    }
+                    sodium_memzero(pin_hash, sizeof(pin_hash));
+                    sodium_memzero(mnemonic_bin, sizeof(mnemonic_bin));
+                    sodium_memzero(mnemonic, sizeof(mnemonic));
+
+                    esp_restart();
                 }
-                storage_set_mnemonic(mnemonic_bin, pin_hash);
-                sodium_memzero(pin_hash, sizeof(pin_hash));
-                sodium_memzero(mnemonic_bin, sizeof(mnemonic_bin));
-                sodium_memzero(menominc, sizeof(mnemonic));
-                esp_restart();
+                else {
+                    current_screen--;
+                }
                 break;
             }
             default:

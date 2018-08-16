@@ -15,35 +15,35 @@
 #include "menu8g2.h"
 #include "jolttypes.h"
 #include "bipmnemonic.h"
-#include "helpers.h"
-#include "globals.h"
-#include "vault.h"
-#include "gui/gui.h"
-#include "gui/entry.h"
-#include "gui/statusbar.h"
-#include "gui/loading.h"
+#include "../helpers.h"
+#include "../globals.h"
+#include "../vault.h"
+#include "../gui/gui.h"
+#include "../gui/entry.h"
+#include "../gui/statusbar.h"
+#include "../gui/loading.h"
+#include "storage_internal.h"
 
-static const char* TAG = "storage_hal";
+static const char* TAG = "ataes132a";
 static const char* TITLE = "Storage Access";
 
 bool storage_ataes132a_exists_mnemonic() {
+    return false;
 }
 
-bool storage_ataes132a_get_mnemonic(uint256_t mnemonic) {
-    /* prompt user for pin, returns 256-bit mnemonic from storage 
-     * Returns true if mnemonic is returned; false if user cancelled
+void storage_ataes132a_set_mnemonic(uint256_t bin, uint256_t pin_hash) {
+}
+
+bool storage_ataes132a_get_mnemonic(uint256_t mnemonic, uint256_t pin_hash) {
+    /* returns 256-bit mnemonic from storage 
+     * Returns true if mnemonic is returned; false if incorrect pin_hash
      * */
-    bool res;
-exit:
-    return res;
+    return false;
 }
 
 uint32_t storage_ataes132a_get_pin_count() {
     /* Gets the current PIN counter. This value is monotomicly increasing. */
-    uint32_t res;
-exit:
-    return res;
-
+    return 0;
 }
 
 void storage_ataes132a_set_pin_count(uint32_t count) {
@@ -52,34 +52,62 @@ void storage_ataes132a_set_pin_count(uint32_t count) {
 uint32_t storage_ataes132a_get_pin_last() {
     /* Gets the pin counter of the last successful pin attempt.
      */
-    uint32_t res;
-exit:
-    return res;
-
+    return 0;
 }
 
 void storage_ataes132a_set_pin_last(uint32_t count) {
 }
 
-
-bool storage_ataes132a_get(void *value, void *namespace, void *key, void *default_value ) {
-    /* Populates [value] from value in storage with [namespace] and [key].
-     * If [key] is not found in storage, set [value] to [default_value]
-     *
-     * Returns true if key was found.
-     */
-    bool res;
-exit:
-    return res;
-
+bool storage_ataes132a_get_u8(uint8_t *value, char *namespace, char *key,
+        uint8_t default_value ) {
+    return false;
 }
 
-bool storage_ataes132a_set(void* value, void *namespace, void *key) {
-    /* Stores [value] into [key]. Primarily used for settings.
-     *
-     * Returns true on success, false on failure.
-     * todo: MACRO and function for all types*/
-    bool res;
-exit:
-    return res;
+bool storage_ataes132a_set_u8(uint8_t value, char *namespace, char *key) {
+    return false;
+}
+
+bool storage_ataes132a_get_u16(uint16_t *value, char *namespace, char *key,
+        uint16_t default_value ) {
+    return false;
+}
+
+bool storage_ataes132a_set_u16(uint16_t value, char *namespace, char *key) {
+    return false;
+}
+
+bool storage_ataes132a_get_u32(uint32_t *value, char *namespace, char *key,
+        uint32_t default_value ) {
+    return false;
+}
+
+bool storage_ataes132a_set_u32(uint32_t value, char *namespace, char *key) {
+    return false;
+}
+
+bool storage_ataes132a_get_str(char *buf, size_t *required_size,
+        char *namespace, char *key, char *default_value) {
+    return false;
+}
+
+bool storage_ataes132a_set_str(char *str, char *namespace, char *key) {
+    return false;
+}
+
+bool storage_ataes132a_get_blob(char *buf, size_t *required_size,
+        char *namespace, char *key) {
+    return false;
+}
+
+bool storage_ataes132a_set_blob(char *buf, size_t len,
+        char *namespace, char *key) {
+    return false;
+}
+
+void storage_ataes132a_factory_reset() {
+    return false;
+}
+
+bool storage_ataes132a_erase_key(char *namespace, char *key) {
+    return false;
 }
