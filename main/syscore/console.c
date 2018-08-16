@@ -246,6 +246,11 @@ static int jolt_cast(int argc, char** argv) {
         return return_code;
 }
 
+static int cmd_reboot(int argc, char** argv) {
+    esp_restart();
+    return 0;
+}
+
 void console_syscore_register() {
     esp_console_cmd_t cmd;
 
@@ -294,6 +299,14 @@ void console_syscore_register() {
         .help = "Update jolt_cast (domain, path, port).",
         .hint = NULL,
         .func = &jolt_cast,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "reboot",
+        .help = "Reboot device.",
+        .hint = NULL,
+        .func = &cmd_reboot,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
