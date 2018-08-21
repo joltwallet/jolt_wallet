@@ -138,7 +138,7 @@ exit:
     return res;
 }
 
-bool refresh_vault() {
+bool vault_refresh() {
     /* Kicks dog if vault is valid.
      * Repopulates node (therefore prompting user for PIN otherwise
      *
