@@ -30,6 +30,6 @@ void vault_sem_give();
 bool vault_setup();
 void vault_clear();
 bool vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key);
-bool refresh_vault();
+bool vault_refresh();
 
 #endif

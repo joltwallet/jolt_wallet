@@ -5,11 +5,10 @@
 
 PROJECT_NAME := joltwallet
 
+#COMPONENTS = 
 CFLAGS +=  \
 	 -I$(BUILD_DIR_BASE)/libwebsockets/include \
 	 -I$(PROJECT_PATH)/components/libwebsockets/lib \
-	 -D U8G2_16BIT \
-	 -D JOLTOS \
-	 -D ESP_PLATFORM
+	 -D U8G2_16BIT
 
 include $(IDF_PATH)/make/project.mk

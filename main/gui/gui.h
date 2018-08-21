@@ -10,6 +10,7 @@
 #include "../globals.h"
 #include "u8g2.h"
 #include "menu8g2.h"
+#include <string.h>
 
 void setup_screen(u8g2_t *u8g2);
 void gui_task();
