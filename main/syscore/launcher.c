@@ -17,7 +17,6 @@
 #include "linenoise/linenoise.h"
 
 #include "nano_lws.h"
-#include "nano_parse.h"
 
 #include "esp_spiffs.h"
 

@@ -52,7 +52,7 @@ bool entry_pin(menu8g2_t *prev, uint256_t pin_hash, const char *title){
     char buf[24];
     int8_t pin_entries[MAX_PIN_DIGITS] = { 0 };
 
-    FULLSCREEN_ENTER(menu);
+    FULLSCREEN_ENTER;
     for(;;){
         MENU8G2_BEGIN_DRAW(menu)
             u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
@@ -137,7 +137,7 @@ bool entry_pin(menu8g2_t *prev, uint256_t pin_hash, const char *title){
             u8g2_ClearDisplay(menu->u8g2);
         MENU8G2_END_DRAW(menu)
 
-        FULLSCREEN_EXIT(menu);
+        FULLSCREEN_EXIT;
         return res;
 }
 

@@ -33,7 +33,8 @@
 
 
 // Definitions for variables in globals.h
-volatile u8g2_t u8g2;
+volatile u8g2_t u8g2_obj;
+volatile u8g2_t *u8g2;
 volatile QueueHandle_t input_queue;
 volatile SemaphoreHandle_t disp_mutex;
 volatile menu8g2_t menu_obj;
@@ -67,13 +68,14 @@ void app_main(){
     ESP_ERROR_CHECK(i2c_driver_install(CONFIG_JOLT_I2C_MASTER_NUM, conf.mode, 0, 0, 0));
 
     // Initialize the OLED Display
-    setup_screen((u8g2_t *) &u8g2);
-    u8g2_SetContrast( &u8g2, get_display_brightness() );
+    u8g2 = &u8g2_obj;
+    setup_screen((u8g2_t *) u8g2);
+    u8g2_SetContrast( u8g2, get_display_brightness() );
     disp_mutex = xSemaphoreCreateMutex();
 
     // Create Global Menu Object
     menu = &menu_obj;
-    menu8g2_init(menu, (u8g2_t *) &u8g2, input_queue, disp_mutex, NULL, statusbar_update);
+    menu8g2_init(menu, (u8g2_t *) u8g2, input_queue, disp_mutex, NULL, statusbar_update);
 
     // Allocate space for the vault and see if a copy exists in NVS
     if( false == vault_setup()) {

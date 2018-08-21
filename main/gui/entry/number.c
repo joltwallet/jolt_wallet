@@ -76,7 +76,7 @@ bool entry_number_arr(menu8g2_t *prev, int8_t* output, uint8_t n_digit, uint8_t 
     char buf[24];
     int8_t *num_entries = calloc( n_digit, sizeof(int8_t) );
 
-    FULLSCREEN_ENTER(menu);
+    FULLSCREEN_ENTER;
     for(;;){
         MENU8G2_BEGIN_DRAW(menu)
             u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
@@ -160,7 +160,7 @@ bool entry_number_arr(menu8g2_t *prev, int8_t* output, uint8_t n_digit, uint8_t 
             u8g2_ClearDisplay(menu->u8g2);
         MENU8G2_END_DRAW(menu)
 
-        FULLSCREEN_EXIT(menu);
+        FULLSCREEN_EXIT;
         free(num_entries);
         return res;
 }

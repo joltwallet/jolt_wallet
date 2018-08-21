@@ -16,7 +16,8 @@
 
 extern vault_t *vault;
 
-extern volatile u8g2_t u8g2;
+extern volatile u8g2_t u8g2_obj;
+extern volatile u8g2_t *u8g2;
 extern volatile SemaphoreHandle_t disp_mutex;
 extern volatile menu8g2_t menu_obj;
 extern volatile menu8g2_t *menu;

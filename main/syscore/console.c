@@ -17,7 +17,6 @@
 #include "linenoise/linenoise.h"
 
 #include "nano_lws.h"
-#include "nano_parse.h"
 #include "bipmnemonic.h"
 
 #include "filesystem.h"
@@ -106,11 +105,9 @@ static int mnemonic_restore(int argc, char** argv) {
     char *line;
     CONFIDENTIAL char user_words[24][11];
     CONFIDENTIAL uint8_t index[24];
-    menu8g2_t menu;
-    menu8g2_init(&menu, (u8g2_t *) &u8g2, input_queue, disp_mutex, NULL, statusbar_update);
     SCREEN_SAVE;
 
-    if( !menu_confirm_action(&menu, "Begin mnemonic restore?") ) {
+    if( !menu_confirm_action(menu, "Begin mnemonic restore?") ) {
         return_code = -1;
         goto exit;
     }
@@ -181,7 +178,7 @@ static int mnemonic_restore(int argc, char** argv) {
         goto exit;
     }
 
-    if( !menu_confirm_action(&menu, "Save restored mnemonic and reboot? CAN NOT BE UNDONE.") ) {
+    if( !menu_confirm_action(menu, "Save restored mnemonic and reboot? CAN NOT BE UNDONE.") ) {
         return_code = -1;
         goto exit;
     }
@@ -206,8 +203,6 @@ static int jolt_cast(int argc, char** argv) {
     /* (url, path, port) */
     int return_code;
     char buf[100];
-    menu8g2_t menu;
-    menu8g2_init(&menu, (u8g2_t *) &u8g2, input_queue, disp_mutex, NULL, statusbar_update);
     SCREEN_SAVE;
 
     // Check if number of inputs is correct
@@ -219,17 +214,17 @@ static int jolt_cast(int argc, char** argv) {
 
     // Confirm Inputs
     snprintf(buf, sizeof(buf), "Update jolt_cast server domain to:\n%s", argv[1]);
-    if( !menu_confirm_action(&menu, buf) ) {
+    if( !menu_confirm_action(menu, buf) ) {
         return_code = -1;
         goto exit;
     }
     snprintf(buf, sizeof(buf), "Update jolt_cast server path to:\n%s", argv[2]);
-    if( !menu_confirm_action(&menu, buf) ) {
+    if( !menu_confirm_action(menu, buf) ) {
         return_code = -1;
         goto exit;
     }
     snprintf(buf, sizeof(buf), "Update jolt_cast server port to:\n%d", port);
-    if( !menu_confirm_action(&menu, buf) ) {
+    if( !menu_confirm_action(menu, buf) ) {
         return_code = -1;
         goto exit;
     }
