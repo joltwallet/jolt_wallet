@@ -1,0 +1,239 @@
+menu "Jolt Wallet Config"
+
+    menu "I2C"
+        config JOLT_I2C_MASTER_NUM
+            int
+            prompt "Which I2C port to use"
+            default 1
+            help
+                Help Text Here
+
+        config JOLT_I2C_PIN_SDA
+            int
+            prompt "Display SDA GPIO PIN"
+            default 4
+            help
+                I2C Display's SDA
+
+        config JOLT_I2C_PIN_SCL
+            int
+            prompt "Display SCL GPIO PIN"
+            default 15
+            help
+                I2C Display's SCL
+
+        config JOLT_I2C_MASTER_FREQ_HZ
+            int
+            prompt "Master I2C Clock Freq"
+            default 800000
+            help
+                Help Text Here
+        config JOLT_I2C_TIMEOUT_MS
+            int
+            prompt "I2C Timeout in milliseconds"
+            default 1000
+            help
+                Help Text Here
+    endmenu
+
+    # TODO: Change this default to y once feature is fully programmed
+    menu "CryptoMemory"
+        config JOLT_CM_ENABLE
+            bool
+            default n
+            help
+                Whether or not to use AT88SC0104CA to store Mnemonic and HW
+                pin attempts. If not enabled, the AT88SC0104CA is not required,
+                however Jolt will then be suscepitble to infinite PIN attempts
+                if the attack reads and restores the encrypted SPI Flash. With a
+                sufficiently strong PIN, it'd still be infeasible to brute force
+                since the PIN attempts still have to be done on-device.
+    endmenu
+
+    menu "Display"
+        config JOLT_DISPLAY_BRIGHTNESS
+            int
+            prompt "Default display brightness"
+            default 200
+            help
+                Value from [0-255] indicating screen brightness
+
+        config JOLT_DISPLAY_FLIP
+            bool
+            prompt "Rotate the display buffer 180 degrees"
+            default n
+            help
+                Flip everything drawn to the display; used depending on how
+                your screen is mounted in your hardware setup.
+
+        config JOLT_DISPLAY_PIN_RST
+            int
+            prompt "Display RST GPIO PIN"
+            default 16
+            help
+                I2C Display's RST
+
+        config JOLT_DISPLAY_ADDRESS
+            hex
+            prompt "Display I2C Address"
+            default 0x78
+            help
+                I2C Display's Address
+    endmenu
+
+    config JOLT_DEFAULT_TIMEOUT_S
+        int
+        prompt "Default idle time in seconds before wiping vault from memory."
+        default 300
+        help
+            help text here
+
+    config JOLT_TIMEOUT_TIMEOUT_MS
+        int
+        prompt "Maximum number of time in milliseconds for Private Node Watchdog to wait to obtain private node mutex."
+        default 1000
+        help
+            help text here
+
+    choice
+        prompt "Select Mnemonic Storage Method"
+        config JOLT_STORE_INTERNAL
+            bool "Simple mnemonic storage on SPI Flash; Unsafe against replay attacks"
+        config JOLT_STORE_ATAES132A
+            bool "Not Yet Implemented"
+    endchoice
+
+    menu "Console"
+        config JOLT_CONSOLE_UART_RX_BUF_LEN
+            int
+            prompt "Buffer length for receiving console commands"
+            default 4096
+            help
+                help text here
+
+        config JOLT_CONSOLE_UART_TX_BUF_LEN
+            int
+            prompt "Buffer length for transmitting back console drawing"
+            default 0
+            help
+                Set to 0 to block until command sent
+
+        config JOLT_CONSOLE_MAX_ARGS
+            int
+            prompt "Maximum number of arguments to parse"
+            default 8
+            help
+                help text here
+
+        config JOLT_CONSOLE_MAX_CMD_LEN
+            int
+            prompt "Maximum length in characters of a command"
+            default 4096
+            help
+                help text here
+
+        config JOLT_CONSOLE_HISTORY
+            int
+            prompt "Number of previous commands to keep in history"
+            default 20
+            help
+                help text here
+
+        config JOLT_CONSOLE_OVERRIDE_LOGGING
+            bool
+            prompt "Disable ESP_LOG while console is running"
+            default y
+            help
+                help text here
+    endmenu
+
+    config JOLT_DEFAULT_BOOT_SPLASH_ENABLE
+        bool
+        prompt "Enable boot splash screen"
+        default y
+        help
+            help text here
+
+    config JOLT_DEFAULT_MAX_ATTEMPT
+        int
+        prompt "Number of pin attempts before wiping NVS"
+        default 10
+        help
+            help text here
+
+    menu "QR"
+        choice
+            prompt "Select QR Encoding Method"
+            config JOLT_QR_TYPE_SIMPLE
+                bool "simple address encoding xrb_"
+            config JOLT_QR_TYPE_STANDARD
+                bool "Follows the Nano QR URI standard"
+            config JOLT_QR_TYPE_SHORT
+                bool "Encodes using QR alphanumeric XRB-"
+        endchoice
+
+        config JOLT_QR_VERSION
+            int
+            prompt "QR Version"
+            default 6
+            help
+                Determines QR Code size
+
+        config JOLT_QR_SCALE
+            int
+            prompt "Pixel-wise QR code scale multiplier"
+            default 1
+            help
+                Integer dimension multipler. Leave as 1 for 1 pixel per square
+    endmenu
+
+    config JOLT_VAULT_RPC_QUEUE_LEN
+        int
+        prompt "Vault RPC queue length"
+        default 8
+        help
+            Length of queue for Vault RPC commands
+
+    menu "Coins"
+        menu "Nano"
+            config JOLT_NANO_DEFAULT_REPRESENTATIVE
+                string
+                prompt "Default Nano Account Representative"
+                default "xrb_1cwswatjifmjnmtu5toepkwca64m7qtuukizyjxsghujtpdr9466wjmn89d8"
+                help
+                    Default representative for new Nano Accounts
+
+            config JOLT_NANO_CONTACTS_MAX
+                int
+                prompt "Maximum number of stored nano contacts"
+                default 10
+                help
+                    Default representative for new Nano Accounts
+
+            config JOLT_NANO_CONTACTS_NAME_LEN
+                int
+                prompt "Maximum length of Nano contact alias"
+                default 18
+                help
+                    Maximum number of characters (including null-term) to store for a
+                    Nano contact alias
+        endmenu
+    endmenu
+
+    menu "WiFi"
+        config AP_TARGET_SSID
+            string
+            prompt "WiFi SSID"
+            default "SSID"
+            help
+                Factory reset WiFi ssid
+
+        config AP_TARGET_PASSWORD
+            string
+            prompt "WiFi Password"
+            default "Password"
+            help
+                Factory reset WiFi pass
+    endmenu
+
+endmenu
