@@ -15,9 +15,6 @@
 #include "esp_log.h"
 #include "linenoise/linenoise.h"
 
-#include <libwebsockets.h>
-#include "nano_lws.h"
-#include "nano_parse.h"
 #include "globals.h"
 #include "console.h"
 #include "vault.h"
