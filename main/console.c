@@ -176,7 +176,9 @@ void initialize_console() {
     linenoiseSetMultiLine(1);
 
     /* Clear the screen */
-    linenoiseClearScreen();
+#if( JOLT_CONFIG_CONSOLE_STARTUP_CLEAR )
+        linenoiseClearScreen();
+#endif
     
     /* Tell linenoise where to get command completions and hints */
     linenoiseSetCompletionCallback(&esp_console_get_completion);

@@ -104,6 +104,12 @@ menu "Jolt Wallet Config"
     endchoice
 
     menu "Console"
+        config JOLT_CONSOLE_STARTUP_CLEAR
+            bool
+            prompt "Clear serial monitor upon startup/console launch."
+            default y
+            help
+                help text here
         config JOLT_CONSOLE_UART_RX_BUF_LEN
             int
             prompt "Buffer length for receiving console commands"
