@@ -83,10 +83,20 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
 #endif
 
     f = fopen(exec_fn, "rb");
-    if( NULL == (ctx = elfLoaderInit(f, &env)) ||
-        NULL == elfLoaderLoad(ctx) ||
-        NULL == elfLoaderRelocate(ctx) ||
-        0 != elfLoaderSetFunc(ctx, func) ) {
+    ESP_LOGI(TAG, "elfLoader; Initializing");
+    if( NULL == (ctx = elfLoaderInit(f, &env)) ) {
+        goto exit;
+    }
+    ESP_LOGI(TAG, "elfLoader; Loading Sections");
+    if( NULL == elfLoaderLoad(ctx) ) {
+        goto exit;
+    }
+    ESP_LOGI(TAG, "elfLoader; Relocating");
+    if( NULL == elfLoaderRelocate(ctx) ) {
+        goto exit;
+    }
+    ESP_LOGI(TAG, "elfLoader; Setting Entrypoint");
+    if( 0 != elfLoaderSetFunc(ctx, func) ) {
         goto exit;
     }
     {
