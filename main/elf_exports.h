@@ -30,7 +30,6 @@
 
 const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( bm_entropy256 ),
-    EXPORT_SYMBOL( boot_splash ), // for debugging; remove
     EXPORT_SYMBOL( console_check_equal_argc ),
     EXPORT_SYMBOL( console_check_range_argc ),
     EXPORT_SYMBOL( crypto_core_curve25519_ref10_ge_frombytes_negate_vartime ),
