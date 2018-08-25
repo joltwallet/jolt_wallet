@@ -132,6 +132,7 @@ bool vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key) {
     vault->coin_type = coin_type;
     bm_master_seed_to_node(&(vault->node), master_seed, vault->bip32_key,
             2, vault->purpose, vault->coin_type);
+    vault->valid = true;
     res = true;
 
 exit:
@@ -150,8 +151,10 @@ bool vault_refresh() {
      */
     bool res;
     vault_sem_take();
+    ESP_LOGI(TAG, "Refreshing Vault");
     if( vault->valid ) {
         // Kick the dog
+        ESP_LOGI(TAG, "Vault is valid; kicking the dog.");
         xSemaphoreGive(vault_watchdog_sem);
         vault_sem_give();
         return true;
@@ -159,6 +162,7 @@ bool vault_refresh() {
     else {
         // Give up semaphore while prompt using for PIN/Passphrase
         vault_sem_give();
+        ESP_LOGI(TAG, "Vault is invalid, prompting user for PIN.");
         // Inside get_master_seed(), PIN and passphrase are prompted for
         CONFIDENTIAL uint512_t master_seed;
         if(!get_master_seed(master_seed)) {

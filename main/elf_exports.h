@@ -10,6 +10,7 @@
 #include <libwebsockets.h>
 #include "menu8g2.h"
 #include "sodium.h"
+#include "sodium/crypto_verify_32.h"
 #include "sodium/private/curve25519_ref10.h"
 #include "u8g2.h"
 #include "driver/uart.h"
@@ -27,14 +28,20 @@
 #include "gui/confirmation.h"
 #include "syscore/filesystem.h"
 #include "hal/storage.h"
-
+//    EXPORT_SYMBOL(  ),
+//
 const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( bm_entropy256 ),
     EXPORT_SYMBOL( console_check_equal_argc ),
     EXPORT_SYMBOL( console_check_range_argc ),
-    EXPORT_SYMBOL( crypto_core_curve25519_ref10_ge_frombytes_negate_vartime ),
-    EXPORT_SYMBOL( crypto_core_curve25519_ref10_sc_reduce ),
     EXPORT_SYMBOL( crypto_core_curve25519_ref10_ge_double_scalarmult_vartime ),
+    EXPORT_SYMBOL( crypto_core_curve25519_ref10_ge_frombytes_negate_vartime ),
+    EXPORT_SYMBOL( crypto_core_curve25519_ref10_ge_p3_tobytes ),
+    EXPORT_SYMBOL( crypto_core_curve25519_ref10_ge_scalarmult_base ),
+    EXPORT_SYMBOL( crypto_core_curve25519_ref10_ge_tobytes ),
+    EXPORT_SYMBOL( crypto_core_curve25519_ref10_ge_p3_tobytes ),
+    EXPORT_SYMBOL( crypto_core_curve25519_ref10_sc_muladd ),
+    EXPORT_SYMBOL( crypto_core_curve25519_ref10_sc_reduce ),
     EXPORT_SYMBOL( crypto_generichash ),
     EXPORT_SYMBOL( crypto_generichash_final ),
     EXPORT_SYMBOL( crypto_generichash_init ),
@@ -46,10 +53,12 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( crypto_hash_sha512_final ),
     EXPORT_SYMBOL( crypto_hash_sha512_init ),
     EXPORT_SYMBOL( crypto_hash_sha512_update ),
+    EXPORT_SYMBOL( crypto_verify_32 ),
     EXPORT_SYMBOL( esp_restart ),
     EXPORT_SYMBOL( esp_log_timestamp ),
     EXPORT_SYMBOL( esp_log_write ),
     EXPORT_SYMBOL( free ),
+    EXPORT_SYMBOL( hd_node_copy ),
     EXPORT_SYMBOL( hd_node_iterate ),
     EXPORT_SYMBOL( heap_caps_calloc ),
     EXPORT_SYMBOL( linenoise ),
@@ -61,6 +70,7 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( mbedtls_mpi_free ),
     EXPORT_SYMBOL( mbedtls_mpi_init ),
     EXPORT_SYMBOL( mbedtls_mpi_write_binary ),
+    EXPORT_SYMBOL( mbedtls_mpi_write_string ),
     EXPORT_SYMBOL( memchr ),
     EXPORT_SYMBOL( memcmp ),
     EXPORT_SYMBOL( memcpy ),
@@ -88,6 +98,7 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( sodium_bin2hex ),
     EXPORT_SYMBOL( sodium_hex2bin ),
     EXPORT_SYMBOL( sodium_malloc ),
+    EXPORT_SYMBOL( sodium_memcmp ),
     EXPORT_SYMBOL( sodium_memzero ),
     EXPORT_SYMBOL( storage_get_blob ),
     EXPORT_SYMBOL( storage_get_str ),
@@ -145,8 +156,10 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( u8g2_SetupBuffer ),
     EXPORT_SYMBOL( u8g2_font_profont12_tf ),
     EXPORT_SYMBOL( u8g2_font_profont17_tf ),
-    EXPORT_SYMBOL( &vault ),
+    { "vault", &vault },
     EXPORT_SYMBOL( vault_refresh ),
+    EXPORT_SYMBOL( vault_sem_give ),
+    EXPORT_SYMBOL( vault_sem_take ),
     EXPORT_SYMBOL( xQueueCreateCountingSemaphore ),
     EXPORT_SYMBOL( xQueueCreateMutex ),
     EXPORT_SYMBOL( xQueueGenericCreate ),

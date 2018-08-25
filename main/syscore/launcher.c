@@ -113,7 +113,7 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         bip32_key[bip32_key_len+1] = '\0';
         ESP_LOGI(TAG,"Derivation Purpose: 0x%x. Coin Type: 0x%x",
                 purpose, coin);
-        ESP_LOGI(TAG, "BIP32 Key: %s", bip32_key);
+        ESP_LOGI(TAG, "The following BIP32 Key is %d char long: %s.", bip32_key_len, bip32_key);
         if( !vault_set(purpose, coin, bip32_key) ) {
             ESP_LOGI(TAG, "User aborted app launch at PIN screen");
             goto exit;

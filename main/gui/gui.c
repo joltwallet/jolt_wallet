@@ -92,7 +92,6 @@ void gui_task(){
         ESP_LOGD(TAG, "Registering App \"%s\" into the GUI", fns[i]);
         menu8g2_set_element(&elements, fns[i], &launch_file_proxy);
     }
-    //menu8g2_set_element(&elements, "Nano", &menu_nano);
     menu8g2_set_element(&elements, "Console", &menu_console);
     menu8g2_set_element(&elements, "Settings", &menu_settings);
 

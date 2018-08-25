@@ -48,7 +48,7 @@ void app_main(){
     easy_input_queue_init((QueueHandle_t *)&input_queue);
     xTaskCreate(easy_input_push_button_task,
             "ButtonDebounce", 2500,
-            (void *)&input_queue, 15,
+            (void *)&input_queue, 19,
             NULL);
 
     // Setup and Install I2C Driver
