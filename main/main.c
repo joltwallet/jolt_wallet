@@ -83,6 +83,7 @@ void app_main(){
     }
     
     // Initialize Wireless
+    esp_log_level_set("wifi", ESP_LOG_ERROR);
     set_jolt_cast();
     wifi_connect();
     
