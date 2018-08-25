@@ -18,73 +18,65 @@
 
 #include "menu8g2.h"
 #include "jolttypes.h"
-
 #include "bipmnemonic.h"
-
 #include "helpers.h"
 #include "globals.h"
 #include "vault.h"
+#include "hal/storage.h"
 #include "gui/gui.h"
 #include "gui/entry.h"
 #include "gui/statusbar.h"
 #include "gui/loading.h"
 
-// Coin RPCs
-#include "syscore/rpc.h"
-#include "coins/nano/rpc.h"
 
 static const char* TAG = "vault";
 static const char* TITLE = "Vault Access";
 
+vault_t *vault = NULL;
+/* The following semaphores are not part of the vault object so we can use
+ * sodium_malloc() */
+static SemaphoreHandle_t vault_sem; // Used for general vault access
+static SemaphoreHandle_t vault_watchdog_sem; // Used to kick the dog
 
-vault_rpc_response_t vault_rpc(vault_rpc_t *rpc){
-    /* Sets up rpc queue, blocks until vault responds. */
-    vault_rpc_response_t res;
+static bool get_master_seed(uint512_t master_seed);
 
-    #if LOG_LOCAL_LEVEL >= ESP_LOG_INFO
-    int32_t id = randombytes_random();
-    #endif
-
-    rpc->response_queue = xQueueCreate( 1, sizeof(res) );
-    
-    ESP_LOGI(TAG, "Attempting Vault RPC Send %d; ID: %d", rpc->type, id);
-    SCREEN_SAVE;
-    if(xQueueSend( vault_queue, (void *) &rpc, 0)){
-        ESP_LOGI(TAG, "Success: Vault RPC Send %d; ID: %d", rpc->type, id);
-        ESP_LOGI(TAG, "Awaiting Vault RPC Send %d response; ID: %d", rpc->type, id);
-        xQueueReceive(rpc->response_queue, (void *) &res, portMAX_DELAY);
-        ESP_LOGI(TAG, "Success: Vault RPC Send %d response %d; ID: %d",
-                rpc->type, res, id);
+void vault_sem_take() {
+    /* Takes Vault semaphore; restarts device if timesout during take. */
+    if( !xSemaphoreTake(vault_sem, pdMS_TO_TICKS(CONFIG_JOLT_TIMEOUT_TIMEOUT_MS) ) ) {
+        // Timed out trying to take the semaphore; reset the device
+        // And let the bootloader wipe the RAM
+        ESP_LOGI(TAG, "Failed taking vault semaphore. Rebooting...");
+        esp_restart();
     }
-    else{
-        ESP_LOGI(TAG, "Vault RPC Send %d failed; ID: %d", rpc->type, id);
-        res = RPC_QUEUE_FULL;
-    }
-    SCREEN_RESTORE;
-
-    vQueueDelete(rpc->response_queue);
-    ESP_LOGI(TAG, "Response Queue Deleted; ID: %d\n", id);
-    return res;
 }
 
-jolt_err_t vault_init(vault_t *vault){
-    /* Secure allocates space for vault, and checks if it exists in NVS
-     *   Returns E_SUCCESS if vault found in NVS
-     *   Returns E_FAILURE if vault is not found in NVS
-     *
-     * Storage Security Notes:
-     *     * make sure seed and attempt counter are on same page
-     *          - Prevents a malicious person from reseting the counter via
-     *            page wipe. However, a missing attempt counter should trigger
-     *            a factory reset. A page can hold 126*32 bytes
-     *     * Increment attempt counter in NVS before testing
-     */
-    nvs_handle nvs_secret;
-    esp_err_t err;
-    jolt_err_t res;
-    size_t required_size;
+void vault_sem_give() {
+    xSemaphoreGive(vault_sem);
+}
 
-    // Allocate guarded space on the heap for the vault
+static void vault_watchdog_task() {
+    /* Daemon-like task to wipe vault after a configurable timeout.
+     * Should be given very high priority to prevent deadlocks. */
+	for(;;) {
+        if( xSemaphoreTake( vault_watchdog_sem, 
+				pdMS_TO_TICKS(CONFIG_JOLT_DEFAULT_TIMEOUT_S * 1000)) ) {
+            // Command to reset the private node watchdog;
+            // Note, vault_sem is probably taken if in here
+            // Do Nothing
+        }
+        else {
+            // WatchDog timeout; wipe the private node
+            vault_clear();
+        }
+	}
+}
+
+bool vault_setup() {
+    /* Creates the private key object and the watchdog task to monitor it.
+     * Also checks to see if there is a stored secret or not.
+     *
+     * Returns True if a secret (mnemonic) has been previously setup.
+     * Returns False if no secret (mnemonic) has been setup.*/
     vault = sodium_malloc(sizeof(vault_t));
     if( NULL==vault ){
         ESP_LOGE(TAG, "Unable to allocate space for the Vault");
@@ -92,161 +84,132 @@ jolt_err_t vault_init(vault_t *vault){
     }
     sodium_mprotect_readwrite(vault);
     sodium_memzero(vault, sizeof(vault_t));
-    sodium_mprotect_noaccess(vault);
+    sodium_mprotect_readonly(vault);
+    vault_sem = xSemaphoreCreateMutex();
+    vault_watchdog_sem = xSemaphoreCreateBinary();
+    xTaskCreate(vault_watchdog_task, "VaultWatchDog", 20000, NULL, 16, NULL); // todo: tweak this memory value
 
-    // Initializes the secret nvs
-    ESP_LOGI(TAG, "Opening SECRET namespace to check if encrypted mnemonic exists.");
-    init_nvm_namespace(&nvs_secret, "secret");
-    
-    // Checks if mnemonic exists in NVS
-    err = nvs_get_blob(nvs_secret, "mnemonic", NULL, &required_size);
-    if ( ESP_OK == err){
-        // vault was found and successfully read from memory;
-        res = E_SUCCESS;
+    // Checks if stored secret exists
+    return storage_exists_mnemonic();
+}
+
+void vault_clear() {
+    /* Clears the Vault struct.
+     * Does NOT clear the following so that the node can be easily restored:
+     *      * purpose
+     *      * coin_type
+     *      * bip32_key
+     */
+    vault_sem_take();
+    ESP_LOGI(TAG, "Clearing Vault.");
+    sodium_mprotect_readwrite(vault);
+    vault->valid = false;
+    sodium_memzero(&(vault->node), sizeof(hd_node_t));
+    sodium_mprotect_readonly(vault);
+    ESP_LOGI(TAG, "Clearing Vault Complete.");
+    vault_sem_give();
+}
+
+bool vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key) {
+    // To only be called before launching an app, or when changing firmware
+    // settings.
+    //
+    // Inside this function (really inside get_master_seed()),
+    // the GUI is invoked for PIN and Passphrase.
+    //
+    // Returns true if successfully set
+    // Returns false if not set (user cancellation)
+    CONFIDENTIAL uint512_t master_seed;
+    bool res;
+    // Inside get_master_seed(), PIN and passphrase are prompted for
+    if(!get_master_seed(master_seed)) {
+        ESP_LOGI(TAG, "Failed to retrieve master seed");
+        res = false;
+        goto exit;
     }
-    else{
-        // Indicates the need for First-Time-Startup
-        res = E_FAILURE;
-    }
-    
-    nvs_close(nvs_secret);
+    strlcpy( vault->bip32_key, bip32_key, sizeof(vault->bip32_key) );
+    vault->purpose = purpose;
+    vault->coin_type = coin_type;
+    bm_master_seed_to_node(&(vault->node), master_seed, vault->bip32_key,
+            2, vault->purpose, vault->coin_type);
+    res = true;
+
+exit:
+    sodium_memzero(master_seed, sizeof(master_seed));
     return res;
 }
 
-static bool pin_prompt(menu8g2_t *menu, vault_t *vault){
-    /* Reads and Decrypts mnemonic from NVS.
-     * Returns true if the vault object is now valid.
-     * Will factory reset when max_attempts is reached.
-     * Returns False when user presses back. */
-    esp_err_t err;
-    uint8_t pin_attempts;
-    nvs_handle nvs_secret;
-    char title[20];
-    uint256_t pin_hash;
-    uint256_t nonce = {0};
-    int8_t decrypt_result;
-    CONFIDENTIAL unsigned char enc_mnemonic[
-            crypto_secretbox_MACBYTES + BM_MNEMONIC_BUF_LEN];
-    size_t required_size = sizeof(enc_mnemonic);
-
-    if( vault->valid ){
-        ESP_LOGI(TAG, "Vault is valid, skipping pin.");
+bool vault_refresh() {
+    /* Kicks dog if vault is valid.
+     * Repopulates node (therefore prompting user for PIN otherwise
+     *
+     * To be called within an app right before a private key is to be used.
+     *
+     * Returns true on success,
+     * false if user cancels (if node needs restored)
+     */
+    bool res;
+    vault_sem_take();
+    if( vault->valid ) {
+        // Kick the dog
+        xSemaphoreGive(vault_watchdog_sem);
+        vault_sem_give();
         return true;
     }
-    else{
-        ESP_LOGI(TAG, "Vault is invalid, prompting user for pin.");
-    }
-
-    ESP_LOGI(TAG, "Opening SECRET namespace to load encrypted vault.");
-    init_nvm_namespace(&nvs_secret, "secret");
-
-    err = nvs_get_u8(nvs_secret, "pin_attempts", &pin_attempts);
-    if(ESP_OK != err || pin_attempts >= CONFIG_JOLT_DEFAULT_MAX_ATTEMPT){
-        factory_reset();
-    }
-    err = nvs_get_blob(nvs_secret, "mnemonic", enc_mnemonic, &required_size);
-
-    for(;;){
-        if(pin_attempts >= CONFIG_JOLT_DEFAULT_MAX_ATTEMPT){
-            factory_reset();
-        }
-        sprintf(title, "Enter Pin (%d/%d)", pin_attempts+1,
-                CONFIG_JOLT_DEFAULT_MAX_ATTEMPT);
-        if(!entry_pin(menu, pin_hash, title)){
-            // User cancelled vault operation
-            nvs_close(nvs_secret);
+    else {
+        // Give up semaphore while prompt using for PIN/Passphrase
+        vault_sem_give();
+        // Inside get_master_seed(), PIN and passphrase are prompted for
+        CONFIDENTIAL uint512_t master_seed;
+        if(!get_master_seed(master_seed)) {
             return false;
-        };
-        pin_attempts++;
-        nvs_set_u8(nvs_secret, "pin_attempts", pin_attempts);
-        nvs_commit(nvs_secret);
-
-        loading_enable();
-        loading_text_title("Decrypting", TITLE);
-        sodium_mprotect_readwrite(vault);
-        decrypt_result = crypto_secretbox_open_easy(
-                (unsigned char *)(vault->mnemonic),
-                enc_mnemonic, required_size, nonce, pin_hash);
-        sodium_mprotect_readonly(vault);
-        loading_disable();
-
-        if(decrypt_result == 0){ //success
-            sodium_memzero(enc_mnemonic, sizeof(enc_mnemonic));
-            nvs_set_u8(nvs_secret, "pin_attempts", 0);
-            nvs_commit(nvs_secret);
-            bm_mnemonic_to_master_seed(vault->master_seed,
-                    vault->mnemonic, "");
-            vault->valid = true;
-            ESP_LOGI(TAG, "Mnemonic successfully decrypted.");
-            break;
         }
-        else{
-            menu8g2_display_text_title(menu, "Wrong PIN", TITLE);
-        }
+
+        vault_sem_take();
+
+        // Kick the dog first to avoid a potential race condition where the 
+        // watchdog resets a just-set node.
+        xSemaphoreGive(vault_watchdog_sem);
+
+        bm_master_seed_to_node(&(vault->node), master_seed, vault->bip32_key,
+            2, vault->purpose, vault->coin_type);
+        vault_sem_give();
+        sodium_memzero(master_seed, sizeof(master_seed));
+        return true;
     }
-    nvs_close(nvs_secret);
-    return true;
 }
 
-void vault_task(void *vault_in){
-    /* This task should be ran at HIGHEST PRIORITY
-     * This task is essentially a daemon that is the only activity that should
-     * be accessing the vault. This task will respond to commands that
-     * request some task to be complete 
-     *
-     * vault must already be initialized before starting this task
-     * */
+static bool get_master_seed(uint512_t master_seed) {
+    // Command-level function to get the user's mnemonic
+    // WILL prompt user for PIN and/or passphrase
+    //
+    // Internally saves/restores display since PIN/Passphrase prompt
+    // overwrites screen buffer.
+    //
+    // Returns True if user successfully entered PIN/Passphrase
+    // Returns False if user cancels
+    bool res;
+    CONFIDENTIAL char passphrase[BM_PASSPHRASE_BUF_LEN] = "";
+    CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
 
-    vault_t *vault = (vault_t *)vault_in;
-
-    vault_rpc_t *cmd;
-    vault_rpc_response_t response;
-
-    menu8g2_t menu;
-    menu8g2_init(&menu, (u8g2_t *)&u8g2, input_queue, disp_mutex, NULL, statusbar_update);
-
-    /* The vault_queue holds a pointer to the vault_rpc_t object declared
-     * by the producer task. Results are directly modified on that object.
-     * A response status is sent back on the queue in the vault_rpc_t stating
-     * the RPC error code. */
-    vault_queue = xQueueCreate( CONFIG_JOLT_VAULT_RPC_QUEUE_LEN, sizeof( vault_rpc_t* ) );
-
-    for(;;){
-        if( xQueueReceive(vault_queue, &cmd,
-                pdMS_TO_TICKS(CONFIG_JOLT_DEFAULT_TIMEOUT_S * 1000)) ){
-            sodium_mprotect_readonly(vault);
-
-            // Prompt user for Pin if necessary
-            if(pin_prompt(&menu, vault)){
-                // Perform RPC command
-                /* MASTER RPC SWITCH STATEMENT */
-                switch(cmd->type){
-                    case SYSCORE_START ... SYSCORE_END:
-                        response = rpc_syscore(vault, cmd, &menu);
-                        break;
-                    case NANO_START ... NANO_END:
-                        response = rpc_nano(vault, cmd, &menu);
-                        break;
-                    default:
-                        response = RPC_UNDEFINED;
-                        break;
-                }
-            }
-            else{
-                response = RPC_CANCELLED;
-            }
-            statusbar_draw_enable = true;
-
-            // Send back response
-            xQueueOverwrite(cmd->response_queue, &response);
-        }
-        else{
-            // Timed Out: Wipe the vault!
-            sodium_mprotect_readwrite(vault);
-            sodium_memzero(vault, sizeof(vault_t));
-            ESP_LOGI(TAG, "Vault timed out; wiping.");
-        }
-        // Always disable access when outside of this task
-        sodium_mprotect_noaccess(vault);
+    SCREEN_SAVE;
+    
+    // storage_get_mnemonic prompts user for PIN
+    if( !storage_get_mnemonic(mnemonic, sizeof(mnemonic)) ) {
+        res = false;
+        goto exit;
     }
+
+    // todo: fetch passphrase
+    strlcpy(passphrase, "", sizeof(passphrase)); // dummy placeholder
+
+    // Derive master seed
+    res = (E_SUCCESS == bm_mnemonic_to_master_seed(master_seed, mnemonic, passphrase));
+
+exit:
+    sodium_memzero(mnemonic, sizeof(mnemonic));
+    sodium_memzero(passphrase, sizeof(passphrase));
+
+    SCREEN_RESTORE;
+    return res;
 }

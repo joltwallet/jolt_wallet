@@ -17,11 +17,10 @@
 #include "linenoise/linenoise.h"
 
 #include "nano_lws.h"
-#include "nano_parse.h"
 
 #include "esp_spiffs.h"
 
-#include "loader.h"
+#include "elfloader.h"
 #include "../jolt_lib.h"
 
 #include "filesystem.h"
@@ -51,7 +50,10 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
      *
      * Launches the app's function with same name as func
      */
-    int return_code;
+    int return_code = -1;
+    FILE *f = NULL;
+    ELFLoaderContext_t *ctx = NULL;
+    uint32_t *data = NULL;
 
     // Parse Exec Filename
 	char exec_fn[128]=SPIFFS_BASE_PATH;
@@ -68,7 +70,6 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
     // Make sure both files exist
     if( check_file_exists(exec_fn) != 1 ){
         ESP_LOGE(TAG, "Executable doesn't exist\n");
-        return_code = -100; // TODO: Better return code
         goto exit;
     }
 
@@ -80,12 +81,62 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         goto exit;
     }
 #endif
-    
-    FILE *f = fopen(exec_fn, "rb");
-    return_code = elfLoader(f, &env, func, app_argc, app_argv);
-    fclose(f);
+
+    f = fopen(exec_fn, "rb");
+    if( NULL == (ctx = elfLoaderInit(f, &env)) ||
+        NULL == elfLoaderLoad(ctx) ||
+        NULL == elfLoaderRelocate(ctx) ||
+        0 != elfLoaderSetFunc(ctx, func) ) {
+        goto exit;
+    }
+    {
+        size_t data_len;
+        uint32_t purpose, coin;
+        char bip32_key[32];
+#define PATH_BYTE_LEN 8
+        data = elfLoaderLoadSectionByName(ctx, ".coin.path", &data_len);
+        if( NULL==data ) {
+            ESP_LOGE(TAG, "Couldn't allocate for .coin.path");
+            goto exit;
+        }
+        if( data_len <= (PATH_BYTE_LEN + 1) || 
+                data_len>=(PATH_BYTE_LEN+sizeof(bip32_key))) {
+            ESP_LOGE(TAG, "BIP32_Key not provided in ELF file.");
+            goto exit;
+        }
+        purpose = *data;
+        coin = *(data+1);
+        size_t bip32_key_len = data_len-PATH_BYTE_LEN; // Not including null terminator
+#undef PATH_BYTE_LEN
+        // WARNING: is this containing a spurious \n ?
+        strncpy(bip32_key, (char *)(data+2), bip32_key_len);
+        bip32_key[bip32_key_len+1] = '\0';
+        ESP_LOGI(TAG,"Derivation Purpose: 0x%x. Coin Type: 0x%x",
+                purpose, coin);
+        ESP_LOGI(TAG, "BIP32 Key: %s", bip32_key);
+        if( !vault_set(purpose, coin, bip32_key) ) {
+            ESP_LOGI(TAG, "User aborted app launch at PIN screen");
+            goto exit;
+        }
+    }
+
+    ESP_LOGI(TAG, "Launching App");
+    return_code = elfLoaderRun(ctx, app_argc, app_argv);
+    ESP_LOGI(TAG, "App closed");
+
+    return_code = 0;
 
 exit:
+    if( NULL != ctx ) {
+        elfLoaderFree(ctx);
+    }
+    if( NULL != f ){
+        fclose(f);
+    }
+    if( NULL != data ){
+        free(data);
+    }
+
     return return_code;
 }
 

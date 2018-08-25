@@ -15,7 +15,7 @@
 	url = https://github.com/joltwallet/nano_zlib.git
 [submodule "components/nano_lws"]
 	path = components/nano_lws
-	url = https://github.com/joltwallet/nano_lws.git
+	url = git@github.com:joltwallet/nano_lws.git
 [submodule "components/nano_parse"]
 	path = components/nano_parse
 	url = https://github.com/joltwallet/nano_parse.git

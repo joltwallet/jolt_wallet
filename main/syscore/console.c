@@ -17,7 +17,6 @@
 #include "linenoise/linenoise.h"
 
 #include "nano_lws.h"
-#include "nano_parse.h"
 #include "bipmnemonic.h"
 
 #include "filesystem.h"
@@ -31,6 +30,9 @@
 #include "../gui/loading.h"
 #include "../gui/statusbar.h"
 #include "../gui/confirmation.h"
+#include "../gui/entry.h"
+#include "../radio/wifi.h"
+#include "../hal/storage.h"
 
 #include "../console.h"
 
@@ -64,34 +66,32 @@ static int cpu_status(int argc, char** argv) {
 }
 
 static int wifi_update(int argc, char** argv) {
-    int return_code = 0;
-    vault_rpc_t rpc;
+    int return_code;
     SCREEN_SAVE;
-    rpc.type = SYSCORE_WIFI_UPDATE;
 
     if( !console_check_range_argc(argc, 2, 3) ) {
         return_code = 1;
         goto exit;
     }
 
+    bool update_success;
     if( 3 == argc ) {
-        rpc.syscore_wifi_update.pass = argv[2];
+        update_success = set_wifi_credentials(argv[1], argv[2]);
     }
     else {
-        rpc.syscore_wifi_update.pass = "";
+        update_success = set_wifi_credentials(argv[1], "");
     }
 
-    rpc.syscore_wifi_update.ssid = argv[1];
-
-    vault_rpc_response_t res = vault_rpc(&rpc);
-    if( RPC_SUCCESS != res ){
+    if( update_success ) {
+        printf("Wifi Settings Updated. Restarting");
+        return_code = 0;
+        esp_restart();
+    }
+    else {
         printf("Error Updating WiFi Settings\n");
-        return_code = res;
+        return_code = 1;
         goto exit;
     }
-
-    printf("Wifi Settings Updated. Restarting");
-    esp_restart();
 
     exit:
         SCREEN_RESTORE;
@@ -105,11 +105,9 @@ static int mnemonic_restore(int argc, char** argv) {
     char *line;
     CONFIDENTIAL char user_words[24][11];
     CONFIDENTIAL uint8_t index[24];
-    menu8g2_t menu;
-    menu8g2_init(&menu, (u8g2_t *) &u8g2, input_queue, disp_mutex, NULL, statusbar_update);
     SCREEN_SAVE;
 
-    if( !menu_confirm_action(&menu, "Begin mnemonic restore?") ) {
+    if( !menu_confirm_action(menu, "Begin mnemonic restore?") ) {
         return_code = -1;
         goto exit;
     }
@@ -173,12 +171,26 @@ static int mnemonic_restore(int argc, char** argv) {
     }
     mnemonic[offset - 1] = '\0'; //null-terminate, remove last space
 
-    if( !menu_confirm_action(&menu, "Save restored mnemonic and reboot? CAN NOT BE UNDONE.") ) {
+    // prompt and verify new pin; result: pin_hash
+    CONFIDENTIAL uint256_t pin_hash;
+    if( !entry_verify_pin(&menu, pin_hash) ) {
+        return_code = -2;
+        goto exit;
+    }
+
+    if( !menu_confirm_action(menu, "Save restored mnemonic and reboot? CAN NOT BE UNDONE.") ) {
         return_code = -1;
         goto exit;
     }
 
-    store_mnemonic_reboot(&menu, mnemonic);
+    CONFIDENTIAL uint256_t bin;
+    jolt_err_t err = bm_mnemonic_to_bin(bin, sizeof(bin), mnemonic);
+
+    storage_set_mnemonic(bin, pin_hash);
+    sodium_memzero(bin, sizeof(bin));
+    sodium_memzero(index, sizeof(index));
+    sodium_memzero(mnemonic, sizeof(mnemonic));
+    esp_restart();
 
     exit:
         sodium_memzero(index, sizeof(index));
@@ -189,11 +201,8 @@ static int mnemonic_restore(int argc, char** argv) {
 
 static int jolt_cast(int argc, char** argv) {
     /* (url, path, port) */
-    nvs_handle nvs_user;
     int return_code;
     char buf[100];
-    menu8g2_t menu;
-    menu8g2_init(&menu, (u8g2_t *) &u8g2, input_queue, disp_mutex, NULL, statusbar_update);
     SCREEN_SAVE;
 
     // Check if number of inputs is correct
@@ -205,52 +214,36 @@ static int jolt_cast(int argc, char** argv) {
 
     // Confirm Inputs
     snprintf(buf, sizeof(buf), "Update jolt_cast server domain to:\n%s", argv[1]);
-    if( !menu_confirm_action(&menu, buf) ) {
+    if( !menu_confirm_action(menu, buf) ) {
         return_code = -1;
         goto exit;
     }
     snprintf(buf, sizeof(buf), "Update jolt_cast server path to:\n%s", argv[2]);
-    if( !menu_confirm_action(&menu, buf) ) {
+    if( !menu_confirm_action(menu, buf) ) {
         return_code = -1;
         goto exit;
     }
     snprintf(buf, sizeof(buf), "Update jolt_cast server port to:\n%d", port);
-    if( !menu_confirm_action(&menu, buf) ) {
+    if( !menu_confirm_action(menu, buf) ) {
         return_code = -1;
         goto exit;
     }
 
     // Store User Values
-    if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){
-        nvs_set_str(nvs_user, "jc_domain", argv[1]);
-        nvs_close(nvs_user);
-    }
-    else {
-        return_code = 2;
-        goto exit;
-    }
-    if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){
-        nvs_set_str(nvs_user, "jc_path", argv[2]);
-        nvs_close(nvs_user);
-    }
-    else {
-        return_code = 3;
-        goto exit;
-    }
-    if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){
-        nvs_set_u16(nvs_user, "jc_port", port);
-        nvs_close(nvs_user);
-    }
-    else {
-        return_code = 4;
-        goto exit;
-    }
+    storage_set_str(argv[1], "user", "jc_domain");
+    storage_set_str(argv[2], "user", "jc_path");
+    storage_set_u16(port, "user", "jc_port");
     
     esp_restart();
 
     exit:
         SCREEN_RESTORE;
         return return_code;
+}
+
+static int cmd_reboot(int argc, char** argv) {
+    esp_restart();
+    return 0;
 }
 
 void console_syscore_register() {
@@ -301,6 +294,14 @@ void console_syscore_register() {
         .help = "Update jolt_cast (domain, path, port).",
         .hint = NULL,
         .func = &jolt_cast,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "reboot",
+        .help = "Reboot device.",
+        .hint = NULL,
+        .func = &cmd_reboot,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 

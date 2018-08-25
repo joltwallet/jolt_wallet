@@ -27,7 +27,7 @@ static const char* TAG = "StatusBar";
 /* Globals */
 volatile bool statusbar_draw_enable = true;
 
-static void statusbar_pending(menu8g2_t *menu, uint16_t *x, uint16_t *y){
+static void statusbar_pending(uint16_t *x, uint16_t *y){
     bool pending_status = false; // todo: check websocket
 
     if (pending_status){
@@ -43,7 +43,7 @@ static void statusbar_pending(menu8g2_t *menu, uint16_t *x, uint16_t *y){
     }
 }
 
-static void statusbar_wifi(menu8g2_t *menu, uint16_t *x, uint16_t *y){
+static void statusbar_wifi(uint16_t *x, uint16_t *y){
     /* Call in a drawing loop */
     *x -= (GRAPHIC_WIFI_W + STATUSBAR_PAD);
     const unsigned char *graphic;
@@ -72,7 +72,7 @@ static void statusbar_wifi(menu8g2_t *menu, uint16_t *x, uint16_t *y){
             graphic);
 }
 
-static void statusbar_bluetooth(menu8g2_t *menu, uint16_t *x, uint16_t *y){
+static void statusbar_bluetooth(uint16_t *x, uint16_t *y){
     bool bluetooth_status = false; // todo: read bluetooth status
 
     if (bluetooth_status){
@@ -88,7 +88,7 @@ static void statusbar_bluetooth(menu8g2_t *menu, uint16_t *x, uint16_t *y){
     }
 }
 
-static void statusbar_battery(menu8g2_t *menu, uint16_t *x, uint16_t *y){
+static void statusbar_battery(uint16_t *x, uint16_t *y){
     *x -= (GRAPHIC_BATTERY_W + STATUSBAR_PAD);
     const unsigned char *graphic;
     uint8_t battery_strength = 3; //todo: read battery voltage
@@ -115,19 +115,17 @@ static void statusbar_battery(menu8g2_t *menu, uint16_t *x, uint16_t *y){
             graphic);
 }
 
-void statusbar_update(menu8g2_t *menu){
+void statusbar_update(){
     uint16_t x = u8g2_GetDisplayWidth(menu->u8g2);
     uint16_t y = 2;
     // Graphical order right to left
-    statusbar_battery(menu, &x, &y);
-    statusbar_bluetooth(menu, &x, &y);
-    statusbar_wifi(menu, &x, &y);
-    statusbar_pending(menu, &x, &y);
+    statusbar_battery(&x, &y);
+    statusbar_bluetooth(&x, &y);
+    statusbar_wifi(&x, &y);
+    statusbar_pending(&x, &y);
 }
 
-void statusbar_task(void *menu_in){
-    menu8g2_t *menu = (menu8g2_t *) menu_in;
-
+void statusbar_task(){
     ESP_LOGI(TAG, "Starting StatusBar Task");
 
     for(;; vTaskDelay(pdMS_TO_TICKS(STATUSBAR_UPDATE_PERIOD_MS))) {
@@ -136,7 +134,7 @@ void statusbar_task(void *menu_in){
         if(statusbar_draw_enable){
             xSemaphoreTake(menu->disp_mutex, portMAX_DELAY);
 
-            statusbar_update(menu);
+            statusbar_update();
             u8g2_SendBuffer(menu->u8g2);
 
             xSemaphoreGive(menu->disp_mutex);

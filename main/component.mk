@@ -5,7 +5,5 @@ COMPONENT_SRCDIRS := . \
 	gui/menus \
 	hal \
 	radio \
-	syscore \
-	coins/nano \
-	coins/nano/menus
+	syscore
 

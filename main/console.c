@@ -15,9 +15,6 @@
 #include "esp_log.h"
 #include "linenoise/linenoise.h"
 
-#include <libwebsockets.h>
-#include "nano_lws.h"
-#include "nano_parse.h"
 #include "globals.h"
 #include "console.h"
 #include "vault.h"
@@ -29,7 +26,6 @@
 
 #include "syscore/console.h"
 #include "syscore/launcher.h"
-#include "coins/nano/console.h"
 
 static const char* TAG = "console";
 
@@ -122,11 +118,13 @@ void menu_console(menu8g2_t *prev){
     menu8g2_copy(&menu, prev);
 
     if(console_h){
+        ESP_LOGI(TAG, "Console already running.");
         menu8g2_display_text_title(&menu,
                 "Console is already running.",
                 "Console");
     }
     else{
+        ESP_LOGI(TAG, "Starting console.");
         start_console();
         menu8g2_display_text_title(&menu,
                 "Console Started.",
@@ -145,7 +143,6 @@ static void console_register_commands(){
 
     /* Register Coin Specific Commands */
     // TODO deprecate this
-    console_nano_register();
 }
 
 void initialize_console() {
@@ -179,7 +176,9 @@ void initialize_console() {
     linenoiseSetMultiLine(1);
 
     /* Clear the screen */
-    linenoiseClearScreen();
+#if( JOLT_CONFIG_CONSOLE_STARTUP_CLEAR )
+        linenoiseClearScreen();
+#endif
     
     /* Tell linenoise where to get command completions and hints */
     linenoiseSetCompletionCallback(&esp_console_get_completion);

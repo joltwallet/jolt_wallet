@@ -29,13 +29,16 @@
 #include "console.h"
 #include "helpers.h"
 #include "syscore/filesystem.h"
+#include "gui/statusbar.h"
 
 
 // Definitions for variables in globals.h
-volatile u8g2_t u8g2;
+volatile u8g2_t u8g2_obj;
+volatile u8g2_t *u8g2;
 volatile QueueHandle_t input_queue;
-volatile QueueHandle_t vault_queue;
 volatile SemaphoreHandle_t disp_mutex;
+volatile menu8g2_t menu_obj;
+volatile menu8g2_t *menu;
 QueueHandle_t backend_queue;
 
 static const char TAG[] = "main";
@@ -65,24 +68,23 @@ void app_main(){
     ESP_ERROR_CHECK(i2c_driver_install(CONFIG_JOLT_I2C_MASTER_NUM, conf.mode, 0, 0, 0));
 
     // Initialize the OLED Display
-    setup_screen((u8g2_t *) &u8g2);
-    u8g2_SetContrast( &u8g2, get_display_brightness() );
+    u8g2 = &u8g2_obj;
+    setup_screen((u8g2_t *) u8g2);
+    u8g2_SetContrast( u8g2, get_display_brightness() );
     disp_mutex = xSemaphoreCreateMutex();
-    
+
+    // Create Global Menu Object
+    menu = &menu_obj;
+    menu8g2_init(menu, (u8g2_t *) u8g2, input_queue, disp_mutex, NULL, statusbar_update);
+
     // Allocate space for the vault and see if a copy exists in NVS
-    vault_t vault;
-    if (E_FAILURE == vault_init(&vault)){
+    if( false == vault_setup()) {
         first_boot_menu();
     }
     
     // Initialize Wireless
     set_jolt_cast();
     wifi_connect();
-
-    xTaskCreate(vault_task,
-            "Vault", 16000,
-            (void *) &vault, 16,
-            NULL);
     
     xTaskCreate(gui_task,
             "GUI", 16000,

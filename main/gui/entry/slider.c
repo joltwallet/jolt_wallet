@@ -37,9 +37,9 @@ bool entry_slider_callback(menu8g2_t *prev, uint8_t *output, uint8_t delta,
      * it'll never get to 255)
      * Starts at position output, and goes up/down from delta*/
     menu8g2_t local_menu;
-    menu8g2_t *menu = &local_menu;
-    menu8g2_copy(menu, prev);
-    u8g2_t *u8g2 = menu->u8g2;
+    menu8g2_t *m = &local_menu;
+    menu8g2_copy(m, prev);
+    u8g2_t *u8g2 = m->u8g2;
 
     bool res;
 
@@ -47,9 +47,9 @@ bool entry_slider_callback(menu8g2_t *prev, uint8_t *output, uint8_t delta,
 
     for(;;){
         ESP_LOGD(TAG, "slider value: %d", *output);
-        MENU8G2_BEGIN_DRAW(menu)
+        MENU8G2_BEGIN_DRAW(m)
             size_t slider_width = u8g2_GetDisplayWidth(u8g2) - 2*SLIDER_PADDING;
-            size_t header_height = menu8g2_buf_header(menu, title);
+            size_t header_height = menu8g2_buf_header(m, title);
             size_t active_height = u8g2_GetDisplayHeight(u8g2) - header_height;
             size_t slider_height = SLIDER_REL_HEIGHT * active_height;
 
@@ -58,10 +58,10 @@ bool entry_slider_callback(menu8g2_t *prev, uint8_t *output, uint8_t delta,
             u8g2_DrawFrame(u8g2, SLIDER_PADDING, y, slider_width, slider_height);
             u8g2_DrawBox(u8g2, SLIDER_PADDING, y, 
                     slider_width * (*output) / maximum, slider_height);
-        MENU8G2_END_DRAW(menu)
+        MENU8G2_END_DRAW(m)
 
         uint64_t input_buf;
-        if(xQueueReceive(menu->input_queue, &input_buf, portMAX_DELAY)) {
+        if(xQueueReceive(m->input_queue, &input_buf, portMAX_DELAY)) {
             if(input_buf & (1ULL << EASY_INPUT_BACK)){
                 res = false;
                 goto exit;
@@ -88,9 +88,9 @@ bool entry_slider_callback(menu8g2_t *prev, uint8_t *output, uint8_t delta,
     }
 
     exit:
-        MENU8G2_BEGIN_DRAW(menu)
-            u8g2_ClearDisplay(menu->u8g2);
-        MENU8G2_END_DRAW(menu)
+        MENU8G2_BEGIN_DRAW(m)
+            u8g2_ClearDisplay(m->u8g2);
+        MENU8G2_END_DRAW(m)
         return res;
 }
 

@@ -14,13 +14,14 @@
 #include "statusbar.h"
 #include "loading.h"
 #include "../vault.h"
+#include "../helpers.h"
 #include "../globals.h"
 #include "../hal/u8g2_esp32.h"
+#include "../hal/storage.h"
 #include "../syscore/filesystem.h"
 #include "../syscore/launcher.h"
 
 #include "menus/submenus.h"
-#include "../coins/nano/menu.h"
 
 static const char TAG[] = "GUI";
 
@@ -61,23 +62,18 @@ static void launch_file_proxy(menu8g2_t *prev) {
 
 void gui_task(){
     /* Master GUI Task */
-    nvs_handle nvs_user;
-    uint8_t boot_splash_enable = CONFIG_JOLT_DEFAULT_BOOT_SPLASH_ENABLE;
-    menu8g2_t menu;
-    menu8g2_init(&menu, (u8g2_t *) &u8g2, input_queue, disp_mutex, NULL, statusbar_update);
+    uint8_t boot_splash_enable;
 
     // display boot_splash if option is set
-    if(E_SUCCESS == init_nvm_namespace(&nvs_user, "user")){
-        nvs_get_u8(nvs_user, "boot_splash", &boot_splash_enable);
-        nvs_close(nvs_user);
-    }
+    storage_get_u8(&boot_splash_enable, "user", "boot_splash",
+            (uint8_t)CONFIG_JOLT_DEFAULT_BOOT_SPLASH_ENABLE);
     if(boot_splash_enable){
-        boot_splash( menu.u8g2 );
+        boot_splash();
     }
 
     xTaskCreate(statusbar_task, "StatusBarTask", 8192,
-            (void *) &menu, 19, NULL);
-    loading_init(&menu);
+            NULL, 19, NULL);
+    loading_init();
 
     const char title[] = "Main";
 
@@ -91,19 +87,19 @@ void gui_task(){
     }
 
     menu8g2_elements_t elements;
-    menu8g2_elements_init(&elements, 3 + n_fns);
+    menu8g2_elements_init(&elements, 2 + n_fns);
     for(uint8_t i=0; i<n_fns; i++) {
         ESP_LOGD(TAG, "Registering App \"%s\" into the GUI", fns[i]);
         menu8g2_set_element(&elements, fns[i], &launch_file_proxy);
     }
-    menu8g2_set_element(&elements, "Nano", &menu_nano);
+    //menu8g2_set_element(&elements, "Nano", &menu_nano);
     menu8g2_set_element(&elements, "Console", &menu_console);
     menu8g2_set_element(&elements, "Settings", &menu_settings);
 
     // Main GUI Menu Loop
     for(;;) {
-        menu8g2_create_vertical_element_menu(&menu, title, &elements);
-        menu.index = 0;
+        menu8g2_create_vertical_element_menu(menu, title, &elements);
+        menu->index = 0;
     }
 
     // Should never reach here!
