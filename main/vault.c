@@ -123,6 +123,7 @@ bool vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key) {
     bool res;
     // Inside get_master_seed(), PIN and passphrase are prompted for
     if(!get_master_seed(master_seed)) {
+        ESP_LOGI(TAG, "Failed to retrieve master seed");
         res = false;
         goto exit;
     }
@@ -203,7 +204,7 @@ static bool get_master_seed(uint512_t master_seed) {
     strlcpy(passphrase, "", sizeof(passphrase)); // dummy placeholder
 
     // Derive master seed
-    res = bm_mnemonic_to_master_seed(master_seed, mnemonic, passphrase);
+    res = (E_SUCCESS == bm_mnemonic_to_master_seed(master_seed, mnemonic, passphrase));
 
 exit:
     sodium_memzero(mnemonic, sizeof(mnemonic));
