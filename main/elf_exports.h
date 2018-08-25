@@ -10,6 +10,7 @@
 #include <libwebsockets.h>
 #include "menu8g2.h"
 #include "sodium.h"
+#include "sodium/private/curve25519_ref10.h"
 #include "u8g2.h"
 #include "driver/uart.h"
 #include "esp_vfs_dev.h"
@@ -32,7 +33,13 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( boot_splash ), // for debugging; remove
     EXPORT_SYMBOL( console_check_equal_argc ),
     EXPORT_SYMBOL( console_check_range_argc ),
+    EXPORT_SYMBOL( crypto_core_curve25519_ref10_ge_frombytes_negate_vartime ),
+    EXPORT_SYMBOL( crypto_core_curve25519_ref10_sc_reduce ),
+    EXPORT_SYMBOL( crypto_core_curve25519_ref10_ge_double_scalarmult_vartime ),
     EXPORT_SYMBOL( crypto_generichash ),
+    EXPORT_SYMBOL( crypto_generichash_final ),
+    EXPORT_SYMBOL( crypto_generichash_init ),
+    EXPORT_SYMBOL( crypto_generichash_update ),
     EXPORT_SYMBOL( crypto_generichash_blake2b ),
     EXPORT_SYMBOL( crypto_generichash_blake2b_final ),
     EXPORT_SYMBOL( crypto_generichash_blake2b_init ),
@@ -41,6 +48,8 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( crypto_hash_sha512_init ),
     EXPORT_SYMBOL( crypto_hash_sha512_update ),
     EXPORT_SYMBOL( esp_restart ),
+    EXPORT_SYMBOL( esp_log_timestamp ),
+    EXPORT_SYMBOL( esp_log_write ),
     EXPORT_SYMBOL( free ),
     EXPORT_SYMBOL( hd_node_iterate ),
     EXPORT_SYMBOL( heap_caps_calloc ),
@@ -48,6 +57,11 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( loading_disable ),
     EXPORT_SYMBOL( loading_enable ),
     EXPORT_SYMBOL( malloc ),
+    EXPORT_SYMBOL( mbedtls_mpi_cmp_mpi ),
+    EXPORT_SYMBOL( mbedtls_mpi_copy ),
+    EXPORT_SYMBOL( mbedtls_mpi_free ),
+    EXPORT_SYMBOL( mbedtls_mpi_init ),
+    EXPORT_SYMBOL( mbedtls_mpi_write_binary ),
     EXPORT_SYMBOL( memchr ),
     EXPORT_SYMBOL( memcmp ),
     EXPORT_SYMBOL( memcpy ),
