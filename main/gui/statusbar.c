@@ -25,7 +25,8 @@ static const char* TAG = "StatusBar";
 
 
 /* Globals */
-volatile bool statusbar_draw_enable = true;
+volatile bool statusbar_draw_enable_obj = true;
+volatile bool *statusbar_draw_enable = &statusbar_draw_enable_obj;
 
 static void statusbar_pending(uint16_t *x, uint16_t *y){
     bool pending_status = false; // todo: check websocket
@@ -131,7 +132,7 @@ void statusbar_task(){
     for(;; vTaskDelay(pdMS_TO_TICKS(STATUSBAR_UPDATE_PERIOD_MS))) {
         // Not a mutex or taskSuspend to prevent deadlock where statusbar_task 
         // is suspended while taking disp_mutex.
-        if(statusbar_draw_enable){
+        if(*statusbar_draw_enable){
             xSemaphoreTake(menu->disp_mutex, portMAX_DELAY);
 
             statusbar_update();

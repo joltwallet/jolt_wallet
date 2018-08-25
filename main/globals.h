@@ -25,7 +25,8 @@ extern volatile menu8g2_t *menu;
 extern volatile QueueHandle_t input_queue;
 extern volatile TaskHandle_t console_h;
 
-extern volatile bool statusbar_draw_enable;
+extern volatile bool statusbar_draw_enable_obj;
+extern volatile bool *statusbar_draw_enable;
 
 extern volatile QueueHandle_t loading_queue;
 extern volatile bool loading_draw_enable;

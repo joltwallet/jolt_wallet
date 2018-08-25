@@ -16,11 +16,11 @@ void setup_screen(u8g2_t *u8g2);
 void gui_task();
 
 #define FULLSCREEN_ENTER \
-    bool statusbar_draw_original = statusbar_draw_enable; \
-    statusbar_draw_enable = false;
+    bool statusbar_draw_original = *statusbar_draw_enable; \
+    *statusbar_draw_enable = false;
 
 #define FULLSCREEN_EXIT \
-    statusbar_draw_enable = statusbar_draw_original;
+    *statusbar_draw_enable = statusbar_draw_original;
 
 // todo: should probably grab menu mutex here
 #define SCREEN_SAVE \

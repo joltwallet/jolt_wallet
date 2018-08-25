@@ -16,6 +16,7 @@
 #include "driver/uart.h"
 #include "esp_vfs_dev.h"
 #include "linenoise/linenoise.h"
+#include "qrcode.h"
 
 #include "console.h"
 #include "globals.h"
@@ -26,6 +27,7 @@
 #include "gui/loading.h"
 #include "gui/statusbar.h"
 #include "gui/confirmation.h"
+#include "gui/qr.h"
 #include "syscore/filesystem.h"
 #include "hal/storage.h"
 //    EXPORT_SYMBOL(  ),
@@ -54,10 +56,12 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( crypto_hash_sha512_init ),
     EXPORT_SYMBOL( crypto_hash_sha512_update ),
     EXPORT_SYMBOL( crypto_verify_32 ),
+    EXPORT_SYMBOL( display_qr_center ),
     EXPORT_SYMBOL( esp_restart ),
     EXPORT_SYMBOL( esp_log_timestamp ),
     EXPORT_SYMBOL( esp_log_write ),
     EXPORT_SYMBOL( free ),
+    EXPORT_SYMBOL( get_display_brightness ),
     EXPORT_SYMBOL( hd_node_copy ),
     EXPORT_SYMBOL( hd_node_iterate ),
     EXPORT_SYMBOL( heap_caps_calloc ),
@@ -76,7 +80,7 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( memcpy ),
     EXPORT_SYMBOL( memmove ),
     EXPORT_SYMBOL( memset ),
-    {"menu", &menu},
+    EXPORT_SYMBOL_PTR( menu ),
     EXPORT_SYMBOL( menu8g2_buf_header ),
     EXPORT_SYMBOL( menu8g2_copy ),
     EXPORT_SYMBOL( menu8g2_create_simple ),
@@ -93,6 +97,8 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( menu_confirm_action ),
     EXPORT_SYMBOL( puts ),
     EXPORT_SYMBOL( printf ),
+    EXPORT_SYMBOL( qrcode_getBufferSize ),
+    EXPORT_SYMBOL( qrcode_initText ),
     EXPORT_SYMBOL( randombytes_random ),
     EXPORT_SYMBOL( snprintf ),
     EXPORT_SYMBOL( sodium_bin2hex ),
@@ -100,6 +106,7 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( sodium_malloc ),
     EXPORT_SYMBOL( sodium_memcmp ),
     EXPORT_SYMBOL( sodium_memzero ),
+    EXPORT_SYMBOL_PTR( statusbar_draw_enable ),
     EXPORT_SYMBOL( storage_get_blob ),
     EXPORT_SYMBOL( storage_get_str ),
     EXPORT_SYMBOL( storage_get_u16 ),
@@ -156,7 +163,8 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( u8g2_SetupBuffer ),
     EXPORT_SYMBOL( u8g2_font_profont12_tf ),
     EXPORT_SYMBOL( u8g2_font_profont17_tf ),
-    { "vault", &vault },
+    EXPORT_SYMBOL( u8x8_SetContrast ),
+    EXPORT_SYMBOL_PTR( vault ),
     EXPORT_SYMBOL( vault_refresh ),
     EXPORT_SYMBOL( vault_sem_give ),
     EXPORT_SYMBOL( vault_sem_take ),
