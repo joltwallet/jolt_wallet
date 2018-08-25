@@ -53,7 +53,7 @@ static void menu_factory_reset(menu8g2_t *prev){
 #define SCREEN_BRIGHTNESS_DELTA 25
 static void screen_brightness_callback(uint8_t brightness){
     SCREEN_MUTEX_TAKE;
-    u8g2_SetContrast(&u8g2, brightness);
+    u8g2_SetContrast(u8g2, brightness);
     SCREEN_MUTEX_GIVE;
 }
 
