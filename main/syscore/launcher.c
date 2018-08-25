@@ -20,7 +20,7 @@
 
 #include "esp_spiffs.h"
 
-#include "loader.h"
+#include "elfloader.h"
 #include "../jolt_lib.h"
 
 #include "filesystem.h"
@@ -79,10 +79,52 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         goto exit;
     }
 #endif
-    
-    FILE *f = fopen(exec_fn, "rb");
-    return_code = elfLoader(f, &env, func, app_argc, app_argv);
-    fclose(f);
+
+    {
+        FILE *f = fopen(exec_fn, "rb");
+        ELFLoaderContext_t *ctx;
+        if( NULL == (ctx = elfLoaderInit(f, &env)) ||
+            NULL == elfLoaderLoad(ctx) ||
+            NULL == elfLoaderRelocate(ctx) ||
+            0 != elfLoaderSetFunc(ctx, func) ) {
+            elfLoaderFree(ctx);
+            return -1;
+        }
+        {
+            size_t data_len;
+            uint32_t purpose, coin;
+            char bip32_key[32];
+            uint32_t *data;
+#define PATH_BYTE_LEN 8
+            data = elfLoaderLoadSectionByName(ctx, ".coin.path", &data_len);
+            if( NULL==data ) {
+                ESP_LOGE(TAG, "Couldn't allocate for .coin.path");
+                elfLoaderFree(ctx);
+                return -1;
+            }
+            if( data_len <= (PATH_BYTE_LEN + 1) || 
+                    data_len>=(PATH_BYTE_LEN+sizeof(bip32_key))) {
+                ESP_LOGE(TAG, "BIP32_Key not provided in ELF file.");
+                elfLoaderFree(ctx);
+                return -1;
+            }
+            purpose = *data;
+            coin = *(data+1);
+            size_t bip32_key_len = data_len-PATH_BYTE_LEN; // Not including null terminator
+            // WARNING: is this containing a spurious \n ?
+            strncpy(bip32_key, (char *)(data+2), bip32_key_len);
+            bip32_key[bip32_key_len+1] = '\0';
+            free(data);
+            ESP_LOGI(TAG,"Derivation Purpose: 0x%x. Coin Type: 0x%x",
+                    purpose, coin);
+            ESP_LOGI(TAG, "BIP32 Key: %s", bip32_key);
+            vault_set(purpose, coin, bip32_key);
+        }
+
+        return_code = elfLoaderRun(ctx, app_argc, app_argv);
+        elfLoaderFree(ctx);
+        fclose(f);
+    }
 
 exit:
     return return_code;
