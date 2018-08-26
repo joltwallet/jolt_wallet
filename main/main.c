@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <esp_system.h>
-#include "nvs.h"
 #include "esp_log.h"
 
 #include "freertos/FreeRTOS.h"
@@ -19,7 +18,7 @@
 #include "u8g2.h"
 #include "menu8g2.h"
 #include "easy_input.h"
-#include "nano_lws.h"
+#include "nano_rest.h" // todo remove this; for debugging only
 
 #include "gui/gui.h"
 #include "radio/wifi.h"
@@ -39,7 +38,6 @@ volatile QueueHandle_t input_queue;
 volatile SemaphoreHandle_t disp_mutex;
 volatile menu8g2_t menu_obj;
 volatile menu8g2_t *menu;
-QueueHandle_t backend_queue;
 
 static const char TAG[] = "main";
 
@@ -86,15 +84,21 @@ void app_main(){
     esp_log_level_set("wifi", ESP_LOG_NONE);
     set_jolt_cast();
     wifi_connect();
+
+    // todo: remove this, just here for sanity checks;
+    // turn down main task stack back to 3584 when done debugging
+#if 0
+    vTaskDelay( 5000 / portTICK_PERIOD_MS );
+    char buf[1024];
+    network_get_data( (unsigned char *)"{ \"action\" : \"block_count\"}",
+            (unsigned char *)buf, sizeof(buf) );
+    printf("%s\n", buf);
+    return;
+#endif
     
     xTaskCreate(gui_task,
             "GUI", 16000,
             NULL, 10,
-            NULL);
-
-    xTaskCreate(network_task,
-            "Network", 3200,
-            NULL, 5,
             NULL);
 
     // ==== Initialize the file system ====

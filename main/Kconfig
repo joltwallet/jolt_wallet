@@ -35,21 +35,26 @@ menu "Jolt Wallet Config"
             help
                 Help Text Here
     endmenu
-
-    # TODO: Change this default to y once feature is fully programmed
-    menu "CryptoMemory"
-        config JOLT_CM_ENABLE
-            bool
-            default n
+    menu "Jolt Cast"
+        config JOLT_CAST_DOMAIN
+            string
+            prompt "Jolt Cast Default Domain"
+            default "yapraiwallet.space"
             help
-                Whether or not to use AT88SC0104CA to store Mnemonic and HW
-                pin attempts. If not enabled, the AT88SC0104CA is not required,
-                however Jolt will then be suscepitble to infinite PIN attempts
-                if the attack reads and restores the encrypted SPI Flash. With a
-                sufficiently strong PIN, it'd still be infeasible to brute force
-                since the PIN attempts still have to be done on-device.
+                Help Text Here
+        config JOLT_CAST_PORT
+            int
+            prompt "Jolt Cast Default Port"
+            default 5523
+            help
+                Help Text Here
+        config JOLT_CAST_PATH
+            string
+            prompt "Jolt Cast Default Path"
+            default "/api"
+            help
+                Help Text Here
     endmenu
-
     menu "Display"
         config JOLT_DISPLAY_BRIGHTNESS
             int
@@ -101,6 +106,13 @@ menu "Jolt Wallet Config"
             bool "Simple mnemonic storage on SPI Flash; Unsafe against replay attacks"
         config JOLT_STORE_ATAES132A
             bool "Not Yet Implemented"
+            help
+                Whether or not to use ATAES132A to store Mnemonic and HW
+                pin attempts. If not enabled, the ATAES132A is not required,
+                however Jolt will then be suscepitble to infinite PIN attempts
+                if the attack reads and restores the encrypted SPI Flash. With a
+                sufficiently strong PIN, it'd still be infeasible to brute force
+                since the PIN attempts still have to be done on-device.
     endchoice
 
     menu "Console"
