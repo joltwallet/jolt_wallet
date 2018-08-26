@@ -9,7 +9,7 @@
 #include <esp_system.h>
 #include "esp_log.h"
 #include "sodium.h"
-#include "nano_lws.h"
+#include "nano_rest.h"
 
 #include "esp_vfs_dev.h"
 #include "esp_spiffs.h"
@@ -31,7 +31,7 @@ static const char* TAG = "helpers";
 uint32_t fs_free() {
     uint32_t tot, used;
     esp_spiffs_info(NULL, &tot, &used);
-    return (tot-used-16384);
+    return (tot-used-16384); // todo; is this correct?
 }
 
 size_t get_file_size(char *fname) {
@@ -66,32 +66,32 @@ void set_jolt_cast() {
     char *buf = NULL;
     uint16_t port;
 
-    if( !storage_get_str(NULL, &required_size, "user", "jc_domain", NULL) ) {
+    if( !storage_get_str(NULL, &required_size, "user", "jc_domain", CONFIG_JOLT_CAST_DOMAIN) ) {
         goto reset;
     }
     buf = malloc(required_size);
-    storage_get_str(buf, &required_size, "user", "jc_domain", NULL);
-    nano_lws_set_remote_domain(buf);
+    storage_get_str(buf, &required_size, "user", "jc_domain", CONFIG_JOLT_CAST_DOMAIN);
+    nano_rest_set_remote_domain(buf);
     free(buf);
 
-    if( !storage_get_str(NULL, &required_size, "user", "jc_path", NULL) ) {
+    if( !storage_get_str(NULL, &required_size, "user", "jc_path", CONFIG_JOLT_CAST_PATH) ) {
         goto reset;
     }
     buf = malloc(required_size);
-    storage_get_str(buf, &required_size, "user", "jc_path", NULL);
-    nano_lws_set_remote_path(buf);
+    storage_get_str(buf, &required_size, "user", "jc_path", CONFIG_JOLT_CAST_PATH);
+    nano_rest_set_remote_path(buf);
     free(buf);
 
-    if( !storage_get_u16(&port, "user", "jc_port", 0) ) {
+    if( !storage_get_u16(&port, "user", "jc_port", CONFIG_JOLT_CAST_PORT) ) {
         goto reset;
     }
-    nano_lws_set_remote_path(buf);
+    nano_rest_set_remote_path(buf);
     return;
 
 reset:
-    nano_lws_set_remote_domain(NULL);
-    nano_lws_set_remote_path(NULL);
-    nano_lws_set_remote_port(0);
+    nano_rest_set_remote_domain(CONFIG_JOLT_CAST_DOMAIN);
+    nano_rest_set_remote_path(CONFIG_JOLT_CAST_PATH);
+    nano_rest_set_remote_port(CONFIG_JOLT_CAST_PORT);
     return;
 }
 

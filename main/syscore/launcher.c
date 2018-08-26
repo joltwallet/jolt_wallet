@@ -4,7 +4,6 @@
  */
 
 #include "menu8g2.h"
-#include <libwebsockets.h>
 #include "sodium.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -15,13 +14,8 @@
 #include "esp_vfs_dev.h"
 #include "esp_log.h"
 #include "linenoise/linenoise.h"
-
-#include "nano_lws.h"
-
 #include "esp_spiffs.h"
-
 #include "elfloader.h"
-#include "../jolt_lib.h"
 
 #include "filesystem.h"
 #include "../globals.h"
@@ -32,8 +26,7 @@
 #include "../gui/loading.h"
 #include "../gui/statusbar.h"
 #include "../gui/confirmation.h"
-
-#include "../console.h"
+#include "../jolt_lib.h"
 
 static const char* TAG = "syscore_launcher";
 

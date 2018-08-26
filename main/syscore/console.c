@@ -4,7 +4,6 @@
  */
 
 #include "menu8g2.h"
-#include <libwebsockets.h>
 #include "sodium.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -16,7 +15,6 @@
 #include "esp_log.h"
 #include "linenoise/linenoise.h"
 
-#include "nano_lws.h"
 #include "bipmnemonic.h"
 
 #include "filesystem.h"

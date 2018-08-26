@@ -7,7 +7,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
-#include <libwebsockets.h>
 #include "menu8g2.h"
 #include "sodium.h"
 #include "sodium/crypto_verify_32.h"
@@ -17,6 +16,7 @@
 #include "esp_vfs_dev.h"
 #include "linenoise/linenoise.h"
 #include "qrcode.h"
+#include "nano_rest.h"
 
 #include "console.h"
 #include "globals.h"
@@ -95,6 +95,7 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( menu8g2_set_element ),
     EXPORT_SYMBOL( menu8g2_word_wrap ),
     EXPORT_SYMBOL( menu_confirm_action ),
+    EXPORT_SYMBOL( network_get_data ),
     EXPORT_SYMBOL( printf ),
     EXPORT_SYMBOL( puts ),
     EXPORT_SYMBOL( qrcode_getBufferSize ),

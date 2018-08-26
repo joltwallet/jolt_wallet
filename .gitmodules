@@ -13,15 +13,6 @@
 [submodule "components/zlib"]
 	path = components/zlib
 	url = https://github.com/joltwallet/nano_zlib.git
-[submodule "components/nano_lws"]
-	path = components/nano_lws
-	url = git@github.com:joltwallet/nano_lws.git
-[submodule "components/nano_parse"]
-	path = components/nano_parse
-	url = https://github.com/joltwallet/nano_parse.git
-[submodule "components/libwebsockets"]
-	path = components/libwebsockets
-	url = https://github.com/joltwallet/libwebsockets.git
 [submodule "components/QRCode"]
 	path = components/QRCode
 	url = https://github.com/joltwallet/QRCode.git
@@ -37,3 +28,6 @@
 [submodule "components/jolt-types"]
 	path = components/jolt-types
 	url = git@github.com:joltwallet/jolt-types.git
+[submodule "components/nano_rest"]
+	path = components/nano_rest
+	url = git@github.com:joltwallet/nano_rest.git

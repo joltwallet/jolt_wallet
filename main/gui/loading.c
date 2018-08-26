@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <esp_system.h>
-#include "nvs.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -16,7 +15,6 @@
 #include "u8g2.h"
 #include "menu8g2.h"
 #include "easy_input.h"
-#include "nano_lws.h"
 
 #include "gui.h"
 #include "first_boot.h"
