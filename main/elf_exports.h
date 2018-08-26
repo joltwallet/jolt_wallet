@@ -2,6 +2,7 @@
 #define __JOLT_LIB_EXPORTS_H__
 
 #include "bipmnemonic.h"
+#include "cJSON.h"
 #include "esp_console.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -33,7 +34,14 @@
 //    EXPORT_SYMBOL(  ),
 //
 const ELFLoaderSymbol_t exports[] = {
+    EXPORT_SYMBOL( atoi ),
+    EXPORT_SYMBOL( atol ),
     EXPORT_SYMBOL( bm_entropy256 ),
+    EXPORT_SYMBOL( cJSON_Delete ),
+    EXPORT_SYMBOL( cJSON_GetObjectItemCaseSensitive ),
+    EXPORT_SYMBOL( cJSON_IsString ),
+    EXPORT_SYMBOL( cJSON_Parse ),
+    EXPORT_SYMBOL( cJSON_Print ),
     EXPORT_SYMBOL( console_check_equal_argc ),
     EXPORT_SYMBOL( console_check_range_argc ),
     EXPORT_SYMBOL( crypto_core_curve25519_ref10_ge_double_scalarmult_vartime ),
@@ -73,6 +81,8 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( mbedtls_mpi_copy ),
     EXPORT_SYMBOL( mbedtls_mpi_free ),
     EXPORT_SYMBOL( mbedtls_mpi_init ),
+    EXPORT_SYMBOL( mbedtls_mpi_lset ),
+    EXPORT_SYMBOL( mbedtls_mpi_read_string ),
     EXPORT_SYMBOL( mbedtls_mpi_write_binary ),
     EXPORT_SYMBOL( mbedtls_mpi_write_string ),
     EXPORT_SYMBOL( memchr ),
@@ -141,6 +151,7 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( strtod ),
     EXPORT_SYMBOL( strtof ),
     EXPORT_SYMBOL( strtol ),
+    EXPORT_SYMBOL( strupr ),
     EXPORT_SYMBOL( u8g2_ClearBuffer ),
     EXPORT_SYMBOL( u8g2_ClearDisplay ),
     EXPORT_SYMBOL( u8g2_DrawBox ),
