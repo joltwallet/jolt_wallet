@@ -163,20 +163,20 @@ bool vault_refresh() {
         // Give up semaphore while prompt using for PIN/Passphrase
         vault_sem_give();
         ESP_LOGI(TAG, "Vault is invalid, prompting user for PIN.");
-        // Inside get_master_seed(), PIN and passphrase are prompted for
         CONFIDENTIAL uint512_t master_seed;
+        // Inside get_master_seed(), PIN and passphrase are prompted for
         if(!get_master_seed(master_seed)) {
             return false;
         }
 
         vault_sem_take();
-
         // Kick the dog first to avoid a potential race condition where the 
         // watchdog resets a just-set node.
         xSemaphoreGive(vault_watchdog_sem);
 
         bm_master_seed_to_node(&(vault->node), master_seed, vault->bip32_key,
             2, vault->purpose, vault->coin_type);
+        vault->valid = true;
         vault_sem_give();
         sodium_memzero(master_seed, sizeof(master_seed));
         return true;
