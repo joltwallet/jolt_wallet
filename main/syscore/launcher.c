@@ -51,9 +51,9 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
      * Launches the app's function with same name as func
      */
     int return_code = -1;
-    FILE *f = NULL;
     ELFLoaderContext_t *ctx = NULL;
     uint32_t *data = NULL;
+    char *program_buf = NULL;
 
     // Parse Exec Filename
 	char exec_fn[128]=SPIFFS_BASE_PATH;
@@ -82,11 +82,29 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
     }
 #endif
 
-    f = fopen(exec_fn, "rb");
+    {
+        // Reading the whole App to memory is 1~2 orders of magnitude faster
+        // than POSIX ops on file pointers
+        ESP_LOGI(TAG, "Reading in file");
+        FILE *f = NULL;
+        f = fopen(exec_fn, "rb");
+        fseek(f, 0, SEEK_END);
+        size_t fsize = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        if( NULL == (program_buf = malloc(fsize)) ) {
+            ESP_LOGE(TAG, "Couldn't allocate space for program buffer.");
+            fclose(f);
+            goto exit;
+        }
+        fread(program_buf, fsize, 1, f);
+        fclose(f);
+    }
+
     ESP_LOGI(TAG, "elfLoader; Initializing");
-    if( NULL == (ctx = elfLoaderInit(f, &env)) ) {
+    if( NULL == (ctx = elfLoaderInit(program_buf, &env)) ) {
         goto exit;
     }
+    // todo: Load and Relocate in the background while the user enter's their pin
     ESP_LOGI(TAG, "elfLoader; Loading Sections");
     if( NULL == elfLoaderLoad(ctx) ) {
         goto exit;
@@ -118,17 +136,19 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         coin = *(data+1);
         size_t bip32_key_len = data_len-PATH_BYTE_LEN; // Not including null terminator
 #undef PATH_BYTE_LEN
-        // WARNING: is this containing a spurious \n ?
         strncpy(bip32_key, (char *)(data+2), bip32_key_len);
         bip32_key[bip32_key_len+1] = '\0';
         ESP_LOGI(TAG,"Derivation Purpose: 0x%x. Coin Type: 0x%x",
                 purpose, coin);
-        ESP_LOGI(TAG, "The following BIP32 Key is %d char long: %s.", bip32_key_len, bip32_key);
+        ESP_LOGI(TAG, "The following BIP32 Key is %d char long:%s.", bip32_key_len, bip32_key);
         if( !vault_set(purpose, coin, bip32_key) ) {
             ESP_LOGI(TAG, "User aborted app launch at PIN screen");
             goto exit;
         }
     }
+
+    free(program_buf);
+    program_buf = NULL;
 
     ESP_LOGI(TAG, "Launching App");
     return_code = elfLoaderRun(ctx, app_argc, app_argv);
@@ -140,8 +160,8 @@ exit:
     if( NULL != ctx ) {
         elfLoaderFree(ctx);
     }
-    if( NULL != f ){
-        fclose(f);
+    if( NULL != program_buf ){
+        free(program_buf);
     }
     if( NULL != data ){
         free(data);
