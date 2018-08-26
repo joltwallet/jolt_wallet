@@ -212,32 +212,6 @@ menu "Jolt Wallet Config"
         help
             Length of queue for Vault RPC commands
 
-    menu "Coins"
-        menu "Nano"
-            config JOLT_NANO_DEFAULT_REPRESENTATIVE
-                string
-                prompt "Default Nano Account Representative"
-                default "xrb_1cwswatjifmjnmtu5toepkwca64m7qtuukizyjxsghujtpdr9466wjmn89d8"
-                help
-                    Default representative for new Nano Accounts
-
-            config JOLT_NANO_CONTACTS_MAX
-                int
-                prompt "Maximum number of stored nano contacts"
-                default 10
-                help
-                    Default representative for new Nano Accounts
-
-            config JOLT_NANO_CONTACTS_NAME_LEN
-                int
-                prompt "Maximum length of Nano contact alias"
-                default 18
-                help
-                    Maximum number of characters (including null-term) to store for a
-                    Nano contact alias
-        endmenu
-    endmenu
-
     menu "WiFi"
         config AP_TARGET_SSID
             string
