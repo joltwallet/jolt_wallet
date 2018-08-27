@@ -20,8 +20,8 @@ typedef struct subconsole_t {
 } subconsole_t;
 
 subconsole_t *subconsole_cmd_init();
-void subconsole_cmd_register(subconsole_t *subconsole, esp_console_cmd_t *cmd);
-void subconsole_cmd_help(subconsole_t *subconsole);
+int subconsole_cmd_register(subconsole_t *subconsole, esp_console_cmd_t *cmd);
 int subconsole_cmd_run(subconsole_t *subconsole, uint8_t argc, char **argv);
 void subconsole_cmd_free(subconsole_t *subconsole);
+
 #endif
