@@ -3,37 +3,39 @@
 
 #include "bipmnemonic.h"
 #include "cJSON.h"
+#include "driver/uart.h"
 #include "esp_console.h"
 #include "esp_log.h"
+#include "esp_vfs_dev.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "linenoise/linenoise.h"
 #include "menu8g2.h"
+#include "nano_rest.h"
+#include "qrcode.h"
 #include "sodium.h"
 #include "sodium/crypto_verify_32.h"
 #include "sodium/private/curve25519_ref10.h"
 #include "u8g2.h"
-#include "driver/uart.h"
-#include "esp_vfs_dev.h"
-#include "linenoise/linenoise.h"
-#include "qrcode.h"
-#include "nano_rest.h"
 
 #include "console.h"
 #include "globals.h"
-#include "vault.h"
-#include "helpers.h"
-#include "gui/gui.h"
-#include "gui/graphics.h"
-#include "gui/loading.h"
-#include "gui/statusbar.h"
 #include "gui/confirmation.h"
+#include "gui/entry.h"
+#include "gui/graphics.h"
+#include "gui/gui.h"
+#include "gui/loading.h"
 #include "gui/qr.h"
-#include "syscore/filesystem.h"
+#include "gui/statusbar.h"
 #include "hal/storage.h"
+#include "helpers.h"
+#include "syscore/filesystem.h"
+#include "vault.h"
 //    EXPORT_SYMBOL(  ),
 //
 const ELFLoaderSymbol_t exports[] = {
+    EXPORT_SYMBOL( _esp_error_check_failed ),
     EXPORT_SYMBOL( atoi ),
     EXPORT_SYMBOL( atol ),
     EXPORT_SYMBOL( bm_entropy256 ),
@@ -65,6 +67,9 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( crypto_hash_sha512_update ),
     EXPORT_SYMBOL( crypto_verify_32 ),
     EXPORT_SYMBOL( display_qr_center ),
+    EXPORT_SYMBOL( entry_number_arr ),
+    EXPORT_SYMBOL( esp_console_deinit ),
+    EXPORT_SYMBOL( esp_console_init ),
     EXPORT_SYMBOL( esp_log_timestamp ),
     EXPORT_SYMBOL( esp_log_write ),
     EXPORT_SYMBOL( esp_restart ),
@@ -79,12 +84,15 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( loading_text_title ),
     EXPORT_SYMBOL( malloc ),
     EXPORT_SYMBOL( mbedtls_mpi_add_abs ),
+    EXPORT_SYMBOL( mbedtls_mpi_add_mpi ),
     EXPORT_SYMBOL( mbedtls_mpi_cmp_mpi ),
     EXPORT_SYMBOL( mbedtls_mpi_copy ),
     EXPORT_SYMBOL( mbedtls_mpi_free ),
     EXPORT_SYMBOL( mbedtls_mpi_init ),
     EXPORT_SYMBOL( mbedtls_mpi_lset ),
     EXPORT_SYMBOL( mbedtls_mpi_read_string ),
+    EXPORT_SYMBOL( mbedtls_mpi_sub_abs ),
+    EXPORT_SYMBOL( mbedtls_mpi_sub_mpi ),
     EXPORT_SYMBOL( mbedtls_mpi_write_binary ),
     EXPORT_SYMBOL( mbedtls_mpi_write_string ),
     EXPORT_SYMBOL( memchr ),
@@ -119,7 +127,9 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( sodium_malloc ),
     EXPORT_SYMBOL( sodium_memcmp ),
     EXPORT_SYMBOL( sodium_memzero ),
+    EXPORT_SYMBOL( sscanf ),
     EXPORT_SYMBOL_PTR( statusbar_draw_enable ),
+    EXPORT_SYMBOL( storage_erase_key ),
     EXPORT_SYMBOL( storage_get_blob ),
     EXPORT_SYMBOL( storage_get_str ),
     EXPORT_SYMBOL( storage_get_u16 ),

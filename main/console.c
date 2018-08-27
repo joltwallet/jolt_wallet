@@ -214,3 +214,43 @@ bool console_check_equal_argc(uint8_t argc, uint8_t expected){
     }
     return true;
 }
+
+subconsole_t *subconsole_cmd_init() {
+    subconsole_t *subconsole;
+    subconsole = calloc(1, sizeof(subconsole_t));
+    return subconsole;
+}
+
+void subconsole_cmd_register(subconsole_t *subconsole, esp_console_cmd_t *cmd) {
+    subconsole_t *new = subconsole_cmd_init();
+    subconsole->next = new;
+    memcpy(&subconsole->cmd, cmd, sizeof(esp_console_cmd_t));
+}
+
+void subconsole_cmd_help(subconsole_t *subconsole) {
+    subconsole_t *current = subconsole;
+    while( current ) {
+        printf("%s\n", current->cmd.help);
+        current = current->next;
+    }
+}
+
+int subconsole_cmd_run(subconsole_t *subconsole, uint8_t argc, char **argv) {
+    subconsole_t *current = subconsole;
+    while( current ) {
+        if( 0 == strcmp(argv[0], subconsole) ) {
+            return (current->cmd.func)(argc, argv);
+        }
+        current = current->next;
+    }
+    return -100;
+}
+
+void subconsole_cmd_free(subconsole_t *subconsole) {
+    subconsole_t *current = subconsole;
+    while( current ) {
+        subconsole_t *next = current->next;
+        free(current);
+        current = next;
+    }
+}
