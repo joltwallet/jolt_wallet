@@ -30,6 +30,11 @@
 
 static const char* TAG = "syscore_launcher";
 
+#ifdef CONFIG_ELFLOADER_POSIX
+#define LOADER_FD_FREE fclose
+#elif CONFIG_ELFLOADER_MEMORY_POINTER
+#define LOADER_FD_FREE free
+#endif
 
 bool check_elf_valid(char *fn) {
     /* Checks ths signature file for a given basename fn*/
@@ -46,7 +51,7 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
     int return_code = -1;
     ELFLoaderContext_t *ctx = NULL;
     uint32_t *data = NULL;
-    char *program_buf = NULL;
+    LOADER_FD_T program = NULL;
 
     // Parse Exec Filename
 	char exec_fn[128]=SPIFFS_BASE_PATH;
@@ -75,26 +80,31 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
     }
 #endif
 
+    // todo; lz4 compression
+#if CONFIG_ELFLOADER_MEMORY_POINTER
     {
         // Reading the whole App to memory is 1~2 orders of magnitude faster
         // than POSIX ops on file pointers
-        ESP_LOGI(TAG, "Reading in file");
+        ESP_LOGI(TAG, "Reading in executable to memory");
         FILE *f = NULL;
         f = fopen(exec_fn, "rb");
         fseek(f, 0, SEEK_END);
         size_t fsize = ftell(f);
         fseek(f, 0, SEEK_SET);
-        if( NULL == (program_buf = malloc(fsize)) ) {
+        if( NULL == (program = malloc(fsize)) ) {
             ESP_LOGE(TAG, "Couldn't allocate space for program buffer.");
             fclose(f);
             goto exit;
         }
-        fread(program_buf, fsize, 1, f);
+        fread(program, fsize, 1, f);
         fclose(f);
     }
+#elif CONFIG_ELFLOADER_POSIX
+    program = fopen(exec_fn, "rb");
+#endif
 
     ESP_LOGI(TAG, "elfLoader; Initializing");
-    if( NULL == (ctx = elfLoaderInit(program_buf, &env)) ) {
+    if( NULL == (ctx = elfLoaderInit(program, &env)) ) {
         goto exit;
     }
     // todo: Load and Relocate in the background while the user enter's their pin
@@ -114,7 +124,7 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         size_t data_len;
         uint32_t purpose, coin;
         char bip32_key[32];
-#define PATH_BYTE_LEN 8
+#define PATH_BYTE_LEN 8 // 4 bytes for purpose, 4 bytes for
         data = elfLoaderLoadSectionByName(ctx, ".coin.path", &data_len);
         if( NULL==data ) {
             ESP_LOGE(TAG, "Couldn't allocate for .coin.path");
@@ -140,8 +150,8 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         }
     }
 
-    free(program_buf);
-    program_buf = NULL;
+    LOADER_FD_FREE(program);
+    program = NULL;
 
     ESP_LOGI(TAG, "Launching App");
     return_code = elfLoaderRun(ctx, app_argc, app_argv);
@@ -153,8 +163,8 @@ exit:
     if( NULL != ctx ) {
         elfLoaderFree(ctx);
     }
-    if( NULL != program_buf ){
-        free(program_buf);
+    if( NULL != program ){
+        LOADER_FD_FREE(program);
     }
     if( NULL != data ){
         free(data);
