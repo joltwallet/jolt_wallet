@@ -81,7 +81,6 @@ void console_task() {
             char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
             // split_argv modifies line with NULL-terminators
             size_t argc = esp_console_split_argv(line, argv, sizeof(argv));
-            printf("Line: %s\n", line);
             if( launch_file(argv[0], "console", argc-1, argv+1) ) {
                 printf("Unsuccessful command\n");
             }
@@ -213,4 +212,69 @@ bool console_check_equal_argc(uint8_t argc, uint8_t expected){
         return false;
     }
     return true;
+}
+
+subconsole_t *subconsole_cmd_init() {
+    subconsole_t *subconsole;
+    subconsole = calloc(1, sizeof(subconsole_t));
+    return subconsole;
+}
+
+int subconsole_cmd_register(subconsole_t *subconsole, esp_console_cmd_t *cmd) {
+    subconsole_t *new;
+    subconsole_t *current = subconsole;
+    if( NULL != current->cmd.func ) {
+        new = subconsole_cmd_init();
+        if( NULL == new ) {
+            return -1;
+        }
+        for(;;){
+            if( NULL == current->next ){
+                break;
+            }
+            current = current->next;
+        }
+        current->next = new;
+    }
+    else{
+        new = current;
+    }
+    memcpy(&new->cmd, cmd, sizeof(esp_console_cmd_t));
+    return 0;
+}
+
+static void subconsole_cmd_help(subconsole_t *subconsole) {
+    subconsole_t *current = subconsole;
+    printf("Help:\n");
+    while( current ) {
+        printf("    %s - %s\n", current->cmd.command, current->cmd.help);
+        current = current->next;
+    }
+}
+
+int subconsole_cmd_run(subconsole_t *subconsole, uint8_t argc, char **argv) {
+    subconsole_t *current = subconsole;
+    if( argc > 0 ) {
+        while( current ) {
+            if( 0 == strcmp(argv[0], current->cmd.command) ) {
+                return (current->cmd.func)(argc, argv);
+            }
+            else if( 0 == strcmp(argv[0], "help") ) {
+                subconsole_cmd_help(subconsole);
+                return 0;
+            }
+            current = current->next;
+        }
+    }
+    subconsole_cmd_help(subconsole);
+    return -100;
+}
+
+void subconsole_cmd_free(subconsole_t *subconsole) {
+    subconsole_t *current = subconsole;
+    while( current ) {
+        subconsole_t *next = current->next;
+        free(current);
+        current = next;
+    }
 }
