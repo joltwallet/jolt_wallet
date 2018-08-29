@@ -86,37 +86,39 @@ menu "Jolt Wallet Config"
                 I2C Display's Address
     endmenu
 
-    config JOLT_APP_COMPRESS
-        bool
-        depends on ELFLOADER_MEMORY_POINTER
-        prompt "Use heatshrink to decompress apps"
-        default n
-        help
-            help text here
+    menu "App Compression"
+        config JOLT_APP_COMPRESS
+            bool
+            depends on ELFLOADER_MEMORY_POINTER
+            prompt "Use heatshrink to decompress apps"
+            default n
+            help
+                help text here
 
-    config JOLT_HEATSHRINK_BUFFER
-        int
-        depends on JOLT_APP_COMPRESS
-        prompt "Heatshrink Decompress Buffer Size"
-        default 256
-        help
-            help text here
+        config JOLT_HEATSHRINK_BUFFER
+            int
+            depends on JOLT_APP_COMPRESS
+            prompt "Heatshrink Decompress Buffer Size"
+            default 256
+            help
+                help text here
 
-    config JOLT_HEATSHRINK_WINDOW
-        int
-        depends on JOLT_APP_COMPRESS
-        prompt "Heatshrink Window Size"
-        default 8
-        help
-            help text here
+        config JOLT_HEATSHRINK_WINDOW
+            int
+            depends on JOLT_APP_COMPRESS
+            prompt "Heatshrink Window Size"
+            default 8
+            help
+                help text here
 
-    config JOLT_HEATSHRINK_LOOKAHEAD
-        int
-        depends on JOLT_APP_COMPRESS
-        prompt "Heatshrink Lookahead"
-        default 4
-        help
-            help text here
+        config JOLT_HEATSHRINK_LOOKAHEAD
+            int
+            depends on JOLT_APP_COMPRESS
+            prompt "Heatshrink Lookahead"
+            default 4
+            help
+                help text here
+    endmenu
 
     config JOLT_DEFAULT_TIMEOUT_S
         int

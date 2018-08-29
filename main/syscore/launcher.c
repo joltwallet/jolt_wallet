@@ -136,7 +136,7 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
     {
         size_t data_len;
         uint32_t purpose, coin;
-        char bip32_key[32];
+        char bip32_key[33];
 #define PATH_BYTE_LEN 8 // 4 bytes for purpose, 4 bytes for
         data = elfLoaderLoadSectionByName(ctx, ".coin.path", &data_len);
         if( NULL==data ) {
@@ -151,9 +151,9 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         purpose = *data;
         coin = *(data+1);
         size_t bip32_key_len = data_len-PATH_BYTE_LEN; // Not including null terminator
+        strncpy(bip32_key, &((char *)data)[PATH_BYTE_LEN], bip32_key_len);
 #undef PATH_BYTE_LEN
-        strncpy(bip32_key, (char *)(data+2), bip32_key_len);
-        bip32_key[bip32_key_len+1] = '\0';
+        bip32_key[bip32_key_len] = '\0';
         ESP_LOGI(TAG,"Derivation Purpose: 0x%x. Coin Type: 0x%x",
                 purpose, coin);
         ESP_LOGI(TAG, "The following BIP32 Key is %d char long:%s.", bip32_key_len, bip32_key);
