@@ -1,0 +1,15 @@
+menu "Heatshrink Compression/Decompression"
+
+config HEATSHRINK_DYNAMIC_ALLOC
+    bool "Use dynamic allocation?"
+    default y
+
+config HEATSHRINK_DEBUGGING_LOGS
+    bool "Enable Logging"
+    default n
+
+config HEATSHRINK_USE_INDEX
+    bool "Use indexing for faster compression. (This requires additional space.)"
+    default y
+
+endmenu

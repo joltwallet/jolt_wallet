@@ -3,32 +3,30 @@
  https://www.joltwallet.com/
  */
 
-#include "menu8g2.h"
-#include "sodium.h"
+#include "driver/uart.h"
+#include "esp_console.h"
+#include "esp_log.h"
+#include "esp_spiffs.h"
+#include "esp_vfs_dev.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
-
-#include "esp_console.h"
-#include "driver/uart.h"
-#include "esp_vfs_dev.h"
-#include "esp_log.h"
 #include "linenoise/linenoise.h"
-
-#include "esp_spiffs.h"
+#include "menu8g2.h"
+#include "sodium.h"
 #include "ymodem.h"
 
-#include "filesystem.h"
-#include "../globals.h"
 #include "../console.h"
-#include "../vault.h"
-#include "../helpers.h"
+#include "../console.h"
+#include "../globals.h"
+#include "../gui/confirmation.h"
 #include "../gui/gui.h"
 #include "../gui/loading.h"
 #include "../gui/statusbar.h"
-#include "../gui/confirmation.h"
-
-#include "../console.h"
+#include "../helpers.h"
+#include "../vault.h"
+#include "filesystem.h"
+#include "heatshrink_decoder.h"
 
 static const char* TAG = "console_syscore_fs";
 
@@ -336,6 +334,84 @@ static int file_ls(int argc, char** argv) {
     esp_spiffs_info(NULL, &tot, &used);
     printf("SPIFFS: free %d KB of %d KB\r\n", (tot-used) / 1024, tot / 1024);
     return 0;
+}
+
+/* Decompresses file into mem. This function malloc's mem which will need
+ * to be freed externally */
+uint8_t *decompress_file(char *fn) {
+    uint8_t *mem = NULL;
+    FILE *f = NULL;
+    f = fopen(fn, "rb");
+    fseek(f, 0, SEEK_END);
+    size_t fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    size_t uncompressed_size;
+    fread(&uncompressed_size,4,1,f); // read the uncompressed size we prepended during build
+    uncompressed_size += 1; // 1 more byte is required
+    ESP_LOGI(TAG, "File claims to be %d bytes uncompressed", uncompressed_size);
+    if( NULL == (mem = malloc(uncompressed_size)) ) {
+        ESP_LOGE(TAG, "Couldn't allocate space for program buffer for %s.", fn);
+        fclose(f);
+        return NULL;
+    }
+
+    heatshrink_decoder *hsd = heatshrink_decoder_alloc(
+            CONFIG_JOLT_HEATSHRINK_BUFFER,
+            CONFIG_JOLT_HEATSHRINK_WINDOW,
+            CONFIG_JOLT_HEATSHRINK_LOOKAHEAD);
+  
+    size_t sink_head=0, to_sink = 0;
+    size_t out_head = 0, out_remaining = uncompressed_size;
+
+    for( ;; ) { // iterate over the entire compressed file
+        // Sinking
+        uint8_t read_buf[CONFIG_JOLT_HEATSHRINK_BUFFER];
+        size_t count = 0;
+        if( to_sink == 0 ) { // refill buffer if read_buf is empty
+            to_sink = fread(read_buf, 1, sizeof(read_buf), f);
+            //ESP_LOGI(TAG, "first 4 bytes: 0x%02x%02x%02x%02x", read_buf[0], read_buf[1], read_buf[2], read_buf[3]);
+            if( 0 == to_sink ) {
+                break;
+            }
+            ESP_LOGD(TAG, "Read %d bytes into read_buf", to_sink);
+            sink_head = 0;
+        }
+        heatshrink_decoder_sink(hsd, &read_buf[sink_head], to_sink, &count);
+        to_sink -= count;
+        sink_head = count;
+        
+        // Polling
+        HSD_poll_res pres;
+        do { // poll decoder until it stops producing
+            pres = heatshrink_decoder_poll(hsd, &mem[out_head], out_remaining, &count);
+            ESP_LOGD(TAG, "Decompressed %d bytes", count);
+            out_remaining -= count;
+            out_head += count;
+            if( HSDR_POLL_MORE == pres && 0 == count) {
+                ESP_LOGE(TAG, "Didn't allocate enough space for decompressed app");
+                heatshrink_decoder_free(hsd);
+                free(mem);
+                fclose(f);
+                return NULL;
+            }
+        } while( HSDR_POLL_MORE == pres );
+    }
+    HSD_finish_res fres = heatshrink_decoder_finish(hsd);
+    if( HSDR_FINISH_DONE == fres ) {
+        ESP_LOGI(TAG, "Decompression complete");
+    }
+    else if ( HSDR_FINISH_MORE == fres ) {
+        ESP_LOGE(TAG, "Insufficient decompression buffer");
+        free(mem);
+    }
+    else {
+        ESP_LOGE(TAG, "Decompression finsih NULL arguments");
+        free(mem);
+    }
+    heatshrink_decoder_free(hsd);
+    fclose(f);
+    return mem;
 }
 
 void console_syscore_fs_register() {

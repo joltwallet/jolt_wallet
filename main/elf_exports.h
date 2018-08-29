@@ -11,6 +11,7 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "linenoise/linenoise.h"
+#include "math.h"
 #include "menu8g2.h"
 #include "nano_rest.h"
 #include "qrcode.h"
@@ -32,9 +33,17 @@
 #include "helpers.h"
 #include "syscore/filesystem.h"
 #include "vault.h"
-//    EXPORT_SYMBOL(  ),
-//
+
+extern void *__floatsidf;
+extern void *__gtdf2;
+extern void *__ltdf2;
+extern void *__muldf3;
+
 const ELFLoaderSymbol_t exports[] = {
+    EXPORT_SYMBOL_PTR( __floatsidf ),
+    EXPORT_SYMBOL_PTR( __gtdf2 ),
+    EXPORT_SYMBOL_PTR( __ltdf2 ),
+    EXPORT_SYMBOL_PTR( __muldf3 ),
     EXPORT_SYMBOL( _esp_error_check_failed ),
     EXPORT_SYMBOL( atoi ),
     EXPORT_SYMBOL( atol ),

@@ -17,16 +17,16 @@
 #include "esp_spiffs.h"
 #include "elfloader.h"
 
-#include "filesystem.h"
-#include "../globals.h"
 #include "../console.h"
-#include "../vault.h"
-#include "../helpers.h"
+#include "../globals.h"
+#include "../gui/confirmation.h"
 #include "../gui/gui.h"
 #include "../gui/loading.h"
 #include "../gui/statusbar.h"
-#include "../gui/confirmation.h"
+#include "../helpers.h"
 #include "../jolt_lib.h"
+#include "../vault.h"
+#include "filesystem.h"
 
 static const char* TAG = "syscore_launcher";
 
@@ -54,18 +54,18 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
     LOADER_FD_T program = NULL;
 
     // Parse Exec Filename
-	char exec_fn[128]=SPIFFS_BASE_PATH;
+	char exec_fn[128] = SPIFFS_BASE_PATH;
 	strcat(exec_fn, "/");
 	strncat(exec_fn, fn_basename, sizeof(exec_fn)-strlen(exec_fn)-1-4);
     strcat(exec_fn, ".elf");
 
     // Parse Signature Filename
-    char sig_fn[128]=SPIFFS_BASE_PATH;
+    char sig_fn[128] = SPIFFS_BASE_PATH;
 	strcat(sig_fn, "/");
 	strncat(sig_fn, fn_basename, sizeof(sig_fn)-strlen(sig_fn)-1-4);
     strcat(sig_fn, ".sig");
 
-    // Make sure both files exist
+    // todo: Make sure both files exist
     if( check_file_exists(exec_fn) != 1 ){
         ESP_LOGE(TAG, "Executable doesn't exist\n");
         goto exit;
@@ -80,11 +80,22 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
     }
 #endif
 
-    // todo; lz4 compression
+// Reading the whole App to memory is 1~2 orders of magnitude faster
+// than POSIX ops on file pointers
 #if CONFIG_ELFLOADER_MEMORY_POINTER
+
+#if CONFIG_JOLT_APP_COMPRESS
+    ESP_LOGI(TAG, "Decompressing %s", exec_fn);
+    if( NULL == (program = decompress_file(exec_fn)) ) {
+        ESP_LOGE(TAG, "Error decompressing %s", exec_fn);
+        goto exit;
+    }
+    ESP_LOGI(TAG, "mem pointer: %p", program);
+    ESP_LOGI(TAG, "first 4 bytes: 0x%08x", *(uint32_t *)program);
+    char *read_buf = program;
+    ESP_LOGI(TAG, "first 4 bytes: 0x%02x%02x%02x%02x", read_buf[0], read_buf[1], read_buf[2], read_buf[3]);
+#else
     {
-        // Reading the whole App to memory is 1~2 orders of magnitude faster
-        // than POSIX ops on file pointers
         ESP_LOGI(TAG, "Reading in executable to memory");
         FILE *f = NULL;
         f = fopen(exec_fn, "rb");
@@ -99,6 +110,8 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         fread(program, fsize, 1, f);
         fclose(f);
     }
+#endif
+
 #elif CONFIG_ELFLOADER_POSIX
     program = fopen(exec_fn, "rb");
 #endif
