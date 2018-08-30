@@ -3,28 +3,26 @@
  https://www.joltwallet.com/
  */
 
+#include "esp_log.h"
+#include "nvs.h"
+#include "nvs_flash.h"
+#include "sodium.h"
+#include <esp_system.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <esp_system.h>
-#include "esp_log.h"
-#include "sodium.h"
-#include "nvs_flash.h"
-#include "nvs.h"
 
-#include "menu8g2.h"
-#include "jolttypes.h"
-#include "bipmnemonic.h"
-#include "storage.h"
-#include "../helpers.h"
 #include "../globals.h"
-#include "../vault.h"
-#include "../gui/gui.h"
 #include "../gui/entry.h"
-#include "../gui/statusbar.h"
-#include "../gui/loading.h"
+#include "../gui/gui.h"
+#include "../helpers.h"
+#include "../vault.h"
+#include "bipmnemonic.h"
+#include "jolttypes.h"
+#include "menu8g2.h"
+#include "storage.h"
 
-static const char* TAG = "storage_hal";
+static const char* TAG = "storage_internal";
 static const char* TITLE = "Storage Access";
 
 jolt_err_t init_nvs_namespace(nvs_handle *nvs_h, const char *namespace) {

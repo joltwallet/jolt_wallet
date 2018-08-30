@@ -145,7 +145,7 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         }
         if( data_len <= (PATH_BYTE_LEN + 1) || 
                 data_len>=(PATH_BYTE_LEN+sizeof(bip32_key))) {
-            ESP_LOGE(TAG, "BIP32_Key not provided in ELF file.");
+            ESP_LOGE(TAG, "Valid BIP32_Key not provided in ELF file.");
             goto exit;
         }
         purpose = *data;

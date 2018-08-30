@@ -4,6 +4,7 @@ COMPONENT_SRCDIRS := . \
 	gui/entry \
 	gui/menus \
 	hal \
+	hal/aes132_library \
 	radio \
 	syscore
 

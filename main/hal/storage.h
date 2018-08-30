@@ -10,6 +10,7 @@
 
 bool storage_exists_mnemonic();
 
+/* Get/Stores Mnemonic. Has access to pin_hash or will prompt for pin_hash */
 void storage_set_mnemonic(uint256_t bin, uint256_t pin_hash);
 bool storage_get_mnemonic(char *buf, const uint16_t buf_len);
 
