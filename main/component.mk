@@ -8,3 +8,5 @@ COMPONENT_SRCDIRS := . \
 	radio \
 	syscore
 
+COMPONENT_PRIV_INCLUDEDIRS := \
+	hal/aes132_library

@@ -22,8 +22,15 @@
 
 #include <stdint.h>
 #include <string.h>
+#include "esp_log.h"
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "freertos/task.h"
 
 #include "aes132_comm.h"
+
+static const char TAG[] = "aes132_comm";
 
 /** \brief This function calculates a 16-bit CRC.
  * \param[in] length number of bytes in data buffer
@@ -74,11 +81,9 @@ uint8_t aes132c_reset_io_address(void)
  */
 uint8_t aes132c_resync()
 {
-	uint8_t aes132_lib_return = aes132p_resync_physical();
-	if (aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS)
-		return aes132_lib_return;
-
-	return aes132c_reset_io_address();
+    // dummy command; esp32 doesn't need this
+    // todo: strip out resync information
+	return AES132_FUNCTION_RETCODE_SUCCESS;
 }
 
 
@@ -108,34 +113,33 @@ uint8_t aes132c_read_device_status_register(uint8_t *device_status_register)
  */
 uint8_t aes132c_wait_for_status_register_bit(uint8_t mask, uint8_t is_set, uint16_t n_retries)
 {
-	uint8_t aes132_lib_return;
-	uint8_t device_status_register;
+	uint8_t aes132_lib_return, device_status_register = 0;
+    ESP_LOGI(TAG, "wait for status register bit mask %.2X", mask);
 
-	do {
+	do { //debug: this is looping
+        ESP_LOGI(TAG, "Reading AES132 Status Register at %.4X", AES132_STATUS_ADDR);
 		aes132_lib_return = aes132p_read_memory_physical(1, AES132_STATUS_ADDR, &device_status_register);
-		if (aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS)
-			// The device is busy. Continue polling until "n_retries" is depleted.
+		if (aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) {
+            ESP_LOGI(TAG, "Device busy while trying to read Status Register. "
+                    "Continue polling until n_retries (%d) is depleted.", n_retries);
 			continue;
-
+        }
 		if (is_set == AES132_BIT_SET) {
-			// Wait for the mask bit(s) being set.
-			if ((device_status_register & mask) == mask)
-				// Mask pattern has been found in device status register. Return success.
-				return aes132_lib_return;
+			ESP_LOGD(TAG, "Wait for the mask bit(s) being set.");
+			if ((device_status_register & mask) == mask) {
+				ESP_LOGI(TAG, "Mask pattern has been found in device status register. ");
+				return AES132_FUNCTION_RETCODE_SUCCESS;
+            }
 
 		} else {
-			// Wait for the mask bit(s) being cleared.
-			if ((device_status_register & mask) == 0)
-				// Mask pattern has been found in device status register. Return success.
-				return aes132_lib_return;
+			ESP_LOGI(TAG, "Wait for the mask bit(s) being cleared.");
+			if ((device_status_register & mask) == 0) {
+				ESP_LOGI(TAG, "Mask pattern has been found in device status register. ");
+				return AES132_FUNCTION_RETCODE_SUCCESS;
+            }
 		}
-
-		// Device is busy, or "mask" pattern does not yet match the device status register value.
-		// Continue polling.
+        vTaskDelay(3 / portTICK_PERIOD_MS); //todo remove
 	} while (n_retries-- > 0);
-
-	// The mask pattern was not found in the device status register after "n_retries" polling
-	// iterations. Return timeout error.
 	return AES132_FUNCTION_RETCODE_TIMEOUT;
 }
 
@@ -145,7 +149,8 @@ uint8_t aes132c_wait_for_status_register_bit(uint8_t mask, uint8_t is_set, uint1
  */
 uint8_t aes132c_wait_for_device_ready(void)
 {
-	return aes132c_wait_for_status_register_bit(AES132_WIP_BIT, AES132_BIT_CLEARED, AES132_RETRY_COUNT_DEVICE_READY);
+	return aes132c_wait_for_status_register_bit(AES132_WIP_BIT,
+            AES132_BIT_CLEARED, AES132_RETRY_COUNT_DEVICE_READY);
 }
 
 
@@ -154,7 +159,8 @@ uint8_t aes132c_wait_for_device_ready(void)
  */
 uint8_t aes132c_wait_for_response_ready(void)
 {
-	return aes132c_wait_for_status_register_bit(AES132_RESPONSE_READY_BIT, AES132_BIT_SET, AES132_RETRY_COUNT_RESPONSE_READY);
+	return aes132c_wait_for_status_register_bit(AES132_RESPONSE_READY_BIT,
+            AES132_BIT_SET, AES132_RETRY_COUNT_RESPONSE_READY);
 }
 
 
@@ -240,41 +246,53 @@ uint8_t aes132c_access_memory(uint8_t count, uint16_t word_address, uint8_t *dat
 		n_retries_memory_access = AES132_RETRY_COUNT_ERROR;
 
 		do {
+            ESP_LOGI(TAG, "Waiting for Device Ready");
 			aes132_lib_return = aes132c_wait_for_device_ready();
-			if (aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS)
-				// We lost communication. Re-synchronize.
+			if (aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) {
+                ESP_LOGW(TAG, "Lost communication with device; need to resync.");
 				break;
+            }
 
 			if (read == 0) {
 				// Write to the device.
 				aes132_lib_return = aes132p_write_memory_physical(count, word_address, data);
-				if (aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS)
-					// Communication failed. Retry.
+				if (aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) {
+                    ESP_LOGW(TAG, "Communcation failed. Retry...");
 					continue;
+                }
 
-				// Communication succeeded.
-				if	(word_address >= AES132_IO_ADDR)
+                ESP_LOGI(TAG, "Communication Succeeded");
+				if	(word_address >= AES132_IO_ADDR) {
 					// Return success and do not read response buffer if we wrote to the I/O buffer
 					// or to the address used to reset the I/O buffer index.
 					return aes132_lib_return;
+                }
 
 				// Read response buffer when writing to device memory to check for write success.
 				aes132c_wait_for_response_ready();
 
 				aes132_lib_return = aes132c_receive_response(sizeof(response_buffer), response_buffer);
-				if (aes132_lib_return == AES132_FUNCTION_RETCODE_SUCCESS)
-					// Reading the return code from the I/O buffer succeeded. Return the code byte.
+				if (aes132_lib_return == AES132_FUNCTION_RETCODE_SUCCESS) {
+                    ESP_LOGI(TAG, "Reading the return code from the I/O buffer succeeded. "
+                            "Return the code byte.");
 					return response_buffer[AES132_RESPONSE_INDEX_RETURN_CODE];
-				else
-					// Reading the return code from the I/O buffer failed. Return the error code that
-					// aes132c_receive_response returned.
+                }
+				else {
+					ESP_LOGI(TAG, "Reading the return code from the I/O buffer failed. "
+                            "Return the error code that aes132c_receive_response returned.");
 					return aes132_lib_return;
+                }
 			}
 			else {
 				// Read from the device.
 				aes132_lib_return = aes132p_read_memory_physical(count, word_address, data);
-				if (aes132_lib_return == AES132_FUNCTION_RETCODE_SUCCESS)
+				if (aes132_lib_return == AES132_FUNCTION_RETCODE_SUCCESS) {
+                    ESP_LOGI(TAG, "aes132p_read_memory_physical succeess!");
 					return aes132_lib_return;
+                }
+                else {
+                    ESP_LOGW(TAG, "aes132p_read_memory_physical did not succeed.");
+                }
 			}
 			// Accessing the device failed. Retry until "n_retries_memory_access" is depleted.
 		} while (--n_retries_memory_access > 0);
@@ -315,15 +333,18 @@ uint8_t aes132c_send_command(uint8_t *command, uint8_t options)
 	uint8_t device_status_register;
 	uint8_t count = command[AES132_COMMAND_INDEX_COUNT];
 
-	if ((options & AES132_OPTION_NO_APPEND_CRC) == 0)
+	if ((options & AES132_OPTION_NO_APPEND_CRC) == 0) {
 		// Append two-byte CRC to command.
+        ESP_LOGI(TAG, "Computing CRC for command opcode %.2X, length %d", command[1], command[0]);
 		aes132c_calculate_crc(count - AES132_CRC_SIZE, command, &command[count - AES132_CRC_SIZE]);
+    }
 
 	do {
 		aes132_lib_return = aes132c_access_memory(count, AES132_IO_ADDR, command,  AES132_WRITE);
-		if (aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS)
-			// Writing to the I/O buffer failed. Retry.
+		if (aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) {
+            ESP_LOGE(TAG, "Writing to the I/O buffer failed. Retry.");
 			continue;
+        }
 
 		if ((options & AES132_OPTION_NO_STATUS_READ) != 0)
 			// We don't read device status register when sending a Sleep command.
@@ -332,13 +353,14 @@ uint8_t aes132c_send_command(uint8_t *command, uint8_t options)
 		// Try to read the device status register. If it fails with an I2C nack of the I2C write address,
 		// we know that the device is busy.
 		aes132_lib_return = aes132c_read_device_status_register(&device_status_register);
-		//aes132_lib_return = aes132p_read_memory_physical(1, AES132_STATUS_ADDR, &device_status_register);
 		if (aes132_lib_return == AES132_FUNCTION_RETCODE_SUCCESS) {
-			// We were able to read the device status register. Check the CRC bit.
-			if ((device_status_register & AES132_CRC_ERROR_BIT) != 0)
-				// The device has calculated a not-matching CRC, which indicates a flawed communication.
+            ESP_LOGI(TAG, "Able to read the device status register. Checking the CRC bit.");
+			if ((device_status_register & AES132_CRC_ERROR_BIT) != 0) {
+                ESP_LOGW(TAG, "The device has calculated a not-matching CRC, "
+                        "which indicates a flawed communication.");
 				// Retry sending the command.
 				aes132_lib_return = AES132_FUNCTION_RETCODE_BAD_CRC_TX;
+            }
 		}
 		else if (aes132_lib_return == AES132_FUNCTION_RETCODE_COMM_FAIL){
 			// This code block applies to I2C only. Receiving a nack to a I2C address write
@@ -348,6 +370,7 @@ uint8_t aes132c_send_command(uint8_t *command, uint8_t options)
 		// In case of read-device-status-register failure, we do not send the command again but only
 		// re-synchronize, because we do not want certain commands being repeated, e.g. the Counter command.
 		}else {
+            ESP_LOGI(TAG, "Resync Garbage");
 			// Do not override the return value from the call to aes132p_read_memory_physical.
 			(void) aes132c_resync();
 			return aes132_lib_return;

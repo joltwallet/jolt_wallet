@@ -32,9 +32,9 @@ bool storage_ataes132a_get_str(char *buf, size_t *required_size,
         char *namespace, char *key, char *default_value);
 bool storage_ataes132a_set_str(char *str, char *namespace, char *key);
 
-bool storage_ataes132a_get_blob(char *buf, size_t *required_size,
+bool storage_ataes132a_get_blob(unsigned char *buf, size_t *required_size,
         char *namespace, char *key);
-bool storage_ataes132a_set_blob(char *buf, size_t len,
+bool storage_ataes132a_set_blob(unsigned char *buf, size_t len,
         char *namespace, char *key);
 
 void storage_ataes132a_factory_reset();

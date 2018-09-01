@@ -24,6 +24,8 @@
 
 #include <stdint.h>
 
+#define AES132_I2C // Jolt uses I2C
+
 #ifdef AES132_I2C
 #   include "aes132_i2c.h"
 #elif AES132_SPI

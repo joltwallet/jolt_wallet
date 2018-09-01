@@ -18,7 +18,7 @@
 #include "u8g2.h"
 #include "menu8g2.h"
 #include "easy_input.h"
-#include "nano_rest.h" // todo remove this; for debugging only
+#include "aes132_comm_marshaling.h" // todo remove this; for debugging only
 
 #include "gui/gui.h"
 #include "radio/wifi.h"
@@ -41,6 +41,16 @@ volatile menu8g2_t *menu;
 
 static const char TAG[] = "main";
 
+void printf_puthex_array(uint8_t* data_buffer, uint8_t length) {
+	uint8_t i_data;
+    printf("Response: ");
+	for (i_data = 0; i_data < length; i_data++) {
+		printf("%.2X",*data_buffer++);
+		printf(" ");
+	}
+    printf("\n");
+}
+
 void app_main(){
     // Setup Input Button Debouncing Code
     easy_input_queue_init((QueueHandle_t *)&input_queue);
@@ -62,9 +72,20 @@ void app_main(){
     conf.master.clk_speed = CONFIG_JOLT_I2C_MASTER_FREQ_HZ;
     ESP_LOGI(TAG, "i2c_param_config %d", conf.mode);
     ESP_ERROR_CHECK(i2c_param_config(CONFIG_JOLT_I2C_MASTER_NUM, &conf));
-    ESP_LOGI(TAG, "i2c_driver_install %d", I2C_NUM_1);
+    ESP_LOGI(TAG, "i2c_driver_install %d", CONFIG_JOLT_I2C_MASTER_NUM);
     ESP_ERROR_CHECK(i2c_driver_install(CONFIG_JOLT_I2C_MASTER_NUM, conf.mode, 0, 0, 0));
 
+    {
+        // testing ataes132a chip; remove after done testing.
+        // internally, aes132m_execute concatenates all the datablocks into tx_buffer
+        uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
+        uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
+        uint8_t res = aes132m_execute(AES132_RANDOM, 0x01, 0x0000, 0x0000,
+			0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+        printf_puthex_array(rx_buffer, sizeof(rx_buffer));
+
+        return;
+    }
     // Initialize the OLED Display
     u8g2 = &u8g2_obj;
     setup_screen((u8g2_t *) u8g2);

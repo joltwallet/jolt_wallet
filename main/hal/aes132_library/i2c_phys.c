@@ -6,19 +6,46 @@
  */ 
 
 #include "i2c_phys.h"
-#include "i2c_master.h"
+#include "driver/i2c.h" /* esp-idf i2c library */
+#include "esp_log.h"
+#include "esp_err.h"
 
 /** \brief I2C address used at AES132 library startup. */
 #define AES132_I2C_DEFAULT_ADDRESS   ((uint8_t) 0xA0)
 
-// File scope globals
-// I2C software module.
-struct i2c_master_module i2c_master_instance;
+static const char TAG[] = "i2c_phys";
 
 //! I2C address currently in use.
 static uint8_t i2c_address_current = AES132_I2C_DEFAULT_ADDRESS;
 
-
+/* Helper error translating/logging functions */
+static uint8_t i2c_master_cmd_begin_s(i2c_port_t i2c_num,
+        i2c_cmd_handle_t cmd, TickType_t ticks_to_wait)
+{
+    //todo; take and give i2c mutex
+    uint8_t res = I2C_FUNCTION_RETCODE_COMM_FAIL;
+    switch( i2c_master_cmd_begin(i2c_num, cmd, ticks_to_wait) ) {
+        case ESP_OK:
+            ESP_LOGI(TAG, "I2C buffer send success.");
+            res = I2C_FUNCTION_RETCODE_SUCCESS;
+            break;
+        case ESP_ERR_INVALID_ARG:
+            ESP_LOGW(TAG, "i2c_master_cmd_begin parameter error.");
+            break;
+        case ESP_FAIL:
+            ESP_LOGW(TAG, "Sending command error, slave doesn’t ACK the transfer.");
+            res = I2C_FUNCTION_RETCODE_NACK;
+            break;
+        case ESP_ERR_INVALID_STATE:
+            ESP_LOGE(TAG, "I2C driver not installed or not in master mode.");
+            break;
+        case ESP_ERR_TIMEOUT:
+            ESP_LOGW(TAG, "Operation timeout because the bus is busy.");
+            res = I2C_FUNCTION_RETCODE_TIMEOUT;
+            break;
+    }
+    return res;
+}
 
 /** \brief This function selects a I2C AES132 device.
  *
@@ -27,7 +54,7 @@ static uint8_t i2c_address_current = AES132_I2C_DEFAULT_ADDRESS;
  */
 uint8_t i2c_select_device_phys(uint8_t device_id)
 {		
-	i2c_address_current = device_id & ~1;
+	i2c_address_current = device_id & ~1; // Mask off r/w bit
 	return AES132_FUNCTION_RETCODE_SUCCESS;
 }
 
@@ -36,62 +63,42 @@ uint8_t i2c_select_device_phys(uint8_t device_id)
  * */
 void i2c_enable_phys(void)
 {
-	/* Initialize config structure and software module. */
-	//! [init_conf]
-	struct i2c_master_config config_i2c_master;
-	i2c_master_get_config_defaults(&config_i2c_master);
-	//! [init_conf]
+    // Done; need to debug
 
-	config_i2c_master.baud_rate = 400;
+    esp_err_t err;
+    // Configure I2C Driver
+    i2c_config_t conf;
+    conf.mode = I2C_MODE_MASTER;
 
-	/* Change buffer timeout to something longer. */
-	//! [conf_change]
-	config_i2c_master.buffer_timeout = 10000;
-	//! [conf_change]
+    ESP_LOGI(TAG, "sda_io_num %d", CONFIG_JOLT_I2C_PIN_SDA);
+    conf.sda_io_num = CONFIG_JOLT_I2C_PIN_SDA;
+    conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
 
-	/* Initialize and enable device with config. */
-	//! [init_module]
-	i2c_master_init(&i2c_master_instance, SERCOM2, &config_i2c_master);
-	//! [init_module]
+    ESP_LOGI(TAG, "scl_io_num %d", CONFIG_JOLT_I2C_PIN_SCL);
+    conf.scl_io_num = CONFIG_JOLT_I2C_PIN_SCL;
+    conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
 
-	//! [enable_module]
-	i2c_master_enable(&i2c_master_instance);
-	//! [enable_module]
+    ESP_LOGI(TAG, "clk_speed %d", CONFIG_JOLT_I2C_MASTER_FREQ_HZ);
+    conf.master.clk_speed = CONFIG_JOLT_I2C_MASTER_FREQ_HZ;
+
+    ESP_LOGI(TAG, "i2c_param_config %d", conf.mode);
+    err = i2c_param_config(CONFIG_JOLT_I2C_MASTER_NUM, &conf);
+
+    // Install i2c driver
+    ESP_LOGI(TAG, "i2c_driver_install %d", CONFIG_JOLT_I2C_MASTER_NUM);
+    err = i2c_driver_install(CONFIG_JOLT_I2C_MASTER_NUM, conf.mode, 0, 0, 0);
+    if(ESP_FAIL == err) {
+        ESP_LOGW(TAG, "ATAES132A failed to install I2C driver. "
+                "I2C driver may already be installed");
+    }
 }
 
 
 /** \brief This function disables the I2C peripheral. */
 void i2c_disable_phys(void)
 {
-	//! [enable_module]
-	i2c_master_disable(&i2c_master_instance);
-	//! [enable_module]
+    i2c_driver_delete(CONFIG_JOLT_I2C_MASTER_NUM);
 }
-
-
-/** \brief This function creates a Start condition (SDA low, then SCL low).
- * \return status of the operation
- * */
-uint8_t i2c_send_start(void)
-{
-	// Do nothing
-	return I2C_FUNCTION_RETCODE_SUCCESS;
-}
-
-
-/** \brief This function creates a Stop condition (SCL high, then SDA high).
- * \return status of the operation
- * */
-uint8_t i2c_send_stop(void)
-{
-	SercomI2cm *const i2c_module = &(i2c_master_instance.hw->I2CM);
-
-	/* Send stop command unless arbitration is lost. */
-	_i2c_master_wait_for_sync(&i2c_master_instance);
-	i2c_module->CTRLB.reg |= SERCOM_I2CM_CTRLB_CMD(3);
-	return I2C_FUNCTION_RETCODE_SUCCESS;
-}
-
 
 /** \brief This function sends bytes to an I2C device.
  * \param[in] count number of bytes to send
@@ -100,39 +107,49 @@ uint8_t i2c_send_stop(void)
  */
 uint8_t i2c_send_bytes(uint8_t count, uint8_t *data)
 {
-	enum status_code statusCode = STATUS_OK;
-	struct i2c_master_packet packet = {
-		.address     = i2c_address_current>>1,
-		.data_length = count,
-		.data        = data,
-		.ten_bit_address = false,
-		.high_speed      = false,
-		.hs_master_code  = 0x0,
-	};
-
-	//	statusCode = i2c_master_write_packet_wait(&i2c_master_instance, &packet);
-	statusCode = i2c_master_write_packet_wait_no_stop(&i2c_master_instance, &packet);
-	if (statusCode != STATUS_OK) return I2C_FUNCTION_RETCODE_COMM_FAIL;
-
-	// Send the stop
-	//statusCode = i2c_send_stop();
-	//if (statusCode != STATUS_OK) return I2C_FUNCTION_RETCODE_COMM_FAIL;
-
-	return I2C_FUNCTION_RETCODE_SUCCESS;
+    //ESP_LOGI(TAG, "First 9 bytes of data to send: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X",
+    //        data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8]);
+    uint8_t res = I2C_FUNCTION_RETCODE_COMM_FAIL;
+    i2c_cmd_handle_t cmd;
+    if( NULL == (cmd = i2c_cmd_link_create()) ) {
+        ESP_LOGE(TAG, "Failed to create i2c_cmd_link");
+        return I2C_FUNCTION_RETCODE_COMM_FAIL;
+    }
+    if( ESP_OK != i2c_master_start(cmd) ) {
+        ESP_LOGE(TAG, "i2c_master_start parameter error");
+        goto failure;
+    }
+    if( ESP_OK != i2c_master_write_byte(cmd, i2c_address_current | I2C_MASTER_WRITE, ACK_CHECK_EN) ) {
+        ESP_LOGE(TAG, "i2c_master_write_byte slave address parameter error");
+        goto failure;
+    }
+    if( ESP_OK != i2c_master_write_byte(cmd, count, ACK_CHECK_EN) ) {
+        ESP_LOGE(TAG, "i2c_master_write_byte payload count parameter error");
+        goto failure;
+    }
+    if( ESP_OK != i2c_master_write(cmd, data, count, ACK_CHECK_EN) ) {
+        ESP_LOGE(TAG, "i2c_master_write payload data parameter error");
+        goto failure;
+    }
+    if( ESP_OK != i2c_master_stop(cmd) ) {
+        ESP_LOGE(TAG, "i2c_master_stop parameter error");
+        goto failure;
+    }
+    res = i2c_master_cmd_begin_s(CONFIG_JOLT_I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
+failure:
+    i2c_cmd_link_delete(cmd);
+    return res;
 }
-
 
 /** \brief This function receives one byte from an I2C device.
  *
  * \param[out] data pointer to received byte
  * \return status of the operation
  */
-uint8_t i2c_receive_byte(uint8_t *data)
+uint8_t i2c_receive_byte(uint8_t *data, uint8_t *address)
 {
-
-	return i2c_receive_bytes(1, data);
+    return i2c_receive_bytes(1, data, address);
 }
-
 
 /** \brief This function receives bytes from an I2C device
  *         and sends a Stop.
@@ -141,36 +158,48 @@ uint8_t i2c_receive_byte(uint8_t *data)
  * \param[out] data pointer to rx buffer
  * \return status of the operation
  */
-uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data)
+uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address)
 {
-	enum status_code statusCode = I2C_FUNCTION_RETCODE_SUCCESS;
-	struct i2c_master_packet packet = {
-		.address     = i2c_address_current>>1,
-		.data_length = count,
-		.data        = data,
-		.ten_bit_address = false,
-		.high_speed      = false,
-		.hs_master_code  = 0x0,
-	};
-
-	statusCode = i2c_master_read_packet_wait(&i2c_master_instance, &packet);
-	if (statusCode != STATUS_OK)
-	{
-		return I2C_FUNCTION_RETCODE_COMM_FAIL;
-	}
-	
-	statusCode = i2c_send_stop();
-	if (statusCode != I2C_FUNCTION_RETCODE_SUCCESS) return I2C_FUNCTION_RETCODE_COMM_FAIL;
-	
-	return I2C_FUNCTION_RETCODE_SUCCESS;
-}
-
-/** \brief This function creates a Start condition and sends the I2C address.
- * \param[in] read I2C_READ for reading, I2C_WRITE for writing
- * \return status of the operation
- */
-uint8_t i2c_send_slave_address(uint8_t read)
-{
-	// Do nothing
-	return AES132_FUNCTION_RETCODE_SUCCESS;
+    uint8_t res = I2C_FUNCTION_RETCODE_COMM_FAIL;
+    i2c_cmd_handle_t cmd;
+    if( NULL == (cmd = i2c_cmd_link_create()) ) {
+        ESP_LOGE(TAG, "Failed to create i2c_cmd_link");
+        return I2C_FUNCTION_RETCODE_COMM_FAIL;
+    }
+    if( ESP_OK != i2c_master_start(cmd) ) {
+        ESP_LOGE(TAG, "i2c_master_start parameter error");
+        goto failure;
+    }
+    if( ESP_OK != i2c_master_write_byte(cmd, i2c_address_current | I2C_MASTER_WRITE, ACK_CHECK_EN) ) {
+        ESP_LOGE(TAG, "i2c_master_write_byte slave address parameter error");
+        goto failure;
+    }
+    if( ESP_OK != i2c_master_write(cmd, address, 2, ACK_CHECK_EN) ) {
+        ESP_LOGE(TAG, "i2c_master_write payload data parameter error");
+        goto failure;
+    }
+    if( ESP_OK != i2c_master_start(cmd) ) {
+        ESP_LOGE(TAG, "i2c_master_start parameter error");
+        goto failure;
+    }
+    if( ESP_OK != i2c_master_write_byte(cmd, i2c_address_current | I2C_MASTER_READ, ACK_CHECK_EN) ) {
+        ESP_LOGE(TAG, "i2c_master_write_byte slave address parameter error");
+        goto failure;
+    }
+    ESP_LOGD(TAG, "Going to read in %d bytes into data", count);
+    if( ESP_OK != i2c_master_read(cmd, data, count, I2C_MASTER_LAST_NACK) ) {
+        ESP_LOGE(TAG, "i2c_master_read parameter error");
+        goto failure;
+    }
+    if( ESP_OK != i2c_master_stop(cmd) ) {
+        ESP_LOGE(TAG, "i2c_master_stop parameter error");
+        goto failure;
+    }
+    res = i2c_master_cmd_begin_s(CONFIG_JOLT_I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
+    for(uint8_t i=0; i<count; i++) {
+        ESP_LOGD(TAG, "Received byte %d: %.2X", i, data[i]);
+    }
+failure:
+    i2c_cmd_link_delete(cmd);
+    return res;
 }

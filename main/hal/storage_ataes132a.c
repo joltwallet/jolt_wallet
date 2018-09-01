@@ -98,12 +98,12 @@ bool storage_ataes132a_set_str(char *str, char *namespace, char *key) {
     return storage_internal_set_str(str, namespace, key);
 }
 
-bool storage_ataes132a_get_blob(char *buf, size_t *required_size,
+bool storage_ataes132a_get_blob(unsigned char *buf, size_t *required_size,
         char *namespace, char *key) {
     return storage_internal_get_blob(buf, required_size, namespace, key);
 }
 
-bool storage_ataes132a_set_blob(char *buf, size_t len,
+bool storage_ataes132a_set_blob(unsigned char *buf, size_t len,
         char *namespace, char *key) {
     return storage_internal_set_blob(buf, len, namespace, key);
 }

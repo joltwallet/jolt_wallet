@@ -10,10 +10,11 @@
 
 #include <stdint.h>				// data type definitions
 #include "aes132_i2c.h"
-#include <i2c_master.h>
+#include "driver/i2c.h"
+#include "esp_err.h"
 
 //! I2C clock
-#define I2C_CLOCK                         (400000.0)
+#define I2C_CLOCK                         (JOLT_I2C_MASTER_FREQ_HZ)
 
 //! Use pull-up resistors.
 #define I2C_PULLUP
@@ -53,15 +54,15 @@
 #define I2C_FUNCTION_RETCODE_TIMEOUT     ((uint8_t) 0xF1) //!< Communication timed out.
 #define I2C_FUNCTION_RETCODE_NACK        ((uint8_t) 0xF8) //!< I2C nack
 
+#define ACK_CHECK_EN                       0x1              /*!< I2C master will check ack from slave*/
+#define ACK_CHECK_DIS                      0x0              /*!< I2C master will not check ack from slave */
 
 // Function prototypes to be implemented in the target i2c_phys.c
 void    i2c_enable_phys(void);
 void    i2c_disable_phys(void);
 uint8_t i2c_select_device_phys(uint8_t device_id);
-uint8_t i2c_send_start(void);
-uint8_t i2c_send_stop(void);
 uint8_t i2c_send_bytes(uint8_t count, uint8_t *data);
-uint8_t i2c_receive_byte(uint8_t *data);
-uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data);
+uint8_t i2c_receive_byte(uint8_t *data, uint8_t *address);
+uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address);
 uint8_t i2c_send_slave_address(uint8_t read);
 #endif /* I2C_PHYS_H_ */

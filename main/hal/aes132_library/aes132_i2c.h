@@ -137,6 +137,5 @@ void    aes132p_disable_interface(void);
 uint8_t aes132p_select_device(uint8_t device_id);
 uint8_t aes132p_read_memory_physical(uint8_t size, uint16_t word_address, uint8_t *data);
 uint8_t aes132p_write_memory_physical(uint8_t count, uint16_t word_address, uint8_t *data);
-uint8_t aes132p_resync_physical(void);
 
 #endif
