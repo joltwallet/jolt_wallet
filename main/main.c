@@ -41,7 +41,7 @@ volatile menu8g2_t *menu;
 
 static const char TAG[] = "main";
 
-void printf_puthex_array(uint8_t* data_buffer, uint8_t length) {
+static void printf_puthex_array(uint8_t* data_buffer, uint8_t length) {
 	uint8_t i_data;
     printf("Response: ");
 	for (i_data = 0; i_data < length; i_data++) {
@@ -51,15 +51,7 @@ void printf_puthex_array(uint8_t* data_buffer, uint8_t length) {
     printf("\n");
 }
 
-void app_main(){
-    // Setup Input Button Debouncing Code
-    easy_input_queue_init((QueueHandle_t *)&input_queue);
-    xTaskCreate(easy_input_push_button_task,
-            "ButtonDebounce", 2500,
-            (void *)&input_queue, 19,
-            NULL);
-
-    // Setup and Install I2C Driver
+static void i2c_setup() {
     i2c_config_t conf;
     conf.mode = I2C_MODE_MASTER;
     ESP_LOGI(TAG, "sda_io_num %d", CONFIG_JOLT_I2C_PIN_SDA);
@@ -74,25 +66,19 @@ void app_main(){
     ESP_ERROR_CHECK(i2c_param_config(CONFIG_JOLT_I2C_MASTER_NUM, &conf));
     ESP_LOGI(TAG, "i2c_driver_install %d", CONFIG_JOLT_I2C_MASTER_NUM);
     ESP_ERROR_CHECK(i2c_driver_install(CONFIG_JOLT_I2C_MASTER_NUM, conf.mode, 0, 0, 0));
+}
 
-    {
-        // testing ataes132a chip; remove after done testing.
-        // internally, aes132m_execute concatenates all the datablocks into tx_buffer
-        uint8_t res;
-        uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
-        uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
-#if 0
-        res = aes132m_execute(AES132_INFO, 0x00, 0x000C, 0x0000,
-			0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
-        printf_puthex_array(rx_buffer, sizeof(rx_buffer));
-        return;
-#endif
-        res = aes132m_execute(AES132_RANDOM, 0x02, 0x0000, 0x0000,
-			0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
-        printf_puthex_array(rx_buffer, sizeof(rx_buffer));
-        return;
+void app_main(){
+    // Setup Input Button Debouncing Code
+    easy_input_queue_init((QueueHandle_t *)&input_queue);
+    xTaskCreate(easy_input_push_button_task,
+            "ButtonDebounce", 2500,
+            (void *)&input_queue, 19,
+            NULL);
 
-    }
+    // Setup and Install I2C Driver
+    i2c_setup();
+
     // Initialize the OLED Display
     u8g2 = &u8g2_obj;
     setup_screen((u8g2_t *) u8g2);
@@ -102,6 +88,18 @@ void app_main(){
     // Create Global Menu Object
     menu = &menu_obj;
     menu8g2_init(menu, (u8g2_t *) u8g2, input_queue, disp_mutex, NULL, statusbar_update);
+
+    {
+        // testing ataes132a chip; remove after done testing.
+        // internally, aes132m_execute concatenates all the datablocks into tx_buffer
+        uint8_t res;
+        uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
+        uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
+        res = aes132m_execute(AES132_RANDOM, 0x02, 0x0000, 0x0000,
+			0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+        printf_puthex_array(rx_buffer, sizeof(rx_buffer));
+        return;
+    }
 
     // Allocate space for the vault and see if a copy exists in NVS
     if( false == vault_setup()) {
