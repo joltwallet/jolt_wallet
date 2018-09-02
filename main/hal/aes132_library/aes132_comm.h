@@ -240,8 +240,6 @@ enum aes132_bit_set_flag {
 #define AES132_RESPONSE_INDEX_DATA              ((uint8_t)    2)
 
 
-
-
 uint8_t aes132c_access_memory(uint8_t count, uint16_t word_address, uint8_t *data, uint8_t read);
 uint8_t aes132c_read_device_status_register(uint8_t *deviceStatus);
 uint8_t aes132c_send_command(uint8_t *command, uint8_t options);

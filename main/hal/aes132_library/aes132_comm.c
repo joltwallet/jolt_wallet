@@ -97,6 +97,7 @@ uint8_t aes132c_read_device_status_register(uint8_t *device_status_register)
 	uint8_t n_retries = AES132_RETRY_COUNT_ERROR;
 
 	do {
+        ESP_LOGI(TAG, "Reading Status Register");
 		aes132_lib_return = aes132p_read_memory_physical(1, AES132_STATUS_ADDR, device_status_register);
 	} while ((aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) && (--n_retries > 0));
 
@@ -114,10 +115,11 @@ uint8_t aes132c_read_device_status_register(uint8_t *device_status_register)
 uint8_t aes132c_wait_for_status_register_bit(uint8_t mask, uint8_t is_set, uint16_t n_retries)
 {
 	uint8_t aes132_lib_return, device_status_register = 0;
-    ESP_LOGI(TAG, "wait for status register bit mask %.2X", mask);
+    ESP_LOGI(TAG, "aes132c_wait_for_status_register_bit; "
+            "target mask %.2X", mask);
 
 	do { //debug: this is looping
-        ESP_LOGI(TAG, "Reading AES132 Status Register at %.4X", AES132_STATUS_ADDR);
+        ESP_LOGI(TAG, "Reading Status Register");
 		aes132_lib_return = aes132p_read_memory_physical(1, AES132_STATUS_ADDR, &device_status_register);
 		if (aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) {
             ESP_LOGI(TAG, "Device busy while trying to read Status Register. "
@@ -331,11 +333,12 @@ uint8_t aes132c_send_command(uint8_t *command, uint8_t options)
 	uint8_t aes132_lib_return;
 	uint8_t n_retries = AES132_RETRY_COUNT_ERROR;
 	uint8_t device_status_register;
-	uint8_t count = command[AES132_COMMAND_INDEX_COUNT];
+	uint8_t count = command[AES132_COMMAND_INDEX_COUNT]; // command length
 
 	if ((options & AES132_OPTION_NO_APPEND_CRC) == 0) {
 		// Append two-byte CRC to command.
-        ESP_LOGI(TAG, "Computing CRC for command opcode %.2X, length %d", command[1], command[0]);
+        ESP_LOGI(TAG, "Computing CRC for command opcode %.2X, length %d",
+                command[1], command[0]);
 		aes132c_calculate_crc(count - AES132_CRC_SIZE, command, &command[count - AES132_CRC_SIZE]);
     }
 
@@ -354,7 +357,7 @@ uint8_t aes132c_send_command(uint8_t *command, uint8_t options)
 		// we know that the device is busy.
 		aes132_lib_return = aes132c_read_device_status_register(&device_status_register);
 		if (aes132_lib_return == AES132_FUNCTION_RETCODE_SUCCESS) {
-            ESP_LOGI(TAG, "Able to read the device status register. Checking the CRC bit.");
+            ESP_LOGI(TAG, "Checking the CRC bit of status register response.");
 			if ((device_status_register & AES132_CRC_ERROR_BIT) != 0) {
                 ESP_LOGW(TAG, "The device has calculated a not-matching CRC, "
                         "which indicates a flawed communication.");
@@ -375,9 +378,6 @@ uint8_t aes132c_send_command(uint8_t *command, uint8_t options)
 			(void) aes132c_resync();
 			return aes132_lib_return;
 		}
-
-		// Retry sending the command if an error occurred sending the command, or the device status register
-		// indicates a CRC error after having sent the command.
 	} while ((aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) && (--n_retries > 0));
 
 	// We did not succeed sending a command. Return the error from aes132p_read_memory_physical or
@@ -440,6 +440,7 @@ uint8_t aes132c_receive_response(uint8_t size, uint8_t *response)
 		}
 
 		// Read remainder of response.
+        ESP_LOGI(TAG, "Reading the rest of the response");
 		aes132_lib_return = aes132p_read_memory_physical(count_byte - 1, AES132_IO_ADDR, &response[AES132_RESPONSE_INDEX_RETURN_CODE]);
 		if (aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) {
 			// Reading the remainder of the response failed. We might have lost communication.

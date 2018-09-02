@@ -71,9 +71,11 @@ uint8_t aes132p_write_memory_physical(uint8_t count, uint16_t word_address, uint
 {
 	// In both, big-endian and little-endian systems, we send MSB first.
 	uint8_t word_address_buffer[2] = {(uint8_t) (word_address >> 8), (uint8_t) (word_address & 0xFF)};
+
 	uint8_t data_buffer[2+count];
-			memcpy(&data_buffer[0], word_address_buffer, 2);
-			memcpy(&data_buffer[2], data, count);
+    memcpy(&data_buffer[0], word_address_buffer, sizeof(word_address_buffer));
+    memcpy(&data_buffer[2], data, count);
+
 	uint8_t aes132_lib_return = i2c_send_bytes(sizeof(data_buffer), (uint8_t *) data_buffer);
 	if (aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) {
 		// Don't override the return code from i2c_send_bytes in case of error.
@@ -93,15 +95,9 @@ uint8_t aes132p_write_memory_physical(uint8_t count, uint16_t word_address, uint
  */
 uint8_t aes132p_read_memory_physical(uint8_t size, uint16_t word_address, uint8_t *data)
 {
-	// Random read:
-	// Start, I2C address with write bit, word address, Start, I2C address with read bit
-
 	// In both, big-endian and little-endian systems, we send MSB first.
 	const uint8_t word_address_buffer[2] = {
         (uint8_t) (word_address >> 8), (uint8_t) (word_address & 0x00FF)
     };
-    ESP_LOGD(TAG, "Attempting to read from memory address %.2X %.2X; "
-            "sending memory address to device...",
-            word_address_buffer[0], word_address_buffer[1]);
 	return i2c_receive_bytes(size, data, word_address_buffer);
 }

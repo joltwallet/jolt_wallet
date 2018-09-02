@@ -78,13 +78,20 @@ void app_main(){
     {
         // testing ataes132a chip; remove after done testing.
         // internally, aes132m_execute concatenates all the datablocks into tx_buffer
+        uint8_t res;
         uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
         uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
-        uint8_t res = aes132m_execute(AES132_RANDOM, 0x01, 0x0000, 0x0000,
+#if 0
+        res = aes132m_execute(AES132_INFO, 0x00, 0x000C, 0x0000,
 			0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
         printf_puthex_array(rx_buffer, sizeof(rx_buffer));
-
         return;
+#endif
+        res = aes132m_execute(AES132_RANDOM, 0x02, 0x0000, 0x0000,
+			0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+        printf_puthex_array(rx_buffer, sizeof(rx_buffer));
+        return;
+
     }
     // Initialize the OLED Display
     u8g2 = &u8g2_obj;

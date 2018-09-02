@@ -26,7 +26,7 @@ static uint8_t i2c_master_cmd_begin_s(i2c_port_t i2c_num,
     uint8_t res = I2C_FUNCTION_RETCODE_COMM_FAIL;
     switch( i2c_master_cmd_begin(i2c_num, cmd, ticks_to_wait) ) {
         case ESP_OK:
-            ESP_LOGI(TAG, "I2C buffer send success.");
+            ESP_LOGD(TAG, "I2C buffer send success.");
             res = I2C_FUNCTION_RETCODE_SUCCESS;
             break;
         case ESP_ERR_INVALID_ARG:
@@ -107,8 +107,15 @@ void i2c_disable_phys(void)
  */
 uint8_t i2c_send_bytes(uint8_t count, uint8_t *data)
 {
-    //ESP_LOGI(TAG, "First 9 bytes of data to send: %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X",
-    //        data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8]);
+    /* Data contains complete message (except device address). This means:
+     * 0-1) Memory address
+     * 2) Message Count
+     * 3-N) Data
+     * N+1, N+2) CRC */
+    for(uint8_t i=0; i<count; i++) {
+        ESP_LOGI(TAG, "Send byte %d: %.2X", i, data[i]);
+    }
+
     uint8_t res = I2C_FUNCTION_RETCODE_COMM_FAIL;
     i2c_cmd_handle_t cmd;
     if( NULL == (cmd = i2c_cmd_link_create()) ) {
@@ -121,10 +128,6 @@ uint8_t i2c_send_bytes(uint8_t count, uint8_t *data)
     }
     if( ESP_OK != i2c_master_write_byte(cmd, i2c_address_current | I2C_MASTER_WRITE, ACK_CHECK_EN) ) {
         ESP_LOGE(TAG, "i2c_master_write_byte slave address parameter error");
-        goto failure;
-    }
-    if( ESP_OK != i2c_master_write_byte(cmd, count, ACK_CHECK_EN) ) {
-        ESP_LOGE(TAG, "i2c_master_write_byte payload count parameter error");
         goto failure;
     }
     if( ESP_OK != i2c_master_write(cmd, data, count, ACK_CHECK_EN) ) {
@@ -160,6 +163,11 @@ uint8_t i2c_receive_byte(uint8_t *data, uint8_t *address)
  */
 uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address)
 {
+	// Random read:
+	// Start, I2C address with write bit, word address, Start, I2C address with read bit
+
+    ESP_LOGI(TAG, "Performing read from memory address %.2X %.2X",
+            address[0], address[1]);
     uint8_t res = I2C_FUNCTION_RETCODE_COMM_FAIL;
     i2c_cmd_handle_t cmd;
     if( NULL == (cmd = i2c_cmd_link_create()) ) {
@@ -186,7 +194,7 @@ uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address)
         ESP_LOGE(TAG, "i2c_master_write_byte slave address parameter error");
         goto failure;
     }
-    ESP_LOGD(TAG, "Going to read in %d bytes into data", count);
+    ESP_LOGI(TAG, "Going to read in %d bytes into data", count);
     if( ESP_OK != i2c_master_read(cmd, data, count, I2C_MASTER_LAST_NACK) ) {
         ESP_LOGE(TAG, "i2c_master_read parameter error");
         goto failure;
@@ -197,7 +205,7 @@ uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address)
     }
     res = i2c_master_cmd_begin_s(CONFIG_JOLT_I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
     for(uint8_t i=0; i<count; i++) {
-        ESP_LOGD(TAG, "Received byte %d: %.2X", i, data[i]);
+        ESP_LOGI(TAG, "Received byte %d: %.2X", i, data[i]);
     }
 failure:
     i2c_cmd_link_delete(cmd);
