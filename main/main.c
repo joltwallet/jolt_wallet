@@ -51,7 +51,7 @@ static void printf_puthex_array(uint8_t* data_buffer, uint8_t length) {
     printf("\n");
 }
 
-static void i2c_setup() {
+static void i2c_driver_setup() {
     i2c_config_t conf;
     conf.mode = I2C_MODE_MASTER;
     ESP_LOGI(TAG, "sda_io_num %d", CONFIG_JOLT_I2C_PIN_SDA);
@@ -66,6 +66,8 @@ static void i2c_setup() {
     ESP_ERROR_CHECK(i2c_param_config(CONFIG_JOLT_I2C_MASTER_NUM, &conf));
     ESP_LOGI(TAG, "i2c_driver_install %d", CONFIG_JOLT_I2C_MASTER_NUM);
     ESP_ERROR_CHECK(i2c_driver_install(CONFIG_JOLT_I2C_MASTER_NUM, conf.mode, 0, 0, 0));
+
+    disp_mutex = xSemaphoreCreateMutex(); // was originally just a mutex on the display buffer, but also now used as a general i2c mutex
 }
 
 void app_main(){
@@ -76,14 +78,13 @@ void app_main(){
             (void *)&input_queue, 19,
             NULL);
 
-    // Setup and Install I2C Driver
-    i2c_setup();
+    // Setup and Install I2C Driver and supporting objects
+    i2c_driver_setup();
 
     // Initialize the OLED Display
     u8g2 = &u8g2_obj;
     setup_screen((u8g2_t *) u8g2);
     u8g2_SetContrast( u8g2, get_display_brightness() );
-    disp_mutex = xSemaphoreCreateMutex();
 
     // Create Global Menu Object
     menu = &menu_obj;
