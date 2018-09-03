@@ -22,7 +22,10 @@
 
 #include <string.h>                    // needed for memcpy()
 #include "aes132_comm_marshaling.h"    // definitions and declarations for the Command Marshaling module
+#include "aes132_i2c.h" // For ReturnCode macros
+#include "esp_log.h"
 
+static const char TAG[] = "aes132m";
 
 /** \brief This function sends data to the device.
  * \param[in] count number of bytes to send
@@ -108,4 +111,32 @@ uint8_t aes132m_execute(uint8_t op_code, uint8_t mode, uint16_t param1, uint16_t
 	// Send command and receive response.
 	return aes132c_send_and_receive(&tx_buffer[0], AES132_RESPONSE_SIZE_MAX,
 				&rx_buffer[0], AES132_OPTION_DEFAULT);
+}
+
+static uint8_t aes132m_rand(uint8_t *out, const size_t n_bytes) {
+    uint8_t res;
+    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
+    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
+
+    for(size_t i=0; i < n_bytes; i++) {
+        res = aes132m_execute(AES132_RANDOM, 0x02, 0x0000, 0x0000,
+            0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+        if( AES132_FUNCTION_RETCODE_SUCCESS != res ) {
+            // todo error handling
+            return res;
+        }
+        if( AES132_DEVICE_RETCODE_SUCCESS != rx_buffer ) {
+            // todo error handling
+        }
+        // Copy over up to 96 bits
+    }
+    return 0; //todo change
+}
+
+// Generates 256-bits of entropy
+uint8_t aes132m_rand256(uint256_t out) {
+    uint8_t res;
+    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
+    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
+    return 0;
 }

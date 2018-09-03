@@ -154,6 +154,9 @@ uint8_t aes132m_execute(uint8_t op_code, uint8_t mode, uint16_t param1, uint16_t
 			uint8_t datalen3, uint8_t *data3, uint8_t datalen4, uint8_t *data4,
 			uint8_t *tx_buffer, uint8_t *rx_buffer);
 
+/* Convenience functions */
+#include "jolttypes.h"
+uint8_t aes132m_rand256(uint256_t out);
 /** @} */
 
 #endif
