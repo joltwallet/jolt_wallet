@@ -113,30 +113,37 @@ uint8_t aes132m_execute(uint8_t op_code, uint8_t mode, uint16_t param1, uint16_t
 				&rx_buffer[0], AES132_OPTION_DEFAULT);
 }
 
-static uint8_t aes132m_rand(uint8_t *out, const size_t n_bytes) {
+/* Populates the output buffer with n_bytes of random numbers */
+uint8_t aes132m_rand(uint8_t *out, const size_t n_bytes) {
+#define AES132_RAND_BYTE_LEN 16
     uint8_t res;
     uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
     uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
 
-    for(size_t i=0; i < n_bytes; i++) {
+    size_t out_head = 0; // Current index into out buffer
+    size_t n_copy = 0; // number of bits top copy from rand buffer
+    do {
         res = aes132m_execute(AES132_RANDOM, 0x02, 0x0000, 0x0000,
             0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
         if( AES132_FUNCTION_RETCODE_SUCCESS != res ) {
             // todo error handling
             return res;
         }
-        if( AES132_DEVICE_RETCODE_SUCCESS != rx_buffer ) {
+        if( AES132_DEVICE_RETCODE_SUCCESS != rx_buffer[AES132_RESPONSE_INDEX_RETURN_CODE] ) {
             // todo error handling
+            return rx_buffer[AES132_RESPONSE_INDEX_RETURN_CODE]; // this probably isn't the correct thing to return.
         }
-        // Copy over up to 96 bits
-    }
-    return 0; //todo change
-}
+        // Copy over up to 16 bytes
+        if( n_bytes - out_head > AES132_RAND_BYTE_LEN ) {
+            n_copy = AES132_RAND_BYTE_LEN;
+        }
+        else {
+            n_copy = n_bytes - out_head;
+        }
+        memcpy(&out[out_head], &rx_buffer[AES132_RESPONSE_INDEX_DATA], n_copy);
+        out_head += n_copy;
+    } while( n_copy > 0 );
 
-// Generates 256-bits of entropy
-uint8_t aes132m_rand256(uint256_t out) {
-    uint8_t res;
-    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
-    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
-    return 0;
+    return 0; // success
+#undef AES132_RAND_BYTE_LEN
 }

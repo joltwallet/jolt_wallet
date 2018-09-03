@@ -24,7 +24,7 @@ static uint8_t i2c_master_cmd_begin_s(i2c_port_t i2c_num,
         i2c_cmd_handle_t cmd, TickType_t ticks_to_wait)
 {
     uint8_t res = I2C_FUNCTION_RETCODE_COMM_FAIL;
-    ESP_LOGI(TAG, "Taking display mutex");
+    ESP_LOGD(TAG, "Taking display mutex");
     xSemaphoreTake(disp_mutex, portMAX_DELAY);
     switch( i2c_master_cmd_begin(i2c_num, cmd, ticks_to_wait) ) {
         case ESP_OK:
@@ -46,7 +46,7 @@ static uint8_t i2c_master_cmd_begin_s(i2c_port_t i2c_num,
             res = I2C_FUNCTION_RETCODE_TIMEOUT;
             break;
     }
-    ESP_LOGI(TAG, "Giving display mutex");
+    ESP_LOGD(TAG, "Giving display mutex");
     xSemaphoreGive(disp_mutex);
     return res;
 }
@@ -117,7 +117,7 @@ uint8_t i2c_send_bytes(uint8_t count, uint8_t *data)
      * 3-N) Data
      * N+1, N+2) CRC */
     for(uint8_t i=0; i<count; i++) {
-        ESP_LOGI(TAG, "Send byte %d: %.2X", i, data[i]);
+        ESP_LOGD(TAG, "Send byte %d: %.2X", i, data[i]);
     }
 
     uint8_t res = I2C_FUNCTION_RETCODE_COMM_FAIL;
@@ -170,7 +170,7 @@ uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address)
 	// Random read:
 	// Start, I2C address with write bit, word address, Start, I2C address with read bit
 
-    ESP_LOGI(TAG, "Performing read from memory address %.2X %.2X",
+    ESP_LOGD(TAG, "Performing read from memory address %.2X %.2X",
             address[0], address[1]);
     uint8_t res = I2C_FUNCTION_RETCODE_COMM_FAIL;
     i2c_cmd_handle_t cmd;
@@ -198,7 +198,7 @@ uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address)
         ESP_LOGE(TAG, "i2c_master_write_byte slave address parameter error");
         goto failure;
     }
-    ESP_LOGI(TAG, "Going to read in %d bytes into data", count);
+    ESP_LOGD(TAG, "Going to read in %d bytes into data", count);
     if( ESP_OK != i2c_master_read(cmd, data, count, I2C_MASTER_LAST_NACK) ) {
         ESP_LOGE(TAG, "i2c_master_read parameter error");
         goto failure;
@@ -209,7 +209,7 @@ uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address)
     }
     res = i2c_master_cmd_begin_s(CONFIG_JOLT_I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
     for(uint8_t i=0; i<count; i++) {
-        ESP_LOGI(TAG, "Received byte %d: %.2X", i, data[i]);
+        ESP_LOGD(TAG, "Received byte %d: %.2X", i, data[i]);
     }
 failure:
     i2c_cmd_link_delete(cmd);

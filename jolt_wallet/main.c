@@ -16,7 +16,6 @@
 #include "u8g2.h"
 #include "menu8g2.h"
 #include "easy_input.h"
-#include "aes132_comm_marshaling.h" // todo remove this; for debugging only
 
 #include "gui/gui.h"
 #include "radio/wifi.h"
@@ -49,7 +48,9 @@ static void printf_puthex_array(uint8_t* data_buffer, uint8_t length) {
     printf("\n");
 }
 
-void app_main(){
+#ifndef UNIT_TESTING
+// So our app_main() doesn't override the unit test app_main()
+void app_main() {
     // Setup Input Button Debouncing Code
     easy_input_queue_init((QueueHandle_t *)&input_queue);
     xTaskCreate(easy_input_push_button_task,
@@ -68,25 +69,6 @@ void app_main(){
     // Create Global Menu Object
     menu = &menu_obj;
     menu8g2_init(menu, (u8g2_t *) u8g2, input_queue, disp_mutex, NULL, statusbar_update);
-
-    {
-        // testing ataes132a chip; remove after done testing.
-        // internally, aes132m_execute concatenates all the datablocks into tx_buffer
-        uint8_t res;
-        uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
-        uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-#if 0
-        printf_puthex_array(rx_buffer, sizeof(rx_buffer));
-        res = aes132m_execute(AES132_INFO, 0x00, 0x000C, 0x0000,
-                0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
-        printf_puthex_array(rx_buffer, sizeof(rx_buffer));
-        return;
-#endif
-        res = aes132m_execute(AES132_RANDOM, 0x02, 0x0000, 0x0000,
-			0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
-        printf_puthex_array(rx_buffer, sizeof(rx_buffer));
-        return;
-    }
 
     // Allocate space for the vault and see if a copy exists in NVS
     if( false == vault_setup()) {
@@ -121,3 +103,4 @@ void app_main(){
     initialize_console();
     start_console();
 }
+#endif

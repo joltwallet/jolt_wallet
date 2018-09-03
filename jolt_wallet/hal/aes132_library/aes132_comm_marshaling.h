@@ -156,7 +156,7 @@ uint8_t aes132m_execute(uint8_t op_code, uint8_t mode, uint16_t param1, uint16_t
 
 /* Convenience functions */
 #include "jolttypes.h"
-uint8_t aes132m_rand256(uint256_t out);
+uint8_t aes132m_rand(uint8_t *out, const size_t n_bytes);
 /** @} */
 
 #endif
