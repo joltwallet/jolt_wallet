@@ -44,10 +44,7 @@ static const char TAG[] = "main";
 void app_main(){
     // Setup Input Button Debouncing Code
     easy_input_queue_init((QueueHandle_t *)&input_queue);
-    xTaskCreate(easy_input_push_button_task,
-            "ButtonDebounce", 2500,
-            (void *)&input_queue, 19,
-            NULL);
+    easy_input_run( (QueueHandle_t *)&input_queue );
 
     // Setup and Install I2C Driver
     i2c_config_t conf;
