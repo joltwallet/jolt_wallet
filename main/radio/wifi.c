@@ -55,7 +55,6 @@ esp_err_t event_handler(void *ctx, system_event_t *event)
 }
 
 void wifi_connect(){
-    nvs_handle wifi_nvs_handle;
     wifi_config_t sta_config = {
         .sta = {
             .ssid      = CONFIG_AP_TARGET_SSID,
@@ -64,7 +63,6 @@ void wifi_connect(){
         }
     };
     
-    nvs_flash_init();
     tcpip_adapter_init();
     
     //Check for WiFi credentials in NVS
@@ -124,6 +122,7 @@ uint8_t get_wifi_strength(){
      * 2 - medium
      * 3 - strong
      */
+    //return 0; //todo: esp_wifi_sta_get_ap_info reboots on virgin boot
     wifi_ap_record_t ap_info;
     if(esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK){
         return 0;
