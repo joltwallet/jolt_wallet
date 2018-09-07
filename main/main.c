@@ -72,15 +72,18 @@ void app_main(){
     menu = &menu_obj;
     menu8g2_init(menu, (u8g2_t *) u8g2, input_queue, disp_mutex, NULL, statusbar_update);
 
+    // Initialize Wireless
+    /* todo: this must be before first_boot_setup otherwise attempting
+     * to get ap_info before initializing wifi causes a boot loop. investigate
+     * more robust solutions */
+    esp_log_level_set("wifi", ESP_LOG_NONE);
+    set_jolt_cast();
+    wifi_connect();
+
     // Allocate space for the vault and see if a copy exists in NVS
     if( false == vault_setup()) {
         first_boot_menu();
     }
-    
-    // Initialize Wireless
-    esp_log_level_set("wifi", ESP_LOG_NONE);
-    set_jolt_cast();
-    wifi_connect();
 
     // todo: remove this, just here for sanity checks;
     // turn down main task stack back to 3584 when done debugging
