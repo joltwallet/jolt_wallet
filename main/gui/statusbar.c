@@ -120,10 +120,12 @@ void statusbar_update(){
     uint16_t x = u8g2_GetDisplayWidth(menu->u8g2);
     uint16_t y = 2;
     // Graphical order right to left
-    statusbar_battery(&x, &y);
-    statusbar_bluetooth(&x, &y);
-    statusbar_wifi(&x, &y);
-    statusbar_pending(&x, &y);
+    if(*statusbar_draw_enable){
+        statusbar_battery(&x, &y);
+        statusbar_bluetooth(&x, &y);
+        statusbar_wifi(&x, &y);
+        statusbar_pending(&x, &y);
+    }
 }
 
 void statusbar_task(){
