@@ -33,9 +33,6 @@ static const char* TAG = "entry_pin";
 bool entry_pin(menu8g2_t *prev, uint256_t pin_hash, const char *title){
     /* Screen for Pin Entry 
      * Saves results into pin_entries*/
-    menu8g2_t local_menu;
-    menu8g2_t *menu = &local_menu;
-    menu8g2_copy(menu, prev);
 
     bool res;
 
@@ -83,10 +80,9 @@ bool entry_pin(menu8g2_t *prev, uint256_t pin_hash, const char *title){
                         (u8g2_GetDisplayHeight(u8g2) + num_height)/2 ,
                         buf);
             }
+            u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
+            u8g2_SetDrawColor(u8g2, 1); // Set it back to default background
         MENU8G2_END_DRAW(menu)
-
-        u8g2_SetFont(u8g2, u8g2_font_profont12_tf);
-        u8g2_SetDrawColor(u8g2, 1); // Set it back to default background
 
         if(xQueueReceive(menu->input_queue, &input_buf, portMAX_DELAY)) {
             if(input_buf & (1ULL << EASY_INPUT_BACK)){
