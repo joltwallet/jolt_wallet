@@ -111,6 +111,7 @@
 #   define AES132_COMM_MARSHALING_H
 
 #include "aes132_comm.h" // definitions and declarations for the communication module
+#include "aes132_conf.h"
 
 
 /** \defgroup ataes132_command_marshaling Module 01: Command Marshaling
@@ -154,9 +155,14 @@ uint8_t aes132m_execute(uint8_t op_code, uint8_t mode, uint16_t param1, uint16_t
 			uint8_t datalen3, uint8_t *data3, uint8_t datalen4, uint8_t *data4,
 			uint8_t *tx_buffer, uint8_t *rx_buffer);
 
-/* Convenience functions */
+/* Convenience Command Functions */
 #include "jolttypes.h"
+uint8_t aes132m_nonce_sync(uint8_t *nonce_out);
 uint8_t aes132m_rand(uint8_t *out, const size_t n_bytes);
+uint8_t aes132m_encrypt(uint8_t *out);
+uint8_t aes132m_auth_compute(uint8_t *out_mac, const uint8_t key_id,
+        const uint8_t *b0, const uint8_t *b1);
+uint8_t aes132m_lock();
 /** @} */
 
 #endif

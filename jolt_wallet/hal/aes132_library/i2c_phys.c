@@ -35,7 +35,8 @@ static uint8_t i2c_master_cmd_begin_s(i2c_port_t i2c_num,
             ESP_LOGW(TAG, "i2c_master_cmd_begin parameter error.");
             break;
         case ESP_FAIL:
-            ESP_LOGW(TAG, "Sending command error, slave doesn’t ACK the transfer.");
+            ESP_LOGD(TAG, "Sending command error, slave doesn’t ACK the transfer. "
+                    "Probably means the ataes132a is busy carrying out a command.");
             res = I2C_FUNCTION_RETCODE_NACK;
             break;
         case ESP_ERR_INVALID_STATE:

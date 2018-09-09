@@ -33,6 +33,17 @@
 static const char* TAG = "storage_hal";
 static const char* TITLE = "Storage Access";
 
+bool storage_factory_startup() {
+    /* Configures storage upon first bootup */
+    bool res;
+#if CONFIG_JOLT_STORE_INTERNAL
+    res = storage_internal_factory_startup();
+#elif CONFIG_JOLT_STORE_ATAES132A
+    res = storage_ataes132a_factory_startup();
+#endif
+   return res;
+}
+
 bool storage_exists_mnemonic() {
     /* Checks if a mnemonic has been previously setup on the device.
      * Returns true if mnemonic has been setup; false otherwise*/

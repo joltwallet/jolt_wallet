@@ -25,7 +25,7 @@
 static const char* TAG = "storage_internal";
 static const char* TITLE = "Storage Access";
 
-jolt_err_t init_nvs_namespace(nvs_handle *nvs_h, const char *namespace) {
+static jolt_err_t init_nvs_namespace(nvs_handle *nvs_h, const char *namespace) {
     // Initialize NVS
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
@@ -47,6 +47,10 @@ jolt_err_t init_nvs_namespace(nvs_handle *nvs_h, const char *namespace) {
     }
 }
 
+bool storage_internal_factory_startup() {
+    // nothing to do
+    return true;
+}
 
 bool storage_internal_exists_mnemonic() {
     /* Returens true if mnemonic exists, false otherwise */

@@ -8,6 +8,8 @@
 
 #include "jolttypes.h"
 
+bool storage_factory_startup();
+
 bool storage_exists_mnemonic();
 
 /* Get/Stores Mnemonic. Has access to pin_hash or will prompt for pin_hash */

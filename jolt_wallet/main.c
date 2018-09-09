@@ -38,16 +38,6 @@ volatile menu8g2_t *menu;
 
 static const char TAG[] = "main";
 
-static void printf_puthex_array(uint8_t* data_buffer, uint8_t length) {
-	uint8_t i_data;
-    printf("Response: ");
-	for (i_data = 0; i_data < length; i_data++) {
-		printf("%.2X",*data_buffer++);
-		printf(" ");
-	}
-    printf("\n");
-}
-
 #ifndef UNIT_TESTING
 // So our app_main() doesn't override the unit test app_main()
 void app_main() {
@@ -80,17 +70,6 @@ void app_main() {
     set_jolt_cast();
     wifi_connect();
 
-    // todo: remove this, just here for sanity checks;
-    // turn down main task stack back to 3584 when done debugging
-#if 0
-    vTaskDelay( 5000 / portTICK_PERIOD_MS );
-    char buf[1024];
-    network_get_data( (unsigned char *)"{ \"action\" : \"block_count\"}",
-            (unsigned char *)buf, sizeof(buf) );
-    printf("%s\n", buf);
-    return;
-#endif
-    
     xTaskCreate(gui_task,
             "GUI", 16000,
             NULL, 10,

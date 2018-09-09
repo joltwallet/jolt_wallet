@@ -6,6 +6,8 @@
 #ifndef __JOLT_HAL_ATAES132A_STORAGE_H__
 #define __JOLT_HAL_ATAES132A_STORAGE_H__
 
+bool storage_ataes132a_factory_startup();
+
 bool storage_ataes132a_exists_mnemonic();
 
 void storage_ataes132a_set_mnemonic(uint256_t bin, uint256_t pin_hash);

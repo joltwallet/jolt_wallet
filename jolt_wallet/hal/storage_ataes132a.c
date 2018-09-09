@@ -19,11 +19,26 @@
 #include "jolttypes.h"
 #include "menu8g2.h"
 #include "storage_internal.h"
+#include "aes132_comm_marshaling.h"
 
 static const char* TAG = "storage_ataes132a";
 static const char* TITLE = "Storage Access";
 
+bool storage_ataes132a_factory_startup() {
+    /* Check if device is locked */
+    if( false ) {
+        /* Try and recover encrypted master key from ataes132a master storage */
+        // todo: Decrypt master key
+        // if master key doesn't work, express that the device is bricked
+    }
+    else {
+        /* ChipConfig */
+    }
+    return false;
+}
+
 bool storage_ataes132a_exists_mnemonic() {
+    // todo: implement
     return false;
 }
 
