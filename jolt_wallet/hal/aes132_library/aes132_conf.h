@@ -58,7 +58,7 @@ typedef union {
                 auth_compute: 1;
         uint8_t link_pointer: 4,
                 counter_num: 4;
-        uint8_t dec_read:1,
+        uint8_t dec_read: 1,
                 reserved_0: 7;
     };
 } aes132_keyconfig_t;

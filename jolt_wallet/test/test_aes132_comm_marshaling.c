@@ -76,6 +76,9 @@ TEST_CASE("Check Device Locked", MODULE_NAME) {
      * but is a useful test none the less */
 }
 
+TEST_CASE("Configure Device", MODULE_NAME) {
+}
+
 TEST_CASE("MAC Computation", MODULE_NAME) {
     uint8_t res;
     uint8_t nonce[12] = { 0 };
