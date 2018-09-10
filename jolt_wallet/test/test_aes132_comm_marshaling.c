@@ -85,6 +85,11 @@ TEST_CASE("Configure Device", MODULE_NAME) {
      // todo: Make sure AuthCompute fails
 }
 
+TEST_CASE("Load Master Key", MODULE_NAME) {
+    uint8_t res;
+    res = aes132m_load_master_key();
+}
+
 TEST_CASE("Counter Read", MODULE_NAME) {
     /* Read all counters */
     // Setup required hardware

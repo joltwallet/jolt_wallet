@@ -15,6 +15,11 @@
 #define AES132_KEYCONFIG_ADDR         0xF080
 #define AES132_ZONECONFIG_ADDR        0xF0C0
 
+#define AES132_LOCK_SMALLZONE     0b00
+#define AES132_LOCK_KEY           0b01
+#define AES132_LOCK_CONFIG        0b10
+#define AES132_LOCK_ZONECONFIG_RO 0b11
+
 #define AES132_NUM_ZONES 16
 
 #define AES132_INCLUDE_SMALLZONE false // We don't use smallzone
