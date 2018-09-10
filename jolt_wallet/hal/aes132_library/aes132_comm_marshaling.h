@@ -157,11 +157,15 @@ uint8_t aes132m_execute(uint8_t op_code, uint8_t mode, uint16_t param1, uint16_t
 
 /* Convenience Command Functions */
 #include "jolttypes.h"
+uint8_t aes132m_blockread(uint8_t *data, const uint16_t address,
+        const uint8_t count);
+uint8_t aes132m_counter(uint32_t *count, uint8_t counter_id);
+uint8_t aes132m_encrypt(uint8_t *out);
+uint8_t aes132m_load_master_key();
+uint8_t aes132m_lock();
 uint8_t aes132m_nonce_sync(uint8_t *nonce_out);
 uint8_t aes132m_rand(uint8_t *out, const size_t n_bytes);
-uint8_t aes132m_encrypt(uint8_t *out);
-uint8_t aes132m_lock();
-uint8_t aes132m_counter(uint32_t *count, uint8_t counter_id);
 /** @} */
+#define AES132_RAND_BYTE_LEN 16
 
 #endif

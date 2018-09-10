@@ -23,10 +23,14 @@
 #include <string.h>                    // needed for memcpy()
 #include "aes132_comm_marshaling.h"    // definitions and declarations for the Command Marshaling module
 #include "aes132_i2c.h" // For ReturnCode macros
+
+#include "esp_system.h"
 #include "esp_log.h"
 #include "sodium.h"
+#include "hal/storage.h"
 
 static const char TAG[] = "aes132m";
+static uint8_t *master_key = NULL;
 
 /* Used to mirror the internal MacCount of the ataes132a device.
  * The ataes132a MacCount gets zero'd when:
@@ -141,6 +145,56 @@ uint8_t aes132m_debug_auth_compute(uint8_t *out_mac, const uint8_t key_id,
 }
 #endif
 
+
+uint8_t aes132m_load_master_key() {
+    /* Allocates space for the master key on the heap */
+    if( NULL==master_key ) {
+        master_key = sodium_malloc(16);
+    }
+    if( NULL==master_key ){
+        ESP_LOGE(TAG, "Unable to allocate space for the ATAES132A Master Key");
+        esp_restart();
+    }
+    sodium_mprotect_readwrite(master_key);
+    sodium_memzero(master_key, 16);
+
+    /* Check if the device is locked, if not locked generate a new master key */ 
+    // todo
+    /* Loads the key from storage */
+    // todo
+    /* If not found in storage, check the Master UserZone */
+
+    sodium_mprotect_noaccess(master_key);
+    return 0;
+}
+
+uint8_t aes132m_blockread(uint8_t *data, const uint16_t address, const uint8_t count) {
+    /* BlockRead Command reads 1~32 bytes of plaintext from userzone or 
+     * configuration memory. Standard eeprom read commands can also read userzone
+     * data if authentication nor encryption is required. Standard eeprom read
+     * commands cannot read configuration memory.
+     *
+     * Requested data cannot cross page boundaries.
+     *
+     * Configuration memory can only be read via the blockread command.
+     */
+    uint8_t res;
+    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
+    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
+    uint8_t cmd, mode;
+    uint16_t param1, param2;
+
+    cmd = AES132_BLOCK_READ;
+    mode = 0x00; // Must be zero
+    param1 = address;
+    param2 = count;
+    res = aes132m_execute(cmd, mode, param1, param2,
+            0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+    //todo opcode check
+    memcpy(data, &rx_buffer[AES132_RESPONSE_INDEX_DATA], count);
+    return 0;
+}
+
 /** \brief This function sends data to the device.
  * \param[in] count number of bytes to send
  * \param[in] word_address word address
@@ -229,7 +283,6 @@ uint8_t aes132m_execute(uint8_t op_code, uint8_t mode, uint16_t param1, uint16_t
 
 /* Populates the output buffer with n_bytes of random numbers */
 uint8_t aes132m_rand(uint8_t *out, const size_t n_bytes) {
-#define AES132_RAND_BYTE_LEN 16
     uint8_t res;
     uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
     uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
@@ -259,7 +312,6 @@ uint8_t aes132m_rand(uint8_t *out, const size_t n_bytes) {
     } while( n_copy > 0 );
 
     return 0; // success
-#undef AES132_RAND_BYTE_LEN
 }
 
 /* Nonce Synchronization - Page 58
@@ -354,7 +406,7 @@ uint8_t aes132m_local_auth_compute(uint8_t *out_mac, uint8_t *key,
     return 0;
 }
 
-uint8_t aes132m_key_load(uint8_t *out, const uint8_t key_id) {
+uint8_t aes132m_key_load(uint128_t key, const uint8_t key_id) {
     /* We use this to load in the PIN authorization key */
 
     uint8_t res;
@@ -362,36 +414,31 @@ uint8_t aes132m_key_load(uint8_t *out, const uint8_t key_id) {
     uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
     uint8_t cmd, mode;
     uint16_t param1, param2;
+    uint8_t in_mac[16];
+    uint8_t enc_key[16];
 
     /* Configuration - Page 51
-     * Mode<7> - 0b = First four bytes of SmallZone are not included in the MAC.
-     * Mode<6> - 1b = 1b = Include SerialNum in the MAC.
-     * Mode<5> - 0b = 0b = Usage Counter is not included in the MAC.
-     * Mode<4-1> - 0000b = Reserved
-     * Mode<0> - 1b = The key load target is Key Memory. 
-     * Total Mode Config: 0x21
-     *
-     * Param1<15-8> - 00000000b = Always Zero.
-     * Param1<7-0> = ChildKeyID for the Key Memory loads,
-     *               or the ParentKeyID for VolatileKey loads.
-     * Param2 - 2 Bytes - Volatile Key Configuration. We don't use Volatile Key,
-     *                    so set this to 0x0000.
      * Data1 - 16 Bytes - Integrity MAC for the input data
      * Data2 - 16 Bytes - Encrypted Key Value
      *
      */
     cmd = AES132_KEY_LOAD;
-    mode = 0x21;
+    mode = 0x01;
+    mode |= AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER; // MAC Params
     param1 = key_id;
-    param2 = 0x0000;
-    // todo, flesh this out more
+    param2 = 0x0000; // only used for VolatileKey
+    // todo: encrypt key
+    // todo: compute MAC
     res = aes132m_execute(cmd, mode, param1, param2,
-            0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+            sizeof(in_mac), in_mac,
+            sizeof(enc_key), enc_key,
+            0, NULL, 0, NULL, tx_buffer, rx_buffer);
 
     return 0; // success
 }
 
 static uint8_t lin2bin(uint8_t bin) {
+    /* Used in Counter command; counts number of zero bits from lsb */
     uint8_t count = 0;
     while( !(bin & 0x1) ) {
         count++;
@@ -401,6 +448,11 @@ static uint8_t lin2bin(uint8_t bin) {
 }
 
 uint8_t aes132m_counter(uint32_t *count, uint8_t counter_id) {
+    /* MVP
+     * Todo:
+     *     * error handling
+     *     * robust unit tests
+     */
     uint8_t res;
     uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
     uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};

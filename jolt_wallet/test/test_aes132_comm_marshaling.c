@@ -71,14 +71,6 @@ TEST_CASE("Bitfield Config", MODULE_NAME) {
     TEST_ASSERT_EQUAL(4, sizeof(aes132_zoneconfig_t));
 }
 
-TEST_CASE("Check Device Locked", MODULE_NAME) {
-    /* Doesn't definitively prove that the lock checking function works,
-     * but is a useful test none the less */
-    // Setup required hardware
-    test_setup_i2c();
-
-}
-
 TEST_CASE("Configure Device", MODULE_NAME) {
     // Setup required hardware
     test_setup_i2c();
@@ -107,6 +99,15 @@ TEST_CASE("Counter Read", MODULE_NAME) {
     printf("Read all device counters complete.\n");
 }
 
+TEST_CASE("BlockRead: Check if LockConfig", MODULE_NAME) {
+    // Setup required hardware
+    test_setup_i2c();
+    uint8_t data;
+    uint8_t res;
+    res =  aes132m_blockread(&data, AES132_LOCKCONFIG_ADDR, sizeof(data));
+    TEST_ASSERT_EQUAL_HEX8(0x55, data);
+}
+
 TEST_CASE("PIN Auth", MODULE_NAME) {
     // Setup required hardware
     test_setup_i2c();
@@ -115,6 +116,7 @@ TEST_CASE("PIN Auth", MODULE_NAME) {
     aes132_write_counterconfig();
     aes132_write_keyconfig();
     aes132_write_zoneconfig();
+
     //todo: actually do the Auth Command
 }
 
