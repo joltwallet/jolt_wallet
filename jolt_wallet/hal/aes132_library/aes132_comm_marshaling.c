@@ -116,7 +116,8 @@ static bool check_configlock() {
 }
 
 
-#ifdef UNIT_TESTING
+//#ifdef UNIT_TESTING
+#if 0
 void aes132m_debug_set_local_mac_count( uint8_t count ) {
     mac_count = count;
 }
@@ -160,18 +161,23 @@ uint8_t aes132m_debug_auth_compute(uint8_t *out_mac, const uint8_t key_id,
 #endif
 
 static void lock_device() {
+    /* Locks smallzone, config memory, key memory, and makes the master
+     * UserZone read-only 
+     *
+     * Warning; this function has permament physical impacts.
+     * */
     // Configuration Memory MUST be locked before Key Memory
     uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
     uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
 
     const uint8_t cmd = AES132_LOCK;
     // Require Validate memory checksum in Param2
-    const mode_common = 0x04 | AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER;
+    const uint8_t mode_common = 0x04 | AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER;
 
     /* Lock SmallZone */
     {
         ESP_LOGI(TAG, "Locking SmallZone");
-        const uint8_t mode_smallzone = mode_common | AES132_LOCK_SMALLZONE;
+        const uint8_t mode = mode_common | AES132_LOCK_SMALLZONE;
         uint16_t param1 = 0;
         // todo: compute checksum into param2
         uint16_t param2;
@@ -181,8 +187,8 @@ static void lock_device() {
     /* Make Master UserZone Read-Only */
     {
         ESP_LOGI(TAG, "Locking UserZone 0 (master) read-only");
-        const uint8_t mode_ro = mode_common | AES132_LOCK_ZONECONFIG_RO;
-        param1 = 0;
+        const uint8_t mode = mode_common | AES132_LOCK_ZONECONFIG_RO;
+        uint16_t param1 = 0;
         // todo: compute checksum into param2
         uint16_t param2;
 
@@ -194,8 +200,8 @@ static void lock_device() {
     /* Lock Configuration Memory */
     {
         ESP_LOGI(TAG, "Locking Configuration Memory");
-        uint8_t mode_config = mode_common | AES132_LOCK_CONFIG;
-        param1 = 0;
+        uint8_t mode = mode_common | AES132_LOCK_CONFIG;
+        uint16_t param1 = 0;
         // todo: compute checksum into param2
         uint16_t param2;
         uint8_t res = aes132m_execute(cmd, mode, param1, param2,
@@ -204,8 +210,8 @@ static void lock_device() {
     /* Lock Key Memory */
     {
         ESP_LOGI(TAG, "Locking Key Memory");
-        const uint8_t mode_key = mode_common | AES132_LOCK_KEY;
-        param1 = 0;
+        const uint8_t mode = mode_common | AES132_LOCK_KEY;
+        uint16_t param1 = 0;
         // todo: compute checksum into param2
         uint16_t param2;
         uint8_t res = aes132m_execute(cmd, mode, param1, param2,
@@ -248,14 +254,24 @@ uint8_t aes132m_load_master_key() {
         // Generate 16 bytes of entropy
         for( uint8_t i=0; i<4; i++ ) {
             uint32_t entropy = randombytes_random();
-            memcpy(((uint32_t*)master_key)[i], &entropy, sizeof(uint32_t));
+            memcpy(&((uint32_t*)master_key)[i], &entropy, sizeof(uint32_t));
         }
-        ESP_LOGD("Confidential; ATAES132A Master Key: "
-                "0x%x%x%x%x%x%x%x%%x%x%x%%x%x%x%",
+
+        printf("Confidential; ATAES132A Master Key: 0x");
+        for( uint8_t i=0; i<16; i++) {
+            printf("%02x", master_key[i]);
+        }
+        printf("\n");
+#if 0
+                "%02x%02x%02x%02x%02x%02x%02x%02x"
+                "%02x%02x%02x%02x%02x%02x%02x%02x",
                 master_key[0], master_key[1], master_key[2],
                 master_key[3], master_key[4], master_key[5],
                 master_key[6], master_key[7], master_key[8],
-                master_key[9], master_key[10], master_key[11]);
+                master_key[9], master_key[10], master_key[11]
+                master_key[12], master_key[13], master_key[14],
+                master_key[15]);
+#endif
         /* Encrypt Key */
         // todo
         /* Backup Key */
@@ -269,7 +285,8 @@ uint8_t aes132m_load_master_key() {
 #ifdef UNIT_TESTING
         // Do Nothing; Don't actually lock device
 #else
-        lock_device();
+        //lock_device();
+        printf("While debugging, if lock_device wasn't commented out, itd be locked.\n");
         // todo: test
 #endif
 
