@@ -323,6 +323,7 @@ uint8_t aes132m_nonce_sync(uint8_t *nonce_out) {
 
     return 0; // success
 }
+
 uint8_t aes132m_local_auth_compute(uint8_t *out_mac, uint8_t *key,
         const uint8_t *block1, const uint8_t *block2) {
     /* Computes the MAC code locally; does not interact with device.
@@ -387,5 +388,40 @@ uint8_t aes132m_key_load(uint8_t *out, const uint8_t key_id) {
     res = aes132m_execute(cmd, mode, param1, param2,
             0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
 
+    return 0; // success
+}
+
+static uint8_t lin2bin(uint8_t bin) {
+    uint8_t count = 0;
+    while( !(bin & 0x1) ) {
+        count++;
+        bin >>= 1;
+    }
+    return count;
+}
+
+uint8_t aes132m_counter(uint32_t *count, uint8_t counter_id) {
+    uint8_t res;
+    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
+    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
+    uint8_t cmd, mode;
+    uint16_t param1, param2;
+
+    cmd = AES132_COUNTER;
+    mode = 0x01; // Read the Counter
+    mode |= AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER; // MAC Params
+    param1 = counter_id;
+    param2 = 0x0000;
+    res = aes132m_execute(cmd, mode, param1, param2,
+            0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+
+    // Interpretting the counter
+    uint8_t lin_count, count_flag;
+    uint16_t bin_count;
+    lin_count = rx_buffer[AES132_RESPONSE_INDEX_DATA];
+    count_flag = rx_buffer[AES132_RESPONSE_INDEX_DATA+1];
+    bin_count = rx_buffer[AES132_RESPONSE_INDEX_DATA+2]<<8 \
+                | rx_buffer[AES132_RESPONSE_INDEX_DATA+3];
+    *count = (bin_count*32) + (count_flag/2)*8 + lin2bin(lin_count);
     return 0; // success
 }

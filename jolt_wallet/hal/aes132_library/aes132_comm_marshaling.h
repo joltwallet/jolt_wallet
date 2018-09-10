@@ -160,9 +160,8 @@ uint8_t aes132m_execute(uint8_t op_code, uint8_t mode, uint16_t param1, uint16_t
 uint8_t aes132m_nonce_sync(uint8_t *nonce_out);
 uint8_t aes132m_rand(uint8_t *out, const size_t n_bytes);
 uint8_t aes132m_encrypt(uint8_t *out);
-uint8_t aes132m_auth_compute(uint8_t *out_mac, const uint8_t key_id,
-        const uint8_t *b0, const uint8_t *b1);
 uint8_t aes132m_lock();
+uint8_t aes132m_counter(uint32_t *count, uint8_t counter_id);
 /** @} */
 
 #endif

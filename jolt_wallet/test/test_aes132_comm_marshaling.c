@@ -74,9 +74,48 @@ TEST_CASE("Bitfield Config", MODULE_NAME) {
 TEST_CASE("Check Device Locked", MODULE_NAME) {
     /* Doesn't definitively prove that the lock checking function works,
      * but is a useful test none the less */
+    // Setup required hardware
+    test_setup_i2c();
+
 }
 
 TEST_CASE("Configure Device", MODULE_NAME) {
+    // Setup required hardware
+    test_setup_i2c();
+
+    aes132_write_chipconfig();
+    aes132_write_counterconfig();
+    aes132_write_keyconfig();
+    aes132_write_zoneconfig();
+
+     // todo: Make sure Legacy command fails
+     // todo: Make sure DecRead or WriteCompute fails
+     // todo: Make sure AuthCompute fails
+}
+
+TEST_CASE("Counter Read", MODULE_NAME) {
+    /* Read all counters */
+    // Setup required hardware
+    test_setup_i2c();
+
+    printf("Reading all device counters:\n");
+    for(uint8_t counter_id=0; counter_id < AES132_NUM_ZONES; counter_id++) {
+        uint32_t count;
+        aes132m_counter(&count, counter_id);
+        printf("Key %d: %u\n", counter_id, count);
+    }
+    printf("Read all device counters complete.\n");
+}
+
+TEST_CASE("PIN Auth", MODULE_NAME) {
+    // Setup required hardware
+    test_setup_i2c();
+
+    aes132_write_chipconfig();
+    aes132_write_counterconfig();
+    aes132_write_keyconfig();
+    aes132_write_zoneconfig();
+    //todo: actually do the Auth Command
 }
 
 TEST_CASE("MAC Computation", MODULE_NAME) {
