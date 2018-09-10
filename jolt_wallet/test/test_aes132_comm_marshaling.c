@@ -86,6 +86,9 @@ TEST_CASE("Configure Device", MODULE_NAME) {
 }
 
 TEST_CASE("Load Master Key", MODULE_NAME) {
+    // Setup required hardware
+    test_setup_i2c();
+
     uint8_t res;
     res = aes132m_load_master_key();
 }

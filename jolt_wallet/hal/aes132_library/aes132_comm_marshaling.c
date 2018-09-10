@@ -257,21 +257,15 @@ uint8_t aes132m_load_master_key() {
             memcpy(&((uint32_t*)master_key)[i], &entropy, sizeof(uint32_t));
         }
 
-        printf("Confidential; ATAES132A Master Key: 0x");
-        for( uint8_t i=0; i<16; i++) {
-            printf("%02x", master_key[i]);
-        }
-        printf("\n");
-#if 0
+        ESP_LOGD(TAG, "Confidential; ATAES132A Master Key: 0x"
                 "%02x%02x%02x%02x%02x%02x%02x%02x"
-                "%02x%02x%02x%02x%02x%02x%02x%02x",
+                "%02x%02x%02x%02x%02x%02x%02x%02x\n",
                 master_key[0], master_key[1], master_key[2],
                 master_key[3], master_key[4], master_key[5],
                 master_key[6], master_key[7], master_key[8],
-                master_key[9], master_key[10], master_key[11]
+                master_key[9], master_key[10], master_key[11],
                 master_key[12], master_key[13], master_key[14],
                 master_key[15]);
-#endif
         /* Encrypt Key */
         // todo
         /* Backup Key */
