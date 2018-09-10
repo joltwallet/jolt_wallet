@@ -20,6 +20,8 @@
 #define AES132_LOCK_CONFIG        0b10
 #define AES132_LOCK_ZONECONFIG_RO 0b11
 
+#define AES132_USERZONE(x) ((x)*0x0100)
+
 #define AES132_NUM_ZONES 16
 
 #define AES132_INCLUDE_SMALLZONE false // We don't use smallzone
@@ -37,6 +39,8 @@ bool aes132_write_chipconfig();
 bool aes132_write_counterconfig();
 bool aes132_write_keyconfig();
 bool aes132_write_zoneconfig();
+
+bool aes132_reset_master_zoneconfig();
 
 /* For bitfields, LSB first; MSB last */
 

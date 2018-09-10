@@ -123,6 +123,31 @@ bool aes132_write_keyconfig() {
     return true; // todo: error handling overhaul
 }
 
+
+bool aes132_reset_master_zoneconfig() {
+    /* Writes the ZoneConfig into a state so that we can easily write to
+     * the UserZone before locking */
+    uint8_t res;
+    const aes132_zoneconfig_t config_master = {
+        .auth_read = false, // Master Zone just holding an esp32 encrypted backup of the master key, no authentication required to read the ciphertext.
+        .auth_write = false, // Irrelevant; section is read-only
+        .enc_read = false,   // No security benefit in EncRead
+        .enc_write = false,  // Irrelevant; section is read-only
+        .write_mode = 0b00,  // R/W
+        .use_serial = AES132_INCLUDE_SERIAL,  // Irrelevant; section is read-only
+        .use_small = AES132_INCLUDE_SMALLZONE,  // Irrelevant; section is read-only
+        .read_id = 0x0,      // Master to generate OutMAC 
+        .auth_id = 0x0,      // Irrelevant; authentication not required
+        .volatile_transfer_ok = false, // Prohibit KeyTransfer to VolatileKey
+        .write_id = 0x0,     // Irrelevant, EncWrite not used
+        .read_only = 0x00  // Ignored unless WriteMode is 0b10 or 0b11
+    };
+    res = aes132m_write_memory(sizeof(aes132_zoneconfig_t),
+            AES132_ZONECONFIG_ADDR + 0 * sizeof(aes132_zoneconfig_t),
+            (uint8_t *)&config_master);
+    return true; // todo: error handling overhaul
+}
+
 bool aes132_write_zoneconfig() {
     uint8_t res;
     const aes132_zoneconfig_t config_master = {

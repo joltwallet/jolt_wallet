@@ -229,6 +229,7 @@ uint8_t aes132m_load_master_key() {
      * If device is locked:
      *     * Load and decrypt Master key from MasterUserZone
      */
+    uint8_t res;
     if( NULL==master_key ) {
         master_key = sodium_malloc(16);
     }
@@ -257,7 +258,7 @@ uint8_t aes132m_load_master_key() {
             memcpy(&((uint32_t*)master_key)[i], &entropy, sizeof(uint32_t));
         }
 
-        ESP_LOGD(TAG, "Confidential; ATAES132A Master Key: 0x"
+        ESP_LOGI(TAG, "Confidential; ATAES132A Master Key: 0x"
                 "%02x%02x%02x%02x%02x%02x%02x%02x"
                 "%02x%02x%02x%02x%02x%02x%02x%02x\n",
                 master_key[0], master_key[1], master_key[2],
@@ -266,10 +267,37 @@ uint8_t aes132m_load_master_key() {
                 master_key[9], master_key[10], master_key[11],
                 master_key[12], master_key[13], master_key[14],
                 master_key[15]);
+
         /* Encrypt Key */
-        // todo
-        /* Backup Key */
-        // todo
+        // todo; replace this; this is an identity placeholder
+        uint8_t enc_master_key[16];
+        memcpy(enc_master_key, master_key, sizeof(enc_master_key));
+
+        /* Backup Encrypted Key to Device*/
+        // Make sure the zone config is in a state where we can write to
+        // UserZone 0
+        aes132_reset_master_zoneconfig();
+        res = aes132m_write_memory(sizeof(enc_master_key), AES132_USERZONE(0),
+                enc_master_key);
+        ESP_LOGI(TAG, "Write memory result: %d", res);
+
+        /* Confirm Backup */
+        {
+            uint8_t rx[16];
+            res = aes132m_read_memory(sizeof(enc_master_key), AES132_USERZONE(0),
+                    rx);
+            ESP_LOGI(TAG, "Read memory result: %d", res);
+            ESP_LOGI(TAG, "Confidential; "
+                    "ATAES132A Master Key Backup Response: 0x"
+                    "%02x%02x%02x%02x%02x%02x%02x%02x"
+                    "%02x%02x%02x%02x%02x%02x%02x%02x\n",
+                    rx[0], rx[1], rx[2], rx[3], rx[4], rx[5], rx[6], rx[7],
+                    rx[8], rx[9], rx[10], rx[11], rx[12], rx[13], rx[14],
+                    rx[15]);
+
+            ESP_ERROR_CHECK(memcmp(enc_master_key, rx, sizeof(rx)));
+        }
+        
         /* Configure Device */
         aes132_write_chipconfig();
         aes132_write_counterconfig();
