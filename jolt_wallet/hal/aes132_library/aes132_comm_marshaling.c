@@ -504,6 +504,46 @@ uint8_t aes132m_rand(uint8_t *out, const size_t n_bytes) {
     return 0; // success
 }
 
+uint8_t aes132m_nonce(uint8_t out_random, const uint8_t *in_seed) {
+    /* Random is only populated if in_seed is NULL.
+     * Both inputs can be in_seed.
+     *
+     * random needs to be able to hold a 16-byte output.
+     * in_seed should be 12 bytes.
+     * */
+    uint8_t res;
+    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
+    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
+
+    uint8_t cmd, mode;
+    uint16_t param1, param2;
+    uint8_t data[12] = { 0 };
+
+    cmd = AES132_NONCE;
+    if( NULL == in_seed) {
+        mode = 0x01; // Use the inSeed as Nonce
+    }
+    else {
+        mode = 0x00; // Generate a random Nonce using internal RNG
+    }
+    mode |= AES132_EEPROM_RNG_UPDATE_BIT;
+    param1 = 0x0000; // Always 0
+    param2 = 0x0000; // Always 0
+    if( NULL != in_seed ) {
+        memcpy(data, in_seed, sizeof(data));
+    }
+    res = aes132m_execute(cmd, mode, param1, param2,
+            12, data, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+    if( res ) {
+        ESP_LOGI(TAG, "Nonce returncode: %02X",
+                rx_buffer[AES132_RESPONSE_INDEX_RETURN_CODE]);
+    }
+    if( NULL != out_random && NULL != in_seed ) {
+        memcpy(out_random, &rx_buffer[AES132_RESPONSE_INDEX_DATA], 16);
+    }
+
+    return res;
+}
 /* Nonce Synchronization - Page 58
  * 1) The Random Command is executed on Device A with Mode<2> set to 1b. 
  *    The first 12 bytes of the random field value in the response are stored 
@@ -574,6 +614,7 @@ uint8_t aes132m_local_auth_compute(uint8_t *out_mac, uint8_t *key,
      * WARNING: This function is ripe for side-channel attacks.
      * DO NOT allow information about the key to leak.
      *
+     * probably deprecate this
      * */
     uint8_t b0[16] = { 0 };
     uint8_t bp0[16] = { 0 };
@@ -682,10 +723,12 @@ uint8_t aes132m_key_create(uint8_t key_id) {
     param2 = 0x0000;
     res = aes132m_execute(cmd, mode, param1, param2,
             0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
-    printf("Key Create Response: \n");
-    for(uint8_t i=0; i<sizeof(rx_buffer); i++) {
-        printf("%02X ", rx_buffer[i]);
+    if( res ) {
+        printf("Key Create Response: \n");
+        for(uint8_t i=0; i<sizeof(rx_buffer); i++) {
+            printf("%02X ", rx_buffer[i]);
+        }
+        printf("\n");
     }
-    printf("\n");
     return res;
 }

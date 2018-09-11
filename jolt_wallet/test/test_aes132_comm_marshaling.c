@@ -106,6 +106,9 @@ TEST_CASE("Encrypt/Decrypt", MODULE_NAME) {
     /* Load the Master Key */
     res = aes132m_load_master_key();
 
+    /* Generate Valid Random Nonce */
+    res = aes132m_nonce(NULL, NULL);
+
     /* KeyCreate */
     res = aes132m_key_create(1);
     ESP_LOGI(TAG, "KeyCreate Response: %02X", res);
