@@ -4,8 +4,10 @@
 #include "aes132_conf.h"
 #include "sodium.h"
 #include "stdbool.h"
+#include "esp_log.h"
 
 static const char MODULE_NAME[] = "[aes132a]";
+static const char TAG[] = "test_comm_marsh";
 
 /* Many of these tests only work on an unlocked ataes132a */
 
@@ -105,6 +107,8 @@ TEST_CASE("Encrypt/Decrypt", MODULE_NAME) {
     res = aes132m_load_master_key();
 
     /* KeyCreate */
+    res = aes132m_key_create(1);
+    ESP_LOGI(TAG, "KeyCreate Response: %02X", res);
 }
 
 TEST_CASE("Counter Read", MODULE_NAME) {

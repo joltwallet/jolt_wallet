@@ -166,6 +166,7 @@ uint8_t aes132m_rand(uint8_t *out, const size_t n_bytes);
 
 uint8_t aes132m_load_master_key();
 uint8_t aes132m_nonce_sync(uint8_t *nonce_out);
+uint8_t aes132m_key_create(uint8_t key_id);
 /** @} */
 #define AES132_RAND_BYTE_LEN 16
 

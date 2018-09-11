@@ -667,3 +667,25 @@ uint8_t aes132m_counter(uint32_t *count, uint8_t counter_id) {
     *count = (bin_count*32) + (count_flag/2)*8 + lin2bin(lin_count);
     return 0; // success
 }
+
+uint8_t aes132m_key_create(uint8_t key_id) {
+    uint8_t res;
+    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
+    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
+    uint8_t cmd, mode;
+    uint16_t param1, param2;
+
+    cmd = AES132_KEY_CREATE;
+    mode = 0x07; 
+    mode |= AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER; // MAC Params
+    param1 = key_id;
+    param2 = 0x0000;
+    res = aes132m_execute(cmd, mode, param1, param2,
+            0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+    printf("Key Create Response: \n");
+    for(uint8_t i=0; i<sizeof(rx_buffer); i++) {
+        printf("%02X ", rx_buffer[i]);
+    }
+    printf("\n");
+    return res;
+}
