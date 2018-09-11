@@ -116,8 +116,7 @@ static bool check_configlock() {
 }
 
 
-//#ifdef UNIT_TESTING
-#if 0
+#ifdef UNIT_TESTING
 void aes132m_debug_set_local_mac_count( uint8_t count ) {
     mac_count = count;
 }
@@ -135,6 +134,30 @@ void aes132m_debug_set_nonce( uint8_t *val ) {
     // todo
 }
 
+uint8_t aes132m_debug_clear_master_key() {
+    // deallocate master_key space
+    if( NULL != master_key ) {
+        sodium_free(master_key);
+        master_key = NULL;
+    }
+    // todo: delete the master_key in esp32 storage
+
+    // Clear backed up masterkey
+    if( check_configlock() ) {
+        // Device configuration is locked, cannot clear backup
+        return 1;
+    }
+    else {
+        // Device configuration is unlocked, can clear backup
+        aes132_reset_master_zoneconfig();
+        uint8_t zeros[16] = { 0 };
+        uint8_t res = aes132m_write_memory(sizeof(zeros),
+                AES132_USERZONE(0), zeros);
+    }
+    return 0;
+}
+#endif
+#if 0
 uint8_t aes132m_debug_auth_compute(uint8_t *out_mac, const uint8_t key_id,
         const uint8_t *b0, const uint8_t *b1) {
     /* Computes and returns the 16-byte out_mac */
@@ -225,6 +248,7 @@ uint8_t aes132m_load_master_key() {
      *     * Generate Master Key from ESP32 Entropy
      *     * Configure Device
      *     * Encrypt and Backup Master Key to MasterUserZone
+     *     * Write key to slot 0
      *     * Lock Device
      * If device is locked:
      *     * Load and decrypt Master key from MasterUserZone
@@ -247,12 +271,25 @@ uint8_t aes132m_load_master_key() {
         /* Loads the key from storage */
         // todo
         /* If not found in storage, check the Master UserZone */
-        //todo
+        {
+            uint8_t rx[16];
+            res = aes132m_read_memory(sizeof(rx), AES132_USERZONE(0),
+                    rx);
+            ESP_LOGI(TAG, "Read memory result: %d", res);
+            ESP_LOGI(TAG, "Confidential; "
+                    "ATAES132A Master Key Backup Response: 0x"
+                    "%02x%02x%02x%02x%02x%02x%02x%02x"
+                    "%02x%02x%02x%02x%02x%02x%02x%02x\n",
+                    rx[0], rx[1], rx[2], rx[3], rx[4], rx[5], rx[6], rx[7],
+                    rx[8], rx[9], rx[10], rx[11], rx[12], rx[13], rx[14],
+                    rx[15]);
+            //todo decrypt rx; here just identity
+            memcpy(master_key, rx, 16);
+        }
     }
     else {
         // Device configuration is unlocked
-        // Generate new master key
-        // Generate 16 bytes of entropy
+        /* Generate new master key */
         for( uint8_t i=0; i<4; i++ ) {
             uint32_t entropy = randombytes_random();
             memcpy(&((uint32_t*)master_key)[i], &entropy, sizeof(uint32_t));
@@ -297,6 +334,9 @@ uint8_t aes132m_load_master_key() {
 
             ESP_ERROR_CHECK(memcmp(enc_master_key, rx, sizeof(rx)));
         }
+        /* Write Key to Key0 */
+        res = aes132m_write_memory(16, AES132_KEY(0), master_key);
+        ESP_LOGI(TAG, "Write key result: %d", res);
         
         /* Configure Device */
         aes132_write_chipconfig();

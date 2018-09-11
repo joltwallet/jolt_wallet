@@ -169,4 +169,8 @@ uint8_t aes132m_nonce_sync(uint8_t *nonce_out);
 /** @} */
 #define AES132_RAND_BYTE_LEN 16
 
+#ifdef UNIT_TESTING
+uint8_t aes132m_debug_clear_master_key();
+#endif
+
 #endif

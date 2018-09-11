@@ -15,12 +15,14 @@
 #define AES132_KEYCONFIG_ADDR         0xF080
 #define AES132_ZONECONFIG_ADDR        0xF0C0
 
+
 #define AES132_LOCK_SMALLZONE     0b00
 #define AES132_LOCK_KEY           0b01
 #define AES132_LOCK_CONFIG        0b10
 #define AES132_LOCK_ZONECONFIG_RO 0b11
 
 #define AES132_USERZONE(x) ((x)*0x0100)
+#define AES132_KEY(x) (0xF200 + (x)*0x010)
 
 #define AES132_NUM_ZONES 16
 

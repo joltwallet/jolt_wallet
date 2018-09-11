@@ -72,6 +72,7 @@ TEST_CASE("Bitfield Config", MODULE_NAME) {
 }
 
 TEST_CASE("Configure Device", MODULE_NAME) {
+    /* Incomplete */
     // Setup required hardware
     test_setup_i2c();
 
@@ -85,12 +86,25 @@ TEST_CASE("Configure Device", MODULE_NAME) {
      // todo: Make sure AuthCompute fails
 }
 
-TEST_CASE("Load Master Key", MODULE_NAME) {
+TEST_CASE("[debug] Clear Master Key", MODULE_NAME) {
     // Setup required hardware
     test_setup_i2c();
+    aes132m_debug_clear_master_key();
+}
 
+TEST_CASE("Encrypt/Decrypt", MODULE_NAME) {
+    /* Actually tests many things:
+     * 1) Master Key generate/load
+     * 2) 
+     */
+    // Setup required hardware
+    test_setup_i2c();
     uint8_t res;
+
+    /* Load the Master Key */
     res = aes132m_load_master_key();
+
+    /* KeyCreate */
 }
 
 TEST_CASE("Counter Read", MODULE_NAME) {
@@ -128,6 +142,7 @@ TEST_CASE("PIN Auth", MODULE_NAME) {
     //todo: actually do the Auth Command
 }
 
+#if 0
 TEST_CASE("MAC Computation", MODULE_NAME) {
     uint8_t res;
     uint8_t nonce[12] = { 0 };
@@ -136,6 +151,7 @@ TEST_CASE("MAC Computation", MODULE_NAME) {
     // Compare ESP32 computed nonce with what the ataes132a produces
     // todo
 }
+#endif
 
 #if 0
 TEST_CASE("Encrypt/Decrypt", MODULE_NAME) {
