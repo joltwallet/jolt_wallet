@@ -53,7 +53,7 @@ enum aes132_bit_set_flag {
 // ------------------------ timing definitions -----------------------------------
 
 //! Poll this many ms for the device being ready for access.
-#define AES132_DEVICE_READY_TIMEOUT      (100)
+#define AES132_DEVICE_READY_TIMEOUT      (70)
 
 /** \brief Poll this many ms for the response buffer being ready for reading.
  *
@@ -63,7 +63,7 @@ enum aes132_bit_set_flag {
  * words: The earlier we start polling after sending a command,
  * the longer we have to make the wait-for-response-ready time-out.
  */
-#define AES132_RESPONSE_READY_TIMEOUT     (145) // Biggest response timeout is the one for the TempSense command (in ms).
+#define AES132_RESPONSE_READY_TIMEOUT     (60) // Biggest response timeout is the one for the KeyCreate command (in ms).
 
 
 // ----------------------- definitions for retry counts -----------------------------
@@ -72,7 +72,7 @@ enum aes132_bit_set_flag {
 #define AES132_RETRY_COUNT_ERROR           ((uint8_t) 2)
 
 //! number of re-synchronization retries
-#define AES132_RETRY_COUNT_RESYNC          ((uint8_t) 2)
+#define AES132_RETRY_COUNT_RESYNC          ((uint8_t) 1)
 
 
 // ------------- definitions for packet sizes --------------------

@@ -23,6 +23,7 @@
 #include <string.h>                    // needed for memcpy()
 #include "aes132_comm_marshaling.h"    // definitions and declarations for the Command Marshaling module
 #include "aes132_i2c.h" // For ReturnCode macros
+#include "i2c_phys.h" // For res macros
 
 #include "esp_system.h"
 #include "esp_log.h"
@@ -724,6 +725,9 @@ uint8_t aes132m_key_create(uint8_t key_id) {
     res = aes132m_execute(cmd, mode, param1, param2,
             0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
     if( res ) {
+        if( I2C_FUNCTION_RETCODE_NACK == res ) {
+            ESP_LOGE(TAG, "KeyCreate Nack!");
+        }
         printf("Key Create Response: \n");
         for(uint8_t i=0; i<sizeof(rx_buffer); i++) {
             printf("%02X ", rx_buffer[i]);
