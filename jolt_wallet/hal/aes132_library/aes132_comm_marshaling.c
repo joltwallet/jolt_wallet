@@ -266,6 +266,7 @@ uint8_t aes132m_load_master_key() {
     sodium_memzero(master_key, 16);
 
     /* Check if the device is locked, if not locked generate a new master key */ 
+    ESP_LOGI(TAG, "Checking if device is locked");
     if( check_configlock() ) {
         // Device configuration is locked
         /* Attempt to load key from encrypted spi flash */
@@ -314,7 +315,9 @@ uint8_t aes132m_load_master_key() {
         /* Backup Encrypted Key to Device*/
         // Make sure the zone config is in a state where we can write to
         // UserZone 0
+        ESP_LOGI(TAG, "Reseting Master UserZone Conifg");
         aes132_reset_master_zoneconfig();
+        ESP_LOGI(TAG, "Writing Master Key Backup to UserZone0");
         res = aes132m_write_memory(sizeof(enc_master_key), AES132_USERZONE(0),
                 enc_master_key);
         ESP_LOGI(TAG, "Write memory result: %d", res);
@@ -336,10 +339,12 @@ uint8_t aes132m_load_master_key() {
             ESP_ERROR_CHECK(memcmp(enc_master_key, rx, sizeof(rx)));
         }
         /* Write Key to Key0 */
+        ESP_LOGI(TAG, "Writing Master Key to Key0");
         res = aes132m_write_memory(16, AES132_KEY(0), master_key);
-        ESP_LOGI(TAG, "Write key result: %d", res);
+        ESP_LOGI(TAG, "Write key0 result: %d", res);
         
         /* Configure Device */
+        ESP_LOGI(TAG, "Configuring Device");
         aes132_write_chipconfig();
         aes132_write_counterconfig();
         aes132_write_keyconfig();
@@ -349,7 +354,8 @@ uint8_t aes132m_load_master_key() {
         // Do Nothing; Don't actually lock device
 #else
         //lock_device();
-        printf("While debugging, if lock_device wasn't commented out, itd be locked.\n");
+        ESP_LOGE(TAG, "While debugging, if lock_device wasn't commented out, "
+                "itd be locked.\n");
         // todo: test
 #endif
 
@@ -712,8 +718,8 @@ uint8_t aes132m_counter(uint32_t *count, uint8_t counter_id) {
 
 uint8_t aes132m_key_create(uint8_t key_id) {
     uint8_t res;
-    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
-    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
+    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = { 0 };
+    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = { 0 };
     uint8_t cmd, mode;
     uint16_t param1, param2;
 
@@ -728,7 +734,13 @@ uint8_t aes132m_key_create(uint8_t key_id) {
         if( I2C_FUNCTION_RETCODE_NACK == res ) {
             ESP_LOGE(TAG, "KeyCreate Nack!");
         }
-        printf("Key Create Response: \n");
+        printf("Key Create TX Buffer: \n");
+        for(uint8_t i=0; i<sizeof(tx_buffer); i++) {
+            printf("%02X ", tx_buffer[i]);
+        }
+        printf("\n");
+
+        printf("Key Create RX Buffer: \n");
         for(uint8_t i=0; i<sizeof(rx_buffer); i++) {
             printf("%02X ", rx_buffer[i]);
         }

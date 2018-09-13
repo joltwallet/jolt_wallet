@@ -93,7 +93,8 @@ uint8_t aes132p_write_memory_physical(uint8_t count, uint16_t word_address, uint
  * \param[out] data pointer to rx buffer
  * \return status of the operation
  */
-uint8_t aes132p_read_memory_physical(uint8_t size, uint16_t word_address, uint8_t *data)
+uint8_t aes132p_read_memory_physical(uint8_t size, uint16_t word_address,
+        uint8_t *data)
 {
 	// In both, big-endian and little-endian systems, we send MSB first.
 	const uint8_t word_address_buffer[2] = {

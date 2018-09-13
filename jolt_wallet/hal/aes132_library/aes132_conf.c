@@ -63,9 +63,12 @@ bool aes132_write_keyconfig() {
         .counter_num = 0x0,       // Not used
         .dec_read = false,        // DecRead and WriteCompute prohibited
     };
+    // todo: Need to error handle and poll
+    // Look at how commands poll
     res = aes132m_write_memory(sizeof(aes132_keyconfig_t),
             AES132_KEYCONFIG_ADDR + 0 * sizeof(aes132_keyconfig_t),
             (uint8_t *)&config_master);
+    
 
     /* Stretch is only used for Key streshing via Encrypt command */
     const aes132_keyconfig_t config_stretch = {

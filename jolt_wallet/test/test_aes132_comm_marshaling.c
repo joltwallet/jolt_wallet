@@ -6,6 +6,10 @@
 #include "stdbool.h"
 #include "esp_log.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "freertos/task.h"
+
 static const char MODULE_NAME[] = "[aes132a]";
 static const char TAG[] = "test_comm_marsh";
 
@@ -25,6 +29,7 @@ TEST_CASE("Random Buffer Fill", MODULE_NAME) {
     TEST_ASSERT_EQUAL_UINT8(0, res);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(soln1, out, sizeof(soln1));
 
+#if 0
     // TEST 2: 5 Random Bytes
     const uint8_t soln2[10] = {0xA5,0xA5,0xA5,0xA5,0xA5};
     sodium_memzero(out, sizeof(out));
@@ -39,6 +44,7 @@ TEST_CASE("Random Buffer Fill", MODULE_NAME) {
     sodium_memzero(out, sizeof(out));
     res = aes132m_rand(out, 41);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(soln3, out, sizeof(soln3));
+#endif
 }
 
 TEST_CASE("Bitfield Config", MODULE_NAME) {

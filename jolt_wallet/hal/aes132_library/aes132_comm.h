@@ -71,10 +71,6 @@ enum aes132_bit_set_flag {
 //! number of retries for sending a command, receiving a response, and accessing memory
 #define AES132_RETRY_COUNT_ERROR           ((uint8_t) 2)
 
-//! number of re-synchronization retries
-#define AES132_RETRY_COUNT_RESYNC          ((uint8_t) 1)
-
-
 // ------------- definitions for packet sizes --------------------
 
 //! size of CRC
