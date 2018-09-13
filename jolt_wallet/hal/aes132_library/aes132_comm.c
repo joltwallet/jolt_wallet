@@ -38,8 +38,7 @@ static const char TAG[] = "aes132_comm";
  * \param[in] data pointer to data
  * \param[out] crc pointer to calculated CRC (high byte at crc[0])
  */
-void aes132c_calculate_crc(uint8_t length, uint8_t *data, uint8_t *crc)
-{
+void aes132c_calculate_crc(uint8_t length, uint8_t *data, uint8_t *crc) {
     uint8_t counter;
     uint8_t crc_low = 0, crc_high = 0, crc_carry;
     uint8_t poly_low = 0x05, poly_high = 0x80;
@@ -71,21 +70,9 @@ void aes132c_calculate_crc(uint8_t length, uint8_t *data, uint8_t *crc)
 /** \brief This function resets the command and response buffer address.
  * \return status of the operation
  */
-uint8_t aes132c_reset_io_address(void)
-{
+uint8_t aes132c_reset_io_address(void) {
     ESP_LOGD(TAG, "Reseting command and response buffer address.");
     return aes132p_write_memory_physical(0, AES132_RESET_ADDR, (void *) 0);
-}
-
-
-/** \brief This function resynchronizes communication with the device.
- * \return status of the operation
- */
-uint8_t aes132c_resync()
-{
-    // dummy command; esp32 doesn't need this
-    // todo: strip out resync information
-    return AES132_FUNCTION_RETCODE_SUCCESS;
 }
 
 
@@ -93,21 +80,22 @@ uint8_t aes132c_resync()
  * \param[out] device_status_register pointer to byte where the register value is stored
  * \return status of the operation
  */
-uint8_t aes132c_read_device_status_register(uint8_t *device_status_register)
-{
+uint8_t aes132c_read_device_status_register(uint8_t *device_status_register) {
     uint8_t aes132_lib_return;
     uint8_t n_retries = AES132_RETRY_COUNT_ERROR;
 
     do {
         ESP_LOGD(TAG, "Reading Status Register");
-        aes132_lib_return = aes132p_read_memory_physical(1, AES132_STATUS_ADDR, device_status_register);
+        aes132_lib_return = aes132p_read_memory_physical(1, 
+                AES132_STATUS_ADDR, device_status_register);
         if( !aes132_lib_return ) {
             ESP_LOGD(TAG, "looping");
         }
         else {
             ESP_LOGD(TAG, "breaking out of loop");
         }
-    } while ((aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) && (--n_retries > 0));
+    } while ((aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) 
+            && (--n_retries > 0));
 
     return aes132_lib_return;
 }
@@ -120,8 +108,8 @@ uint8_t aes132c_read_device_status_register(uint8_t *device_status_register)
  * \param[in] n_retries 16-bit number that indicates the number of retries before stopping to poll.
  * \return status of the operation
  */
-uint8_t aes132c_wait_for_status_register_bit(uint8_t mask, uint8_t is_set, uint16_t n_retries)
-{
+uint8_t aes132c_wait_for_status_register_bit(uint8_t mask, uint8_t is_set,
+        uint16_t n_retries) {
     uint8_t aes132_lib_return, device_status_register = 0;
     ESP_LOGD(TAG, "aes132c_wait_for_status_register_bit; "
             "target mask %.2X", mask);
@@ -134,7 +122,6 @@ uint8_t aes132c_wait_for_status_register_bit(uint8_t mask, uint8_t is_set, uint1
             ESP_LOGD(TAG, "Device busy while trying to read Status Register. "
                     "Continue polling until n_retries (%d) is depleted.",
                     n_retries);
-            vTaskDelay(1 / portTICK_PERIOD_MS); // Polling Period
             continue;
         }
 
@@ -154,6 +141,9 @@ uint8_t aes132c_wait_for_status_register_bit(uint8_t mask, uint8_t is_set, uint1
                         "status register.");
                 return AES132_FUNCTION_RETCODE_SUCCESS;
             }
+        }
+        if( n_retries == 0 ) {
+            ESP_LOGE(TAG, "Ran out of retries waiting for statusbit");
         }
     } while (n_retries-- > 0);
     return AES132_FUNCTION_RETCODE_TIMEOUT;
@@ -389,11 +379,9 @@ uint8_t aes132c_send_command(uint8_t *command, uint8_t options)
         }
         else {
             // In case of read-device-status-register failure,
-            // we do not send the command again but only
-            // re-synchronize, because we do not want certain commands 
-            // being repeated, e.g. the Counter command.
+            // we do not send the command again because we do not want certain
+            // commands being repeated, e.g. the Counter command.
             ESP_LOGE(TAG, "Read Device Status Failure: %02X", aes132_lib_return);
-            (void) aes132c_resync();
             return aes132_lib_return;
         }
     } while ( (aes132_lib_return != I2C_FUNCTION_RETCODE_SUCCESS )
@@ -420,10 +408,8 @@ uint8_t aes132c_receive_response(uint8_t size, uint8_t *response)
     do {
         aes132_lib_return = aes132c_wait_for_response_ready();
         if (aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) {
-            // Waiting for the Response-Ready bit timed out. We might have lost communication.
-            // Re-synchronize and retry.
-            // Do not override the return value from the call to aes132c_wait_for_response_ready.
-            (void) aes132c_resync();
+            // Waiting for the Response-Ready bit timed out. 
+            // We might have lost communication.
             continue;
         }
 
@@ -432,8 +418,6 @@ uint8_t aes132c_receive_response(uint8_t size, uint8_t *response)
         if (aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) {
             // Reading the count byte failed. We might have lost communication.
             // Re-synchronize and retry.
-            // Do not override the return value from the call to aes132p_read_memory_physical.
-            (void) aes132c_resync();
             continue;
         }
 
@@ -443,17 +427,13 @@ uint8_t aes132c_receive_response(uint8_t size, uint8_t *response)
             // or the count value got corrupted due to a bad communication channel.
             // Re-synchronize and retry.
             aes132_lib_return = AES132_FUNCTION_RETCODE_SIZE_TOO_SMALL;
-            // Do not override aes132_lib_return.
-            (void) aes132c_resync();
             continue;
         }
 
         if ((count_byte < AES132_RESPONSE_SIZE_MIN) || (count_byte > AES132_RESPONSE_SIZE_MAX)) {
-            // A response has to be between #AES132_RESPONSE_SIZE_MIN and #AES132_RESPONSE_SIZE_MAX bytes long to be valid.
-            // Re-synchronize and retry.
+            // A response has to be between #AES132_RESPONSE_SIZE_MIN 
+            // and #AES132_RESPONSE_SIZE_MAX bytes long to be valid.
             aes132_lib_return = AES132_FUNCTION_RETCODE_COUNT_INVALID;
-            // Do not override aes132_lib_return.
-            (void) aes132c_resync();
             continue;
         }
 
@@ -462,9 +442,6 @@ uint8_t aes132c_receive_response(uint8_t size, uint8_t *response)
         aes132_lib_return = aes132p_read_memory_physical(count_byte - 1, AES132_IO_ADDR, &response[AES132_RESPONSE_INDEX_RETURN_CODE]);
         if (aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) {
             // Reading the remainder of the response failed. We might have lost communication.
-            // Re-synchronize and retry.
-            // Do not override the return value from the call to aes132p_read_memory_physical.
-            (void) aes132c_resync();
             continue;
         }
 
@@ -472,19 +449,17 @@ uint8_t aes132c_receive_response(uint8_t size, uint8_t *response)
         crc_index = count_byte - AES132_CRC_SIZE;
         aes132c_calculate_crc(crc_index, response, crc);
         if ((crc[0] == response[crc_index]) && (crc[1] == response[crc_index + 1]))
-            // We received a consistent response packet. Return the response return code.
+            // We received a consistent response packet.
             return response[AES132_RESPONSE_INDEX_RETURN_CODE];
 
-        // Received and calculated CRC do not match. Retry reading the response buffer.
+        // Received and calculated CRC do not match.
+        // Retry reading the response buffer.
         aes132_lib_return = AES132_FUNCTION_RETCODE_BAD_CRC_RX;
 
-        // Do not override aes132_lib_return.
-        (void) aes132c_resync();
-
         // Retry if communication failed, or CRC did not match.
-    } while ((aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) && (--n_retries > 0));
+    } while ((aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS) 
+            && (--n_retries > 0));
 
-    // Even after re-synchronizing and retrying, we could not receive a consistent response packet.
     return aes132_lib_return;
 }
 

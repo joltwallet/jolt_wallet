@@ -100,8 +100,7 @@ void i2c_enable_phys(void)
 
 
 /** \brief This function disables the I2C peripheral. */
-void i2c_disable_phys(void)
-{
+void i2c_disable_phys(void) {
     i2c_driver_delete(CONFIG_JOLT_I2C_MASTER_NUM);
 }
 
@@ -110,8 +109,7 @@ void i2c_disable_phys(void)
  * \param[in] data pointer to tx buffer
  * \return status of the operation
  */
-uint8_t i2c_send_bytes(uint8_t count, uint8_t *data)
-{
+uint8_t i2c_send_bytes(uint8_t count, uint8_t *data) {
     /* Data contains complete message (except device address). This means:
      * 0-1) Memory address
      * 2) Message Count
@@ -131,7 +129,8 @@ uint8_t i2c_send_bytes(uint8_t count, uint8_t *data)
         ESP_LOGE(TAG, "i2c_master_start parameter error");
         goto failure;
     }
-    if( ESP_OK != i2c_master_write_byte(cmd, i2c_address_current | I2C_MASTER_WRITE, ACK_CHECK_EN) ) {
+    if( ESP_OK != i2c_master_write_byte(cmd,
+                i2c_address_current | I2C_MASTER_WRITE, ACK_CHECK_EN) ) {
         ESP_LOGE(TAG, "i2c_master_write_byte slave address parameter error");
         goto failure;
     }
@@ -143,7 +142,8 @@ uint8_t i2c_send_bytes(uint8_t count, uint8_t *data)
         ESP_LOGE(TAG, "i2c_master_stop parameter error");
         goto failure;
     }
-    res = i2c_master_cmd_begin_s(CONFIG_JOLT_I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
+    res = i2c_master_cmd_begin_s(CONFIG_JOLT_I2C_MASTER_NUM, cmd, 
+            1000 / portTICK_RATE_MS);
 failure:
     i2c_cmd_link_delete(cmd);
     return res;
@@ -154,8 +154,7 @@ failure:
  * \param[out] data pointer to received byte
  * \return status of the operation
  */
-uint8_t i2c_receive_byte(uint8_t *data, uint8_t *address)
-{
+uint8_t i2c_receive_byte(uint8_t *data, uint8_t *address){
     return i2c_receive_bytes(1, data, address);
 }
 
@@ -166,10 +165,9 @@ uint8_t i2c_receive_byte(uint8_t *data, uint8_t *address)
  * \param[out] data pointer to rx buffer
  * \return status of the operation
  */
-uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address)
-{
+uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address){
 	// Random read:
-	// Start, I2C address with write bit, word address, Start, I2C address with read bit
+	// Start, I2C address w/ write bit, word addr, Start, I2C addr with read bit
 
     ESP_LOGD(TAG, "Performing read from memory address %.2X %.2X",
             address[0], address[1]);
@@ -183,7 +181,8 @@ uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address)
         ESP_LOGE(TAG, "i2c_master_start parameter error");
         goto failure;
     }
-    if( ESP_OK != i2c_master_write_byte(cmd, i2c_address_current | I2C_MASTER_WRITE, ACK_CHECK_EN) ) {
+    if( ESP_OK != i2c_master_write_byte(cmd,
+                i2c_address_current | I2C_MASTER_WRITE, ACK_CHECK_EN) ) {
         ESP_LOGE(TAG, "i2c_master_write_byte slave address parameter error");
         goto failure;
     }
@@ -195,7 +194,8 @@ uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address)
         ESP_LOGE(TAG, "i2c_master_start parameter error");
         goto failure;
     }
-    if( ESP_OK != i2c_master_write_byte(cmd, i2c_address_current | I2C_MASTER_READ, ACK_CHECK_EN) ) {
+    if( ESP_OK != i2c_master_write_byte(cmd, 
+                i2c_address_current | I2C_MASTER_READ, ACK_CHECK_EN) ) {
         ESP_LOGE(TAG, "i2c_master_write_byte slave address parameter error");
         goto failure;
     }
@@ -208,7 +208,8 @@ uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address)
         ESP_LOGE(TAG, "i2c_master_stop parameter error");
         goto failure;
     }
-    res = i2c_master_cmd_begin_s(CONFIG_JOLT_I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
+    res = i2c_master_cmd_begin_s(CONFIG_JOLT_I2C_MASTER_NUM, cmd, 
+            1000 / portTICK_RATE_MS);
     for(uint8_t i=0; i<count; i++) {
         ESP_LOGD(TAG, "Received byte %d: %.2X", i, data[i]);
     }

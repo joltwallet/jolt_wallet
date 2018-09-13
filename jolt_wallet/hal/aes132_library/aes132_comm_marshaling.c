@@ -53,6 +53,31 @@ static uint8_t *master_key = NULL;
 static uint8_t mac_count = 0;
 static uint8_t nonce[12] = { 0 };
 
+#define MAC_COUNT_LOCKSTEP_CHECK false
+static uint8_t mac_incr() {
+    /* Increments the local maccount, sends a nonce command if it needs to
+     * be reset */
+
+#if MAC_COUNT_LOCKSTEP_CHECK
+    {
+        // Read the aes132m mac_count to make sure we are in lock-step
+        uint8_t device_count;
+        aes132m_mac_count(&device_count);
+        if( device_count != mac_count ) {
+            ESP_LOGE(TAG, "mac_count desyncronized; Device=%d; Local=%d",
+                    device_count, mac_count);
+        }
+    }
+#endif
+    if( UINT8_MAX == mac_count ) {
+        // todo: error handling, nonce sync?
+        ESP_LOGD(TAG, "local mac_count maxed out, issuing rand Nonce");
+        uint8_t res = aes132m_nonce(NULL, NULL);
+        mac_count = 0;
+    }
+    mac_count++; // Since The Encrypt command returns a MAC, increase mac_count
+    return mac_count;
+}
 /* See Page 110
  * There are two passes through the AES crypto engine in CBC mode to create 
  * the cleartext MAC. The inputs to the crypto engine for those blocks are 
@@ -551,6 +576,29 @@ uint8_t aes132m_nonce(uint8_t out_random, const uint8_t *in_seed) {
 
     return res;
 }
+
+uint8_t aes132m_mac_count(uint8_t *count) {
+    /* Gets the maccount */
+    uint8_t res;
+    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
+    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
+    uint8_t cmd, mode;
+    uint16_t param1, param2;
+
+    cmd = AES132_INFO;
+    mode = 0x00;
+    param1 = 0x0000;
+    param2 = 0x0000;
+    res = aes132m_execute(cmd, mode, param1, param2,
+        0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+    if( AES132_FUNCTION_RETCODE_SUCCESS == res ) {
+        *count = rx_buffer[AES132_RESPONSE_INDEX_DATA + 1];
+    }
+    else {
+    }
+    return res;
+}
+
 /* Nonce Synchronization - Page 58
  * 1) The Random Command is executed on Device A with Mode<2> set to 1b. 
  *    The first 12 bytes of the random field value in the response are stored 
@@ -630,7 +678,8 @@ uint8_t aes132m_local_auth_compute(uint8_t *out_mac, uint8_t *key,
     uint8_t a0[16] = { 0 };
     uint8_t ap0[16] = { 0 };
 
-    mac_count++;
+    mac_incr();
+
     //create_b0(b0, data_len);
     // todo: compute bp0 in CBC mode
     //create_b1(bp0, b1, data_len, data);
@@ -723,6 +772,7 @@ uint8_t aes132m_key_create(uint8_t key_id) {
     uint8_t cmd, mode;
     uint16_t param1, param2;
 
+    mac_incr();
     cmd = AES132_KEY_CREATE;
     mode = 0x07; 
     mode |= AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER; // MAC Params
@@ -734,13 +784,13 @@ uint8_t aes132m_key_create(uint8_t key_id) {
         if( I2C_FUNCTION_RETCODE_NACK == res ) {
             ESP_LOGE(TAG, "KeyCreate Nack!");
         }
-        printf("Key Create TX Buffer: \n");
+        printf("KeyCreate TX Buffer: \n");
         for(uint8_t i=0; i<sizeof(tx_buffer); i++) {
             printf("%02X ", tx_buffer[i]);
         }
         printf("\n");
 
-        printf("Key Create RX Buffer: \n");
+        printf("KeyCreate RX Buffer: \n");
         for(uint8_t i=0; i<sizeof(rx_buffer); i++) {
             printf("%02X ", rx_buffer[i]);
         }
@@ -781,8 +831,11 @@ uint8_t aes132m_encrypt(const uint8_t *in, uint8_t len, uint8_t key_id,
         return AES132_DEVICE_RETCODE_PARSE_ERROR; // todo: better error
     }
 
+    mac_incr(); // Encrypt command returns a MAC, increase local mac_count
+
     cmd = AES132_ENCRYPT;
-    mode = AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER; // MAC Params
+    mode = 0; // We don't care about the MAC, we want speed
+    //mode = AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER; // MAC Params
     param1 = key_id;
     param2 = len;
     res = aes132m_execute(cmd, mode, param1, param2,

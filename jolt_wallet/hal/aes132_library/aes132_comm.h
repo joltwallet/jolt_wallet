@@ -69,7 +69,7 @@ enum aes132_bit_set_flag {
 // ----------------------- definitions for retry counts -----------------------------
 
 //! number of retries for sending a command, receiving a response, and accessing memory
-#define AES132_RETRY_COUNT_ERROR           ((uint8_t) 2)
+#define AES132_RETRY_COUNT_ERROR           ((uint8_t) 10)
 
 // ------------- definitions for packet sizes --------------------
 
@@ -244,7 +244,6 @@ uint8_t aes132c_send_and_receive(uint8_t *command, uint8_t size, uint8_t *respon
 uint8_t aes132c_wakeup(void);
 uint8_t aes132c_sleep(void);
 uint8_t aes132c_standby(void);
-uint8_t aes132c_resync(void);
 uint8_t aes132c_wait_for_status_register_bit(uint8_t mask, uint8_t is_set, uint16_t n_retries);
 uint8_t aes132c_wait_for_response_ready(void);
 uint8_t aes132c_wait_for_device_ready(void);

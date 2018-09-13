@@ -110,6 +110,7 @@
 #ifndef AES132_COMM_MARSHALING_H
 #   define AES132_COMM_MARSHALING_H
 
+#include <stddef.h>
 #include "aes132_comm.h" // definitions and declarations for the communication module
 #include "aes132_conf.h"
 
@@ -168,6 +169,7 @@ uint8_t aes132m_load_master_key();
 uint8_t aes132m_nonce_sync(uint8_t *nonce_out);
 uint8_t aes132m_nonce(uint8_t out_random, const uint8_t *in_seed);
 uint8_t aes132m_key_create(uint8_t key_id);
+uint8_t aes132m_mac_count(uint8_t *count);
 /** @} */
 #define AES132_RAND_BYTE_LEN 16
 
