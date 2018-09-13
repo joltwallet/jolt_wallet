@@ -29,7 +29,6 @@ TEST_CASE("Random Buffer Fill", MODULE_NAME) {
     TEST_ASSERT_EQUAL_UINT8(0, res);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(soln1, out, sizeof(soln1));
 
-#if 0
     // TEST 2: 5 Random Bytes
     const uint8_t soln2[10] = {0xA5,0xA5,0xA5,0xA5,0xA5};
     sodium_memzero(out, sizeof(out));
@@ -44,7 +43,6 @@ TEST_CASE("Random Buffer Fill", MODULE_NAME) {
     sodium_memzero(out, sizeof(out));
     res = aes132m_rand(out, 41);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(soln3, out, sizeof(soln3));
-#endif
 }
 
 TEST_CASE("Bitfield Config", MODULE_NAME) {
@@ -100,24 +98,44 @@ TEST_CASE("[debug] Clear Master Key", MODULE_NAME) {
     aes132m_debug_clear_master_key();
 }
 
-TEST_CASE("Encrypt/Decrypt", MODULE_NAME) {
+TEST_CASE("Encrypt", MODULE_NAME) {
     /* Actually tests many things:
      * 1) Master Key generate/load
-     * 2) 
+     * 2) KeyCreate
+     * 3) Encrypt
      */
     // Setup required hardware
     test_setup_i2c();
     uint8_t res;
+    const uint8_t key_id = 1;
+
+    const char payload[32] = "Super Secret Data To Encrypt";
+    uint8_t ciphertext[32] = { 0 };
+    uint8_t out_mac[16] = { 0 };
 
     /* Load the Master Key */
     res = aes132m_load_master_key();
+    TEST_ASSERT( AES132_DEVICE_RETCODE_SUCCESS == res );
 
     /* Generate Valid Random Nonce */
     res = aes132m_nonce(NULL, NULL);
+    TEST_ASSERT( AES132_DEVICE_RETCODE_SUCCESS == res );
 
     /* KeyCreate */
-    res = aes132m_key_create(1);
+    // todo: replace this with keyload for deterministic unit test
+    res = aes132m_key_create( key_id );
+    TEST_ASSERT( AES132_DEVICE_RETCODE_SUCCESS == res );
     ESP_LOGI(TAG, "KeyCreate Response: %02X", res);
+
+    /* Encrypt payload */
+    res =  aes132m_encrypt((uint8_t *)payload, sizeof(payload), key_id,
+            ciphertext, out_mac);
+    TEST_ASSERT( AES132_DEVICE_RETCODE_SUCCESS == res );
+    printf("Ciphertext: ");
+    for(uint8_t i=0; i< sizeof(ciphertext); i++) {
+        printf("%02X ", ciphertext[i]);
+    }
+    printf("\n");
 }
 
 TEST_CASE("Counter Read", MODULE_NAME) {
@@ -163,21 +181,5 @@ TEST_CASE("MAC Computation", MODULE_NAME) {
 
     // Compare ESP32 computed nonce with what the ataes132a produces
     // todo
-}
-#endif
-
-#if 0
-TEST_CASE("Encrypt/Decrypt", MODULE_NAME) {
-    /* Tests Key 
-     * Tests on the volatile key slot*/
-
-    // Setup required hardware
-    test_setup_i2c();
-
-    uint8_t res;
-    uint8_t out[100];
-    const char test1[] = "Jolt Wallet 123";
-    const char key1[] = "meow";
-
 }
 #endif

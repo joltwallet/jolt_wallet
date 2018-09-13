@@ -160,10 +160,10 @@ uint8_t aes132m_execute(uint8_t op_code, uint8_t mode, uint16_t param1, uint16_t
 uint8_t aes132m_blockread(uint8_t *data, const uint16_t address,
         const uint8_t count);
 uint8_t aes132m_counter(uint32_t *count, uint8_t counter_id);
-uint8_t aes132m_encrypt(uint8_t *out);
+uint8_t aes132m_encrypt(const uint8_t *in, uint8_t len, uint8_t key_id,
+        uint8_t *out_data, uint8_t *out_mac);
 uint8_t aes132m_lock();
 uint8_t aes132m_rand(uint8_t *out, const size_t n_bytes);
-
 uint8_t aes132m_load_master_key();
 uint8_t aes132m_nonce_sync(uint8_t *nonce_out);
 uint8_t aes132m_nonce(uint8_t out_random, const uint8_t *in_seed);

@@ -400,7 +400,7 @@ uint8_t aes132m_blockread(uint8_t *data, const uint16_t address, const uint8_t c
  */
 uint8_t aes132m_write_memory(uint8_t count, uint16_t word_address, uint8_t *data)
 {
-	return aes132c_access_memory(count, word_address, data,  AES132_WRITE);
+    return aes132c_access_memory(count, word_address, data,  AES132_WRITE);
 }
 
 
@@ -412,7 +412,7 @@ uint8_t aes132m_write_memory(uint8_t count, uint16_t word_address, uint8_t *data
 */
 uint8_t aes132m_read_memory(uint8_t size, uint16_t word_address, uint8_t *data)
 {
-	return aes132c_access_memory(size, word_address, data, AES132_READ);
+    return aes132c_access_memory(size, word_address, data, AES132_READ);
 }
 
 
@@ -438,44 +438,44 @@ uint8_t aes132m_read_memory(uint8_t size, uint16_t word_address, uint8_t *data)
  * \return status of the operation
  */
 uint8_t aes132m_execute(uint8_t op_code, uint8_t mode, uint16_t param1, uint16_t param2,
-			uint8_t datalen1, uint8_t *data1, uint8_t datalen2, uint8_t *data2,
-			uint8_t datalen3, uint8_t *data3, uint8_t datalen4, uint8_t *data4,
-			uint8_t *tx_buffer, uint8_t *rx_buffer)
+            uint8_t datalen1, uint8_t *data1, uint8_t datalen2, uint8_t *data2,
+            uint8_t datalen3, uint8_t *data3, uint8_t datalen4, uint8_t *data4,
+            uint8_t *tx_buffer, uint8_t *rx_buffer)
 {
-	uint8_t *p_buffer;
-	uint8_t len;
+    uint8_t *p_buffer;
+    uint8_t len;
 
-	// Assemble command.
-	len = datalen1 + datalen2 + datalen3 + datalen4 + AES132_COMMAND_SIZE_MIN;
-	p_buffer = tx_buffer;
-	*p_buffer++ = len;
-	*p_buffer++ = op_code;
-	*p_buffer++ = mode;
-	*p_buffer++ = param1 >> 8;
-	*p_buffer++ = param1 & 0xFF;
-	*p_buffer++ = param2 >> 8;
-	*p_buffer++ = param2 & 0xFF;
+    // Assemble command.
+    len = datalen1 + datalen2 + datalen3 + datalen4 + AES132_COMMAND_SIZE_MIN;
+    p_buffer = tx_buffer;
+    *p_buffer++ = len;
+    *p_buffer++ = op_code;
+    *p_buffer++ = mode;
+    *p_buffer++ = param1 >> 8;
+    *p_buffer++ = param1 & 0xFF;
+    *p_buffer++ = param2 >> 8;
+    *p_buffer++ = param2 & 0xFF;
 
-	if (datalen1 > 0) {
-		memcpy(p_buffer, data1, datalen1);
-		p_buffer += datalen1;
-	}
-	if (datalen2 > 0) {
-		memcpy(p_buffer, data2, datalen2);
-		p_buffer += datalen2;
-	}
-	if (datalen3 > 0) {
-		memcpy(p_buffer, data3, datalen3);
-		p_buffer += datalen3;
-	}
-	if (datalen4 > 0) {
-		memcpy(p_buffer, data4, datalen4);
-		p_buffer += datalen4;
-	}
+    if (datalen1 > 0) {
+        memcpy(p_buffer, data1, datalen1);
+        p_buffer += datalen1;
+    }
+    if (datalen2 > 0) {
+        memcpy(p_buffer, data2, datalen2);
+        p_buffer += datalen2;
+    }
+    if (datalen3 > 0) {
+        memcpy(p_buffer, data3, datalen3);
+        p_buffer += datalen3;
+    }
+    if (datalen4 > 0) {
+        memcpy(p_buffer, data4, datalen4);
+        p_buffer += datalen4;
+    }
 
-	// Send command and receive response.
-	return aes132c_send_and_receive(&tx_buffer[0], AES132_RESPONSE_SIZE_MAX,
-				&rx_buffer[0], AES132_OPTION_DEFAULT);
+    // Send command and receive response.
+    return aes132c_send_and_receive(&tx_buffer[0], AES132_RESPONSE_SIZE_MAX,
+                &rx_buffer[0], AES132_OPTION_DEFAULT);
 }
 
 /* Populates the output buffer with n_bytes of random numbers */
@@ -748,3 +748,80 @@ uint8_t aes132m_key_create(uint8_t key_id) {
     }
     return res;
 }
+
+uint8_t aes132m_encrypt(const uint8_t *in, uint8_t len, uint8_t key_id,
+        uint8_t *out_data, uint8_t *out_mac) {
+    /* Encrypts upto 32 bytes of data (*in with length len) using key_id
+     * returns cipher text (*out)
+     * len must be <=32.
+     * out_data must be able to handle 16 bytes (<=16byte in) or 
+     * 32 bytes (<=32 byte in)
+     * todo: something with the output MAC*/
+    uint8_t res;
+    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = { 0 };
+    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = { 0 };
+    uint8_t cmd, mode;
+    uint16_t param1, param2;
+
+    uint8_t ciphertext_len;
+    if( len > 32 ) {
+        ESP_LOGE(TAG, "ENCRYPT accepts a maximum of 32 bytes. "
+                "%d bytes were provided.", len);
+        return AES132_DEVICE_RETCODE_PARSE_ERROR; // todo: better error
+    }
+    else if( len > 16 ) {
+        ciphertext_len = 32;
+    }
+    else if(len > 0) {
+        ciphertext_len = 16;
+        return AES132_DEVICE_RETCODE_PARSE_ERROR; // todo: better error
+    }
+    else{
+        ESP_LOGE(TAG, "No cleartext data provided to encrypt");
+        return AES132_DEVICE_RETCODE_PARSE_ERROR; // todo: better error
+    }
+
+    cmd = AES132_ENCRYPT;
+    mode = AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER; // MAC Params
+    param1 = key_id;
+    param2 = len;
+    res = aes132m_execute(cmd, mode, param1, param2,
+            len, in, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+    if( 0 == res ) {
+        if( NULL != out_mac ) {
+            memcpy(out_mac, &rx_buffer[AES132_RESPONSE_INDEX_DATA], 16);
+        }
+
+        if( NULL != out_data ) {
+            memcpy(out_data, &rx_buffer[AES132_RESPONSE_INDEX_DATA+16],
+                    ciphertext_len);
+        }
+        else {
+            ESP_LOGE(TAG, "Cannot copy ciphertext to NULL pointer");
+        }
+    }
+    return res;
+}
+
+#if 0
+uint8_t aes132m_decrypt(const uint8_t *in, uint8_t len, uint8_t key_id,
+        uint8_t *out) {
+    /* Encrypts upto 32 bytes of data (*in with length len) using key_id
+     * returns cipher text (*out)
+     * len must be <=32 
+     * todo: something with the output MAC*/
+    uint8_t res;
+    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = { 0 };
+    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = { 0 };
+    uint8_t cmd, mode;
+    uint16_t param1, param2;
+
+    cmd = AES132_ENCRYPT;
+    mode = AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER; // MAC Params
+    param1 = key_id;
+    param2 = len;
+    res = aes132m_execute(cmd, mode, param1, param2,
+            len, in, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+    return res;
+}
+#endif
