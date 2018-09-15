@@ -4,9 +4,12 @@
 #include "esp_log.h"
 #include "sodium.h"
 
-/* Defines configuration and justification for Jolt */
 
-bool aes132_write_chipconfig() {
+/* Defines configuration and justification for Jolt */
+static const char TAG[] = "aes132_con";
+
+
+uint8_t aes132_write_chipconfig() {
     const aes132_chipconfig_t config = {
         .legacy = false, // Legacy cmd is not used; dangerous
         .encrypt_decrypt = true, // Use Encrypt cmd for key stretching
@@ -18,11 +21,13 @@ bool aes132_write_chipconfig() {
     res = aes132m_write_memory(sizeof(aes132_chipconfig_t),
             AES132_CHIPCONFIG_ADDR,
             (uint8_t *)&config);
-    return true; // todo: error handling overhaul
+    return res;
 }
 
-bool aes132_write_counterconfig() {
-    /* Only imposes restrictions on the usage of the Counter Command */
+uint8_t aes132_write_counterconfig() {
+    /* Only imposes restrictions on the usage of the Counter Command. 
+     * Does not influence which keys use which counters. */
+    uint8_t res;
     const aes132_counterconfig_t config = {
         .increment_ok = false, // No need to increment
         .require_mac = false, // irrelevant because of increment_ok = false
@@ -31,15 +36,19 @@ bool aes132_write_counterconfig() {
     };
     /* Write the same CounterConfig to all 16 registers */
     for(uint8_t i=0; i<AES132_NUM_ZONES; i++) {
-        uint8_t res;
         res = aes132m_write_memory(sizeof(aes132_counterconfig_t),
                 AES132_COUNTERCONFIG_ADDR + i*sizeof(aes132_counterconfig_t),
                 (uint8_t *)&config);
+        if( res ) {
+            ESP_LOGW(TAG, "Wrote up to %d CounterConfig. "
+                    "Error 0x%02x on CounterConfig %d", i, res, i);
+            return res;
+        }
     }
-    return true; // todo: error handling overhaul
+    return res;
 }
 
-bool aes132_write_keyconfig() {
+uint8_t aes132_write_keyconfig() {
     uint8_t res;
     /* Master is primarily used for inbound/outbound MACs */
     const aes132_keyconfig_t config_master = {
@@ -63,11 +72,17 @@ bool aes132_write_keyconfig() {
         .counter_num = 0x0,       // Not used
         .dec_read = false,        // DecRead and WriteCompute prohibited
     };
-    // todo: Need to error handle and poll
-    // Look at how commands poll
+
     res = aes132m_write_memory(sizeof(aes132_keyconfig_t),
             AES132_KEYCONFIG_ADDR + 0 * sizeof(aes132_keyconfig_t),
             (uint8_t *)&config_master);
+
+    if( res ) {
+        ESP_LOGE(TAG, "Failed writing Master (Key0) KeyConfig "
+                "Error Return Code 0x%02X",
+                res);
+        return res;
+    }
     
 
     /* Stretch is only used for Key streshing via Encrypt command */
@@ -95,6 +110,12 @@ bool aes132_write_keyconfig() {
     res = aes132m_write_memory(sizeof(aes132_keyconfig_t),
             AES132_KEYCONFIG_ADDR + 1 * sizeof(aes132_keyconfig_t),
             (uint8_t *)&config_stretch);
+    if( res ) {
+        ESP_LOGE(TAG, "Failed writing Stretch (Key1) KeyConfig "
+                "Error Return Code 0x%02X",
+                res);
+        return res;
+    }
 
     aes132_keyconfig_t config_pin = {
         .external_crypto = false, // Prohibit Encrypt/Decrypt
@@ -122,12 +143,19 @@ bool aes132_write_keyconfig() {
         res = aes132m_write_memory(sizeof(aes132_keyconfig_t),
                 AES132_KEYCONFIG_ADDR + i * sizeof(aes132_keyconfig_t),
                 (uint8_t *)&config_pin);
+        if( res ) {
+            ESP_LOGE(TAG, "Failed writing PIN (Key%d) KeyConfig "
+                    "Error Return Code 0x%02X",
+                    i, res);
+            return res;
+        }
+
     }
-    return true; // todo: error handling overhaul
+    return res;
 }
 
 
-bool aes132_reset_master_zoneconfig() {
+uint8_t aes132_reset_master_zoneconfig() {
     /* Writes the ZoneConfig into a state so that we can easily write to
      * the UserZone before locking */
     uint8_t res;
@@ -148,10 +176,10 @@ bool aes132_reset_master_zoneconfig() {
     res = aes132m_write_memory(sizeof(aes132_zoneconfig_t),
             AES132_ZONECONFIG_ADDR + 0 * sizeof(aes132_zoneconfig_t),
             (uint8_t *)&config_master);
-    return true; // todo: error handling overhaul
+    return res;
 }
 
-bool aes132_write_zoneconfig() {
+uint8_t aes132_write_zoneconfig() {
     uint8_t res;
     const aes132_zoneconfig_t config_master = {
         .auth_read = false, // Master Zone just holding an esp32 encrypted backup of the master key, no authentication required to read the ciphertext.
@@ -170,6 +198,12 @@ bool aes132_write_zoneconfig() {
     res = aes132m_write_memory(sizeof(aes132_zoneconfig_t),
             AES132_ZONECONFIG_ADDR + 0 * sizeof(aes132_zoneconfig_t),
             (uint8_t *)&config_master);
+    if( res ) {
+        ESP_LOGE(TAG, "Failed writing Master (Key1) ZoneConfig "
+                "Error Return Code 0x%02X",
+                res);
+        return res;
+    }
 
     aes132_zoneconfig_t config_pin = {
         .auth_read = true, // PIN required to access zone
@@ -191,6 +225,13 @@ bool aes132_write_zoneconfig() {
         res = aes132m_write_memory(sizeof(aes132_zoneconfig_t),
                 AES132_ZONECONFIG_ADDR + i * sizeof(aes132_zoneconfig_t),
                 (uint8_t *)&config_pin);
+        if( res ) {
+            ESP_LOGE(TAG, "Failed writing PIN (Key%d) ZoneConfig "
+                    "Error Return Code 0x%02X",
+                    i, res);
+            return res;
+        }
+
     }
-    return true; // todo: error handling overhaul
+    return res;
 }

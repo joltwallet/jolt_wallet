@@ -47,12 +47,12 @@
 
 #include "stdbool.h"
 
-bool aes132_write_chipconfig();
-bool aes132_write_counterconfig();
-bool aes132_write_keyconfig();
-bool aes132_write_zoneconfig();
+uint8_t aes132_write_chipconfig();
+uint8_t aes132_write_counterconfig();
+uint8_t aes132_write_keyconfig();
+uint8_t aes132_write_zoneconfig();
 
-bool aes132_reset_master_zoneconfig();
+uint8_t aes132_reset_master_zoneconfig();
 
 /* For bitfields, LSB first; MSB last */
 

@@ -291,7 +291,6 @@ uint8_t aes132m_load_master_key() {
         esp_restart();
     }
     sodium_mprotect_readwrite(master_key);
-    sodium_memzero(master_key, 16);
 
     /* Check if the device is locked, if not locked generate a new master key */ 
     ESP_LOGI(TAG, "Checking if device is locked");
@@ -573,13 +572,13 @@ uint8_t aes132m_nonce(const uint8_t *in_seed) {
     res = aes132m_execute(cmd, mode, param1, param2,
             12, data, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
     if( res ) {
-        ESP_LOGI(TAG, "Nonce returncode: %02X",
+        ESP_LOGE(TAG, "Nonce returncode: %02X",
                 rx_buffer[AES132_RESPONSE_INDEX_RETURN_CODE]);
     }
     else {
         mac_count = 0; // or is this reset no matter what?
+        memcpy(nonce, &rx_buffer[AES132_RESPONSE_INDEX_DATA], 12);
     }
-    memcpy(nonce, &rx_buffer[AES132_RESPONSE_INDEX_DATA], 12);
     return res;
 }
 
