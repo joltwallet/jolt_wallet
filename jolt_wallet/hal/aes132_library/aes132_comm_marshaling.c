@@ -24,6 +24,7 @@
 #include "aes132_comm_marshaling.h"    // definitions and declarations for the Command Marshaling module
 #include "aes132_i2c.h" // For ReturnCode macros
 #include "i2c_phys.h" // For res macros
+#include "mbedtls/aes.h" // For esp32-side MAC computation
 
 #include "esp_system.h"
 #include "esp_log.h"
@@ -32,6 +33,8 @@
 
 static const char TAG[] = "aes132m";
 static uint8_t *master_key = NULL;
+static uint16_t manufacturing_id = 0x00EE; // default manufacturing id
+// Changing the manufacturing id could maybe make it harder to spoof
 
 /* Used to mirror the internal MacCount of the ataes132a device.
  * The ataes132a MacCount gets zero'd when:
@@ -53,11 +56,19 @@ static uint8_t *master_key = NULL;
 static uint8_t mac_count = 0;
 static uint8_t nonce[12] = { 0 };
 
-#define MAC_COUNT_LOCKSTEP_CHECK false
-static uint8_t mac_incr() {
-    /* Increments the local maccount, sends a nonce command if it needs to
-     * be reset */
+/* Forward declare static functions */
+static uint8_t mac_incr();
+static void mac_create_b0(uint8_t *b0, uint16_t data_len);
+static void mac_create_a(uint8_t *block, uint16_t counter);
+static void xor128(uint128_t x, const uint128_t y);
+static bool check_configlock();
+static void lock_device();
+static void create_auth_only_block1(uint8_t *block, uint8_t cmd, uint8_t mode,
+        uint16_t param1, uint16_t param2 );
 
+
+#define MAC_COUNT_LOCKSTEP_CHECK true
+static uint8_t mac_incr() {
 #if MAC_COUNT_LOCKSTEP_CHECK
     {
         // Read the aes132m mac_count to make sure we are in lock-step
@@ -72,12 +83,13 @@ static uint8_t mac_incr() {
     if( UINT8_MAX == mac_count ) {
         // todo: error handling, nonce sync?
         ESP_LOGD(TAG, "local mac_count maxed out, issuing rand Nonce");
-        uint8_t res = aes132m_nonce(NULL, NULL);
+        uint8_t res = aes132m_nonce(NULL);
         mac_count = 0;
     }
     mac_count++; // Since The Encrypt command returns a MAC, increase mac_count
     return mac_count;
 }
+
 /* See Page 110
  * There are two passes through the AES crypto engine in CBC mode to create 
  * the cleartext MAC. The inputs to the crypto engine for those blocks are 
@@ -94,44 +106,60 @@ static uint8_t mac_incr() {
  * B’1 is the cleartext MAC, which must be encrypted before being sent to the system
  *
  */
-static void create_b0(uint8_t *b0, uint16_t data_len){
+static void xor128(uint128_t x, const uint128_t y) {
+    for(uint8_t i=0; i<16; i++) {
+        x[i] ^= y[i];
+    }
+}
+
+static void mac_create_b0(uint8_t *b0, uint16_t data_len){
     /* Crafts bits into 16-byte output buffer b0 
-     * Uses the global nonce and mac_count*/
+     * Uses the global nonce and mac_count
+     * data_len has a max value of 32*/
     b0[0] = 0x79; // constant flag
     memcpy(&b0[1], nonce, 12); // nonce data
     b0[13] = mac_count; // make sure to increment mac_count before performing all these operations
-    memcpy(&b0[14], &data_len, 2); // 2-byte length field; check back on this
+    b0[14] = data_len >> 8;
+    b0[15] = data_len & 0xFF;
 }
 
-static void create_b1(const uint8_t *bp0, uint8_t *b1, uint16_t data_len, uint8_t *data) {
-    /* Crafts bit into 16-byte output buffer b1 */
-    memcpy(&b1[0], &data_len, 2);
-    if( data_len > 14 ) {
-        memcpy(&b1[2], data, 14);
-    }
-    else {
-        memcpy(&b1[2], data, data_len); // Check on this, do we zero pad the data?
-    }
-    // Perform the XOR operation on the arrays
-    for(uint8_t i=0; i<16; i++){
-        b1[i] ^= bp0[i];
-    }
-}
-
-static void create_a0(uint8_t *a0) {
+static void mac_create_a(uint8_t *block, uint16_t counter) {
+    /* Counter must be 0 for the first block */
     /* Crafts bits into 16-byte output buffer a0*/
-    a0[0] = 0x01; // constant flag
-    memcpy(&a0[1], nonce, 12); // nonce data
-    a0[13] = mac_count; // make sure to increment mac_count before performing all these operations
-    a0[14] = 0x00; // constant
-    a0[15] = 0x00; // constant
+    block[0] = 0x01; // constant flag
+    memcpy(&block[1], nonce, 12); // nonce data
+    block[13] = mac_count; // make sure to increment mac_count before performing all these operations
+    block[14] = counter >> 8;
+    block[15] = counter & 0xFF;
+}
+
+static void create_auth_only_block1(uint8_t *block, uint8_t cmd, uint8_t mode,
+        uint16_t param1, uint16_t param2 ) {
+    /* Valid for the following commands:
+     *    Auth, KeyLoad,
+     *   Possibly others, but Jolt only requires InMAC for these 2 commands
+     *
+     * block must be a buffer of 14 bytes
+     */
+    *block++ = manufacturing_id >> 8; 
+    *block++ = manufacturing_id & 0xFF;
+    *block++ = cmd;
+    *block++ = mode;
+    *block++ = param1 >> 8;
+    *block++ = param1 & 0xFF;
+    *block++ = param2 >> 8;
+    *block++ = param2 & 0xFF;
+    *block++ = AES132_MACFLAG_HOST;
+    // 4 bytes of 0x00
+    // 1 byte 0x00 padding
+    return;
 }
 
 static bool check_configlock() {
     /* Returns true if device configuratoin is locked */
     uint8_t data;
     uint8_t res;
-    res =  aes132m_blockread(&data, AES132_LOCKCONFIG_ADDR, sizeof(data));
+    res = aes132m_blockread(&data, AES132_LOCKCONFIG_ADDR, sizeof(data));
     if( 0x55 == data ) {
         // Device configuration is unlocked
         return false;
@@ -181,31 +209,6 @@ uint8_t aes132m_debug_clear_master_key() {
                 AES132_USERZONE(0), zeros);
     }
     return 0;
-}
-#endif
-#if 0
-uint8_t aes132m_debug_auth_compute(uint8_t *out_mac, const uint8_t key_id,
-        const uint8_t *b0, const uint8_t *b1) {
-    /* Computes and returns the 16-byte out_mac */
-    uint8_t res;
-    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
-    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
-    uint8_t cmd, mode;
-    uint16_t param1, param2;
-    uint8_t b0[16] = { 0 };
-    uint8_t b1[16] = { 0 };
-
-    create_b0();
-    create_b1();
-
-    cmd = AES132_AUTH_COMPUTE;
-    mode = 0x00; // Reserved; Always Zero
-    param1 = (uint8_t) key_id;
-    param2 = 0x0000; // Reserved; Always Zero
-    res = aes132m_execute(cmd, mode, param1, param2,
-            16, b0, 16, b1, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
-    memcpy(out_mac, &rx_buffer[AES132_RESPONSE_INDEX_DATA], 16);
-    return 0; // success
 }
 #endif
 
@@ -316,7 +319,12 @@ uint8_t aes132m_load_master_key() {
     }
     else {
         // Device configuration is unlocked
-        /* Generate new master key */
+        /* Generate new master key 
+         * We cannot use ataes132a for additional entropy since its unlocked */
+        /* aes132 will generate non-random 0xA5 bytes until the LockConfig
+         * reigster is locked, so we cannot use it for additional entropy,
+         * so we cannot use it for additional entropy.
+         * todo: investigate more sources of entropy. */
         for( uint8_t i=0; i<4; i++ ) {
             uint32_t entropy = randombytes_random();
             memcpy(&((uint32_t*)master_key)[i], &entropy, sizeof(uint32_t));
@@ -332,7 +340,7 @@ uint8_t aes132m_load_master_key() {
                 master_key[12], master_key[13], master_key[14],
                 master_key[15]);
 
-        /* Encrypt Key */
+        /* Encrypt Key with ESP32 Storage Engine Key */
         // todo; replace this; this is an identity placeholder
         uint8_t enc_master_key[16];
         memcpy(enc_master_key, master_key, sizeof(enc_master_key));
@@ -536,11 +544,9 @@ uint8_t aes132m_rand(uint8_t *out, const size_t n_bytes) {
     return 0; // success
 }
 
-uint8_t aes132m_nonce(uint8_t out_random, const uint8_t *in_seed) {
+uint8_t aes132m_nonce(const uint8_t *in_seed) {
     /* Random is only populated if in_seed is NULL.
-     * Both inputs can be in_seed.
      *
-     * random needs to be able to hold a 16-byte output.
      * in_seed should be 12 bytes.
      * */
     uint8_t res;
@@ -570,10 +576,10 @@ uint8_t aes132m_nonce(uint8_t out_random, const uint8_t *in_seed) {
         ESP_LOGI(TAG, "Nonce returncode: %02X",
                 rx_buffer[AES132_RESPONSE_INDEX_RETURN_CODE]);
     }
-    if( NULL != out_random && NULL != in_seed ) {
-        memcpy(out_random, &rx_buffer[AES132_RESPONSE_INDEX_DATA], 16);
+    else {
+        mac_count = 0; // or is this reset no matter what?
     }
-
+    memcpy(nonce, &rx_buffer[AES132_RESPONSE_INDEX_DATA], 12);
     return res;
 }
 
@@ -661,7 +667,8 @@ uint8_t aes132m_nonce_sync(uint8_t *nonce_out) {
     return 0; // success
 }
 
-uint8_t aes132m_local_auth_compute(uint8_t *out_mac, uint8_t *key,
+#if 0
+uint8_t aes132m_local_mac_compute(uint8_t *out_mac, uint8_t *key,
         const uint8_t *block1, const uint8_t *block2) {
     /* Computes the MAC code locally; does not interact with device.
      * key is a pointer to 128-bits
@@ -669,29 +676,11 @@ uint8_t aes132m_local_auth_compute(uint8_t *out_mac, uint8_t *key,
      * WARNING: This function is ripe for side-channel attacks.
      * DO NOT allow information about the key to leak.
      *
-     * probably deprecate this
-     * */
-    uint8_t b0[16] = { 0 };
-    uint8_t bp0[16] = { 0 };
-    uint8_t b1[16] = { 0 };
-    uint8_t bp1[16] = { 0 };
-    uint8_t a0[16] = { 0 };
-    uint8_t ap0[16] = { 0 };
-
-    mac_incr();
-
-    //create_b0(b0, data_len);
-    // todo: compute bp0 in CBC mode
-    //create_b1(bp0, b1, data_len, data);
-    // todo: compute bp1 in CBC mode
-    create_a0(a0);
-    // todo: compute ap0 in CTR mode
-    for(uint8_t i=0; i<16; i++){
-        out_mac[i] = ap0[i] ^ bp1[i];
-    }
+     */
 
     return 0;
 }
+#endif
 
 uint8_t aes132m_key_load(uint128_t key, const uint8_t key_id) {
     /* We use this to load in the PIN authorization key */
@@ -714,8 +703,45 @@ uint8_t aes132m_key_load(uint128_t key, const uint8_t key_id) {
     mode |= AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER; // MAC Params
     param1 = key_id;
     param2 = 0x0000; // only used for VolatileKey
-    // todo: encrypt key
-    // todo: compute MAC
+    {
+        // A lot of this stuff is on page 109
+        mbedtls_aes_context aes;
+        mbedtls_aes_init( &aes );
+        mbedtls_aes_setkey_enc( &aes, master_key, 128 );
+
+        uint128_t iv = { 0 }; // ataes132a uses an all zero IV
+        uint128_t in = { 0 };
+        uint128_t out = { 0 };
+        uint128_t cleartext_mac = { 0 };
+        const uint16_t auth_data_len = 14;
+
+        mac_incr();
+
+        /* CBC Section */
+        mac_create_b0(in, 16); // 16 bytes of encrypted key payload
+        mbedtls_aes_crypt_cbc( &aes, MBEDTLS_AES_ENCRYPT, 16, iv, in, out ); 
+
+        in[0] = auth_data_len >> 8;
+        in[1] = auth_data_len & 0xFF;
+        create_auth_only_block1( &in[2], cmd, mode, param1, param2 );
+        mbedtls_aes_crypt_cbc( &aes, MBEDTLS_AES_ENCRYPT, 16, iv, in, out ); 
+        mbedtls_aes_crypt_cbc( &aes, MBEDTLS_AES_ENCRYPT, 16, iv, 
+                key, cleartext_mac );
+
+        /* CTR Section */
+        /* We are calling ECB functions because we basically implement our own
+         * custom CTR scheme */
+        uint16_t ctr = 0;
+        mac_create_a(in, ctr++);
+        mbedtls_aes_crypt_ecb( &aes, MBEDTLS_AES_ENCRYPT, in, in_mac);
+        xor128(in_mac, cleartext_mac);
+        mac_create_a(in, ctr++);
+        mbedtls_aes_crypt_ecb( &aes, MBEDTLS_AES_ENCRYPT, in, enc_key);
+        xor128(enc_key, key);
+
+        /* mbedtls aes context cleanup */
+        mbedtls_aes_free( &aes );
+    }
     res = aes132m_execute(cmd, mode, param1, param2,
             sizeof(in_mac), in_mac,
             sizeof(enc_key), enc_key,
@@ -781,6 +807,9 @@ uint8_t aes132m_key_create(uint8_t key_id) {
     res = aes132m_execute(cmd, mode, param1, param2,
             0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
     if( res ) {
+        if( AES132_FUNCTION_RETCODE_BAD_CRC_TX == res ) {
+            mac_count--; // mac_count doesn't increment on bad crc
+        }
         if( I2C_FUNCTION_RETCODE_NACK == res ) {
             ESP_LOGE(TAG, "KeyCreate Nack!");
         }
@@ -853,9 +882,88 @@ uint8_t aes132m_encrypt(const uint8_t *in, uint8_t len, uint8_t key_id,
             ESP_LOGE(TAG, "Cannot copy ciphertext to NULL pointer");
         }
     }
+    else {
+        if( AES132_FUNCTION_RETCODE_BAD_CRC_TX == res ) {
+            mac_count--; // mac_count doesn't increment on bad crc
+        }
+    }
     return res;
 }
 
+#if 0
+uint8_t aes132m_auth() {
+    /* Used to check a PIN attempt. Upon successful attempt, unlocks the 
+     * corresponding UserZone 
+     *
+     * Requires a synchronized Nonce beforehand!*/
+    uint8_t res;
+    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = { 0 };
+    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = { 0 };
+    uint8_t cmd, mode;
+    uint16_t param1, param2;
+
+    cmd = AES132_AUTH;
+    mode = 0x03; // Mutual Authentication 
+    mode |= AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER; // MAC Params
+    param1 = key_id;
+    param2 = 0x0003; // R/W for UserZone Alowed
+
+    /* Compute MAC for outbound authentication*/
+    {
+        uint8_t b0[16] = { 0 };
+        uint8_t bp0[16] = { 0 };
+        uint8_t b1[16] = { 0 };
+        uint8_t bp1[16] = { 0 };
+        uint8_t a0[16] = { 0 };
+        uint8_t ap0[16] = { 0 };
+        uint8_t block1[14] = { 0 };
+        uint8_t block2[16] = { 0 };
+        const uint16_t length = 0x0000; // Auth only
+
+        /* Create First Authenticate-only Block */
+        create_auth_only_block1(block1, cmd, mode, param1, param2);
+
+        /* Create Second Authenticate-only Block */
+        // Including information here only increases secuirty if the 
+        // master_key has not been compromised through the esp32
+        // All information in this block is public, but the counter value
+        // changes every pin attempt, making the generated mac unique and
+        // impossible to craft without the master_key.
+
+        mac_incr();
+
+        mac_create_b0(b0, length);
+        {
+            mbedtls_aes_context aes;
+
+            unsigned char key[32];
+            unsigned char iv[16];
+
+            unsigned char input [128];
+            unsigned char output[128];
+
+            size_t input_len = 40;
+            size_t output_len = 0;
+
+            // IV is zero for CBC
+            mbedtls_aes_crypt_cbc
+        }
+        // todo: compute bp0 in CBC mode
+        //create_b1(bp0, b1, data_len, data);
+        // todo: compute bp1 in CBC mode
+        create_a0(a0);
+        // todo: compute ap0 in CTR mode
+        for(uint8_t i=0; i<16; i++){
+            out_mac[i] = ap0[i] ^ bp1[i];
+        }
+
+    }
+    res = aes132m_execute(cmd, mode, param1, param2,
+            len, in, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+
+    /* Confirm response MAC */
+}
+#endif
 #if 0
 uint8_t aes132m_decrypt(const uint8_t *in, uint8_t len, uint8_t key_id,
         uint8_t *out) {

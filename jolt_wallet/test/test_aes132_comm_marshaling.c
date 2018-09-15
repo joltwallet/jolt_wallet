@@ -111,24 +111,29 @@ TEST_CASE("Key Stretch", MODULE_NAME) {
     uint8_t res;
     const uint8_t key_id = 1;
 
-    const uint32_t n_iterations = 1000;
+    const uint32_t n_iterations = 100;
     const char payload[32] = "Super Secret Data To Encrypt";
     uint8_t ciphertext[32] = { 0 };
     uint8_t out_mac[16] = { 0 };
+
+    /* Generate Valid Random Nonce */
+    res = aes132m_nonce( NULL );
+    TEST_ASSERT( AES132_DEVICE_RETCODE_SUCCESS == res );
 
     /* Load the Master Key */
     res = aes132m_load_master_key();
     TEST_ASSERT( AES132_DEVICE_RETCODE_SUCCESS == res );
 
-    /* Generate Valid Random Nonce */
-    res = aes132m_nonce(NULL, NULL);
-    TEST_ASSERT( AES132_DEVICE_RETCODE_SUCCESS == res );
-
     /* KeyCreate */
-    // todo: replace this with keyload for deterministic unit test
     res = aes132m_key_create( key_id );
     TEST_ASSERT( AES132_DEVICE_RETCODE_SUCCESS == res );
-    ESP_LOGI(TAG, "KeyCreate Response: %02X", res);
+
+    /* KeyLoad (note this overwrites the KeyCreate, just used for
+     * determinism) */
+    const uint128_t const_key = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
+            0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
+    res = aes132m_key_load( const_key, key_id );
+    TEST_ASSERT( AES132_DEVICE_RETCODE_SUCCESS == res );
 
     /* Encrypt payload */
     memcpy(ciphertext, payload, sizeof(payload));

@@ -29,14 +29,21 @@
 
 #define AES132_NUM_ZONES 16
 
+// Note: if any of these are set to true, MAC generation code for Auth needs to
+// be updated to add functionality.
 #define AES132_INCLUDE_SMALLZONE false // We don't use smallzone
-#define AES132_INCLUDE_SERIAL true // Good practice to include device serial
-#define AES132_INCLUDE_COUNTER true // todo: come back and make a choice here
+#define AES132_INCLUDE_SERIAL false // Doesn't increase security, increases complexity
+#define AES132_INCLUDE_COUNTER false
 #define AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER ( \
           (AES132_INCLUDE_SMALLZONE << 7) \
         | (AES132_INCLUDE_SERIAL << 6) \
         | (AES132_INCLUDE_COUNTER << 5) \
         )
+
+#define AES132_MACFLAG_DEVICE 0x01 // For mac vlaues output by the ATAES132a
+#define AES132_MACFLAG_HOST 0x03 // For MAC values sent to the device as inputs
+#define AES132_MAC_B0_FLAG 0b01111001 // See page 109
+#define AES132_MAC_A0_FLAG 0x01 // See page 109
 
 #include "stdbool.h"
 

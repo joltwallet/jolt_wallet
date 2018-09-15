@@ -57,7 +57,7 @@
        <td>Mode</td>
        <td>Command Modifier</td>
      </tr>
-	 <tr>
+     <tr>
        <td>3 and 4</td>
        <td>Parameter 1</td>
        <td>First Command Parameter</td>
@@ -124,37 +124,38 @@
 
 /** \name OpCodes for ATAES132 Commands
 @{ */
-#define AES132_AUTH              ((uint8_t) 0x03)       //!< Auth command op-code
-#define AES132_AUTH_CHECK        ((uint8_t) 0x15)       //!< AuthCheck command op-code
-#define AES132_AUTH_COMPUTE      ((uint8_t) 0x14)       //!< AuthCompute command op-code
-#define AES132_BLOCK_READ        ((uint8_t) 0x10)       //!< BlockRead command op-code
-#define AES132_COUNTER           ((uint8_t) 0x0A)       //!< Counter command op-code
-#define AES132_CRUNCH            ((uint8_t) 0x0B)       //!< Crunch command op-code
-#define AES132_DECRYPT           ((uint8_t) 0x07)       //!< Decrypt command op-code
-#define AES132_ENC_READ          ((uint8_t) 0x04)       //!< EncRead command op-code
-#define AES132_ENCRYPT           ((uint8_t) 0x06)       //!< Encrypt command op-code
-#define AES132_ENC_WRITE         ((uint8_t) 0x05)       //!< EncWrite command op-code
-#define AES132_INFO              ((uint8_t) 0x0C)       //!< Info command op-code
-#define AES132_KEY_CREATE        ((uint8_t) 0x08)       //!< KeyCreate command op-code
-#define AES132_KEY_IMPORT        ((uint8_t) 0x19)       //!< KeyImport command op-code
-#define AES132_KEY_LOAD          ((uint8_t) 0x09)       //!< KeyLoad command op-code
-#define AES132_KEY_TRANSFER      ((uint8_t) 0x1A)       //!< KeyTransfer command op-code
-#define AES132_LEGACY            ((uint8_t) 0x0F)       //!< Legacy command op-code
-#define AES132_LOCK              ((uint8_t) 0x0D)       //!< Lock command op-code
-#define AES132_NONCE             ((uint8_t) 0x01)       //!< Nonce command op-code
-#define AES132_NONCE_COMPUTE     ((uint8_t) 0x13)       //!< NonceCompute command op-code
-#define AES132_RANDOM            ((uint8_t) 0x02)       //!< Random command op-code
-#define AES132_RESET             ((uint8_t) 0x00)       //!< Reset command op-code
-#define AES132_SLEEP             ((uint8_t) 0x11)       //!< Sleep command op-code
-#define AES132_TEMP_SENSE        ((uint8_t) 0x0E)       //!< TempSense command op-code
+#define AES132_AUTH           ((uint8_t) 0x03) //!< Auth command op-code
+#define AES132_AUTH_CHECK     ((uint8_t) 0x15) //!< AuthCheck command op-code
+#define AES132_AUTH_COMPUTE   ((uint8_t) 0x14) //!< AuthCompute command op-code
+#define AES132_BLOCK_READ     ((uint8_t) 0x10) //!< BlockRead command op-code
+#define AES132_COUNTER        ((uint8_t) 0x0A) //!< Counter command op-code
+#define AES132_CRUNCH         ((uint8_t) 0x0B) //!< Crunch command op-code
+#define AES132_DECRYPT        ((uint8_t) 0x07) //!< Decrypt command op-code
+#define AES132_ENC_READ       ((uint8_t) 0x04) //!< EncRead command op-code
+#define AES132_ENCRYPT        ((uint8_t) 0x06) //!< Encrypt command op-code
+#define AES132_ENC_WRITE      ((uint8_t) 0x05) //!< EncWrite command op-code
+#define AES132_INFO           ((uint8_t) 0x0C) //!< Info command op-code
+#define AES132_KEY_CREATE     ((uint8_t) 0x08) //!< KeyCreate command op-code
+#define AES132_KEY_IMPORT     ((uint8_t) 0x19) //!< KeyImport command op-code
+#define AES132_KEY_LOAD       ((uint8_t) 0x09) //!< KeyLoad command op-code
+#define AES132_KEY_TRANSFER   ((uint8_t) 0x1A) //!< KeyTransfer command op-code
+#define AES132_LEGACY         ((uint8_t) 0x0F) //!< Legacy command op-code
+#define AES132_LOCK           ((uint8_t) 0x0D) //!< Lock command op-code
+#define AES132_NONCE          ((uint8_t) 0x01) //!< Nonce command op-code
+#define AES132_NONCE_COMPUTE  ((uint8_t) 0x13) //!< NonceCompute command op-code
+#define AES132_RANDOM         ((uint8_t) 0x02) //!< Random command op-code
+#define AES132_RESET          ((uint8_t) 0x00) //!< Reset command op-code
+#define AES132_SLEEP          ((uint8_t) 0x11) //!< Sleep command op-code
+#define AES132_TEMP_SENSE     ((uint8_t) 0x0E) //!< TempSense command op-code
 /** @} */
 
 uint8_t aes132m_read_memory(uint8_t count, uint16_t word_address, uint8_t *data);
 uint8_t aes132m_write_memory(uint8_t count, uint16_t word_address, uint8_t *data);
-uint8_t aes132m_execute(uint8_t op_code, uint8_t mode, uint16_t param1, uint16_t param2,
-			uint8_t datalen1, uint8_t *data1, uint8_t datalen2, uint8_t *data2,
-			uint8_t datalen3, uint8_t *data3, uint8_t datalen4, uint8_t *data4,
-			uint8_t *tx_buffer, uint8_t *rx_buffer);
+uint8_t aes132m_execute(uint8_t op_code, uint8_t mode,
+        uint16_t param1, uint16_t param2,
+        uint8_t datalen1, uint8_t *data1, uint8_t datalen2, uint8_t *data2,
+        uint8_t datalen3, uint8_t *data3, uint8_t datalen4, uint8_t *data4,
+        uint8_t *tx_buffer, uint8_t *rx_buffer);
 
 /* Convenience Command Functions */
 #include "jolttypes.h"
@@ -167,8 +168,9 @@ uint8_t aes132m_lock();
 uint8_t aes132m_rand(uint8_t *out, const size_t n_bytes);
 uint8_t aes132m_load_master_key();
 uint8_t aes132m_nonce_sync(uint8_t *nonce_out);
-uint8_t aes132m_nonce(uint8_t out_random, const uint8_t *in_seed);
+uint8_t aes132m_nonce(const uint8_t *in_seed);
 uint8_t aes132m_key_create(uint8_t key_id);
+uint8_t aes132m_key_load(uint128_t key, const uint8_t key_id); //incomplete
 uint8_t aes132m_mac_count(uint8_t *count);
 /** @} */
 #define AES132_RAND_BYTE_LEN 16
