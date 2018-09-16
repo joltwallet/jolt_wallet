@@ -118,22 +118,25 @@ TEST_CASE("Key Stretch", MODULE_NAME) {
 
     /* Generate Valid Random Nonce */
     res = aes132m_nonce( NULL );
-    TEST_ASSERT( AES132_DEVICE_RETCODE_SUCCESS == res );
+    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
 
     /* Load the Master Key */
     res = aes132m_load_master_key();
-    TEST_ASSERT( AES132_DEVICE_RETCODE_SUCCESS == res );
+    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+    aes132m_debug_print_device_mac_count();
 
     /* KeyCreate */
     res = aes132m_key_create( key_id );
-    TEST_ASSERT( AES132_DEVICE_RETCODE_SUCCESS == res );
+    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+    aes132m_debug_print_device_mac_count();
 
     /* KeyLoad (note this overwrites the KeyCreate, just used for
      * determinism) */
     const uint128_t const_key = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
             0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
     res = aes132m_key_load( const_key, key_id );
-    TEST_ASSERT( AES132_DEVICE_RETCODE_SUCCESS == res );
+    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+    aes132m_debug_print_device_mac_count();
 
     /* Encrypt payload */
     memcpy(ciphertext, payload, sizeof(payload));
@@ -153,7 +156,7 @@ TEST_CASE("Key Stretch", MODULE_NAME) {
     printf("Performed %d encrypt iterations over %lld uS.\n"
             "Average time per iteration: %lld uS\n",
             n_iterations, end-start, (end-start)/n_iterations);
-    TEST_ASSERT( AES132_DEVICE_RETCODE_SUCCESS == res );
+    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
     
     printf("Ciphertext: ");
     for(uint8_t i=0; i< sizeof(ciphertext); i++) {

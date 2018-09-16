@@ -177,6 +177,7 @@ uint8_t aes132m_mac_count(uint8_t *count);
 
 #ifdef UNIT_TESTING
 uint8_t aes132m_debug_clear_master_key();
+uint8_t aes132m_debug_print_device_mac_count();
 #endif
 
 #endif

@@ -171,6 +171,17 @@ static bool check_configlock() {
 
 
 #ifdef UNIT_TESTING
+uint8_t aes132m_debug_print_device_mac_count() {
+    /* Prints device mac_count */
+    uint8_t device_count, res;
+    res = aes132m_mac_count(&device_count);
+    if( !res ) {
+        ESP_LOGI(TAG, "Local MacCount: 0x%02X; Device MacCount: 0x%02X", 
+                mac_count, device_count);
+    }
+    return res;
+}
+
 void aes132m_debug_set_local_mac_count( uint8_t count ) {
     mac_count = count;
 }
@@ -327,6 +338,9 @@ uint8_t aes132m_load_master_key() {
         for( uint8_t i=0; i<4; i++ ) {
             uint32_t entropy = randombytes_random();
             memcpy(&((uint32_t*)master_key)[i], &entropy, sizeof(uint32_t));
+#ifdef UNIT_TESTING
+            ((uint32_t*)master_key)[i] = 0x1111111111;
+#endif
         }
 
         ESP_LOGI(TAG, "Confidential; ATAES132A Master Key: 0x"
@@ -347,9 +361,10 @@ uint8_t aes132m_load_master_key() {
         /* Backup Encrypted Key to Device*/
         // Make sure the zone config is in a state where we can write to
         // UserZone 0
-        ESP_LOGI(TAG, "Reseting Master UserZone Conifg");
+        ESP_LOGI(TAG, "Reseting Master UserZone Config so the master key can "
+                "be written in plaintext");
         aes132_reset_master_zoneconfig();
-        ESP_LOGI(TAG, "Writing Master Key Backup to UserZone0");
+        ESP_LOGI(TAG, "Writing encrypted Master Key backup to UserZone0");
         res = aes132m_write_memory(sizeof(enc_master_key), AES132_USERZONE(0),
                 enc_master_key);
         ESP_LOGI(TAG, "Write memory result: %d", res);
@@ -359,6 +374,7 @@ uint8_t aes132m_load_master_key() {
             uint8_t rx[16];
             res = aes132m_read_memory(sizeof(enc_master_key), AES132_USERZONE(0),
                     rx);
+            ESP_LOGI(TAG, "Confirming UserZone 0 contents");
             ESP_LOGI(TAG, "Read memory result: %d", res);
             ESP_LOGI(TAG, "Confidential; "
                     "ATAES132A Master Key Backup Response: 0x"
@@ -381,8 +397,10 @@ uint8_t aes132m_load_master_key() {
         aes132_write_counterconfig();
         aes132_write_keyconfig();
         aes132_write_zoneconfig();
+
         /* Lock Device */
 #ifdef UNIT_TESTING
+        ESP_LOGI(TAG, "Not locking device since we are in unit_testing mode");
         // Do Nothing; Don't actually lock device
 #else
         //lock_device();
@@ -578,6 +596,11 @@ uint8_t aes132m_nonce(const uint8_t *in_seed) {
     else {
         mac_count = 0; // or is this reset no matter what?
         memcpy(nonce, &rx_buffer[AES132_RESPONSE_INDEX_DATA], 12);
+        ESP_LOGI(TAG, "Local Nonce updated to %02X %02X %02X %02X %02X "
+                "%02X %02X %02X %02X %02X %02X %02X",
+                nonce[0], nonce[1], nonce[2], nonce[3],
+                nonce[4], nonce[5], nonce[6], nonce[7],
+                nonce[8], nonce[9], nonce[10], nonce[11] );
     }
     return res;
 }
@@ -745,8 +768,14 @@ uint8_t aes132m_key_load(uint128_t key, const uint8_t key_id) {
             sizeof(in_mac), in_mac,
             sizeof(enc_key), enc_key,
             0, NULL, 0, NULL, tx_buffer, rx_buffer);
+    if( res ) {
+        ESP_LOGE(TAG, "Key Load Failed! Dumping...");
+        ESP_LOGE(TAG, "mode: %02X", mode);
+        ESP_LOGE(TAG, "param1: %04X", param1);
+        ESP_LOGE(TAG, "param2: %04X", param2);
+    }
 
-    return 0; // success
+    return res;
 }
 
 static uint8_t lin2bin(uint8_t bin) {
