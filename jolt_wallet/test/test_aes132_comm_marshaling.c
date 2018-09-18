@@ -100,6 +100,35 @@ TEST_CASE("[debug] Clear Master Key", MODULE_NAME) {
     aes132m_debug_clear_master_key();
 }
 
+TEST_CASE("Auth", MODULE_NAME) {
+    /* Actually tests many things:
+     * 1) Master Key generate/load
+     * 2) KeyCreate
+     * 3) Encrypt
+     */
+    // Setup required hardware
+    test_setup_i2c();
+    uint8_t res;
+    const uint8_t key_id = 0;
+
+    const uint32_t n_iterations = 100;
+    uint8_t ciphertext[32] = { 0 };
+    uint8_t out_mac[16] = { 0 };
+
+    /* Generate Valid Random Nonce */
+    res = aes132m_nonce( NULL );
+    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+
+    /* Load the Master Key */
+    res = aes132m_load_master_key();
+    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+
+    /* Issue Auth Command */
+    res = aes132m_auth(key_id);
+    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+    aes132m_debug_print_device_mac_count("final");
+}
+
 TEST_CASE("Key Stretch", MODULE_NAME) {
     /* Actually tests many things:
      * 1) Master Key generate/load
@@ -109,7 +138,7 @@ TEST_CASE("Key Stretch", MODULE_NAME) {
     // Setup required hardware
     test_setup_i2c();
     uint8_t res;
-    const uint8_t key_id = 1;
+    const uint8_t key_id = 2;
 
     const uint32_t n_iterations = 100;
     const char payload[32] = "Super Secret Data To Encrypt";
@@ -123,12 +152,10 @@ TEST_CASE("Key Stretch", MODULE_NAME) {
     /* Load the Master Key */
     res = aes132m_load_master_key();
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
-    aes132m_debug_print_device_mac_count();
 
     /* KeyCreate */
     res = aes132m_key_create( key_id );
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
-    aes132m_debug_print_device_mac_count();
 
     /* KeyLoad (note this overwrites the KeyCreate, just used for
      * determinism) */
@@ -136,7 +163,6 @@ TEST_CASE("Key Stretch", MODULE_NAME) {
             0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
     res = aes132m_key_load( const_key, key_id );
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
-    aes132m_debug_print_device_mac_count();
 
     /* Encrypt payload */
     memcpy(ciphertext, payload, sizeof(payload));

@@ -25,6 +25,7 @@
 #include "aes132_i2c.h" // For ReturnCode macros
 #include "i2c_phys.h" // For res macros
 #include "mbedtls/aes.h" // For esp32-side MAC computation
+#include "mbedtls/ccm.h"
 
 #include "esp_system.h"
 #include "esp_log.h"
@@ -64,7 +65,7 @@ static void xor128(uint128_t x, const uint128_t y);
 static bool check_configlock();
 static void lock_device();
 static void create_auth_only_block1(uint8_t *block, uint8_t cmd, uint8_t mode,
-        uint16_t param1, uint16_t param2 );
+        uint16_t param1, uint16_t param2, uint16_t adata_len, bool host );
 
 
 #define MAC_COUNT_LOCKSTEP_CHECK true
@@ -75,7 +76,8 @@ static uint8_t mac_incr() {
         uint8_t device_count;
         aes132m_mac_count(&device_count);
         if( device_count != mac_count ) {
-            ESP_LOGE(TAG, "mac_count desyncronized; Device=%d; Local=%d",
+            ESP_LOGE(TAG, "mac_count desyncronized before incrementing.\n"
+                    "Device=%d; Local=%d",
                     device_count, mac_count);
         }
     }
@@ -86,7 +88,7 @@ static uint8_t mac_incr() {
         uint8_t res = aes132m_nonce(NULL);
         mac_count = 0;
     }
-    mac_count++; // Since The Encrypt command returns a MAC, increase mac_count
+    mac_count++;
     return mac_count;
 }
 
@@ -128,19 +130,21 @@ static void mac_create_a(uint8_t *block, uint16_t counter) {
     /* Crafts bits into 16-byte output buffer a0*/
     block[0] = 0x01; // constant flag
     memcpy(&block[1], nonce, 12); // nonce data
-    block[13] = mac_count; // make sure to increment mac_count before performing all these operations
+    block[13] = mac_count; // make sure to increment mac_count before
     block[14] = counter >> 8;
     block[15] = counter & 0xFF;
 }
 
 static void create_auth_only_block1(uint8_t *block, uint8_t cmd, uint8_t mode,
-        uint16_t param1, uint16_t param2 ) {
+        uint16_t param1, uint16_t param2, uint16_t adata_len, bool host ) {
     /* Valid for the following commands:
      *    Auth, KeyLoad,
      *   Possibly others, but Jolt only requires InMAC for these 2 commands
      *
      * block must be a buffer of 14 bytes
      */
+    //*block++ = adata_len >> 8;
+    //*block++ = adata_len & 0xFF;
     *block++ = manufacturing_id >> 8; 
     *block++ = manufacturing_id & 0xFF;
     *block++ = cmd;
@@ -149,9 +153,12 @@ static void create_auth_only_block1(uint8_t *block, uint8_t cmd, uint8_t mode,
     *block++ = param1 & 0xFF;
     *block++ = param2 >> 8;
     *block++ = param2 & 0xFF;
-    *block++ = AES132_MACFLAG_HOST;
-    // 4 bytes of 0x00
-    // 1 byte 0x00 padding
+    *block++ = 0x01 | (host << 1); // nonce must be random
+    *block++ = 0x00;
+    *block++ = 0x00;
+    *block++ = 0x00;
+    *block++ = 0x00;
+    *block++ = 0x00;
     return;
 }
 
@@ -160,7 +167,7 @@ static bool check_configlock() {
     uint8_t data;
     uint8_t res;
     res = aes132m_blockread(&data, AES132_LOCKCONFIG_ADDR, sizeof(data));
-    if( 0x55 == data ) {
+    if( !res && 0x55 == data ) {
         // Device configuration is unlocked
         return false;
     }
@@ -169,15 +176,29 @@ static bool check_configlock() {
     }
 }
 
+static uint8_t check_manufacturing_id() {
+    /* Returns true if device configuratoin is locked */
+    uint8_t data[2];
+    uint8_t res;
+    res = aes132m_blockread(&data, AES132_MANUFACTURING_ID, sizeof(data));
+    if( res ) {
+    }
+    else {
+        ESP_LOGI(TAG, "Manufacturing ID: 0x%02X%02X", 
+                data[0], data[1]);
+    }
+    return res;
+}
+
 
 #ifdef UNIT_TESTING
-uint8_t aes132m_debug_print_device_mac_count() {
+uint8_t aes132m_debug_print_device_mac_count(const char tag[]) {
     /* Prints device mac_count */
     uint8_t device_count, res;
     res = aes132m_mac_count(&device_count);
     if( !res ) {
-        ESP_LOGI(TAG, "Local MacCount: 0x%02X; Device MacCount: 0x%02X", 
-                mac_count, device_count);
+        ESP_LOGI(TAG, "[%s] Local MacCount: 0x%02X; Device MacCount: 0x%02X", 
+                tag, mac_count, device_count);
     }
     return res;
 }
@@ -329,6 +350,7 @@ uint8_t aes132m_load_master_key() {
     }
     else {
         // Device configuration is unlocked
+        check_manufacturing_id();
         /* Generate new master key 
          * We cannot use ataes132a for additional entropy since its unlocked */
         /* aes132 will generate non-random 0xA5 bytes until the LockConfig
@@ -737,28 +759,44 @@ uint8_t aes132m_key_load(uint128_t key, const uint8_t key_id) {
         uint128_t cleartext_mac = { 0 };
         const uint16_t auth_data_len = 14;
 
+        aes132m_debug_print_device_mac_count("pre");
         mac_incr();
+        aes132m_debug_print_device_mac_count("post");
 
         /* CBC Section */
         mac_create_b0(in, 16); // 16 bytes of encrypted key payload
-        mbedtls_aes_crypt_cbc( &aes, MBEDTLS_AES_ENCRYPT, 16, iv, in, out ); 
+        ESP_ERROR_CHECK(mbedtls_aes_crypt_cbc( &aes, 
+                    MBEDTLS_AES_ENCRYPT, 16, iv, in, out )); 
+        ESP_LOGI(TAG, "IV "
+                "%02x%02x%02x%02x%02x%02x%02x%02x"
+                "%02x%02x%02x%02x%02x%02x%02x%02x\n",
+                iv[0], iv[1], iv[2], iv[3], iv[4], iv[5], iv[6], iv[7],
+                iv[8], iv[9], iv[10], iv[11], iv[12], iv[13], iv[14],
+                iv[15]);
+        ESP_LOGI(TAG, "out "
+                "%02x%02x%02x%02x%02x%02x%02x%02x"
+                "%02x%02x%02x%02x%02x%02x%02x%02x\n",
+                out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7],
+                out[8], out[9], out[10], out[11], out[12], out[13], out[14],
+                out[15]);
 
-        in[0] = auth_data_len >> 8;
-        in[1] = auth_data_len & 0xFF;
-        create_auth_only_block1( &in[2], cmd, mode, param1, param2 );
-        mbedtls_aes_crypt_cbc( &aes, MBEDTLS_AES_ENCRYPT, 16, iv, in, out ); 
-        mbedtls_aes_crypt_cbc( &aes, MBEDTLS_AES_ENCRYPT, 16, iv, 
-                key, cleartext_mac );
+        create_auth_only_block1( &in[2], cmd, mode, param1, param2, auth_data_len, true );
+        ESP_ERROR_CHECK(mbedtls_aes_crypt_cbc( &aes, 
+                    MBEDTLS_AES_ENCRYPT, 16, iv, in, out ));
+        ESP_ERROR_CHECK(mbedtls_aes_crypt_cbc( &aes, 
+                    MBEDTLS_AES_ENCRYPT, 16, iv, key, cleartext_mac ));
 
         /* CTR Section */
         /* We are calling ECB functions because we basically implement our own
          * custom CTR scheme */
         uint16_t ctr = 0;
-        mac_create_a(in, ctr++);
-        mbedtls_aes_crypt_ecb( &aes, MBEDTLS_AES_ENCRYPT, in, in_mac);
+        //mac_create_a(in, ctr++);
+        ESP_ERROR_CHECK(mbedtls_aes_crypt_ecb( &aes, 
+                    MBEDTLS_AES_ENCRYPT, in, in_mac));
         xor128(in_mac, cleartext_mac);
         mac_create_a(in, ctr++);
-        mbedtls_aes_crypt_ecb( &aes, MBEDTLS_AES_ENCRYPT, in, enc_key);
+        ESP_ERROR_CHECK(mbedtls_aes_crypt_ecb( &aes,
+                    MBEDTLS_AES_ENCRYPT, in, enc_key));
         xor128(enc_key, key);
 
         /* mbedtls aes context cleanup */
@@ -917,9 +955,7 @@ uint8_t aes132m_encrypt(const uint8_t *in, uint8_t len, uint8_t key_id,
     }
     return res;
 }
-
-#if 0
-uint8_t aes132m_auth() {
+uint8_t aes132m_auth(uint16_t key_id) {
     /* Used to check a PIN attempt. Upon successful attempt, unlocks the 
      * corresponding UserZone 
      *
@@ -929,69 +965,135 @@ uint8_t aes132m_auth() {
     uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = { 0 };
     uint8_t cmd, mode;
     uint16_t param1, param2;
+    uint128_t out;
 
     cmd = AES132_AUTH;
-    mode = 0x03; // Mutual Authentication 
+    //mode = 0x03; // Mutual Authentication 
+    mode = 0x02; // Outbound Authentication 
     mode |= AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER; // MAC Params
     param1 = key_id;
     param2 = 0x0003; // R/W for UserZone Alowed
 
-    /* Compute MAC for outbound authentication*/
+    res = aes132m_execute(cmd, mode, param1, param2,
+              0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+    //        len, in, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+
+    /* Confirm response MAC */
+    if( res ) {
+        ESP_LOGE(TAG, "Auth command failed with return code 0x%02X", res);
+    }
+    else {
+        memcpy(out, &rx_buffer[AES132_RESPONSE_INDEX_DATA], sizeof(out));
+        ESP_LOGI(TAG, "outMAC "
+                "%02x%02x%02x%02x%02x%02x%02x%02x"
+                "%02x%02x%02x%02x%02x%02x%02x%02x\n",
+                out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7],
+                out[8], out[9], out[10], out[11], out[12], out[13], out[14],
+                out[15]);
+    }
     {
-        uint8_t b0[16] = { 0 };
-        uint8_t bp0[16] = { 0 };
-        uint8_t b1[16] = { 0 };
-        uint8_t bp1[16] = { 0 };
-        uint8_t a0[16] = { 0 };
-        uint8_t ap0[16] = { 0 };
-        uint8_t block1[14] = { 0 };
-        uint8_t block2[16] = { 0 };
-        const uint16_t length = 0x0000; // Auth only
+        // Attempting to compute the same outmac
+        // A lot of this stuff is on page 109
+        mbedtls_aes_context aes;
+        mbedtls_aes_init( &aes );
+        mbedtls_aes_setkey_enc( &aes, master_key, 128 );
 
-        /* Create First Authenticate-only Block */
-        create_auth_only_block1(block1, cmd, mode, param1, param2);
-
-        /* Create Second Authenticate-only Block */
-        // Including information here only increases secuirty if the 
-        // master_key has not been compromised through the esp32
-        // All information in this block is public, but the counter value
-        // changes every pin attempt, making the generated mac unique and
-        // impossible to craft without the master_key.
+        uint128_t iv = { 0 }; // ataes132a uses an all zero IV
+        uint128_t in = { 0 };
+        uint128_t out = { 0 };
+        uint128_t cleartext_mac = { 0 };
+        const uint16_t auth_data_len = 11; // pretty sure this is 11
 
         mac_incr();
 
-        mac_create_b0(b0, length);
-        {
-            mbedtls_aes_context aes;
+        /* CBC Section */
+        // b0
+        mac_create_b0(in, 0); // auth only
+        ESP_ERROR_CHECK(mbedtls_aes_crypt_cbc( &aes, 
+                    MBEDTLS_AES_ENCRYPT, 16, iv, in, out )); 
+        ESP_LOGI(TAG, "in "
+                "%02x%02x%02x%02x%02x%02x%02x%02x"
+                "%02x%02x%02x%02x%02x%02x%02x%02x\n",
+                in[0], in[1], in[2], in[3], in[4], in[5], in[6], in[7],
+                in[8], in[9], in[10], in[11], in[12], in[13], in[14],
+                in[15]);
+        ESP_LOGI(TAG, "out "
+                "%02x%02x%02x%02x%02x%02x%02x%02x"
+                "%02x%02x%02x%02x%02x%02x%02x%02x\n",
+                out[0], out[1], out[2], out[3], out[4], out[5], out[6], out[7],
+                out[8], out[9], out[10], out[11], out[12], out[13], out[14],
+                out[15]);
 
-            unsigned char key[32];
-            unsigned char iv[16];
+        // b1
+        create_auth_only_block1( in, cmd, mode, param1, param2, 
+                auth_data_len, false);
+        ESP_ERROR_CHECK(mbedtls_aes_crypt_cbc( &aes, 
+                    MBEDTLS_AES_ENCRYPT, 16, iv, in, cleartext_mac ));
+        ESP_LOGI(TAG, "computed cleartext out_mac "
+                "%02x%02x%02x%02x%02x%02x%02x%02x"
+                "%02x%02x%02x%02x%02x%02x%02x%02x\n",
+                cleartext_mac[0], cleartext_mac[1], cleartext_mac[2], cleartext_mac[3], cleartext_mac[4], cleartext_mac[5], cleartext_mac[6], cleartext_mac[7],
+                cleartext_mac[8], cleartext_mac[9], cleartext_mac[10], cleartext_mac[11], cleartext_mac[12], cleartext_mac[13], cleartext_mac[14],
+                cleartext_mac[15]);
 
-            unsigned char input [128];
-            unsigned char output[128];
+        /* CTR Section */
+        /* We are calling ECB functions because we basically implement our own
+         * custom CTR scheme */
+        uint16_t ctr = 0;
+        mac_create_a(in, ctr++);
+        uint128_t in_mac;
+        ESP_ERROR_CHECK(mbedtls_aes_crypt_ecb( &aes, 
+                    MBEDTLS_AES_ENCRYPT, in, in_mac));
+        ESP_LOGI(TAG, "pre xor out_mac "
+                "%02x%02x%02x%02x%02x%02x%02x%02x"
+                "%02x%02x%02x%02x%02x%02x%02x%02x\n",
+                in_mac[0], in_mac[1], in_mac[2], in_mac[3], in_mac[4], in_mac[5], in_mac[6], in_mac[7],
+                in_mac[8], in_mac[9], in_mac[10], in_mac[11], in_mac[12], in_mac[13], in_mac[14],
+                in_mac[15]);
 
-            size_t input_len = 40;
-            size_t output_len = 0;
+        xor128(in_mac, cleartext_mac);
 
-            // IV is zero for CBC
-            mbedtls_aes_crypt_cbc
-        }
-        // todo: compute bp0 in CBC mode
-        //create_b1(bp0, b1, data_len, data);
-        // todo: compute bp1 in CBC mode
-        create_a0(a0);
-        // todo: compute ap0 in CTR mode
-        for(uint8_t i=0; i<16; i++){
-            out_mac[i] = ap0[i] ^ bp1[i];
-        }
+        ESP_LOGI(TAG, "computed encrypted out_mac "
+                "%02x%02x%02x%02x%02x%02x%02x%02x"
+                "%02x%02x%02x%02x%02x%02x%02x%02x\n",
+                in_mac[0], in_mac[1], in_mac[2], in_mac[3], in_mac[4], in_mac[5], in_mac[6], in_mac[7],
+                in_mac[8], in_mac[9], in_mac[10], in_mac[11], in_mac[12], in_mac[13], in_mac[14],
+                in_mac[15]);
 
+        /* mbedtls aes context cleanup */
+        mbedtls_aes_free( &aes );
     }
-    res = aes132m_execute(cmd, mode, param1, param2,
-            len, in, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+    {
+        mbedtls_ccm_context ccm;
+        mbedtls_ccm_init( &ccm );
+        mbedtls_ccm_setkey( &ccm, MBEDTLS_CIPHER_ID_AES, master_key, 128 );
 
-    /* Confirm response MAC */
+        uint8_t iv[13] = { 0 }; // ataes132a uses an all zero IV
+        memcpy(iv, nonce, 12);
+        iv[12] = mac_count;
+        uint128_t in = { 0 };
+        uint128_t out = { 0 };
+        uint128_t tag = { 0 };
+
+        create_auth_only_block1( in, cmd, mode, param1, param2, 
+                7, false);
+
+        ESP_ERROR_CHECK( mbedtls_ccm_encrypt_and_tag( &ccm, 16,
+                    iv, 13, NULL, 0, 
+                    in, out, tag, 16 ));
+        ESP_LOGI(TAG, "computed tag "
+                "%02x%02x%02x%02x%02x%02x%02x%02x"
+                "%02x%02x%02x%02x%02x%02x%02x%02x\n",
+                tag[0], tag[1], tag[2], tag[3], tag[4], tag[5], tag[6], tag[7],
+                tag[8], tag[9], tag[10], tag[11], tag[12], tag[13], tag[14],
+                tag[15]);
+
+        mbedtls_ccm_free( &ccm );
+    }
+
+    return res;
 }
-#endif
+
 #if 0
 uint8_t aes132m_decrypt(const uint8_t *in, uint8_t len, uint8_t key_id,
         uint8_t *out) {

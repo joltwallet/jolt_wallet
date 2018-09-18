@@ -14,7 +14,7 @@ uint8_t aes132_write_chipconfig() {
         .legacy = false, // Legacy cmd is not used; dangerous
         .encrypt_decrypt = true, // Use Encrypt cmd for key stretching
         .dec_read = false, // DecRead and WriteCompute not used
-        .auth_compute = false, //AuthCompute not used
+        .auth_compute = true, //TODO CHANGE BACK//AuthCompute not used
         .power_up = 0b11 // active on startup; todo: optimize power consumption 
     };
     uint8_t res;
@@ -67,7 +67,7 @@ uint8_t aes132_write_keyconfig() {
         .import_ok = false,       // Prohibit KeyImport
         .child_auth = false,      // Irreleant; KeyCreate can't target
         .transfer_ok = false,     // Prohibit KeyTransfer
-        .auth_compute = false,    // Key cannot be used for auth_compute
+        .auth_compute = true, //TODO CHANGE BACK    // Key cannot be used for auth_compute
         .link_pointer = 0x0,      // Not used
         .counter_num = 0x0,       // Not used
         .dec_read = false,        // DecRead and WriteCompute prohibited

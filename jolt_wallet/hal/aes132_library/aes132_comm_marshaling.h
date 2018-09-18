@@ -159,6 +159,7 @@ uint8_t aes132m_execute(uint8_t op_code, uint8_t mode,
 
 /* Convenience Command Functions */
 #include "jolttypes.h"
+uint8_t aes132m_auth(uint16_t key_id);
 uint8_t aes132m_blockread(uint8_t *data, const uint16_t address,
         const uint8_t count);
 uint8_t aes132m_counter(uint32_t *count, uint8_t counter_id);
@@ -177,7 +178,7 @@ uint8_t aes132m_mac_count(uint8_t *count);
 
 #ifdef UNIT_TESTING
 uint8_t aes132m_debug_clear_master_key();
-uint8_t aes132m_debug_print_device_mac_count();
+uint8_t aes132m_debug_print_device_mac_count(const char tag[]);
 #endif
 
 #endif
