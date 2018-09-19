@@ -1,6 +1,7 @@
 #include <string.h>                    // needed for memcpy()
 #include "aes132_comm_marshaling.h"    // definitions and declarations for the Command Marshaling module
 #include "aes132_i2c.h" // For ReturnCode macros
+#include "aes132_conf.h"
 #include "esp_log.h"
 #include "sodium.h"
 
@@ -10,17 +11,12 @@ static const char TAG[] = "aes132_con";
 
 
 uint8_t aes132_write_chipconfig() {
-    const aes132_chipconfig_t config = {
-        .legacy = false, // Legacy cmd is not used; dangerous
-        .encrypt_decrypt = true, // Use Encrypt cmd for key stretching
-        .dec_read = false, // DecRead and WriteCompute not used
-        .auth_compute = true, //TODO CHANGE BACK//AuthCompute not used
-        .power_up = 0b11 // active on startup; todo: optimize power consumption 
-    };
     uint8_t res;
-    res = aes132m_write_memory(sizeof(aes132_chipconfig_t),
-            AES132_CHIPCONFIG_ADDR,
-            (uint8_t *)&config);
+    uint8_t config = 
+            AES132_CHIP_CONFIG_ENC_DEC_EN | // Used for Key Stretching
+            AES132_CHIP_CONFIG_POWER_ACTIVE;
+    res = aes132m_write_memory(sizeof(config),
+            AES132_CHIPCONFIG_ADDR, &config);
     return res;
 }
 
@@ -28,17 +24,16 @@ uint8_t aes132_write_counterconfig() {
     /* Only imposes restrictions on the usage of the Counter Command. 
      * Does not influence which keys use which counters. */
     uint8_t res;
-    const aes132_counterconfig_t config = {
-        .increment_ok = false, // No need to increment
-        .require_mac = false, // irrelevant because of increment_ok = false
-        .incr_id = 0b0000, // irrelevant because of increment_ok = false
-        .mac_id = 0b0000 // Master Key ID
-    };
+    uint8_t config[2] = { 0 };
+    /* No bits set; 
+     *     * we don't need the increment option.
+     *     * We use key_id 0 for MACs.
+     */
     /* Write the same CounterConfig to all 16 registers */
-    for(uint8_t i=0; i<AES132_NUM_ZONES; i++) {
-        res = aes132m_write_memory(sizeof(aes132_counterconfig_t),
-                AES132_COUNTERCONFIG_ADDR + i*sizeof(aes132_counterconfig_t),
-                (uint8_t *)&config);
+    for(uint8_t i=0; i<16; i++) {
+        res = aes132m_write_memory(sizeof(config),
+                AES132_COUNTER_CONFIG_ADDR(i),
+                &config);
         if( res ) {
             ESP_LOGW(TAG, "Wrote up to %d CounterConfig. "
                     "Error 0x%02x on CounterConfig %d", i, res, i);
@@ -49,36 +44,37 @@ uint8_t aes132_write_counterconfig() {
 }
 
 uint8_t aes132_write_keyconfig() {
-    uint8_t res;
-    /* Master is primarily used for inbound/outbound MACs */
-    const aes132_keyconfig_t config_master = {
-        .external_crypto = false, // Prohibit Encrypt/Decrypt
-        .inbound_auth = false,    // Key not limited to only Auth command
-        .random_nonce = true,     // Prevent spoofing of Nonces
-        .legacy_ok = false,       // Never allow dangerous Legacy command
-        .auth_key = false,        // Prior authentication not required
-        .child = false,           // Prohibit update via KeyCreate/KeyLoad
-        .parent = false,          // VolatileKey isn't used
-        .change_keys = false,     // Cannot be overwrited via EncWrite
-        .counter_limit = false,   // No usage limit
-        .child_mac = false,       // Irrelevant; KeyCreate can't target
-        .auth_out = false,        // I2C auth signaling disabled
-        .auth_out_hold = false,   // Irrelevant; Auth signaling disabled
-        .import_ok = false,       // Prohibit KeyImport
-        .child_auth = false,      // Irreleant; KeyCreate can't target
-        .transfer_ok = false,     // Prohibit KeyTransfer
-        .auth_compute = true, //TODO CHANGE BACK    // Key cannot be used for auth_compute
-        .link_pointer = 0x0,      // Not used
-        .counter_num = 0x0,       // Not used
-        .dec_read = false,        // DecRead and WriteCompute prohibited
-    };
-
-    res = aes132m_write_memory(sizeof(aes132_keyconfig_t),
-            AES132_KEYCONFIG_ADDR + 0 * sizeof(aes132_keyconfig_t),
-            (uint8_t *)&config_master);
-
+    uint8_t config_master[4] = { 0 };
+    config_master[0] = 
+        //AES132_KEY_CONFIG_EXTERNAL_CRYPTO | // Prohibit Encrypt/Decrypt
+        //AES132_KEY_CONFIG_INBOUND_AUTH | // Can be used for other purposes
+        AES132_KEY_CONFIG_RANDOM_NONCE | // Prevent Spoofing of Nonces 
+        //AES132_KEY_CONFIG_LEGACY_OK | // Never allow dangerous Legacy cmd
+        //AES132_KEY_CONFIG_AUTH_KEY | // Prior authentication not required 
+        //AES132_KEY_CONFIG_CHILD | // Prohibit update via KeyCreate/KeyLoad 
+        //AES132_KEY_CONFIG_PARENT | // VolatileKey isn't used  
+        //AES132_KEY_CONFIG_CHANGE_KEYS | // Cannot be overwrited via EncWrite
+        0;
+    config_master[1] =
+        //AES132_KEY_CONFIG_COUNTER_LIMIT | // No usage limit
+        //AES132_KEY_CONFIG_CHILD_MAC | // Irrelevant; KeyCreate can't target
+        //AES132_KEY_CONFIG_AUTH_OUT | // I2C auth signaling disabled
+        //AES132_KEY_CONFIG_AUTH_OUT_HOLD | // Irrelevant; Auth signaling disabled
+        //AES132_KEY_CONFIG_IMPORT_OK | // Prohibit KeyImport
+        //AES132_KEY_CONFIG_EXPORT_AUTH | // Irreleant; KeyCreate can't target
+        //AES132_KEY_CONFIG_TRANSFER_OK | // Prohibit KeyTransfer
+        //AES132_KEY_CONFIG_AUTH_COMPUTE | // Key cannot be used for auth_compute
+        0;
+    config_master[2] = 
+        AES132_KEY_CONFIG_COUNTER_NUM(0) | // Not used
+        AES132_KEY_CONFIG_LINK_POINTER(0) ; // Not used
+    config_master[3] = 
+        //AES_132_KEY_CONFIG_DEC_READ | // DecRead and WriteCompute prohibited
+        0;
+    res = aes132m_write_memory(sizeof(config_master),
+            AES132_KEY_CONFIG_ADDR(AES132_KEY_ID_MASTER), &config_master);
     if( res ) {
-        ESP_LOGE(TAG, "Failed writing Master (Key0) KeyConfig "
+        ESP_LOGE(TAG, "Failed writing Master KeyConfig "
                 "Error Return Code 0x%02X",
                 res);
         return res;
@@ -86,70 +82,88 @@ uint8_t aes132_write_keyconfig() {
     
 
     /* Stretch is only used for Key streshing via Encrypt command */
-    const aes132_keyconfig_t config_stretch = {
-        .external_crypto = true,  // Allow Encrypt/Decrypt
-        .inbound_auth = false,    // Key not limited to only Auth command
-        .random_nonce = true,     // Prevent spoofing of Nonces
-        .legacy_ok = false,       // Never allow dangerous Legacy command
-        .auth_key = false,        // Prior authentication not required
-        .child = true,            // Allow update via KeyCreate/KeyLoad
-        .parent = false,          // VolatileKey isn't used
-        .change_keys = false,     // Cannot be overwrited via EncWrite
-        .counter_limit = false,   // No usage limit
-        .child_mac = false,       // No InMAC for KeyCreate to modify this key
-        .auth_out = false,        // I2C auth signaling disabled
-        .auth_out_hold = false,   // Irrelevant; Auth signaling disabled
-        .import_ok = false,       // Prohibit KeyImport; we use KeyCreate
-        .child_auth = false,      // No prior auth for KeyCreate to modify this key
-        .transfer_ok = false,     // Prohibit KeyTransfer
-        .auth_compute = false,    // Key cannot be used for auth_compute
-        .link_pointer = 0x0,      // Not used
-        .counter_num = 0x1,       // Not used; stated as 0x1 for consistency
-        .dec_read = false,        // DecRead and WriteCompute prohibited
-    };
-    res = aes132m_write_memory(sizeof(aes132_keyconfig_t),
-            AES132_KEYCONFIG_ADDR + 1 * sizeof(aes132_keyconfig_t),
-            (uint8_t *)&config_stretch);
+    uint8_t config_stretch[4] = { 0 };
+    config_stretch[0] = 
+        AES132_KEY_CONFIG_EXTERNAL_CRYPTO | // Allow Encrypt/Decrypt
+        //AES132_KEY_CONFIG_INBOUND_AUTH | // Can be used for other purposes
+        AES132_KEY_CONFIG_RANDOM_NONCE | // Prevent Spoofing of Nonces 
+        //AES132_KEY_CONFIG_LEGACY_OK | // Never allow dangerous Legacy cmd
+        //AES132_KEY_CONFIG_AUTH_KEY | // Prior authentication not required 
+        AES132_KEY_CONFIG_CHILD | // Allow update via KeyCreate/KeyLoad 
+        //AES132_KEY_CONFIG_PARENT | // VolatileKey isn't used  
+        //AES132_KEY_CONFIG_CHANGE_KEYS | // Cannot be overwrited via EncWrite
+        0;
+    config_stretch[1] =
+        //AES132_KEY_CONFIG_COUNTER_LIMIT | // No usage limit
+        //AES132_KEY_CONFIG_CHILD_MAC | // Irrelevant; KeyCreate can't target
+        //AES132_KEY_CONFIG_AUTH_OUT | // I2C auth signaling disabled
+        //AES132_KEY_CONFIG_AUTH_OUT_HOLD | // Irrelevant; Auth signaling disabled
+        //AES132_KEY_CONFIG_IMPORT_OK | // Prohibit KeyImport
+        //AES132_KEY_CONFIG_EXPORT_AUTH | // Irreleant; KeyCreate can't target
+        //AES132_KEY_CONFIG_TRANSFER_OK | // Prohibit KeyTransfer
+        //AES132_KEY_CONFIG_AUTH_COMPUTE | // Key cannot be used for auth_compute
+        0;
+    config_stretch[2] = 
+        AES132_KEY_CONFIG_COUNTER_NUM(1) | // Not used; 1 for consistency
+        AES132_KEY_CONFIG_LINK_POINTER(0) ; // Not used
+    config_stretch[3] = 
+        //AES_132_KEY_CONFIG_DEC_READ | // DecRead and WriteCompute prohibited
+        0;
+    res = aes132m_write_memory(sizeof(config_stretch),
+            AES132_KEY_CONFIG_ADDR(AES132_KEY_ID_STRETCH), &config_stretch);
     if( res ) {
-        ESP_LOGE(TAG, "Failed writing Stretch (Key1) KeyConfig "
+        ESP_LOGE(TAG, "Failed writing Stretch KeyConfig "
                 "Error Return Code 0x%02X",
                 res);
         return res;
     }
 
-    aes132_keyconfig_t config_pin = {
-        .external_crypto = false, // Prohibit Encrypt/Decrypt
-        .inbound_auth = true,     // Key only used for authentication
-        .random_nonce = true,     // Prevent spoofing of Nonces
-        .legacy_ok = false,       // Never allow dangerous Legacy command
-        .auth_key = false,        // Prior authentication not required
-        .child = true,            // Allow update via KeyCreate/KeyLoad
-        .parent = false,          // VolatileKey isn't used
-        .change_keys = false,     // Cannot be overwrited via EncWrite
-        .counter_limit = true,    // Limit Key Usage
-        .child_mac = false,       // No InMAC for KeyCreate to modify this key
-        .auth_out = false,        // I2C auth signaling disabled
-        .auth_out_hold = false,   // Irrelevant; Auth signaling disabled
-        .import_ok = false,       // Prohibit KeyImport; We use KeyLoad
-        .child_auth = false,      // Irreleant; KeyCreate can't target
-        .transfer_ok = false,     // Prohibit KeyTransfer
-        .auth_compute = false,    // Key cannot be used for auth_compute
-        .link_pointer = 0x0,      // Use Master for MAC
-        .counter_num = 0x0,       // To be updated in loop
-        .dec_read = false,        // DecRead and WriteCompute prohibited
-    };
-    for(uint8_t i=2; i < AES132_NUM_ZONES; i++) {
-        config_pin.counter_num = i;
-        res = aes132m_write_memory(sizeof(aes132_keyconfig_t),
-                AES132_KEYCONFIG_ADDR + i * sizeof(aes132_keyconfig_t),
-                (uint8_t *)&config_pin);
+    uint8_t config_pin[4] = { 0 };
+    config_pin[0] = 
+        //AES132_KEY_CONFIG_EXTERNAL_CRYPTO | // Prohibit Encrypt/Decrypt
+        AES132_KEY_CONFIG_INBOUND_AUTH | // Key only used for authentication
+        AES132_KEY_CONFIG_RANDOM_NONCE | // Prevent Spoofing of Nonces 
+        //AES132_KEY_CONFIG_LEGACY_OK | // Never allow dangerous Legacy cmd
+        //AES132_KEY_CONFIG_AUTH_KEY | // Prior authentication not required 
+        AES132_KEY_CONFIG_CHILD | // Allow update via KeyCreate/KeyLoad 
+        //AES132_KEY_CONFIG_PARENT | // VolatileKey isn't used  
+        //AES132_KEY_CONFIG_CHANGE_KEYS | // Cannot be overwrited via EncWrite
+        0;
+    config_pin[1] =
+        AES132_KEY_CONFIG_COUNTER_LIMIT | // Limit Key Usage
+        //AES132_KEY_CONFIG_CHILD_MAC | // Irrelevant; KeyCreate can't target
+        //AES132_KEY_CONFIG_AUTH_OUT | // I2C auth signaling disabled
+        //AES132_KEY_CONFIG_AUTH_OUT_HOLD | // Irrelevant; Auth signaling disabled
+        //AES132_KEY_CONFIG_IMPORT_OK | // Prohibit KeyImport
+        //AES132_KEY_CONFIG_EXPORT_AUTH | // Irreleant; KeyCreate can't target
+        //AES132_KEY_CONFIG_TRANSFER_OK | // Prohibit KeyTransfer
+        //AES132_KEY_CONFIG_AUTH_COMPUTE | // Key cannot be used for auth_compute
+        0;
+    config_pin[2] = 
+        AES132_KEY_CONFIG_COUNTER_NUM(0) | // To be updated in loopd
+        AES132_KEY_CONFIG_LINK_POINTER(0) ; // Not used
+    config_pin[3] = 
+        //AES_132_KEY_CONFIG_DEC_READ | // DecRead and WriteCompute prohibited
+        0;
+    res = aes132m_write_memory(sizeof(config_pin),
+            AES132_KEY_CONFIG_ADDR(AES132_KEY_ID_PIN), &config_pin);
+    if( res ) {
+        ESP_LOGE(TAG, "Failed writing PIN KeyConfig "
+                "Error Return Code 0x%02X",
+                res);
+        return res;
+    }
+    for(uint8_t i=AES132_KEY_ID_PIN; i < AES132_NUM_ZONES; i++) {
+        config_pin[1] &= AES132_KEY_CONFIG_LINK_POINTER(0xF); // Clear out old counter_num
+        config_pin[2] = AES132_KEY_CONFIG_COUNTER_NUM(i);
+        res = aes132m_write_memory(sizeof(config_pin),
+                AES132_KEY_CONFIG_ADDR(AES132_KEY_ID_PIN), &config_pin);
         if( res ) {
             ESP_LOGE(TAG, "Failed writing PIN (Key%d) KeyConfig "
                     "Error Return Code 0x%02X",
                     i, res);
             return res;
         }
-
     }
     return res;
 }
@@ -159,79 +173,78 @@ uint8_t aes132_reset_master_zoneconfig() {
     /* Writes the ZoneConfig into a state so that we can easily write to
      * the UserZone before locking */
     uint8_t res;
-    const aes132_zoneconfig_t config_master = {
-        .auth_read = false, // Master Zone just holding an esp32 encrypted backup of the master key, no authentication required to read the ciphertext.
-        .auth_write = false, // Irrelevant; section is read-only
-        .enc_read = false,   // No security benefit in EncRead
-        .enc_write = false,  // Irrelevant; section is read-only
-        .write_mode = 0b00,  // R/W
-        .use_serial = AES132_INCLUDE_SERIAL,  // Irrelevant; section is read-only
-        .use_small = AES132_INCLUDE_SMALLZONE,  // Irrelevant; section is read-only
-        .read_id = 0x0,      // Master to generate OutMAC 
-        .auth_id = 0x0,      // Irrelevant; authentication not required
-        .volatile_transfer_ok = false, // Prohibit KeyTransfer to VolatileKey
-        .write_id = 0x0,     // Irrelevant, EncWrite not used
-        .read_only = 0x00  // Ignored unless WriteMode is 0b10 or 0b11
-    };
-    res = aes132m_write_memory(sizeof(aes132_zoneconfig_t),
-            AES132_ZONECONFIG_ADDR + 0 * sizeof(aes132_zoneconfig_t),
-            (uint8_t *)&config_master);
+    const uint8_t config_master[4] = { 0 };
+    res = aes132m_write_memory(sizeof(config_master),
+            AES132_ZONE_CONFIG_ADDR(AES132_KEY_ID_MASTER), &config_master);
     return res;
 }
 
 uint8_t aes132_write_zoneconfig() {
     uint8_t res;
-    const aes132_zoneconfig_t config_master = {
-        .auth_read = false, // Master Zone just holding an esp32 encrypted backup of the master key, no authentication required to read the ciphertext.
-        .auth_write = false, // Irrelevant; section is read-only
-        .enc_read = false,   // No security benefit in EncRead
-        .enc_write = false,  // Irrelevant; section is read-only
-        .write_mode = 0b01,  // Zone is read-only
-        .use_serial = AES132_INCLUDE_SERIAL,  // Irrelevant; section is read-only
-        .use_small = AES132_INCLUDE_SMALLZONE,  // Irrelevant; section is read-only
-        .read_id = 0x0,      // Master to generate OutMAC 
-        .auth_id = 0x0,      // Irrelevant; authentication not required
-        .volatile_transfer_ok = false, // Prohibit KeyTransfer to VolatileKey
-        .write_id = 0x0,     // Irrelevant, EncWrite not used
-        .read_only = 0x00  // Ignored unless WriteMode is 0b10 or 0b11
-    };
-    res = aes132m_write_memory(sizeof(aes132_zoneconfig_t),
-            AES132_ZONECONFIG_ADDR + 0 * sizeof(aes132_zoneconfig_t),
-            (uint8_t *)&config_master);
+    uint8_t config_master[4] = { 0 };
+    config_master[0] = 
+        //AES132_ZONE_CONFIG_AUTH_READ | // Master Zone just holding an esp32 encrypted backup of the master key, no authentication required to read the ciphertext.
+        //AES132_ZONE_CONFIG_AUTH_WRITE | // Irrelevant; section is read-only
+        //AES132_ZONE_CONFIG_ENC_READ | // No security benefit in EncRead
+        //AES132_ZONE_CONFIG_ENC_WRITE | // Irrelevant; section is read-only
+        AES132_ZONE_CONFIG_WRITE_MODE_4 | // Zone is read-only
+        //AES132_ZONE_CONFIG_WRITE_MODE_5 |
+        //AES132_ZONE_CONFIG_USE_SERIAL | // Irrelevant; section is read-only
+        //AES132_ZONE_CONFIG_USE_SMALL | // Irrelevant; section is read-only
+        0;
+    config_master[1] = 
+        AES132_ZONE_CONFIG_AUTH_ID(0) | // Master to generate OutMAC
+        AES132_ZONE_CONFIG_READ_ID(0); // Irrelevant; authentication not required
+    config_master[2] = 
+        AES132_ZONE_CONFIG_WRITE_ID(x) | // Irrelevant, EncWrite not used
+        //AES132_ZONE_CONFIG_VOLATILE_TRANSFER_OK | // Prohibit KeyTransfer to VolatileKey
+        0;
+    config_master[3] = 
+         //AES132_ZONE_CONFIG_READ_ONLY_R | // Ignored unless WriteMode is 0b10 or 0b11
+         0;
+        
+    res = aes132m_write_memory(sizeof(config_master),
+            AES132_ZONE_CONFIG_ADDR(AES132_KEY_ID_MASTER), &config_master);
     if( res ) {
-        ESP_LOGE(TAG, "Failed writing Master (Key1) ZoneConfig "
+        ESP_LOGE(TAG, "Failed writing Master ZoneConfig "
                 "Error Return Code 0x%02X",
                 res);
         return res;
     }
 
-    aes132_zoneconfig_t config_pin = {
-        .auth_read = true, // PIN required to access zone
-        .auth_write = false, // Irrelevant; authentication for write doesn't
-                             // provide more security
-        .enc_read = false,   // No security benefit in EncRead
-        .enc_write = false,  // No security benefit in EncWrite
-        .write_mode = 0b10,  // Zone is read-only
-        .use_serial = AES132_INCLUDE_SERIAL,  // Irrelevant; we don't use EncWrite
-        .use_small = AES132_INCLUDE_SMALLZONE,  // Irrelevant; we don't use EncWrite
-        .read_id = 0x0,      // Master to generate OutMAC 
-        .auth_id = 0x0,      // Overwritten during write loop
-        .volatile_transfer_ok = false, // Prohibit KeyTransfer to VolatileKey
-        .write_id = 0x0,     // Irrelevant, EncWrite not used
-        .read_only = AES132_ZONECONFIG_READONLY_RW  // Ignored unless WriteMode is 0b10 or 0b11
-    };
-    for(uint8_t i=2; i < AES132_NUM_ZONES; i++) {
-        config_pin.auth_id = i;
-        res = aes132m_write_memory(sizeof(aes132_zoneconfig_t),
-                AES132_ZONECONFIG_ADDR + i * sizeof(aes132_zoneconfig_t),
-                (uint8_t *)&config_pin);
+    uint8_t config_pin[4] = { 0 };
+    config_pin[0] = 
+        AES132_ZONE_CONFIG_AUTH_READ | // PIN required to access zone
+        //AES132_ZONE_CONFIG_AUTH_WRITE | // Irrelevant; section is read-only
+        //AES132_ZONE_CONFIG_ENC_READ | // No security benefit in EncRead
+        //AES132_ZONE_CONFIG_ENC_WRITE | // Irrelevant; section is read-only
+        //AES132_ZONE_CONFIG_WRITE_MODE_4 |
+        //AES132_ZONE_CONFIG_WRITE_MODE_5 | // Zone is R/W
+        //AES132_ZONE_CONFIG_USE_SERIAL | // Irrelevant; section is read-only
+        //AES132_ZONE_CONFIG_USE_SMALL | // Irrelevant; section is read-only
+        0;
+    config_pin[1] = 
+        AES132_ZONE_CONFIG_AUTH_ID(0) | // Master to generate OutMAC
+        AES132_ZONE_CONFIG_READ_ID(0); // Overwritten during write loop
+    config_pin[2] = 
+        AES132_ZONE_CONFIG_WRITE_ID(x) | // Irrelevant, EncWrite not used
+        //AES132_ZONE_CONFIG_VOLATILE_TRANSFER_OK | // Prohibit KeyTransfer to VolatileKey
+        0;
+    config_pin[3] = 
+         //AES132_ZONE_CONFIG_READ_ONLY_R | // Ignored unless WriteMode is 0b10 or 0b11
+         0;
+ 
+    for(uint8_t i=AES132_KEY_ID_PIN; i < 16; i++) {
+        config_pin[1] &= AES132_ZONE_CONFIG_AUTH_ID(0xF); // Clear out old read_id
+        config_pin[1] |= AES132_ZONE_CONFIG_READ_ID(i);
+        res = aes132m_write_memory(sizeof(config_pin),
+            AES132_ZONE_CONFIG_ADDR(i), &config_pin);
         if( res ) {
             ESP_LOGE(TAG, "Failed writing PIN (Key%d) ZoneConfig "
                     "Error Return Code 0x%02X",
                     i, res);
             return res;
         }
-
     }
     return res;
 }
