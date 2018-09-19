@@ -43,8 +43,8 @@
  * Please refer to each function documentation for details.
  */
  
-#ifndef AES132_HELPER_H_
-#define AES132_HELPER_H_
+#ifndef AES132_MAC_H_
+#define AES132_MAC_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -84,6 +84,7 @@
 #define AES132_ZONE_CONFIG_ADDR(n)    ((uint16_t) (0xF0C0 + ((n) << 2)))
 #define AES132_COUNTER_CONFIG_ADDR(n) ((uint16_t) (0xF060 + ((n) << 1)))
 #define AES132_COUNTER_ADDR(n)        ((uint16_t) (0xF100 + ((n) << 3)))
+#define AES132_CHIP_CONFIG_ADDR       ((uint16_t) 0xF041)
 
 #define AES132_SMALL_ZONE_ADDR        ((uint16_t) (0xF1E0))
 

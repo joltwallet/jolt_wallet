@@ -1,13 +1,13 @@
 #include <string.h>                    // needed for memcpy()
 #include "aes132_comm_marshaling.h"    // definitions and declarations for the Command Marshaling module
 #include "aes132_i2c.h" // For ReturnCode macros
-#include "aes132_conf.h"
+#include "aes132_mac.h"
 #include "esp_log.h"
 #include "sodium.h"
 
 
 /* Defines configuration and justification for Jolt */
-static const char TAG[] = "aes132_con";
+static const char TAG[] = "aes132_conf";
 
 
 uint8_t aes132_write_chipconfig() {
@@ -16,7 +16,7 @@ uint8_t aes132_write_chipconfig() {
             AES132_CHIP_CONFIG_ENC_DEC_EN | // Used for Key Stretching
             AES132_CHIP_CONFIG_POWER_ACTIVE;
     res = aes132m_write_memory(sizeof(config),
-            AES132_CHIPCONFIG_ADDR, &config);
+            AES132_CHIP_CONFIG_ADDR, &config);
     return res;
 }
 
@@ -33,7 +33,7 @@ uint8_t aes132_write_counterconfig() {
     for(uint8_t i=0; i<16; i++) {
         res = aes132m_write_memory(sizeof(config),
                 AES132_COUNTER_CONFIG_ADDR(i),
-                &config);
+                config);
         if( res ) {
             ESP_LOGW(TAG, "Wrote up to %d CounterConfig. "
                     "Error 0x%02x on CounterConfig %d", i, res, i);
@@ -44,6 +44,7 @@ uint8_t aes132_write_counterconfig() {
 }
 
 uint8_t aes132_write_keyconfig() {
+    uint8_t res;
     uint8_t config_master[4] = { 0 };
     config_master[0] = 
         //AES132_KEY_CONFIG_EXTERNAL_CRYPTO | // Prohibit Encrypt/Decrypt
@@ -72,7 +73,7 @@ uint8_t aes132_write_keyconfig() {
         //AES_132_KEY_CONFIG_DEC_READ | // DecRead and WriteCompute prohibited
         0;
     res = aes132m_write_memory(sizeof(config_master),
-            AES132_KEY_CONFIG_ADDR(AES132_KEY_ID_MASTER), &config_master);
+            AES132_KEY_CONFIG_ADDR(AES132_KEY_ID_MASTER), config_master);
     if( res ) {
         ESP_LOGE(TAG, "Failed writing Master KeyConfig "
                 "Error Return Code 0x%02X",
@@ -110,7 +111,7 @@ uint8_t aes132_write_keyconfig() {
         //AES_132_KEY_CONFIG_DEC_READ | // DecRead and WriteCompute prohibited
         0;
     res = aes132m_write_memory(sizeof(config_stretch),
-            AES132_KEY_CONFIG_ADDR(AES132_KEY_ID_STRETCH), &config_stretch);
+            AES132_KEY_CONFIG_ADDR(AES132_KEY_ID_STRETCH), config_stretch);
     if( res ) {
         ESP_LOGE(TAG, "Failed writing Stretch KeyConfig "
                 "Error Return Code 0x%02X",
@@ -145,19 +146,11 @@ uint8_t aes132_write_keyconfig() {
     config_pin[3] = 
         //AES_132_KEY_CONFIG_DEC_READ | // DecRead and WriteCompute prohibited
         0;
-    res = aes132m_write_memory(sizeof(config_pin),
-            AES132_KEY_CONFIG_ADDR(AES132_KEY_ID_PIN), &config_pin);
-    if( res ) {
-        ESP_LOGE(TAG, "Failed writing PIN KeyConfig "
-                "Error Return Code 0x%02X",
-                res);
-        return res;
-    }
-    for(uint8_t i=AES132_KEY_ID_PIN; i < AES132_NUM_ZONES; i++) {
+    for(uint8_t i=AES132_KEY_ID_PIN(0); i < 16; i++) {
         config_pin[1] &= AES132_KEY_CONFIG_LINK_POINTER(0xF); // Clear out old counter_num
         config_pin[2] = AES132_KEY_CONFIG_COUNTER_NUM(i);
         res = aes132m_write_memory(sizeof(config_pin),
-                AES132_KEY_CONFIG_ADDR(AES132_KEY_ID_PIN), &config_pin);
+                AES132_KEY_CONFIG_ADDR(i), config_pin);
         if( res ) {
             ESP_LOGE(TAG, "Failed writing PIN (Key%d) KeyConfig "
                     "Error Return Code 0x%02X",
@@ -175,7 +168,7 @@ uint8_t aes132_reset_master_zoneconfig() {
     uint8_t res;
     const uint8_t config_master[4] = { 0 };
     res = aes132m_write_memory(sizeof(config_master),
-            AES132_ZONE_CONFIG_ADDR(AES132_KEY_ID_MASTER), &config_master);
+            AES132_ZONE_CONFIG_ADDR(AES132_KEY_ID_MASTER), config_master);
     return res;
 }
 
@@ -196,7 +189,7 @@ uint8_t aes132_write_zoneconfig() {
         AES132_ZONE_CONFIG_AUTH_ID(0) | // Master to generate OutMAC
         AES132_ZONE_CONFIG_READ_ID(0); // Irrelevant; authentication not required
     config_master[2] = 
-        AES132_ZONE_CONFIG_WRITE_ID(x) | // Irrelevant, EncWrite not used
+        AES132_ZONE_CONFIG_WRITE_ID(0) | // Irrelevant, EncWrite not used
         //AES132_ZONE_CONFIG_VOLATILE_TRANSFER_OK | // Prohibit KeyTransfer to VolatileKey
         0;
     config_master[3] = 
@@ -204,7 +197,7 @@ uint8_t aes132_write_zoneconfig() {
          0;
         
     res = aes132m_write_memory(sizeof(config_master),
-            AES132_ZONE_CONFIG_ADDR(AES132_KEY_ID_MASTER), &config_master);
+            AES132_ZONE_CONFIG_ADDR(AES132_KEY_ID_MASTER), config_master);
     if( res ) {
         ESP_LOGE(TAG, "Failed writing Master ZoneConfig "
                 "Error Return Code 0x%02X",
@@ -227,18 +220,18 @@ uint8_t aes132_write_zoneconfig() {
         AES132_ZONE_CONFIG_AUTH_ID(0) | // Master to generate OutMAC
         AES132_ZONE_CONFIG_READ_ID(0); // Overwritten during write loop
     config_pin[2] = 
-        AES132_ZONE_CONFIG_WRITE_ID(x) | // Irrelevant, EncWrite not used
+        AES132_ZONE_CONFIG_WRITE_ID(0) | // Irrelevant, EncWrite not used
         //AES132_ZONE_CONFIG_VOLATILE_TRANSFER_OK | // Prohibit KeyTransfer to VolatileKey
         0;
     config_pin[3] = 
          //AES132_ZONE_CONFIG_READ_ONLY_R | // Ignored unless WriteMode is 0b10 or 0b11
          0;
  
-    for(uint8_t i=AES132_KEY_ID_PIN; i < 16; i++) {
+    for(uint8_t i=AES132_KEY_ID_PIN(0); i < 16; i++) {
         config_pin[1] &= AES132_ZONE_CONFIG_AUTH_ID(0xF); // Clear out old read_id
         config_pin[1] |= AES132_ZONE_CONFIG_READ_ID(i);
         res = aes132m_write_memory(sizeof(config_pin),
-            AES132_ZONE_CONFIG_ADDR(i), &config_pin);
+            AES132_ZONE_CONFIG_ADDR(i), config_pin);
         if( res ) {
             ESP_LOGE(TAG, "Failed writing PIN (Key%d) ZoneConfig "
                     "Error Return Code 0x%02X",

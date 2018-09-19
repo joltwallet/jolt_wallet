@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 #include <string.h>
-#include "aes132_helper.h"
+#include "aes132_mac.h"
 #include "aes132_comm_marshaling.h"
 #include "mbedtls/aes.h"
 #include "esp_log.h"
@@ -32,7 +32,7 @@
 static uint8_t aes132crypt_generate_encrypt(struct aes132crypt_in_out *param);
 static uint8_t aes132crypt_decrypt_verify(struct aes132crypt_in_out *param);
 static uint8_t aes132crypt_nonce(struct aes132crypt_nonce_in_out *param);
-static void aes132crypt_aes_engine_encrypt(uint8_t *data, uint8_t *key, uint8_t init_flag);
+static void aes132crypt_aes_engine_encrypt(uint8_t *data, uint8_t *key, bool init_flag);
 static void aes132crypt_cbc_block(struct aes132crypt_in_out *param, uint8_t *output);
 static void aes132crypt_ctr_block(struct aes132crypt_ctr_block_in_out *param);
 
@@ -51,7 +51,7 @@ static const char TAG[] = "aes132_helper";
  */
 static void aes132crypt_aes_engine_encrypt(uint8_t *data, uint8_t *key, 
         bool init_flag) {
-	static aes_context aes;
+	static mbedtls_aes_context aes;
 	
 	if ( true == init_flag  && NULL != key) {
 		// Call AES context initialization (RoundKey calculation) here
@@ -106,7 +106,7 @@ uint8_t aes132crypt_generate_encrypt(struct aes132crypt_in_out *param) {
 	struct aes132crypt_ctr_block_in_out ctr_param;
 	
 	// Initialize AES engine
-	aes132crypt_aes_engine_encrypt(NULL, param->key, TRUE);
+	aes132crypt_aes_engine_encrypt(NULL, param->key, true);
 	
 	// Perform CBC blocks
 	aes132crypt_cbc_block(param, cleartext_mac);
@@ -199,7 +199,7 @@ uint8_t aes132crypt_decrypt_verify(struct aes132crypt_in_out *param) {
  */
 uint8_t aes132crypt_nonce(struct aes132crypt_nonce_in_out *param) {
 	// Initialize AES engine
-	aes132crypt_aes_engine_encrypt(NULL, param->key, TRUE);
+	aes132crypt_aes_engine_encrypt(NULL, param->key, true);
 	
 	// Run AES for input data
 	memcpy(param->data_out, param->data_in, 16);
@@ -340,7 +340,7 @@ static void aes132crypt_cbc_block(struct aes132crypt_in_out *param, uint8_t *out
 			output[i] ^= *p_input++;
 		}
 		// Run AES
-		aes132crypt_aes_engine_encrypt(output, param->key, FALSE);
+		aes132crypt_aes_engine_encrypt(output, param->key, false);
 		// Y_i is now in array output
 		
 		// Increment pass
@@ -398,7 +398,7 @@ static void aes132crypt_ctr_block(struct aes132crypt_ctr_block_in_out *param)
 		memcpy(ctr_enc, ctr, 16);
 		
 		// Run AES
-		aes132crypt_aes_engine_encrypt(ctr_enc, param->key, FALSE);
+		aes132crypt_aes_engine_encrypt(ctr_enc, param->key, false);
 		// S_j is now in array ctr_enc[]
 
 		// If counter byte = 0, it is the first pass, encrypt/decrypt auth_value
@@ -489,19 +489,19 @@ uint8_t aes132h_nonce(struct aes132h_nonce_in_out *param)
 		// Copy the first 12-byte as a nonce value
 		memcpy(param->nonce->value, data_out, 12);
 
-		// Set the random flag to TRUE (Random nonce)
-		param->nonce->random = TRUE;
+		// Set the random flag to true (Random nonce)
+		param->nonce->random = true;
 	} else {
 		// Copy the InSeed as a nonce value
 		memcpy(param->nonce->value, param->in_seed, 12);
 		
 		// Set the random flag to FALSE (Inbound nonce)
-		param->nonce->random = FALSE;
+		param->nonce->random = false;
 	}
 	
 	// Reset the MacCount, set the valid flag
 	param->nonce->value[12] = 0x00;
-	param->nonce->valid = TRUE;
+	param->nonce->valid = true;
 	
 	return AES132_FUNCTION_RETCODE_SUCCESS;
 }
@@ -698,7 +698,7 @@ uint8_t aes132h_build_auth_block(struct aes132h_build_auth_block_in_out *param)
 	// Check whether the MAC is used as input or output
 	if (	(param->host_opcode == AES132_OPCODE_AUTH_COMPUTE)
 			|| (param->host_opcode == AES132_OPCODE_WRITE_COMPUTE)
-			|| (param->host_opcode == AES132_OPCODE_KEY_EXPORT)) {
+			|| (param->host_opcode == AES132_OPCODE_KEY_CREATE)) {
 		// MAC used as input to device, Input bit (bit 1) always 1
 		*p_first_block++ = (param->random)?
 	                       (AES132_MAC_FLAG_RANDOM | AES132_MAC_FLAG_INPUT):
@@ -758,7 +758,7 @@ uint8_t aes132h_build_auth_block(struct aes132h_build_auth_block_in_out *param)
  * count_value is used only for Counter command, and not used for other commands.
  * in_mac is never used for this function.
  * 
- * The "nonce" struct has to be passed with valid member set to TRUE, otherwise the function returns with error.
+ * The "nonce" struct has to be passed with valid member set to true, otherwise the function returns with error.
  * The "nonce" struct is updated by this function:
  * - If MacCount has reached maximum value (255), valid flag is cleared
  * - MacCount (nonce[12]) is incremented
@@ -791,7 +791,7 @@ uint8_t aes132h_mac_compute_encrypt(struct aes132h_in_out *param)
 		return AES132_FUNCTION_RETCODE_BAD_PARAM;
 	
 	// Check nonce validity
-	if (param->nonce->valid == FALSE)
+	if (param->nonce->valid == false)
 		return AES132_DEVICE_RETCODE_NONCE_ERROR;
 	
 	// Arrange associated_data (see ATAES132 datasheet appendix I)
@@ -842,7 +842,7 @@ uint8_t aes132h_mac_compute_encrypt(struct aes132h_in_out *param)
 	
 	// Increment MacCount before operation. Invalidate nonce if MacCount has reached max
 	if (param->nonce->value[12] == 255) {
-		param->nonce->valid = FALSE;
+		param->nonce->valid = false;
 	}
 	param->nonce->value[12]++;
 	
@@ -898,7 +898,7 @@ uint8_t aes132h_mac_compute_encrypt(struct aes132h_in_out *param)
  * 
  * User must provide enough space for output parameters (out_data).
  * 
- * The "nonce" struct has to be passed with valid member set to TRUE, otherwise the function returns with error.
+ * The "nonce" struct has to be passed with valid member set to true, otherwise the function returns with error.
  * The "nonce" struct is checked and updated by this function:
  * - If MacCount has reached maximum value (255), valid flag is cleared
  * - MacCount (nonce[12]) is incremented
@@ -925,13 +925,12 @@ uint8_t aes132h_mac_check_decrypt(struct aes132h_in_out *param)
 			|| ((param->opcode == AES132_OPCODE_COUNTER) && !param->count_value)
 			|| (((param->opcode == AES132_OPCODE_ENC_READ)
 				|| (param->opcode == AES132_OPCODE_ENCRYPT)
-				|| (param->opcode == AES132_OPCODE_KEY_CREATE)
-				|| (param->opcode == AES132_OPCODE_KEY_EXPORT)) && (!param->in_data || !param->out_data))
+				|| (param->opcode == AES132_OPCODE_KEY_CREATE)) && (!param->in_data || !param->out_data))
 		)
 		return AES132_FUNCTION_RETCODE_BAD_PARAM;
 	
 	// Check nonce validity
-	if (param->nonce->valid == FALSE)
+	if (param->nonce->valid == false)
 		return AES132_DEVICE_RETCODE_NONCE_ERROR;
 	
 	// Arrange associated_data (see ATAES132 datasheet appendix I)
@@ -970,7 +969,7 @@ uint8_t aes132h_mac_check_decrypt(struct aes132h_in_out *param)
 	
 	// Increment MacCount before operation. Invalidate nonce if MacCount has reached max
 	if (param->nonce->value[12] == 255) {
-		param->nonce->valid = FALSE;
+		param->nonce->valid = false;
 	}
 	param->nonce->value[12]++;
 	
@@ -981,7 +980,7 @@ uint8_t aes132h_mac_check_decrypt(struct aes132h_in_out *param)
 	// The length is passed in "Param2" for encryption commands, and 16 for KeyCreate/KeyExport
 	if ((param->opcode == AES132_OPCODE_ENC_READ) || (param->opcode == AES132_OPCODE_ENCRYPT)) {
 		aes132crypt_param.plen_bytes = param->param2 & 0xFF;
-	} else if ((param->opcode == AES132_OPCODE_KEY_CREATE) || (param->opcode == AES132_OPCODE_KEY_EXPORT)) {
+	} else if ( param->opcode == AES132_OPCODE_KEY_CREATE ) {
 		aes132crypt_param.plen_bytes = 16;
 	} else {
 		aes132crypt_param.plen_bytes = 0;
@@ -999,7 +998,7 @@ uint8_t aes132h_mac_check_decrypt(struct aes132h_in_out *param)
 	ret_code = aes132crypt_decrypt_verify(&aes132crypt_param);
 	if (ret_code == AES132_DEVICE_RETCODE_MAC_ERROR) {
 		// Invalidate nonce on MAC mismatch
-		param->nonce->valid = FALSE;
+		param->nonce->valid = false;
 		param->nonce->value[12] = 0;
 	}
 	
