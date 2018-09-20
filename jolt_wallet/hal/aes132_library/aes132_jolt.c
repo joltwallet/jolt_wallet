@@ -31,10 +31,27 @@ static const uint16_t manufacturing_id = 0x00EE; // default manufacturing id
  * For more information, see Page 107
  */
 static uint8_t mac_count = 0;
-static uint8_t nonce[12] = { 0 };
+static uint8_t nonce[12] = { 0 }; // Never directly refer to nonce; use get_nonce()
+static bool nonce_valid = false;
 
+/* Static Functions */
 static uint8_t mac_incr();
 static uint8_t aes132_nonce(const uint8_t *in_seed);
+static uint8_t *get_nonce();
+
+static uint8_t *get_nonce() {
+    uint8_t res;
+    if(!nonce_valid) {
+        res = aes132_nonce( NULL );
+        if( res ) {
+            ESP_LOGE(TAG, "Error %02X generating new nonce", res);
+            esp_restart();
+        }
+        nonce_valid = true;
+        mac_count = 0;
+    }
+    return nonce;
+}
 
 #define MAC_COUNT_LOCKSTEP_CHECK true
 static uint8_t mac_incr() {
@@ -53,8 +70,8 @@ static uint8_t mac_incr() {
     if( UINT8_MAX == mac_count ) {
         // todo: error handling, nonce sync?
         ESP_LOGD(TAG, "local mac_count maxed out, issuing rand Nonce");
-        uint8_t res = aes132_nonce(NULL);
-        mac_count = 0;
+        nonce_valid = false;
+        get_nonce();
     }
     mac_count++;
     return mac_count;
@@ -62,7 +79,7 @@ static uint8_t mac_incr() {
 
 static uint8_t aes132_nonce(const uint8_t *in_seed) {
     /* Random is only populated if in_seed is NULL.
-     *
+     * Populates the global nonce variable
      * in_seed should be 12 bytes.
      *
      * */
@@ -94,7 +111,6 @@ static uint8_t aes132_nonce(const uint8_t *in_seed) {
                 rx_buffer[AES132_RESPONSE_INDEX_RETURN_CODE]);
     }
     else {
-        mac_count = 0; // or is this reset no matter what?
         memcpy(nonce, &rx_buffer[AES132_RESPONSE_INDEX_DATA], 12);
         ESP_LOGI(TAG, "Local Nonce updated to %02X %02X %02X %02X %02X "
                 "%02X %02X %02X %02X %02X %02X %02X",
@@ -106,7 +122,7 @@ static uint8_t aes132_nonce(const uint8_t *in_seed) {
 }
 
 
-uint8_t aes132_load_master_key() {
+uint8_t aes132_jolt_setup() {
     /* Allocates space for the master key on the heap 
      * If device is unlocked:
      *     * Generate Master Key from ESP32 Entropy
@@ -167,7 +183,7 @@ uint8_t aes132_load_master_key() {
             uint32_t entropy = randombytes_random();
             memcpy(&((uint32_t*)master_key)[i], &entropy, sizeof(uint32_t));
 #ifdef UNIT_TESTING
-            ((uint32_t*)master_key)[i] = 0x1111111111;
+            ((uint32_t*)master_key)[i] = 0x11111111;
 #endif
         }
 
@@ -242,7 +258,44 @@ uint8_t aes132_load_master_key() {
     }
 
     sodium_mprotect_noaccess(master_key);
-    return 0;
+    get_nonce(); // Prime the Nonce mechanism
+    return res;
 }
 
+uint8_t aes132_create_stretch_key() {
+    /* Warning; overwriting an existing stretch key will cause permament
+     * loss of mnemonic */
+    uint8_t res;
+    mac_incr();
+    res = aes132_key_create( AES132_KEY_ID_STRETCH );
+    if( AES132_DEVICE_RETCODE_SUCCESS != res ) {
+        mac_count--;
+        ESP_LOGE(TAG, "Failed creating stretch key with retcode %02X\n", res);
+    }
+    return res;
+}
 
+uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter ) {
+    /* Hardware bound key stretching. We limit PIN bruteforcing (in the event 
+     * of a complete esp32 compromise) by how quickly the ataes132a can respond
+     * to encrypt commands. Compared to conventional keystretching, PIN 
+     * brute forcing attempts must be done serially, and do not benefit from 
+     * more compute power.
+     *
+     * Runs AES128 Encryption over the data n_iter times.
+     *
+     * We do not verify the MAC of the returned ciphertext; unnecessary for
+     * our application.
+     */
+    uint8_t res = 0;
+    for(uint32_t i=0; i < n_iter; i++) {
+        mac_incr();
+        res = aes132_encrypt(data, data_len, AES132_KEY_ID_STRETCH, data, NULL);
+        if( AES132_DEVICE_RETCODE_SUCCESS != res ) {
+            mac_count--;
+            ESP_LOGE(TAG, "Failed on iteration %d with retcode %02X\n", i, res);
+            break;
+        }
+    }
+    return res;
+}

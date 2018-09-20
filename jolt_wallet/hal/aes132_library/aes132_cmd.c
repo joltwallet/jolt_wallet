@@ -344,47 +344,34 @@ uint8_t aes132_counter(uint32_t *count, uint8_t counter_id) {
     return 0; // success
 }
 
-#if 0
 uint8_t aes132_key_create(uint8_t key_id) {
+    /* Make sure to increment mac before calling this function */
     uint8_t res;
     uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = { 0 };
     uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = { 0 };
     uint8_t cmd, mode;
     uint16_t param1, param2;
 
-    mac_incr();
     // todo: mac stuff
     cmd = AES132_OPCODE_KEY_CREATE;
     mode = 0x07; 
-    mode |= AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER; // MAC Params
     param1 = key_id;
     param2 = 0x0000;
     res = aes132m_execute(cmd, mode, param1, param2,
             0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
     if( res ) {
+#if 0
         if( AES132_FUNCTION_RETCODE_BAD_CRC_TX == res ) {
             mac_count--; // mac_count doesn't increment on bad crc
         }
+#endif
         if( I2C_FUNCTION_RETCODE_NACK == res ) {
             ESP_LOGE(TAG, "KeyCreate Nack!");
         }
-        printf("KeyCreate TX Buffer: \n");
-        for(uint8_t i=0; i<sizeof(tx_buffer); i++) {
-            printf("%02X ", tx_buffer[i]);
-        }
-        printf("\n");
-
-        printf("KeyCreate RX Buffer: \n");
-        for(uint8_t i=0; i<sizeof(rx_buffer); i++) {
-            printf("%02X ", rx_buffer[i]);
-        }
-        printf("\n");
     }
     return res;
 }
-#endif
 
-#if 0
 uint8_t aes132_encrypt(const uint8_t *in, uint8_t len, uint8_t key_id,
         uint8_t *out_data, uint8_t *out_mac) {
     /* Encrypts upto 32 bytes of data (*in with length len) using key_id
@@ -392,6 +379,8 @@ uint8_t aes132_encrypt(const uint8_t *in, uint8_t len, uint8_t key_id,
      * len must be <=32.
      * out_data must be able to handle 16 bytes (<=16byte in) or 
      * 32 bytes (<=32 byte in)
+     *
+     * Remember to increment mac before calling this function.
      * todo: something with the output MAC*/
     uint8_t res;
     uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = { 0 };
@@ -417,8 +406,6 @@ uint8_t aes132_encrypt(const uint8_t *in, uint8_t len, uint8_t key_id,
         return AES132_DEVICE_RETCODE_PARSE_ERROR; // todo: better error
     }
 
-    mac_incr(); // Encrypt command returns a MAC, increase local mac_count
-
     cmd = AES132_OPCODE_ENCRYPT;
     mode = 0; // We don't care about the MAC, we want speed
     //mode = AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER; // MAC Params
@@ -439,14 +426,9 @@ uint8_t aes132_encrypt(const uint8_t *in, uint8_t len, uint8_t key_id,
             ESP_LOGE(TAG, "Cannot copy ciphertext to NULL pointer");
         }
     }
-    else {
-        if( AES132_FUNCTION_RETCODE_BAD_CRC_TX == res ) {
-            mac_count--; // mac_count doesn't increment on bad crc
-        }
-    }
     return res;
 }
-#endif
+
 #if 0
 uint8_t aes132_auth(uint16_t key_id) {
     /* Used to check a PIN attempt. Upon successful attempt, unlocks the 
@@ -587,4 +569,3 @@ uint8_t aes132_auth(uint16_t key_id) {
     return res;
 }
 #endif
-

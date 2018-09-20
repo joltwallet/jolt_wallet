@@ -2,6 +2,8 @@
 #define __AES132_CMD_H__
 
 #include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>
 
 uint8_t aes132_check_configlock(bool *status);
 uint8_t aes132_check_manufacturing_id(bool *status);
