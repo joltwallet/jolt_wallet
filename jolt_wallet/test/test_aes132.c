@@ -48,7 +48,6 @@ TEST_CASE("Random Buffer Fill", MODULE_NAME) {
     TEST_ASSERT_EQUAL_UINT8_ARRAY(soln3, out, sizeof(soln3));
 }
 
-#if 0
 TEST_CASE("Configure Device", MODULE_NAME) {
     /* Incomplete */
     // Setup required hardware
@@ -64,6 +63,7 @@ TEST_CASE("Configure Device", MODULE_NAME) {
      // todo: Make sure AuthCompute fails
 }
 
+#if 0
 TEST_CASE("Auth", MODULE_NAME) {
     /* Actually tests many things:
      * 1) Master Key generate/load
@@ -91,7 +91,9 @@ TEST_CASE("Auth", MODULE_NAME) {
     res = aes132_auth(key_id);
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
 }
+#endif
 
+#if 0
 TEST_CASE("Key Stretch", MODULE_NAME) {
     /* Actually tests many things:
      * 1) Master Key generate/load
@@ -153,6 +155,7 @@ TEST_CASE("Key Stretch", MODULE_NAME) {
     }
     printf("\n");
 }
+#endif
 
 TEST_CASE("Counter Read", MODULE_NAME) {
     /* Read all counters */
@@ -160,7 +163,7 @@ TEST_CASE("Counter Read", MODULE_NAME) {
     test_setup_i2c();
 
     printf("Reading all device counters:\n");
-    for(uint8_t counter_id=0; counter_id < AES132_NUM_ZONES; counter_id++) {
+    for(uint8_t counter_id=0; counter_id < 16; counter_id++) {
         uint32_t count;
         aes132_counter(&count, counter_id);
         printf("Key %d: %u\n", counter_id, count);
@@ -173,20 +176,8 @@ TEST_CASE("BlockRead: Check if LockConfig", MODULE_NAME) {
     test_setup_i2c();
     uint8_t data;
     uint8_t res;
-    res =  aes132_blockread(&data, AES132_LOCKCONFIG_ADDR, sizeof(data));
+    res =  aes132_blockread(&data, AES132_LOCK_CONFIG_ADDR, sizeof(data));
     TEST_ASSERT_EQUAL_HEX8(0x55, data);
-}
-
-TEST_CASE("PIN Auth", MODULE_NAME) {
-    // Setup required hardware
-    test_setup_i2c();
-
-    aes132_write_chipconfig();
-    aes132_write_counterconfig();
-    aes132_write_keyconfig();
-    aes132_write_zoneconfig();
-
-    //todo: actually do the Auth Command
 }
 
 #if 0
@@ -198,5 +189,4 @@ TEST_CASE("MAC Computation", MODULE_NAME) {
     // Compare ESP32 computed nonce with what the ataes132a produces
     // todo
 }
-#endif
 #endif
