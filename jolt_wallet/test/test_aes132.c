@@ -64,7 +64,6 @@ TEST_CASE("Configure Device", MODULE_NAME) {
      // todo: Make sure AuthCompute fails
 }
 
-#if 0
 TEST_CASE("Auth", MODULE_NAME) {
     /* Actually tests many things:
      * 1) Master Key generate/load
@@ -74,27 +73,17 @@ TEST_CASE("Auth", MODULE_NAME) {
     // Setup required hardware
     test_setup_i2c();
     uint8_t res;
-    const uint8_t key_id = 0;
 
-    const uint32_t n_iterations = 100;
-    uint8_t ciphertext[32] = { 0 };
-    uint8_t out_mac[16] = { 0 };
-
-    /* Generate Valid Random Nonce */
-    res = aes132_nonce( NULL );
+    /* Load the Master Key and setup random nonce */
+    res = aes132_jolt_setup();
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
 
-    /* Load the Master Key */
-    res = aes132_load_master_key();
-    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
-
-    /* Issue Auth Command */
-    res = aes132_auth(key_id);
+    /* todo: replace; just testing outbound authentication currently */
+    res = aes132_auth(NULL, 0);
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
 }
-#endif
     /* KeyLoad (note this overwrites the KeyCreate, just used for
-     * determinism) */
+     * determinism); just storing here to paste in later*/
     //const uint128_t const_key = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
     //        0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
     //res = aes132_key_load( const_key, key_id );
@@ -151,6 +140,6 @@ TEST_CASE("BlockRead: Check if LockConfig", MODULE_NAME) {
     test_setup_i2c();
     uint8_t data;
     uint8_t res;
-    res =  aes132_blockread(&data, AES132_LOCK_CONFIG_ADDR, sizeof(data));
+    res = aes132_blockread(&data, AES132_LOCK_CONFIG_ADDR, sizeof(data));
     TEST_ASSERT_EQUAL_HEX8(0x55, data);
 }

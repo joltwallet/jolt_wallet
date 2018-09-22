@@ -8,10 +8,12 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_system.h"
+#include "jolttypes.h"
 #include "sodium.h"
 
 static const char TAG[] = "aes132_jolt";
 static uint8_t *master_key = NULL;
+static struct aes132h_nonce_s *get_nonce();
 static const uint16_t manufacturing_id = 0x00EE; // default manufacturing id
 /* Used to mirror the internal MacCount of the ataes132a device.
  * The ataes132a MacCount gets zero'd when:
@@ -30,66 +32,74 @@ static const uint16_t manufacturing_id = 0x00EE; // default manufacturing id
  * Can be read via the INFO command.
  * For more information, see Page 107
  */
-static uint8_t mac_count = 0;
-static uint8_t nonce[12] = { 0 }; // Never directly refer to nonce; use get_nonce()
-static bool nonce_valid = false;
 
 /* Static Functions */
 static uint8_t mac_incr();
-static uint8_t aes132_nonce(const uint8_t *in_seed);
-static uint8_t *get_nonce();
+static uint8_t aes132_nonce(struct aes132h_nonce_s *nonce,
+        const uint8_t *in_seed);
 
-static uint8_t *get_nonce() {
+
+static struct aes132h_nonce_s *get_nonce() {
+    /* Always returns a valid nonce pointer */
+    static struct aes132h_nonce_s nonce_obj;
+    struct aes132h_nonce_s *nonce = &nonce_obj;
+
     uint8_t res;
-    if(!nonce_valid) {
-        res = aes132_nonce( NULL );
+    if(!nonce->valid) {
+        ESP_LOGI(TAG, "Nonce Invalid; Refreshing Nonce");
+        res = aes132_nonce(nonce, NULL); 
         if( res ) {
             ESP_LOGE(TAG, "Error %02X generating new nonce", res);
             esp_restart();
         }
-        nonce_valid = true;
-        mac_count = 0;
+        else {
+            ESP_LOGI(TAG, "Nonce Refreshed");
+        }
     }
     return nonce;
 }
 
 #define MAC_COUNT_LOCKSTEP_CHECK true
 static uint8_t mac_incr() {
+    uint8_t *mac_count;
+    struct aes132h_nonce_s *nonce = get_nonce();
+    mac_count = &(nonce->value[12]);
+
 #if MAC_COUNT_LOCKSTEP_CHECK
     {
         // Read the aes132m mac_count to make sure we are in lock-step
         uint8_t device_count;
         aes132_mac_count(&device_count);
-        if( device_count != mac_count ) {
+        if( device_count != *mac_count ) {
             ESP_LOGE(TAG, "mac_count desyncronized before incrementing.\n"
                     "Device=%d; Local=%d",
-                    device_count, mac_count);
+                    device_count, *mac_count);
         }
     }
 #endif
-    if( UINT8_MAX == mac_count ) {
+    (*mac_count)++;
+    if( UINT8_MAX == *mac_count ) {
         // todo: error handling, nonce sync?
         ESP_LOGD(TAG, "local mac_count maxed out, issuing rand Nonce");
-        nonce_valid = false;
-        get_nonce();
+        nonce->valid = false;
     }
-    mac_count++;
-    return mac_count;
+    return *mac_count;
 }
 
-static uint8_t aes132_nonce(const uint8_t *in_seed) {
-    /* Random is only populated if in_seed is NULL.
+static uint8_t aes132_nonce(struct aes132h_nonce_s *nonce,
+        const uint8_t *in_seed) {
+    /* Sends NONCE cmd to aes132.
+     * Random is only populated if in_seed is NULL.
      * Populates the global nonce variable
      * in_seed should be 12 bytes.
-     *
      * */
     uint8_t res;
     uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
     uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
-
     uint8_t cmd, mode;
     uint16_t param1, param2;
     uint8_t data[12] = { 0 };
+    
 
     cmd = AES132_OPCODE_NONCE;
     if( NULL == in_seed) {
@@ -107,23 +117,37 @@ static uint8_t aes132_nonce(const uint8_t *in_seed) {
     res = aes132m_execute(cmd, mode, param1, param2,
             12, data, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
     if( res ) {
+        /* Error */
         ESP_LOGE(TAG, "Nonce returncode: %02X",
                 rx_buffer[AES132_RESPONSE_INDEX_RETURN_CODE]);
     }
     else {
-        memcpy(nonce, &rx_buffer[AES132_RESPONSE_INDEX_DATA], 12);
+        /* Success */
+        memcpy(nonce->value, &rx_buffer[AES132_RESPONSE_INDEX_DATA], 12);
         ESP_LOGI(TAG, "Local Nonce updated to %02X %02X %02X %02X %02X "
                 "%02X %02X %02X %02X %02X %02X %02X",
-                nonce[0], nonce[1], nonce[2], nonce[3],
-                nonce[4], nonce[5], nonce[6], nonce[7],
-                nonce[8], nonce[9], nonce[10], nonce[11] );
+                nonce->value[0], nonce->value[1], nonce->value[2],
+                nonce->value[3], nonce->value[4], nonce->value[5],
+                nonce->value[6], nonce->value[7], nonce->value[8],
+                nonce->value[9], nonce->value[10], nonce->value[11] );
+        if( NULL == in_seed ){
+            nonce->random = false;
+        }
+        else{
+            nonce->random = true;
+        }
+        nonce->value[12] = 0;
+        nonce->valid = true;
     }
     return res;
 }
 
 
 uint8_t aes132_jolt_setup() {
-    /* Allocates space for the master key on the heap 
+    /*
+     * In both cases:
+     *     * Allocates secure space for the master key on the heap.
+     *     * Issue a nonce comman to aes132.
      * If device is unlocked:
      *     * Generate Master Key from ESP32 Entropy
      *     * Configure Device
@@ -131,7 +155,8 @@ uint8_t aes132_jolt_setup() {
      *     * Write key to slot 0
      *     * Lock Device
      * If device is locked:
-     *     * Load and decrypt Master key from MasterUserZone
+     *     * Load master key from local storage;
+     *         * If not available, Load & decrypt Master key from MasterUserZone
      */
     uint8_t res;
     if( NULL==master_key ) {
@@ -262,19 +287,106 @@ uint8_t aes132_jolt_setup() {
     return res;
 }
 
+static uint8_t aes132_key_create(uint8_t key_id) {
+    /* Only used to create the stretch key */
+    uint8_t res;
+    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = { 0 };
+    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = { 0 };
+    uint8_t cmd, mode;
+    uint16_t param1, param2;
+    struct aes132h_nonce_s *nonce = get_nonce();
+
+    // Increment MacCount before operation. 
+    mac_incr();
+
+    // todo: mac stuff
+    cmd = AES132_OPCODE_KEY_CREATE;
+    mode = 0x07; 
+    param1 = key_id;
+    param2 = 0x0000;
+    res = aes132m_execute(cmd, mode, param1, param2,
+            0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+    if( res ) {
+        nonce->valid = false;
+    }
+    return res;
+}
+
 uint8_t aes132_create_stretch_key() {
     /* Warning; overwriting an existing stretch key will cause permament
      * loss of mnemonic */
     uint8_t res;
-    mac_incr();
     res = aes132_key_create( AES132_KEY_ID_STRETCH );
     if( AES132_DEVICE_RETCODE_SUCCESS != res ) {
-        mac_count--;
         ESP_LOGE(TAG, "Failed creating stretch key with retcode %02X\n", res);
     }
     return res;
 }
 
+static uint8_t aes132_encrypt(const uint8_t *in, uint8_t len, uint8_t key_id,
+        uint8_t *out_data, uint8_t *out_mac) {
+    /* Only used in key stretching!
+     *
+     * Encrypts upto 32 bytes of data (*in with length len) using key_id
+     * returns cipher text (*out)
+     * len must be <=32.
+     * out_data must be able to handle 16 bytes (<=16byte in) or 
+     * 32 bytes (<=32 byte in)
+     *
+     * todo: something with the output MAC*/
+    uint8_t res;
+    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = { 0 };
+    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = { 0 };
+    uint8_t cmd, mode;
+    uint16_t param1, param2;
+    struct aes132h_nonce_s *nonce = get_nonce();
+
+    uint8_t ciphertext_len;
+    if( len > 32 ) {
+        ESP_LOGE(TAG, "ENCRYPT accepts a maximum of 32 bytes. "
+                "%d bytes were provided.", len);
+        return AES132_DEVICE_RETCODE_PARSE_ERROR; // todo: better error
+    }
+    else if( len > 16 ) {
+        ciphertext_len = 32;
+    }
+    else if(len > 0) {
+        ciphertext_len = 16;
+        return AES132_DEVICE_RETCODE_PARSE_ERROR; // todo: better error
+    }
+    else{
+        ESP_LOGE(TAG, "No cleartext data provided to encrypt");
+        return AES132_DEVICE_RETCODE_PARSE_ERROR; // todo: better error
+    }
+
+    cmd = AES132_OPCODE_ENCRYPT;
+    mode = 0; // We don't care about the MAC, we want speed
+    //mode = AES132_INCLUDE_SMALLZONE_SERIAL_COUNTER; // MAC Params
+    param1 = key_id;
+    param2 = len;
+
+    mac_incr();
+
+    res = aes132m_execute(cmd, mode, param1, param2,
+            len, in, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+    if( 0 == res ) {
+        if( NULL != out_mac ) {
+            memcpy(out_mac, &rx_buffer[AES132_RESPONSE_INDEX_DATA], 16);
+        }
+
+        if( NULL != out_data ) {
+            memcpy(out_data, &rx_buffer[AES132_RESPONSE_INDEX_DATA+16],
+                    ciphertext_len);
+        }
+        else {
+            ESP_LOGE(TAG, "Cannot copy ciphertext to NULL pointer");
+        }
+    }
+    else{
+        nonce->valid = false;
+    }
+    return res;
+}
 uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter ) {
     /* Hardware bound key stretching. We limit PIN bruteforcing (in the event 
      * of a complete esp32 compromise) by how quickly the ataes132a can respond
@@ -289,13 +401,83 @@ uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter ) 
      */
     uint8_t res = 0;
     for(uint32_t i=0; i < n_iter; i++) {
-        mac_incr();
         res = aes132_encrypt(data, data_len, AES132_KEY_ID_STRETCH, data, NULL);
         if( AES132_DEVICE_RETCODE_SUCCESS != res ) {
-            mac_count--;
             ESP_LOGE(TAG, "Failed on iteration %d with retcode %02X\n", i, res);
             break;
         }
     }
     return res;
 }
+
+/* todo: Make this static */
+uint8_t aes132_auth(uint8_t *key, uint16_t key_id) {
+    /* Used to check a PIN attempt. Upon successful attempt, unlocks the 
+     * corresponding UserZone 
+     *
+     * Requires a synchronized Nonce beforehand!*/
+    uint8_t res;
+    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = { 0 };
+    uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = { 0 };
+    uint8_t cmd, mode;
+    uint16_t param1, param2;
+    uint8_t *out_mac = &rx_buffer[AES132_RESPONSE_INDEX_DATA];
+
+    cmd = AES132_OPCODE_AUTH;
+    //mode = 0x03; // Mutual Authentication 
+    mode = 0x02; // Outbound Authentication 
+    param1 = key_id;
+    param2 = 0x0003; // R/W for UserZone Alowed
+
+    /* Assemble Mac-checking structure */
+    struct aes132h_in_out mac_check_decrypt_param;
+    mac_check_decrypt_param.opcode  = cmd;
+    mac_check_decrypt_param.mode    = mode;
+    mac_check_decrypt_param.param1  = param1;
+    mac_check_decrypt_param.param2  = param2;
+    mac_check_decrypt_param.key     = master_key;
+    mac_check_decrypt_param.nonce   = get_nonce();
+    mac_check_decrypt_param.in_mac = out_mac;
+    mac_check_decrypt_param.in_data = NULL;
+    mac_check_decrypt_param.out_data = NULL;
+
+    res = aes132m_execute(cmd, mode, param1, param2,
+              0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+    //        len, in, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+
+    /* Confirm response MAC */
+    if( res ) {
+        ESP_LOGE(TAG, "Auth command failed with return code 0x%02X", res);
+    }
+    else {
+        ESP_LOGI(TAG, "outMAC "
+                "%02x%02x%02x%02x%02x%02x%02x%02x"
+                "%02x%02x%02x%02x%02x%02x%02x%02x\n",
+                out_mac[0], out_mac[1], out_mac[2], out_mac[3],
+                out_mac[4], out_mac[5], out_mac[6], out_mac[7],
+                out_mac[8], out_mac[9], out_mac[10], out_mac[11],
+                out_mac[12], out_mac[13], out_mac[14], out_mac[15]);
+    }
+
+    // internall increments the mac_count
+    res = aes132h_mac_check_decrypt(&mac_check_decrypt_param);
+
+    if ( AES132_DEVICE_RETCODE_SUCCESS == res ) {
+        ESP_LOGI(TAG, "AES132 returned valid MAC");
+    }
+    else {
+        ESP_LOGE(TAG, "MAC verification error: %02X", res);
+    }
+    return res;
+}
+
+#if 0
+bool aes132_pin_attempt(uint8_t *guess, uint8_t *n_attempts) {
+    /* Attempts a pin hash. If criteria is met, perform factory reset
+     * *n_attempts - out - number of attempts tried.
+     * *guess - out - 16 bytes (128-bit)
+     *
+     * returns true on success, false on failure.
+     */
+}
+#endif
