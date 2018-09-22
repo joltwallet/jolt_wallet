@@ -14,7 +14,6 @@
 static const char TAG[] = "aes132_jolt";
 static uint8_t *master_key = NULL;
 static struct aes132h_nonce_s *get_nonce();
-static const uint16_t manufacturing_id = 0x00EE; // default manufacturing id
 /* Used to mirror the internal MacCount of the ataes132a device.
  * The ataes132a MacCount gets zero'd when:
  *     * Nonce command is executed
@@ -103,17 +102,16 @@ static uint8_t aes132_nonce(struct aes132h_nonce_s *nonce,
 
     cmd = AES132_OPCODE_NONCE;
     if( NULL == in_seed) {
-        mode = 0x01; // Use the inSeed as Nonce
+        mode = 0x01; // Generate a random Nonce using internal RNG
     }
     else {
-        mode = 0x00; // Generate a random Nonce using internal RNG
-    }
-    //mode |= AES132_EEPROM_RNG_UPDATE;
-    param1 = 0x0000; // Always 0
-    param2 = 0x0000; // Always 0
-    if( NULL != in_seed ) {
+        mode = 0x00; // Use inbound seed for nonce
         memcpy(data, in_seed, sizeof(data));
     }
+    //mode |= AES132_EEPROM_RNG_UPDATE;
+    mode |= 0x02;
+    param1 = 0x0000; // Always 0
+    param2 = 0x0000; // Always 0
     res = aes132m_execute(cmd, mode, param1, param2,
             12, data, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
     if( res ) {
@@ -123,20 +121,30 @@ static uint8_t aes132_nonce(struct aes132h_nonce_s *nonce,
     }
     else {
         /* Success */
-        memcpy(nonce->value, &rx_buffer[AES132_RESPONSE_INDEX_DATA], 12);
+        // Stop! Maybe need to compute nonce from the returned data
+        struct aes132h_nonce_in_out nonce_param;
+        nonce_param.mode    = mode;
+        nonce_param.in_seed = data;
+        nonce_param.random  = &rx_buffer[AES132_RESPONSE_INDEX_DATA];
+        nonce_param.nonce   = nonce;
+        res = aes132h_nonce(&nonce_param);
+        //memcpy(nonce->value, &rx_buffer[AES132_RESPONSE_INDEX_DATA], 12);
         ESP_LOGI(TAG, "Local Nonce updated to %02X %02X %02X %02X %02X "
                 "%02X %02X %02X %02X %02X %02X %02X",
                 nonce->value[0], nonce->value[1], nonce->value[2],
                 nonce->value[3], nonce->value[4], nonce->value[5],
                 nonce->value[6], nonce->value[7], nonce->value[8],
                 nonce->value[9], nonce->value[10], nonce->value[11] );
-        if( NULL == in_seed ){
-            nonce->random = false;
-        }
-        else{
+        if( mode & 0x01 ) {
+            ESP_LOGI(TAG, "Setting Nonce Random Flag True");
             nonce->random = true;
         }
+        else {
+            ESP_LOGI(TAG, "Setting Nonce Random Flag False");
+            nonce->random = false;
+        }
         nonce->value[12] = 0;
+        ESP_LOGI(TAG, "Setting Nonce Valid Flag True");
         nonce->valid = true;
     }
     return res;
@@ -162,7 +170,7 @@ uint8_t aes132_jolt_setup() {
     if( NULL==master_key ) {
         master_key = sodium_malloc(16);
     }
-    if( NULL==master_key ){
+    if( NULL==master_key ) {
         ESP_LOGE(TAG, "Unable to allocate space for the ATAES132A Master Key");
         esp_restart();
     }
@@ -257,10 +265,11 @@ uint8_t aes132_jolt_setup() {
             ESP_ERROR_CHECK(memcmp(enc_master_key, rx, sizeof(rx)));
         }
         /* Write Key to Key0 */
-        ESP_LOGI(TAG, "Writing Master Key to Key0");
+        ESP_LOGI(TAG, "Writing Master Key to Key %d", AES132_KEY_ID_MASTER);
         res = aes132m_write_memory(16,
-                AES132_KEY_CONFIG_ADDR(AES132_KEY_ID_MASTER), master_key);
-        ESP_LOGI(TAG, "Write key0 result: %d", res);
+                AES132_KEY_ADDR(AES132_KEY_ID_MASTER), master_key);
+        ESP_LOGI(TAG, "Write memory to 0x%04X result: %d",
+                AES132_KEY_ADDR(AES132_KEY_ID_MASTER), res);
         
         /* Configure Device */
         ESP_LOGI(TAG, "Configuring Device");
@@ -427,7 +436,8 @@ uint8_t aes132_auth(uint8_t *key, uint16_t key_id) {
     //mode = 0x03; // Mutual Authentication 
     mode = 0x02; // Outbound Authentication 
     param1 = key_id;
-    param2 = 0x0003; // R/W for UserZone Alowed
+    //param2 = 0x0003; // R/W for UserZone Alowed
+    param2 = 0x0000; // Ignored for outbound auth
 
     /* Assemble Mac-checking structure */
     struct aes132h_in_out mac_check_decrypt_param;
@@ -459,7 +469,11 @@ uint8_t aes132_auth(uint8_t *key, uint16_t key_id) {
                 out_mac[12], out_mac[13], out_mac[14], out_mac[15]);
     }
 
-    // internall increments the mac_count
+    // internally increments the mac_count
+    //uint8_t device_count;
+    //aes132_mac_count(&device_count);
+    //ESP_LOGI(TAG, "Device mac_count: %d", device_count);
+
     res = aes132h_mac_check_decrypt(&mac_check_decrypt_param);
 
     if ( AES132_DEVICE_RETCODE_SUCCESS == res ) {

@@ -151,11 +151,19 @@ uint8_t aes132crypt_generate_encrypt(struct aes132crypt_in_out *param) {
  */
 uint8_t aes132crypt_decrypt_verify(struct aes132crypt_in_out *param) {
     // Local variables
-    uint8_t computed_mac[16];
-    uint8_t provided_mac[16];
+    uint8_t computed_mac[16] = { 0 };
+    uint8_t provided_mac[16] = { 0 };
     struct aes132crypt_ctr_block_in_out ctr_param;
 
     // Initialize AES engine
+    ESP_LOGI(TAG, "Setting engine key  %02X %02X %02X %02X %02X "
+            "%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X ",
+            param->key[0], param->key[1], param->key[2],
+            param->key[3], param->key[4], param->key[5],
+            param->key[6], param->key[7], param->key[8],
+            param->key[9], param->key[10], param->key[11],
+            param->key[12], param->key[13], param->key[14],
+            param->key[15]);
     aes132crypt_aes_engine_encrypt(NULL, param->key, true);
     
     // Perform CTR blocks
@@ -171,7 +179,7 @@ uint8_t aes132crypt_decrypt_verify(struct aes132crypt_in_out *param) {
     // Perform CBC blocks
     aes132crypt_cbc_block(param, computed_mac);
     
-    // Verify the cleartext MAC T temp2[] against calculated temp1[]
+    // Verify the cleartext MAC T against calculated
     /* todo: prevent side-channel attacks */
     if (memcmp(provided_mac, computed_mac, 16) == 0) {
         return AES132_FUNCTION_RETCODE_SUCCESS;
@@ -179,6 +187,16 @@ uint8_t aes132crypt_decrypt_verify(struct aes132crypt_in_out *param) {
         // As mandated by NIST Special Publication 800-38C, section 6.2,
         //   if verification fails, the payload shall not be revealed.
         // We reset the payload to all 0's
+        ESP_LOGI(TAG, "computeMAC "
+                "%02x%02x%02x%02x%02x%02x%02x%02x"
+                "%02x%02x%02x%02x%02x%02x%02x%02x\n",
+                computed_mac[0], computed_mac[1], computed_mac[2],
+                computed_mac[3], computed_mac[4], computed_mac[5],
+                computed_mac[6], computed_mac[7], computed_mac[8],
+                computed_mac[9], computed_mac[10], computed_mac[11],
+                computed_mac[12], computed_mac[13], computed_mac[14],
+                computed_mac[15]);
+
         sodium_memzero(param->payload, param->plen_bytes);
         return AES132_DEVICE_RETCODE_MAC_ERROR;
     }
@@ -968,16 +986,19 @@ uint8_t aes132h_mac_check_decrypt(struct aes132h_in_out *param)
     
     // Append additional associated_data if specified by mode parameter
     if (param->mode & 0x20) {
+        ESP_LOGI(TAG, "Including Counter in nonce computation.");
         memcpy(&associated_data[14], param->usage_counter, 4);
     } else {
         memset(&associated_data[14], 0x00, 4);
     }
     if (param->mode & 0x40) {
+        ESP_LOGI(TAG, "Including SerialNum in nonce computation.");
         memcpy(&associated_data[18], param->serial_num, 8);
     } else {
         memset(&associated_data[18], 0x00, 8);
     }
     if (param->mode & 0x80) {
+        ESP_LOGI(TAG, "Including SmallZone in nonce computation.");
         memcpy(&associated_data[26], param->small_zone, 4);
     } else {
         memset(&associated_data[26], 0x00, 4);
@@ -988,13 +1009,15 @@ uint8_t aes132h_mac_check_decrypt(struct aes132h_in_out *param)
         param->nonce->valid = false;
     }
     param->nonce->value[12]++;
+    ESP_LOGI(TAG, "Incrementing mac_count to %d", param->nonce->value[12]);
     
     // Do the cryptographic calculation
     // Check if additional auth-only field is used
     aes132crypt_param.alen_bytes = (param->mode & 0xE0)? 30: 14;
 
     // The length is passed in "Param2" for encryption commands, and 16 for KeyCreate/KeyExport
-    if ((param->opcode == AES132_OPCODE_ENC_READ) || (param->opcode == AES132_OPCODE_ENCRYPT)) {
+    if (       (param->opcode == AES132_OPCODE_ENC_READ) 
+            || (param->opcode == AES132_OPCODE_ENCRYPT) ) {
         aes132crypt_param.plen_bytes = param->param2 & 0xFF;
     } else if ( param->opcode == AES132_OPCODE_KEY_CREATE ) {
         aes132crypt_param.plen_bytes = 16;
@@ -1003,12 +1026,12 @@ uint8_t aes132h_mac_check_decrypt(struct aes132h_in_out *param)
     }
     
     // Fill in the rest of parameters
-    aes132crypt_param.nonce = param->nonce->value;
+    aes132crypt_param.nonce           = param->nonce->value;
     aes132crypt_param.associated_data = associated_data;
-    aes132crypt_param.key = param->key;
-    aes132crypt_param.payload = param->out_data;
-    aes132crypt_param.auth_value = param->in_mac;
-    aes132crypt_param.ciphertext = param->in_data;
+    aes132crypt_param.key             = param->key;
+    aes132crypt_param.payload         = param->out_data;
+    aes132crypt_param.auth_value      = param->in_mac;
+    aes132crypt_param.ciphertext      = param->in_data;
     
     // Execute...
     ret_code = aes132crypt_decrypt_verify(&aes132crypt_param);
