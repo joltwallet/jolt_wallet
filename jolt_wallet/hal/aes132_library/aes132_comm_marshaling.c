@@ -76,11 +76,13 @@ uint8_t aes132m_read_memory(uint8_t size, uint16_t word_address, uint8_t *data)
  * \param[out] rx_buffer pointer to response buffer
  * \return status of the operation
  */
-uint8_t aes132m_execute(uint8_t op_code, uint8_t mode, uint16_t param1, uint16_t param2,
-            uint8_t datalen1, uint8_t *data1, uint8_t datalen2, uint8_t *data2,
-            uint8_t datalen3, uint8_t *data3, uint8_t datalen4, uint8_t *data4,
-            uint8_t *tx_buffer, uint8_t *rx_buffer)
-{
+uint8_t aes132m_execute(uint8_t op_code, uint8_t mode,
+        uint16_t param1, uint16_t param2,
+        uint8_t datalen1, const uint8_t *data1,
+        uint8_t datalen2, const uint8_t *data2,
+        uint8_t datalen3, const uint8_t *data3,
+        uint8_t datalen4, const uint8_t *data4,
+        uint8_t *tx_buffer, uint8_t *rx_buffer ) {
     uint8_t *p_buffer;
     uint8_t len;
 

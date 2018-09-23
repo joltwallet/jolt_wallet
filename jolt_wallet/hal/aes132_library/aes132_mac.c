@@ -37,7 +37,7 @@ static void aes132crypt_cbc_block(struct aes132crypt_in_out *param, uint8_t *out
 static void aes132crypt_ctr_block(struct aes132crypt_ctr_block_in_out *param);
 
 /* Global Variables */
-static const char TAG[] = "aes132_helper";
+static const char TAG[] = "aes132_mac";
 
 //----------------------
 // Function definitions
@@ -156,14 +156,6 @@ uint8_t aes132crypt_decrypt_verify(struct aes132crypt_in_out *param) {
     struct aes132crypt_ctr_block_in_out ctr_param;
 
     // Initialize AES engine
-    ESP_LOGI(TAG, "Setting engine key  %02X %02X %02X %02X %02X "
-            "%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X ",
-            param->key[0], param->key[1], param->key[2],
-            param->key[3], param->key[4], param->key[5],
-            param->key[6], param->key[7], param->key[8],
-            param->key[9], param->key[10], param->key[11],
-            param->key[12], param->key[13], param->key[14],
-            param->key[15]);
     aes132crypt_aes_engine_encrypt(NULL, param->key, true);
     
     // Perform CTR blocks

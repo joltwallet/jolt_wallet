@@ -64,7 +64,7 @@ TEST_CASE("Configure Device", MODULE_NAME) {
      // todo: Make sure AuthCompute fails
 }
 
-TEST_CASE("Auth", MODULE_NAME) {
+TEST_CASE("Load Key/Auth Key", MODULE_NAME) {
     /* Actually tests many things:
      * 1) Master Key generate/load
      * 2) KeyCreate
@@ -78,9 +78,14 @@ TEST_CASE("Auth", MODULE_NAME) {
     res = aes132_jolt_setup();
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
 
+    const uint128_t const_key = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
+            0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
+    res = aes132_pin_load_keys(const_key);
+
+    /* Load Key */
     /* todo: replace; just testing outbound authentication currently */
-    res = aes132_auth(NULL, 0);
-    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+    //res = aes132_auth(NULL, 0);
+    //TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
 }
     /* KeyLoad (note this overwrites the KeyCreate, just used for
      * determinism); just storing here to paste in later*/
@@ -100,7 +105,7 @@ TEST_CASE("Key Stretch", MODULE_NAME) {
 
     uint8_t res;
     const uint32_t n_iterations = 300;
-    const char payload[32] = "Super Secret Data To Encrypt";
+    char payload[32] = "Super Secret Data To Encrypt";
 
     /* Load the Master Key and setup random nonce */
     res = aes132_jolt_setup();
@@ -112,7 +117,7 @@ TEST_CASE("Key Stretch", MODULE_NAME) {
 
     /* Stretch Key */
     int64_t start = esp_timer_get_time();
-    res = aes132_stretch(payload, sizeof(payload), n_iterations );
+    res = aes132_stretch( (uint8_t *)payload, sizeof(payload), n_iterations );
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
     int64_t end = esp_timer_get_time();
     printf("Performed %d encrypt iterations over %lld uS.\n"
@@ -121,6 +126,7 @@ TEST_CASE("Key Stretch", MODULE_NAME) {
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
 }
 
+#if 0
 TEST_CASE("Counter Read", MODULE_NAME) {
     /* Read all counters */
     // Setup required hardware
@@ -134,6 +140,7 @@ TEST_CASE("Counter Read", MODULE_NAME) {
     }
     printf("Read all device counters complete.\n");
 }
+#endif
 
 TEST_CASE("BlockRead: Check if LockConfig", MODULE_NAME) {
     // Setup required hardware

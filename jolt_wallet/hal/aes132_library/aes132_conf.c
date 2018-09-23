@@ -141,14 +141,14 @@ uint8_t aes132_write_keyconfig() {
         //AES132_KEY_CONFIG_AUTH_COMPUTE | // Key cannot be used for auth_compute
         0;
     config_pin[2] = 
-        AES132_KEY_CONFIG_COUNTER_NUM(0) | // To be updated in loopd
-        AES132_KEY_CONFIG_LINK_POINTER(0) ; // Not used
+        AES132_KEY_CONFIG_COUNTER_NUM(0) | // To be updated in loop
+        AES132_KEY_CONFIG_LINK_POINTER(0) ; // Always Master Key
     config_pin[3] = 
         //AES_132_KEY_CONFIG_DEC_READ | // DecRead and WriteCompute prohibited
         0;
     for(uint8_t i=AES132_KEY_ID_PIN(0); i < 16; i++) {
-        config_pin[1] &= AES132_KEY_CONFIG_LINK_POINTER(0xF); // Clear out old counter_num
-        config_pin[2] = AES132_KEY_CONFIG_COUNTER_NUM(i);
+        config_pin[2] = AES132_KEY_CONFIG_COUNTER_NUM(i) |
+                AES132_KEY_CONFIG_LINK_POINTER(0);
         res = aes132m_write_memory(sizeof(config_pin),
                 AES132_KEY_CONFIG_ADDR(i), config_pin);
         if( res ) {
