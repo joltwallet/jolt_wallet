@@ -213,8 +213,14 @@ exit:
 }
 
 uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter) {
-    /* No matter what, will return a counter value that can be used
-     * to determine whether or not to wipe the device */
+    /* Derives child key for the last valid key slot and attempt authentication.
+     * No matter what, will return a counter value that can be used
+     * to determine whether or not to wipe the device. 
+     *
+     * Returns 0x00 on authorization success,
+     * 0x40 on authorization failure (because of invalid inbound mac).
+     *
+     * If key is NULL, only populate counter.*/
     uint8_t res = 0;
     uint32_t cum_counter = 0;
     uint8_t attempt_slot = 0xFF; // Sentinel Value
@@ -241,6 +247,9 @@ uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter) {
         goto exit;
     }
     /* attempt authentication */
+    if( NULL == key ) {
+        goto exit;
+    }
     crypto_auth_hmacsha512(child_key, &attempt_slot, 1, key);
     res = aes132_auth(child_key, attempt_slot, nonce);
     if( res ) {
