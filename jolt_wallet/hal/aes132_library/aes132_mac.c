@@ -942,18 +942,47 @@ uint8_t aes132h_mac_check_decrypt(struct aes132h_in_out *param)
     uint8_t associated_data[30];
     
     // Check parameters
-    if (    (!param->key) || (!param->nonce) || (!param->in_mac)
-            || ((param->mode & 0x20) && !param->usage_counter)
-            || ((param->mode & 0x40) && !param->serial_num)
-            || ((param->mode & 0x80) && !param->small_zone)
-            || ((param->opcode == AES132_OPCODE_COUNTER) && !param->count_value)
-            || (((param->opcode == AES132_OPCODE_ENC_READ)
-            || (param->opcode == AES132_OPCODE_ENCRYPT)
-            || (param->opcode == AES132_OPCODE_KEY_CREATE)) && (!param->in_data || !param->out_data))
-        ) {
+    if( !param->key ) {
+        ESP_LOGE(TAG, "aes132h_mac_check_decrypt: No Key provided");
         return AES132_FUNCTION_RETCODE_BAD_PARAM;
     }
-    
+    else if( !param->nonce ) {
+        ESP_LOGE(TAG, "aes132h_mac_check_decrypt: No nonce provided");
+        return AES132_FUNCTION_RETCODE_BAD_PARAM;
+    }
+    else if( !param->in_mac ) {
+        ESP_LOGE(TAG, "aes132h_mac_check_decrypt: No in_mac provided");
+        return AES132_FUNCTION_RETCODE_BAD_PARAM;
+    }
+    else if( (param->mode & 0x20) && !param->usage_counter ) {
+        ESP_LOGE(TAG, "aes132h_mac_check_decrypt:  "
+                "usage_counter specified but not provided");
+        return AES132_FUNCTION_RETCODE_BAD_PARAM;
+    }
+    else if( (param->mode & 0x40) && !param->serial_num ) {
+        ESP_LOGE(TAG, "aes132h_mac_check_decrypt: "
+                "serial_num specified but not provided");
+        return AES132_FUNCTION_RETCODE_BAD_PARAM;
+    }
+    else if( (param->mode & 0x80) && !param->small_zone ) {
+        ESP_LOGE(TAG, "aes132h_mac_check_decrypt: "
+                "small_zone specified but not provided");
+        return AES132_FUNCTION_RETCODE_BAD_PARAM;
+    }
+    else if( (AES132_OPCODE_COUNTER == param->opcode) && !param->count_value ) {
+        ESP_LOGE(TAG, "aes132h_mac_check_decrypt: "
+                "Counter op_code specified but not provided"); // todo: CHECK THIS
+        return AES132_FUNCTION_RETCODE_BAD_PARAM;
+    }
+    else if( ((AES132_OPCODE_ENC_READ == param->opcode)
+            || (AES132_OPCODE_ENCRYPT == param->opcode)
+            || (AES132_OPCODE_KEY_CREATE == param->opcode)) && (!param->in_data || !param->out_data) ) {
+        ESP_LOGE(TAG, "aes132h_mac_check_decrypt: "
+                "ENC_READ, ENCRYPT, or KEY_CREATE opcode specified. "
+                "in_data and/or out_data not provided.");
+        return AES132_FUNCTION_RETCODE_BAD_PARAM;
+    }
+
     // Check nonce validity
     if (param->nonce->valid == false) {
         return AES132_DEVICE_RETCODE_NONCE_ERROR;

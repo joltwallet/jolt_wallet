@@ -64,7 +64,7 @@ TEST_CASE("Configure Device", MODULE_NAME) {
      // todo: Make sure AuthCompute fails
 }
 
-TEST_CASE("Load Key/Auth Key", MODULE_NAME) {
+TEST_CASE("Load Key/Attempt Key", MODULE_NAME) {
     /* Actually tests many things:
      * 1) Master Key generate/load
      * 2) KeyCreate
@@ -78,21 +78,41 @@ TEST_CASE("Load Key/Auth Key", MODULE_NAME) {
     res = aes132_jolt_setup();
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
 
+    /* Load PIN Keys */
+    // Some constant dummy
     const uint128_t const_key = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
             0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
-    res = aes132_pin_load_keys(const_key);
+    // Hash it to simulate a pin entry
+    uint256_t pin_entry_hash;
+    crypto_generichash_blake2b_state hs;
+    crypto_generichash_init(&hs, NULL, 32, 32);
+    crypto_generichash_update(&hs, const_key, sizeof(const_key));
+    crypto_generichash_final(&hs, pin_entry_hash, 32);
 
-    /* Load Key */
-    /* todo: replace; just testing outbound authentication currently */
-    //res = aes132_auth(NULL, 0);
-    //TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+    /* Normally you would key stretch here, but not stretching 
+     * for unit testing purposes */
+
+    res = aes132_pin_load_keys(pin_entry_hash);
+    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+
+    const uint128_t zeros = { 0 };
+    uint32_t counter = 0;
+    /* Bad PIN attempt */
+    res = aes132_pin_attempt(zeros, &counter);
+    ESP_LOGE(TAG, "Counter Value: %d", counter);
+    if( counter >= AES132_CUM_COUNTER_MAX) {
+        ESP_LOGI(TAG, "Device Deactivated; key use completely exhausted.");
+    }
+    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_MAC_ERROR, res );
+
+    /* Good PIN attempt */
+    res = aes132_pin_attempt(pin_entry_hash, &counter);
+    ESP_LOGE(TAG, "Counter Value: %d", counter);
+    if( counter >= AES132_CUM_COUNTER_MAX) {
+        ESP_LOGI(TAG, "Device Deactivated; key use completely exhausted.");
+    }
+    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
 }
-    /* KeyLoad (note this overwrites the KeyCreate, just used for
-     * determinism); just storing here to paste in later*/
-    //const uint128_t const_key = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
-    //        0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
-    //res = aes132_key_load( const_key, key_id );
-    //TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
 
 TEST_CASE("Key Stretch", MODULE_NAME) {
     /* Actually tests many things:
@@ -125,22 +145,6 @@ TEST_CASE("Key Stretch", MODULE_NAME) {
             n_iterations, end-start, (end-start)/n_iterations);
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
 }
-
-#if 0
-TEST_CASE("Counter Read", MODULE_NAME) {
-    /* Read all counters */
-    // Setup required hardware
-    test_setup_i2c();
-
-    printf("Reading all device counters:\n");
-    for(uint8_t counter_id=0; counter_id < 16; counter_id++) {
-        uint32_t count;
-        aes132_counter(&count, counter_id);
-        printf("Key %d: %u\n", counter_id, count);
-    }
-    printf("Read all device counters complete.\n");
-}
-#endif
 
 TEST_CASE("BlockRead: Check if LockConfig", MODULE_NAME) {
     // Setup required hardware

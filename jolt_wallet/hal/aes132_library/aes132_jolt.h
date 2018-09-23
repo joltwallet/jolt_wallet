@@ -9,6 +9,8 @@ uint8_t aes132_jolt_setup();
 
 uint8_t aes132_pin_load_keys(const uint8_t *key);
 uint8_t aes132_pin_load_zones(const uint8_t *secret);
+
+/* Only attempts key and returns the cumulative counter */
 uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter);
 
 /* Takes and returns data, encrypted n_iter times by the key in the stretch 

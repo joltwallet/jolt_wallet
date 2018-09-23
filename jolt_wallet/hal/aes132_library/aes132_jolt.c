@@ -184,7 +184,6 @@ uint8_t aes132_pin_load_keys(const uint8_t *key) {
     /* Assumes 256-bit input key */
     uint8_t res = 0xFF;
     struct aes132h_nonce_s *nonce = get_nonce();
-    return aes132_auth(master_key, 0, nonce);
 
     CONFIDENTIAL unsigned char child_key[crypto_auth_hmacsha512_BYTES];
     for(uint8_t key_id = AES132_KEY_ID_PIN(0); key_id<16; key_id++) {
@@ -192,6 +191,15 @@ uint8_t aes132_pin_load_keys(const uint8_t *key) {
         /* Different derived keys are stored in different slots.
          * If somehow partial data can be recovered from keyslots, this
          * prevents the data from being overly redundant */
+        ESP_LOGI(TAG, " Loading slot %d with child key "
+                "%02X %02X %02X %02X %02X %02X %02X %02X "
+                "%02X %02X %02X %02X %02X %02X %02X %02X", key_id,
+                child_key[0], child_key[1], child_key[2],
+                child_key[3], child_key[4], child_key[5],
+                child_key[6], child_key[7], child_key[8],
+                child_key[9], child_key[10], child_key[11],
+                child_key[12], child_key[13], child_key[14],
+                child_key[15]);
         res = aes132_key_load(master_key, child_key, key_id, nonce);
         if( res ) {
             ESP_LOGE(TAG, "Failed to slot PIN in key slot %d. "
@@ -200,6 +208,59 @@ uint8_t aes132_pin_load_keys(const uint8_t *key) {
         }
     }
 exit:
+    sodium_memzero(child_key, sizeof(child_key));
+    return res;
+}
+
+uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter) {
+    /* No matter what, will return a counter value that can be used
+     * to determine whether or not to wipe the device */
+    uint8_t res = 0;
+    uint32_t cum_counter = 0;
+    uint8_t attempt_slot = 0xFF; // Sentinel Value
+    struct aes132h_nonce_s *nonce = get_nonce();
+    CONFIDENTIAL unsigned char child_key[crypto_auth_hmacsha512_BYTES];
+
+    /* Gather counter values, determine which slot to attempt */
+    for(uint8_t counter_id=AES132_KEY_ID_PIN(0); counter_id < 16; counter_id++) {
+        // For safety, default to maximum value
+        uint32_t count = AES132_COUNTER_MAX;
+        res = aes132_counter(master_key, &count, counter_id, nonce);
+        if( res ) {
+            ESP_LOGE(TAG, "Error attempting to read counter %d. "
+                    "RetCode 0x%02X.", counter_id, res);
+        }
+        if( count < AES132_COUNTER_MAX) {
+            attempt_slot = counter_id;
+        }
+        cum_counter += count;
+    }
+    if( 0xFF == attempt_slot ) {
+        ESP_LOGE(TAG, "Device key-use completely exhausted");
+        res = AES132_DEVICE_RETCODE_COUNT_ERROR; 
+        goto exit;
+    }
+    /* attempt authentication */
+    crypto_auth_hmacsha512(child_key, &attempt_slot, 1, key);
+    res = aes132_auth(child_key, attempt_slot, nonce);
+    if( res ) {
+        ESP_LOGE(TAG, "Failed authenticated key_slot %d. Child Key: "
+                "%02X %02X %02X %02X %02X %02X %02X %02X "
+                "%02X %02X %02X %02X %02X %02X %02X %02X", attempt_slot,
+                child_key[0], child_key[1], child_key[2],
+                child_key[3], child_key[4], child_key[5],
+                child_key[6], child_key[7], child_key[8],
+                child_key[9], child_key[10], child_key[11],
+                child_key[12], child_key[13], child_key[14],
+                child_key[15]);
+        goto exit;
+    }
+    else {
+        ESP_LOGI(TAG, "Successfully authenticated with key_slot %d",
+                attempt_slot);
+    }
+exit:
+    *counter = cum_counter;
     sodium_memzero(child_key, sizeof(child_key));
     return res;
 }

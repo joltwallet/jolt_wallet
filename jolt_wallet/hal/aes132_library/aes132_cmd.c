@@ -68,7 +68,6 @@ uint8_t aes132_auth(const uint8_t *key, uint16_t key_id,
 
     /* Assemble Outbound MAC struct */
     ESP_LOGI(TAG, "Checking Outbound MAC");
-    //aes132_mac_incr(nonce);
     struct aes132h_in_out mac_check_decrypt_param;
     mac_check_decrypt_param.opcode  = cmd;
     mac_check_decrypt_param.mode    = mode;
@@ -83,6 +82,7 @@ uint8_t aes132_auth(const uint8_t *key, uint16_t key_id,
             tx_buffer, rx_buffer);
     if ( AES132_DEVICE_RETCODE_SUCCESS != res ) {
         ESP_LOGE(TAG, "Auth command failed with return code 0x%02X", res);
+        nonce->valid = false;
         goto exit;
     }
 
@@ -93,6 +93,7 @@ uint8_t aes132_auth(const uint8_t *key, uint16_t key_id,
     }
     else {
         ESP_LOGE(TAG, "AES132 returned invalid MAC");
+        nonce->valid = false;
         goto exit;
     }
 exit:
@@ -150,7 +151,8 @@ uint8_t aes132_counter(const uint8_t *mac_key, uint32_t *count,
     uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
     uint8_t cmd, mode;
     uint16_t param1, param2;
-    uint8_t out_mac = &rx_buffer[AES132_RESPONSE_INDEX_DATA+4];
+    uint8_t *count_value = &rx_buffer[AES132_RESPONSE_INDEX_DATA];
+    uint8_t *out_mac = &rx_buffer[AES132_RESPONSE_INDEX_DATA+4];
 
     cmd = AES132_OPCODE_COUNTER;
     mode = 0x03; // Read the Counter with MAC
@@ -164,13 +166,6 @@ uint8_t aes132_counter(const uint8_t *mac_key, uint32_t *count,
         }
     }
 
-    aes132_mac_incr(nonce);
-    res = aes132m_execute(cmd, mode, param1, param2,
-            0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
-    if( res ) {
-        goto exit;
-    }
-
     /* Assemble Outbound MAC struct */
     struct aes132h_in_out mac_check_decrypt_param;
     mac_check_decrypt_param.opcode  = cmd;
@@ -180,21 +175,34 @@ uint8_t aes132_counter(const uint8_t *mac_key, uint32_t *count,
     mac_check_decrypt_param.key     = mac_key;
     mac_check_decrypt_param.nonce   = nonce;
     mac_check_decrypt_param.in_mac = out_mac;
-    res = aes132h_mac_check_decrypt(&mac_check_decrypt_param);
-    if ( AES132_DEVICE_RETCODE_SUCCESS == res ) {
-    }
-    else {
-        ESP_LOGE(TAG, "AES132 returned invalid MAC");
+    mac_check_decrypt_param.count_value = count_value;
+
+    res = aes132m_execute(cmd, mode, param1, param2,
+            0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+    if( res ) {
+        ESP_LOGE(TAG, "Error executing Counter command. Return Code 0x%02X",
+                res);
+        nonce->valid = false;
         goto exit;
     }
 
-    /* Interpret Coutner */
+    res = aes132h_mac_check_decrypt(&mac_check_decrypt_param);
+    if ( AES132_DEVICE_RETCODE_SUCCESS == res ) {
+        ESP_LOGI(TAG, "Successfully verified MAC Counter Read on Key Slot %d",
+                counter_id);
+    }
+    else {
+        ESP_LOGE(TAG, "AES132 returned invalid MAC");
+        nonce->valid = false;
+        goto exit;
+    }
+
+    /* Interpret Counter */
     uint8_t lin_count, count_flag;
     uint16_t bin_count;
-    lin_count = rx_buffer[AES132_RESPONSE_INDEX_DATA];
-    count_flag = rx_buffer[AES132_RESPONSE_INDEX_DATA+1];
-    bin_count = rx_buffer[AES132_RESPONSE_INDEX_DATA+2]<<8 \
-                | rx_buffer[AES132_RESPONSE_INDEX_DATA+3];
+    lin_count = count_value[0];
+    count_flag = count_value[1];
+    bin_count = ((uint16_t)count_value[2])<<8 | count_value[3];
     *count = (bin_count*32) + (count_flag/2)*8 + lin2bin(lin_count);
 exit:
     return res;
@@ -238,6 +246,9 @@ uint8_t aes132_encrypt(const uint8_t *in, uint8_t len, uint8_t key_id,
             ESP_LOGE(TAG, "Cannot copy ciphertext to NULL pointer");
         }
     }
+    else {
+        nonce->valid = false;
+    }
     return res;
 }
 
@@ -278,6 +289,13 @@ uint8_t aes132_key_load(const uint128_t parent_key, uint128_t child_key,
     uint8_t in_mac[16];
     uint8_t enc_key[16];
 
+    if(nonce->valid==false) {
+        res = aes132_nonce(nonce, NULL);
+        if ( res ) {
+            ESP_LOGE(TAG, "Error Refreshing nonce for mutual auth");
+        }
+    }
+
     /* Configuration - Page 51
      * Data1 - 16 Bytes - Integrity MAC for the input data
      * Data2 - 16 Bytes - Encrypted Key Value
@@ -288,7 +306,6 @@ uint8_t aes132_key_load(const uint128_t parent_key, uint128_t child_key,
     param2 = 0x0000; // only used for VolatileKey
 
     /* Assemble and compute Inbound MAC */
-    aes132_mac_incr(nonce);
     struct aes132h_in_out mac_compute_encrypt_param;
     mac_compute_encrypt_param.opcode   = cmd;
     mac_compute_encrypt_param.mode     = mode;
@@ -311,6 +328,7 @@ uint8_t aes132_key_load(const uint128_t parent_key, uint128_t child_key,
             0, NULL, 0, NULL, tx_buffer, rx_buffer);
     if( res ) {
         ESP_LOGE(TAG, "Key Load failed with error code 0x%02X", res);
+        nonce->valid = false;
         goto exit;
     }
 
@@ -413,6 +431,8 @@ uint8_t aes132_mac_count(uint8_t *count) {
 
 #define MAC_COUNT_LOCKSTEP_CHECK true
 uint8_t aes132_mac_incr(struct aes132h_nonce_s *nonce) {
+    /* Used to increase MAC Counter when we don't actually care about
+     * the produced MAC */
     uint8_t *mac_count;
     mac_count = &(nonce->value[12]);
 #if MAC_COUNT_LOCKSTEP_CHECK
@@ -475,6 +495,7 @@ uint8_t aes132_nonce(struct aes132h_nonce_s *nonce, const uint8_t *in_seed) {
         /* Error */
         ESP_LOGE(TAG, "Nonce returncode: %02X",
                 rx_buffer[AES132_RESPONSE_INDEX_RETURN_CODE]);
+        nonce->valid = false;
     }
     else {
         /* Success */

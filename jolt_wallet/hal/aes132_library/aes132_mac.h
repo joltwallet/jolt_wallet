@@ -194,6 +194,7 @@
 #define AES132_KEY_ID_MASTER   ((uint8_t) 0)
 #define AES132_KEY_ID_STRETCH  ((uint8_t) 1)
 #define AES132_KEY_ID_PIN(x)   ((uint8_t) (2+x))
+#define AES132_CUM_COUNTER_MAX (14 * AES132_COUNTER_MAX)
 
 
 //----------------------
