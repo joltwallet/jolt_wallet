@@ -2,6 +2,7 @@
  Copyright (C) 2018  Brian Pugh, James Coxon, Michael Smaili
  https://www.joltwallet.com/
  */
+#if CONFIG_JOLT_STORE_ATAES132A
 
 #include "esp_log.h"
 #include "sodium.h"
@@ -20,60 +21,146 @@
 #include "menu8g2.h"
 #include "storage_internal.h"
 #include "aes132_comm_marshaling.h"
+#include "aes132_jolt.h"
+#include "aes132_cmd.h"
 
 static const char* TAG = "storage_ataes132a";
 static const char* TITLE = "Storage Access";
 
 bool storage_ataes132a_factory_startup() {
     /* Check if device is locked */
-    if( false ) {
-        /* Try and recover encrypted master key from ataes132a master storage */
-        // todo: Decrypt master key
-        // if master key doesn't work, express that the device is bricked
+    uint8_t res;
+    if(aes132_jolt_setup()) {
+        // something bad happened; but we should never get here because
+        // aes132_jolt_setup() should restart esp32 at the slightest hint
+        // of error.
+        return false;
     }
     else {
-        /* ChipConfig */
+        return true;
     }
-    return false;
 }
 
 bool storage_ataes132a_exists_mnemonic() {
-    // todo: implement
-    return false;
+    /* Returens true if mnemonic exists, false otherwise */
+    bool res;
+    res = storage_internal_exists_mnemonic();
+    return res;
+}
+
+static void xor256(uint8_t *out, uint8_t *x, uint8_t *y) {
+    for(uint8_t i=0; i < 32; i ++) {
+        out[i] = x[i] ^ y[i];
+    }
+}
+
+static void rand256(uint8_t *buf) {
+    /* Generates 256-bits of random data from esp32 and ataes132a sources */
+    CONFIDENTIAL uint256_t esp32_entropy;
+    CONFIDENTIAL uint256_t aes132_entropy;
+    bm_entropy256(esp32_entropy);
+    res = aes132_rand(aes132_entropy, sizeof(aes132_entropy));
+    if( res ) {
+        esp_restart();
+    }
+    xor256(buf, esp32_entropy, aes132_entropy);
+    sodium_memzero(aes132_entropy, sizeof(aes132_entropy));
+    sodium_memzero(aes132_entropy, sizeof(aes132_entropy));
 }
 
 void storage_ataes132a_set_mnemonic(uint256_t bin, uint256_t pin_hash) {
-    // todo: implement
+    /* Inputs: Mnemonic the user backed up, stretched pin_hash coming directly
+     * from secure input.
+     *
+     * Breaks up the mnemonic and pin information into 3 locations that
+     * when xor'd together, results in the user mnemonic.
+     *    * ESP32 Secret
+     *    * PIN Secret
+     *    * UserZone Secret
+     * */
+    uint8_t res;
+    CONFIDENTIAL uint256_t aes132_secret;
+    CONFIDENTIAL uint256_t esp_secret;
+    CONFIDENTIAL unsigned char child_key[crypto_auth_hmacsha512_BYTES];
+
+    /* One piece of data is purely random, choosing esp_secret to be random */
+    rand256(esp_secret);
+    xor256(aes132_secret, esp_secret, bin);
+
+    /* Set the pin keys */
+    res = aes132_pin_load_keys(pin_hash);
+    if( res ) {
+        esp_restart();
+    }
+
+    /* for each pin key, set the user zone secret */
+    res = aes132_pin_load_zones(pin_hash, aes132_secret);
+    if( res ) {
+        esp_restart();
+    }
+
+    uint32_t counter;
+    res = aes132_pin_counter(&counter);
+    if( res ) {
+        esp_restart();
+    }
+    // Store pin attempt counter
+    if( !storage_set_u32(counter, "secret", "last_success") ) {
+        esp_restart();
+    }
+    // Store esp32-side secret
+    if( !storage_set_blob(esp_secret, sizeof(esp_secret), "secret", "mnemonic") ) {
+        esp_restart();
+    }
+
+    sodium_memzero(esp32_secret, sizeof(esp32_secret));
+    sodium_memzero(aes132_secret, sizeof(aes132_secret));
+    sodium_memzero(child_key, sizeof(child_key));
 }
 
 bool storage_ataes132a_get_mnemonic(uint256_t mnemonic, uint256_t pin_hash) {
     /* returns 256-bit mnemonic from storage 
      * Returns true if mnemonic is returned; false if incorrect pin_hash
      * */
-    // todo: implement
+    uint8_t res;
+    // Attempt Authorization
+    res =  aes132_pin_attempt(pin_hash, NULL);
+    if( res ) {
+        goto exit;
+    }
+    // Read in User Zone Secret
+exit:
     return false;
 }
 
 uint32_t storage_ataes132a_get_pin_count() {
     /* Gets the current PIN counter. This value is monotomicly increasing. */
-    // todo: implement
-    return 0;
+    uint32_t counter;
+    aes132_pin_counter(&counter);
+    return counter;
 }
 
 void storage_ataes132a_set_pin_count(uint32_t count) {
-    // todo: implement
+    // nothing; pin_count is inherently increased during get_mnemonic attempt
 }
 
 uint32_t storage_ataes132a_get_pin_last() {
     /* Gets the pin counter of the last successful pin attempt.
      */
-    // todo: implement
-    return 0;
+    uint32_t counter;
+    if( !storage_get_u32(&counter, "secret", "last_success", 0) ) {
+        esp_restart();
+    }
+    return counter;
 }
 
 void storage_ataes132a_set_pin_last(uint32_t count) {
-    // Should probably error check to make sure count is always increasing
-    storage_internal_set_pin_last(count);
+    // Make sure count is always increasing
+    uint32_t old_count;
+    old_count = storage_ataes132a_get_pin_last();
+    if( count > old_count) {
+        storage_set_u32(count, "secret", "last_success");
+    }
 }
 
 bool storage_ataes132a_get_u8(uint8_t *value, char *namespace, char *key,
@@ -132,3 +219,4 @@ void storage_ataes132a_factory_reset() {
 bool storage_ataes132a_erase_key(char *namespace, char *key) {
     return storage_internal_erase_key(namespace, key);
 }
+#endif

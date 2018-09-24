@@ -7,11 +7,16 @@ uint8_t aes132_create_stretch_key();
 /* Should be first thing called after setting up i2c */
 uint8_t aes132_jolt_setup();
 
-uint8_t aes132_pin_load_keys(const uint8_t *key);
-uint8_t aes132_pin_load_zones(const uint8_t *secret);
-
 /* Only attempts key and returns the cumulative counter */
-uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter);
+uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter, uint8_t *secret);
+
+uint8_t aes132_pin_load_keys(const uint8_t *key);
+
+/* Stores the value (key ^ secret) into each user zone */
+uint8_t aes132_pin_load_zones(const uint8_t *key, const uint8_t *secret);
+
+/* Populates counter value from ataes132a */
+uint8_t aes132_pin_counter(uint32_t *counter);
 
 /* Takes and returns data, encrypted n_iter times by the key in the stretch 
  * slot */

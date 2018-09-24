@@ -24,7 +24,6 @@
 #include "vault.h"
 #include "hal/storage.h"
 #include "gui/gui.h"
-#include "gui/entry.h"
 #include "gui/statusbar.h"
 #include "gui/loading.h"
 

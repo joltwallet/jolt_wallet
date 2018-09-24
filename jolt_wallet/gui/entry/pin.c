@@ -118,13 +118,25 @@ bool entry_pin(menu8g2_t *prev, uint256_t pin_hash, const char *title){
                 else{
                     ESP_LOGI(TAG, "User entered pin; processing...");
 
-                    // Convert pin into a 256-bit key
+                    /* Convert pin into a 256-bit key */
                     crypto_generichash_blake2b_state hs;
                     crypto_generichash_init(&hs, NULL, 32, 32);
                     crypto_generichash_update(&hs, 
                             (unsigned char *) pin_entries, MAX_PIN_DIGITS);
                     crypto_generichash_final(&hs, pin_hash, 32);
 
+#if CONFIG_JOLT_STORE_INTERNAL
+                    // todo: key stretching done if using internal storage
+#elif CONFIG_JOLT_STORE_ATAES132A
+                    {
+                        uint8_t retcode;
+                        retcode = aes132_stretch(pin_hash, 32, CONFIG_JOLT_AES132_STRETCH_ITER);
+                        if( retcode ) {
+                            ESP_LOGE(TAG, "Error 0x%02x stretching PIN");
+                            esp_restart();
+                        }
+                    }
+#endif
                     res = true;
                     goto exit;
                 }

@@ -28,6 +28,7 @@ menu "Jolt Wallet Config"
             default 400000
             help
                 Help Text Here
+
         config JOLT_I2C_TIMEOUT_MS
             int
             prompt "I2C Timeout in milliseconds"
@@ -70,13 +71,6 @@ menu "Jolt Wallet Config"
             help
                 Flip everything drawn to the display; used depending on how
                 your screen is mounted in your hardware setup.
-
-        config JOLT_DISPLAY_PIN_RST
-            int
-            prompt "Display RST GPIO PIN"
-            default 16
-            help
-                I2C Display's RST
 
         config JOLT_DISPLAY_ADDRESS
             hex
@@ -148,6 +142,15 @@ menu "Jolt Wallet Config"
                 sufficiently strong PIN, it'd still be infeasible to brute force
                 since the PIN attempts still have to be done on-device.
     endchoice
+
+    menu "ATAES132A"
+        config CONFIG_JOLT_AES132_STRETCH_ITER
+            int
+            prompt "Number of encrpytion iterations to slow down pin derivation"
+            default 200
+            help
+                help text here
+    endmenu
 
     menu "Console"
         config JOLT_CONSOLE_STARTUP_CLEAR

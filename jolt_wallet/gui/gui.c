@@ -30,7 +30,6 @@ void setup_screen(u8g2_t *u8g2){
     // Initialize OLED Screen I2C params
     // Already assumes i2c drivers have been installed
     u8g2_esp32_hal_t u8g2_esp32_hal = U8G2_ESP32_HAL_DEFAULT;
-    u8g2_esp32_hal.reset = CONFIG_JOLT_DISPLAY_PIN_RST;
     u8g2_esp32_hal_init(u8g2_esp32_hal);
    
     u8g2_Setup_ssd1306_i2c_128x64_noname_f(

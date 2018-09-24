@@ -10,6 +10,7 @@
 #include "esp_system.h"
 #include "jolttypes.h"
 #include "sodium.h"
+#include "hal/storage.h"
 
 static const char TAG[] = "aes132_jolt";
 static uint8_t *master_key = NULL;
@@ -70,10 +71,13 @@ uint8_t aes132_jolt_setup() {
 
     if( locked ) {
         /* Attempt to load key from encrypted spi flash */
-        /* Loads the key from storage */
-        // todo
-        /* If not found in storage, check the Master UserZone */
-        {
+
+        size_t required_size = 16;
+        /* Load the key from storage */
+        if( !storage_get_blob(master_key, &required_size, "aes132", "master") ) {
+            ESP_LOGE(TAG, "Cannot find local master key; attempting to "
+                    "recover from device.");
+            /* Check the Master UserZone */
             uint8_t rx[16];
             res = aes132m_read_memory(sizeof(rx), AES132_USER_ZONE_ADDR(0), rx);
             ESP_LOGI(TAG, "Read memory result: %d", res);
@@ -89,7 +93,6 @@ uint8_t aes132_jolt_setup() {
         }
     }
     else {
-        //aes132_check_manufacturing_id();
         /* Generate new master key 
          * We cannot use ataes132a for additional entropy since its unlocked */
         /* aes132 will generate non-random 0xA5 bytes until the LockConfig
@@ -100,6 +103,7 @@ uint8_t aes132_jolt_setup() {
             uint32_t entropy = randombytes_random();
             memcpy(&((uint32_t*)master_key)[i], &entropy, sizeof(uint32_t));
 #ifdef UNIT_TESTING
+            // deterministic key for easier unit testing
             ((uint32_t*)master_key)[i] = 0x11111111;
 #endif
         }
@@ -113,6 +117,12 @@ uint8_t aes132_jolt_setup() {
                 master_key[9], master_key[10], master_key[11],
                 master_key[12], master_key[13], master_key[14],
                 master_key[15]);
+
+        /* Locally store master key */
+        if( !storage_set_blob(master_key, 16, "aes132", "master") ) {
+            ESP_LOGE(TAG, "Error trying to store master key to NVS");
+            esp_restart();
+        }
 
         /* Encrypt Key with ESP32 Storage Engine Key */
         // todo; replace this; this is an identity placeholder
@@ -130,7 +140,7 @@ uint8_t aes132_jolt_setup() {
                 AES132_USER_ZONE_ADDR(AES132_KEY_ID_MASTER), enc_master_key);
         ESP_LOGI(TAG, "Write memory result: %d", res);
 
-        /* Confirm Backup */
+        /* Confirm AES132 Backup */
         {
             uint8_t rx[16];
             res = aes132m_read_memory(sizeof(enc_master_key),
@@ -148,7 +158,8 @@ uint8_t aes132_jolt_setup() {
 
             ESP_ERROR_CHECK(memcmp(enc_master_key, rx, sizeof(rx)));
         }
-        /* Write Key to Key0 */
+
+        /* Write Master Key to Key0 */
         ESP_LOGI(TAG, "Writing Master Key to Key %d", AES132_KEY_ID_MASTER);
         res = aes132m_write_memory(16,
                 AES132_KEY_ADDR(AES132_KEY_ID_MASTER), master_key);
@@ -212,7 +223,57 @@ exit:
     return res;
 }
 
-uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter) {
+uint8_t aes132_pin_load_zones(const uint8_t *key, const uint8_t *secret) {
+    /* Assumes 256-bit input key */
+    uint8_t res = 0xFF;
+    struct aes132h_nonce_s *nonce = get_nonce();
+
+    CONFIDENTIAL unsigned char child_key[crypto_auth_hmacsha512_BYTES];
+    CONFIDENTIAL uint256_t zone_secret;
+
+    for(uint8_t key_id = AES132_KEY_ID_PIN(0); key_id<16; key_id++) {
+        crypto_auth_hmacsha512(child_key, &key_id, 1, key);
+        /* Different derived keys are stored in different slots.
+         * If somehow partial data can be recovered from keyslots, this
+         * prevents the data from being overly redundant */
+        ESP_LOGI(TAG, " Loading slot %d with child key "
+                "%02X %02X %02X %02X %02X %02X %02X %02X "
+                "%02X %02X %02X %02X %02X %02X %02X %02X", key_id,
+                child_key[0], child_key[1], child_key[2],
+                child_key[3], child_key[4], child_key[5],
+                child_key[6], child_key[7], child_key[8],
+                child_key[9], child_key[10], child_key[11],
+                child_key[12], child_key[13], child_key[14],
+                child_key[15]);
+
+        // Authorize r/w zone
+        res = aes132_auth(child_key, key_id, nonce);
+        if( res ) {
+            ESP_LOGE(TAG, "Failed to auth key_id %d. "
+                    "Error Code: 0x%02X", key_id, res);
+            goto exit;
+        }
+
+        // Derive and write secret to zone
+        for(uint8_t i=0; i < 32; i ++) {
+            zone_secret[i] = secret[i] ^ child_key[i];
+        }
+        res = aes132m_write_memory(32,
+                AES132_USER_ZONE_ADDR(key_id), zone_secret);
+        if( res ) {
+            ESP_LOGE(TAG, "Failed to store secret in zone %d. "
+                    "Error Code: 0x%02X", key_id, res);
+            goto exit;
+        }
+    }
+exit:
+    sodium_memzero(child_key, sizeof(child_key));
+    sodium_memzero(zone_secret, sizeof(zone_secret));
+    return res;
+}
+
+uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter,
+        uint8_t *secret) {
     /* Derives child key for the last valid key slot and attempt authentication.
      * No matter what, will return a counter value that can be used
      * to determine whether or not to wipe the device. 
@@ -267,12 +328,38 @@ uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter) {
     else {
         ESP_LOGI(TAG, "Successfully authenticated with key_slot %d",
                 attempt_slot);
+        // todo: Try to read in from the user zone
     }
+
 exit:
-    *counter = cum_counter;
+    if( NULL != counter ) {
+        *counter = cum_counter;
+    }
     sodium_memzero(child_key, sizeof(child_key));
     return res;
 }
+
+uint8_t aes132_pin_counter(uint32_t *counter) {
+    /* Gets the cumulative counter of all pin keyslots */
+    uint8_t res;
+    uint32_t cum_counter = 0;
+    struct aes132h_nonce_s *nonce = get_nonce();
+
+    /* Gather counter values, determine which slot to attempt */
+    for(uint8_t counter_id=AES132_KEY_ID_PIN(0); counter_id < 16; counter_id++) {
+        // For safety, default to maximum value
+        uint32_t count = AES132_COUNTER_MAX;
+        res = aes132_counter(master_key, &count, counter_id, nonce);
+        if( res ) {
+            ESP_LOGE(TAG, "Error attempting to read counter %d. "
+                    "RetCode 0x%02X.", counter_id, res);
+        }
+        cum_counter += count;
+    }
+    *counter = cum_counter;
+    return res;
+}
+
 
 uint8_t aes132_create_stretch_key() {
     /* Warning; overwriting an existing stretch key will cause permament

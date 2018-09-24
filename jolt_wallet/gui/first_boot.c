@@ -18,6 +18,10 @@ https://www.joltwallet.com/
 #include "../vault.h"
 #include "../hal/storage.h"
 
+#if CONFIG_JOLT_STORE_ATAES132A
+#include "aes132_cmd.h"
+#endif
+
 #define MNEMONIC_STRENGTH 256
 
 static bool display_welcome(menu8g2_t *menu){
@@ -78,9 +82,21 @@ void first_boot_menu(){
     // Generate Mnemonic
     CONFIDENTIAL uint256_t mnemonic_bin;
     CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
+
     bm_entropy256(mnemonic_bin);
 #if CONFIG_JOLT_STORE_ATAES132A
-    // todo: mix in entropy from ataes132a
+    /* Mix in entropy from ataes132a */
+    {
+        CONFIDENTIAL uint256_t aes132_entropy;
+        res = aes132_rand(aes132_entropy, sizeof(aes132_entropy));
+        if( res ) {
+            esp_restart();
+        }
+        for(uint8_t i=0; i<sizeof(aes132_entropy); i++) {
+            mnemonic_bin[i] ^= aes132_entropy[i];
+        }
+        sodium_memzero(aes132_entropy, sizeof(aes132_entropy));
+    }
 #endif
     bm_bin_to_mnemonic(mnemonic, sizeof(mnemonic), mnemonic_bin, MNEMONIC_STRENGTH);
 

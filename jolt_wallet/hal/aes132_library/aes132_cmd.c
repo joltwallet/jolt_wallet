@@ -429,7 +429,7 @@ uint8_t aes132_mac_count(uint8_t *count) {
     return res;
 }
 
-#define MAC_COUNT_LOCKSTEP_CHECK true
+#define MAC_COUNT_LOCKSTEP_CHECK false
 uint8_t aes132_mac_incr(struct aes132h_nonce_s *nonce) {
     /* Used to increase MAC Counter when we don't actually care about
      * the produced MAC */
