@@ -88,9 +88,10 @@ void first_boot_menu(){
 
     bm_entropy256(mnemonic_bin);
 #if CONFIG_JOLT_STORE_ATAES132A
-    /* Mix in entropy from ataes132a */
     {
+        /* Mix in entropy from ataes132a */
         CONFIDENTIAL uint256_t aes132_entropy;
+        uint8_t res;
         res = aes132_rand(aes132_entropy, sizeof(aes132_entropy));
         if( res ) {
             esp_restart();

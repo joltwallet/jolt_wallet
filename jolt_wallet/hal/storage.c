@@ -24,6 +24,7 @@
 #include "../gui/loading.h"
 
 #include "storage.h"
+
 #if CONFIG_JOLT_STORE_INTERNAL
 #include "storage_internal.h"
 #elif CONFIG_JOLT_STORE_ATAES132A
@@ -33,13 +34,13 @@
 static const char* TAG = "storage_hal";
 static const char* TITLE = "Storage Access";
 
-bool storage_factory_startup() {
+bool storage_startup() {
     /* Configures storage upon first bootup */
     bool res;
 #if CONFIG_JOLT_STORE_INTERNAL
-    res = storage_internal_factory_startup();
+    res = storage_internal_startup();
 #elif CONFIG_JOLT_STORE_ATAES132A
-    res = storage_ataes132a_factory_startup();
+    res = storage_ataes132a_startup();
 #endif
    return res;
 }

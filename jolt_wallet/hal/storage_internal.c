@@ -47,7 +47,7 @@ static jolt_err_t init_nvs_namespace(nvs_handle *nvs_h, const char *namespace) {
     }
 }
 
-bool storage_internal_factory_startup() {
+bool storage_internal_startup() {
     // nothing to do
     return true;
 }

@@ -6,7 +6,7 @@
 #ifndef __JOLT_HAL_ATAES132A_STORAGE_H__
 #define __JOLT_HAL_ATAES132A_STORAGE_H__
 
-bool storage_ataes132a_factory_startup();
+bool storage_ataes132a_startup();
 
 bool storage_ataes132a_exists_mnemonic();
 

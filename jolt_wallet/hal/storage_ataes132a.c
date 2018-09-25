@@ -2,8 +2,6 @@
  Copyright (C) 2018  Brian Pugh, James Coxon, Michael Smaili
  https://www.joltwallet.com/
  */
-#if CONFIG_JOLT_STORE_ATAES132A
-
 #include "esp_log.h"
 #include "sodium.h"
 #include <esp_system.h>
@@ -19,6 +17,7 @@
 #include "bipmnemonic.h"
 #include "jolttypes.h"
 #include "menu8g2.h"
+#include "storage.h"
 #include "storage_internal.h"
 #include "aes132_comm_marshaling.h"
 #include "aes132_jolt.h"
@@ -27,10 +26,10 @@
 static const char* TAG = "storage_ataes132a";
 static const char* TITLE = "Storage Access";
 
-bool storage_ataes132a_factory_startup() {
+bool storage_ataes132a_startup() {
     /* Check if device is locked */
     uint8_t res;
-    if(aes132_jolt_setup()) {
+    if( !(storage_internal_startup() && aes132_jolt_setup()) ) {
         // something bad happened; but we should never get here because
         // aes132_jolt_setup() should restart esp32 at the slightest hint
         // of error.
@@ -56,6 +55,7 @@ static void xor256(uint8_t *out, uint8_t *x, uint8_t *y) {
 
 static void rand256(uint8_t *buf) {
     /* Generates 256-bits of random data from esp32 and ataes132a sources */
+    uint8_t res;
     CONFIDENTIAL uint256_t esp32_entropy;
     CONFIDENTIAL uint256_t aes132_entropy;
     bm_entropy256(esp32_entropy);
@@ -113,7 +113,7 @@ void storage_ataes132a_set_mnemonic(uint256_t bin, uint256_t pin_hash) {
         esp_restart();
     }
 
-    sodium_memzero(esp32_secret, sizeof(esp32_secret));
+    sodium_memzero(esp_secret, sizeof(esp_secret));
     sodium_memzero(aes132_secret, sizeof(aes132_secret));
     sodium_memzero(child_key, sizeof(child_key));
 }
@@ -122,15 +122,30 @@ bool storage_ataes132a_get_mnemonic(uint256_t mnemonic, uint256_t pin_hash) {
     /* returns 256-bit mnemonic from storage 
      * Returns true if mnemonic is returned; false if incorrect pin_hash
      * */
+    bool auth = false;
     uint8_t res;
-    // Attempt Authorization
-    res =  aes132_pin_attempt(pin_hash, NULL);
+    CONFIDENTIAL uint256_t aes132_secret;
+    CONFIDENTIAL uint256_t esp_secret;
+
+    // Attempt Authorization and Get ATAES132A Secret
+    res =  aes132_pin_attempt(pin_hash, NULL, aes132_secret);
     if( res ) {
         goto exit;
     }
-    // Read in User Zone Secret
+
+    // Get ESP32 Secret
+    size_t required_size = 32;
+    if( !storage_get_blob(esp_secret, &required_size, "secret", "mnemonic") ) {
+        esp_restart();
+    }
+
+    // Combine Secrets
+    xor256(mnemonic, aes132_secret, esp_secret);
+    auth = true;
 exit:
-    return false;
+    sodium_memzero(esp_secret, sizeof(esp_secret));
+    sodium_memzero(aes132_secret, sizeof(aes132_secret));
+    return auth;
 }
 
 uint32_t storage_ataes132a_get_pin_count() {
@@ -219,4 +234,3 @@ void storage_ataes132a_factory_reset() {
 bool storage_ataes132a_erase_key(char *namespace, char *key) {
     return storage_internal_erase_key(namespace, key);
 }
-#endif

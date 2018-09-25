@@ -1,5 +1,4 @@
-menu "Jolt Wallet Config"
-
+menu "Jolt Wallet"
     menu "I2C"
         config JOLT_I2C_MASTER_NUM
             int
@@ -131,25 +130,35 @@ menu "Jolt Wallet Config"
     choice
         prompt "Select Mnemonic Storage Method"
         config JOLT_STORE_INTERNAL
-            bool "Simple mnemonic storage on SPI Flash; Unsafe against replay attacks"
-        config JOLT_STORE_ATAES132A
-            bool "Not Yet Implemented"
+            bool "Simple SPI Flash"
             help
-                Whether or not to use ATAES132A to store Mnemonic and HW
-                pin attempts. If not enabled, the ATAES132A is not required,
-                however Jolt will then be suscepitble to infinite PIN attempts
-                if the attack reads and restores the encrypted SPI Flash. With a
-                sufficiently strong PIN, it'd still be infeasible to brute force
-                since the PIN attempts still have to be done on-device.
+               Requires no external components. Unsafe against replay attacks.
+        config JOLT_STORE_ATAES132A
+            bool "ATAES132A Secure EEPROM"
+            help
+                Use ATAES132A to store Mnemonic and pin attempts. Also uses
+                device to stretch keys, making brute force attempts less
+                feasible.
     endchoice
 
     menu "ATAES132A"
-        config CONFIG_JOLT_AES132_STRETCH_ITER
+        depends on JOLT_STORE_ATAES132A
+        config JOLT_AES132_STRETCH_ITER
             int
             prompt "Number of encrpytion iterations to slow down pin derivation"
             default 200
             help
-                help text here
+                A single iteration typically takes 2.4mS on device, but 
+                communication overhead and freeRTOS ticks makes this more
+                around 7mS.
+        config JOLT_AES132_LOCK
+            bool
+            prompt "Lock ATAES132A after configuring"
+            default n
+            help
+                For secure use of Jolt, you must lock the ataes132a device.
+                Locking is a permament action. It is useful to not lock while
+                implementing and debugging new security features.
     endmenu
 
     menu "Console"

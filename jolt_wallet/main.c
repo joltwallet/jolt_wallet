@@ -27,6 +27,7 @@
 #include "syscore/filesystem.h"
 #include "gui/statusbar.h"
 #include "hal/i2c.h"
+#include "hal/storage.h"
 
 
 // Definitions for variables in globals.h
@@ -47,6 +48,9 @@ void app_main() {
 
     // Setup and Install I2C Driver and supporting objects
     i2c_driver_setup();
+
+    // Run Key/Value Storage Initialization
+    storage_startup();
 
     // Initialize the OLED Display
     u8g2 = &u8g2_obj;

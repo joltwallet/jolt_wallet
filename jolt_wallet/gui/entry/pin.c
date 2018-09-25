@@ -25,6 +25,10 @@
 #include "../../helpers.h"
 #include "../../globals.h"
 
+#if CONFIG_JOLT_STORE_ATAES132A
+#include "aes132_jolt.h"
+#endif
+
 static const char* TAG = "entry_pin";
 
 #define PIN_SPACING 13
@@ -128,7 +132,7 @@ bool entry_pin(menu8g2_t *prev, uint256_t pin_hash, const char *title){
                         uint8_t retcode;
                         retcode = aes132_stretch(pin_hash, 32, CONFIG_JOLT_AES132_STRETCH_ITER);
                         if( retcode ) {
-                            ESP_LOGE(TAG, "Error 0x%02x stretching PIN");
+                            ESP_LOGE(TAG, "Error 0x%02x stretching PIN", retcode);
                             esp_restart();
                         }
                     }

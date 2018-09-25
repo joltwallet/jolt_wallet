@@ -8,7 +8,7 @@
 
 #include "jolttypes.h"
 
-bool storage_factory_startup();
+bool storage_startup();
 
 bool storage_exists_mnemonic();
 

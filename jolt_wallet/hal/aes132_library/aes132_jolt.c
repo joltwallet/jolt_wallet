@@ -174,14 +174,12 @@ uint8_t aes132_jolt_setup() {
         aes132_write_zoneconfig();
 
         /* Lock Device */
-#ifdef UNIT_TESTING
-        ESP_LOGI(TAG, "Not locking device since we are in unit_testing mode");
-        // Do Nothing; Don't actually lock device
+        ESP_LOGI(TAG, "AES132 Config Complete.");
+#if CONFIG_JOLT_AES132_LOCK && !UNIT_TESTING
+        ESP_LOGI(TAG, "Locking device.");
+        lock_device();
 #else
-        //lock_device();
-        ESP_LOGE(TAG, "While debugging, if lock_device wasn't commented out, "
-                "itd be locked.\n");
-        // todo: test
+        ESP_LOGE(TAG, "Not locking device. UNSAFE.");
 #endif
 
     }
@@ -288,6 +286,8 @@ uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter,
     struct aes132h_nonce_s *nonce = get_nonce();
     CONFIDENTIAL unsigned char child_key[crypto_auth_hmacsha512_BYTES];
 
+    assert(crypto_auth_hmacsha512_BYTES >= 32);
+
     /* Gather counter values, determine which slot to attempt */
     for(uint8_t counter_id=AES132_KEY_ID_PIN(0); counter_id < 16; counter_id++) {
         // For safety, default to maximum value
@@ -297,10 +297,15 @@ uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter,
             ESP_LOGE(TAG, "Error attempting to read counter %d. "
                     "RetCode 0x%02X.", counter_id, res);
         }
-        if( count < AES132_COUNTER_MAX) {
-            attempt_slot = counter_id;
-        }
         cum_counter += count;
+        if( count < AES132_COUNTER_MAX && 0xFF == attempt_slot) {
+            attempt_slot = counter_id;
+            if( NULL == counter ) {
+                // Don't bother reading the rest if we aren't returning
+                // cumulative value
+                break;
+            }
+        }
     }
     if( 0xFF == attempt_slot ) {
         ESP_LOGE(TAG, "Device key-use completely exhausted");
@@ -325,10 +330,22 @@ uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter,
                 child_key[15]);
         goto exit;
     }
-    else {
-        ESP_LOGI(TAG, "Successfully authenticated with key_slot %d",
-                attempt_slot);
-        // todo: Try to read in from the user zone
+    ESP_LOGI(TAG, "Successfully authenticated with key_slot %d",
+            attempt_slot);
+    {
+        CONFIDENTIAL uint8_t zone_secret[32];
+        res = aes132m_read_memory(sizeof(zone_secret), attempt_slot, 
+                zone_secret);
+        if( res ) {
+            ESP_LOGE(TAG, "Error reading from user zone");
+            goto exit;
+        }
+
+        // xor child_key and secret together
+        for(uint8_t i=0; i<32; i++) {
+            secret[i] = zone_secret[i] ^ child_key[i]; 
+        }
+        sodium_memzero(zone_secret, sizeof(zone_secret));
     }
 
 exit:
