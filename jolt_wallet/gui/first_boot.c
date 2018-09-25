@@ -13,6 +13,7 @@ https://www.joltwallet.com/
 #include "bipmnemonic.h"
 
 #include "entry.h"
+#include "gui.h"
 #include "../helpers.h"
 #include "../globals.h"
 #include "../vault.h"
@@ -80,6 +81,8 @@ static menu8g2_err_t get_nth_word(char buf[], size_t buf_len,
 
 void first_boot_menu(){
     // Generate Mnemonic
+    FULLSCREEN_ENTER;
+
     CONFIDENTIAL uint256_t mnemonic_bin;
     CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
 

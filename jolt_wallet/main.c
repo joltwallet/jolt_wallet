@@ -43,10 +43,7 @@ static const char TAG[] = "main";
 void app_main() {
     // Setup Input Button Debouncing Code
     easy_input_queue_init((QueueHandle_t *)&input_queue);
-    xTaskCreate(easy_input_push_button_task,
-            "ButtonDebounce", 2500,
-            (void *)&input_queue, 19,
-            NULL);
+    easy_input_run( (QueueHandle_t *)&input_queue );
 
     // Setup and Install I2C Driver and supporting objects
     i2c_driver_setup();
@@ -60,23 +57,26 @@ void app_main() {
     menu = &menu_obj;
     menu8g2_init(menu, (u8g2_t *) u8g2, input_queue, disp_mutex, NULL, statusbar_update);
 
+    // Initialize Wireless
+    /* todo: this must be before first_boot_setup otherwise attempting
+     * to get ap_info before initializing wifi causes a boot loop. investigate
+     * more robust solutions */
+    esp_log_level_set("wifi", ESP_LOG_NONE);
+    set_jolt_cast();
+    wifi_connect();
+
     // Allocate space for the vault and see if a copy exists in NVS
     if( false == vault_setup()) {
         first_boot_menu();
     }
-    
-    // Initialize Wireless
-    esp_log_level_set("wifi", ESP_LOG_NONE);
-    set_jolt_cast();
-    wifi_connect();
+
+    // ==== Initialize the file system ====
+    filesystem_init();
 
     xTaskCreate(gui_task,
             "GUI", 16000,
             NULL, 10,
             NULL);
-
-    // ==== Initialize the file system ====
-    filesystem_init();
 
     // Initiate Console
     initialize_console();
