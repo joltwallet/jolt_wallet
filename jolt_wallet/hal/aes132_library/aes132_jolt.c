@@ -403,6 +403,9 @@ uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter ) 
      * our application.
      */
     uint8_t res = 0;
+    // Even though Legacy doesn't use a Nonce, it requires a valid Nonce
+    // on device.
+    get_nonce();
 
     ESP_LOGI(TAG, "Stretch Input: "
             "%02X %02X %02X %02X %02X %02X %02X %02X "
