@@ -188,7 +188,7 @@ uint8_t aes132_counter(const uint8_t *mac_key, uint32_t *count,
 
     res = aes132h_mac_check_decrypt(&mac_check_decrypt_param);
     if ( AES132_DEVICE_RETCODE_SUCCESS == res ) {
-        ESP_LOGI(TAG, "Successfully verified MAC Counter Read on Key Slot %d",
+        ESP_LOGD(TAG, "Successfully verified MAC Counter Read on Key Slot %d",
                 counter_id);
     }
     else {
@@ -398,7 +398,7 @@ uint8_t aes132_lock_device() {
     // todo: compute checksum into param2
     param2 = 0;
 
-    uint8_t data[16];
+    //uint8_t data[16];
     res = aes132m_execute(cmd, mode, param1, param2,
             0, NULL, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
     if( res ) {

@@ -69,7 +69,14 @@ uint8_t aes132_jolt_setup() {
         esp_restart();
     }
 
+#if CONFIG_JOLT_AES132_LOCK
     if( locked ) {
+#else
+    /* See if we have a locally stored master key */
+    size_t required_size;
+    if( storage_get_blob(NULL, &required_size, "aes132", "master") ) {
+#endif
+        ESP_LOGI(TAG, "Using existing keys");
         /* Attempt to load key from encrypted spi flash */
 
         size_t required_size = 16;
@@ -93,6 +100,7 @@ uint8_t aes132_jolt_setup() {
         }
     }
     else {
+        ESP_LOGI(TAG, "Setting up new keys");
         /* Generate new master key 
          * We cannot use ataes132a for additional entropy since its unlocked */
         /* aes132 will generate non-random 0xA5 bytes until the LockConfig
@@ -351,6 +359,7 @@ uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter,
 exit:
     if( NULL != counter ) {
         *counter = cum_counter;
+        ESP_LOGI(TAG, "Cumulative PIN Counter: %d", cum_counter);
     }
     sodium_memzero(child_key, sizeof(child_key));
     return res;
@@ -374,6 +383,7 @@ uint8_t aes132_pin_counter(uint32_t *counter) {
         cum_counter += count;
     }
     *counter = cum_counter;
+    ESP_LOGI(TAG, "Cumulative PIN Counter: %d", cum_counter);
     return res;
 }
 

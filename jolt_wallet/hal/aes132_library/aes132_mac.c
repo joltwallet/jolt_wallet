@@ -1030,7 +1030,7 @@ uint8_t aes132h_mac_check_decrypt(struct aes132h_in_out *param)
         param->nonce->valid = false;
     }
     param->nonce->value[12]++;
-    ESP_LOGI(TAG, "Incrementing mac_count to %d", param->nonce->value[12]);
+    ESP_LOGD(TAG, "Incrementing mac_count to %d", param->nonce->value[12]);
     
     // Do the cryptographic calculation
     // Check if additional auth-only field is used
