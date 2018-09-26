@@ -336,6 +336,32 @@ exit:
     return res;
 }
 
+uint8_t aes132_legacy(const uint8_t key_id, uint8_t *data) {
+    /* Only used for key stretching.
+     * Passes 16-bytes of data through the AES engine using key at key_id.
+     * Results are returned in data. */
+    uint8_t res;
+    uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
+    CONFIDENTIAL uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
+    uint8_t cmd, mode;
+    uint16_t param1, param2;
+
+    cmd = AES132_OPCODE_LEGACY;
+    mode = 0x00; // Must be 0x00
+    param1 = key_id;
+    param2 = 0x0000; // Must be 0x0000
+    res = aes132m_execute(cmd, mode, param1, param2,
+            16, data, 0, NULL, 0, NULL, 0, NULL, tx_buffer, rx_buffer);
+    if( res ) {
+        ESP_LOGE(TAG, "Error issuing Legacy cmd: 0x%02X", res);
+        goto exit;
+    }
+    memcpy(data, &rx_buffer[AES132_RESPONSE_INDEX_DATA], 16);
+exit:
+    sodium_memzero(rx_buffer, sizeof(rx_buffer));
+    return res;
+}
+
 uint8_t aes132_lock_device() {
     /* Locks smallzone, config memory, key memory, and makes the master
      * UserZone read-only 

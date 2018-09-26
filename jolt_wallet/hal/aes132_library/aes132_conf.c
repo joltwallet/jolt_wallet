@@ -13,7 +13,7 @@ static const char TAG[] = "aes132_conf";
 uint8_t aes132_write_chipconfig() {
     uint8_t res;
     uint8_t config = 
-            AES132_CHIP_CONFIG_ENC_DEC_EN | // Used for Key Stretching
+            AES132_CHIP_CONFIG_LEGACY_EN | // Key Stretching
             AES132_CHIP_CONFIG_POWER_ACTIVE;
     res = aes132m_write_memory(sizeof(config),
             AES132_CHIP_CONFIG_ADDR, &config);
@@ -21,7 +21,7 @@ uint8_t aes132_write_chipconfig() {
 }
 
 uint8_t aes132_write_counterconfig() {
-    /* Only imposes restrictions on the usage of the Counter Command. 
+    /* Only imposes restrictions on usage of the Counter Command. 
      * Does not influence which keys use which counters. */
     uint8_t res;
     uint8_t config[2] = { 0 };
@@ -85,10 +85,10 @@ uint8_t aes132_write_keyconfig() {
     /* Stretch is only used for Key streshing via Encrypt command */
     uint8_t config_stretch[4] = { 0 };
     config_stretch[0] = 
-        AES132_KEY_CONFIG_EXTERNAL_CRYPTO | // Allow Encrypt/Decrypt
+        //AES132_KEY_CONFIG_EXTERNAL_CRYPTO | // Prohibit Encrypt/Decrypt
         //AES132_KEY_CONFIG_INBOUND_AUTH | // Can be used for other purposes
         AES132_KEY_CONFIG_RANDOM_NONCE | // Prevent Spoofing of Nonces 
-        //AES132_KEY_CONFIG_LEGACY_OK | // Never allow dangerous Legacy cmd
+        AES132_KEY_CONFIG_LEGACY_OK | // Key Stretching
         //AES132_KEY_CONFIG_AUTH_KEY | // Prior authentication not required 
         AES132_KEY_CONFIG_CHILD | // Allow update via KeyCreate/KeyLoad 
         //AES132_KEY_CONFIG_PARENT | // VolatileKey isn't used  

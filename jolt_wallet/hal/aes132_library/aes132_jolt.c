@@ -397,32 +397,40 @@ uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter ) 
      * brute forcing attempts must be done serially, and do not benefit from 
      * more compute power.
      *
-     * Runs AES128 Encryption over the data n_iter times.
+     * Runs AES128 ECB (16-byte block) over the data n_iter times.
      *
      * We do not verify the MAC of the returned ciphertext; unnecessary for
      * our application.
      */
     uint8_t res = 0;
+
+    ESP_LOGI(TAG, "Stretch Input: "
+            "%02X %02X %02X %02X %02X %02X %02X %02X "
+            "%02X %02X %02X %02X %02X %02X %02X %02X",
+            data[0], data[1], data[2],
+            data[3], data[4], data[5],
+            data[6], data[7], data[8],
+            data[9], data[10], data[11],
+            data[12], data[13], data[14],
+            data[15]);
+
     for(uint32_t i=0; i < n_iter; i++) {
-        struct aes132h_nonce_s *nonce = get_nonce();
-        res = aes132_encrypt(data, data_len, AES132_KEY_ID_STRETCH,
-                data, NULL, nonce);
+        res = aes132_legacy(AES132_KEY_ID_STRETCH, data);
         if( AES132_DEVICE_RETCODE_SUCCESS != res ) {
             ESP_LOGE(TAG, "Failed on iteration %d with retcode %02X\n", i, res);
             break;
         }
     }
+    ESP_LOGI(TAG, "Stretch Output: "
+            "%02X %02X %02X %02X %02X %02X %02X %02X "
+            "%02X %02X %02X %02X %02X %02X %02X %02X",
+            data[0], data[1], data[2],
+            data[3], data[4], data[5],
+            data[6], data[7], data[8],
+            data[9], data[10], data[11],
+            data[12], data[13], data[14],
+            data[15]);
+
     return res;
 }
 
-
-#if 0
-bool aes132_pin_attempt(uint8_t *guess, uint8_t *n_attempts) {
-    /* Attempts a pin hash. If criteria is met, perform factory reset
-     * *n_attempts - out - number of attempts tried.
-     * *guess - out - 16 bytes (128-bit)
-     *
-     * returns true on success, false on failure.
-     */
-}
-#endif

@@ -144,13 +144,13 @@ bool entry_pin(menu8g2_t *prev, uint256_t pin_hash, const char *title){
         }
     }
 
-    exit:
-        MENU8G2_BEGIN_DRAW(menu)
-            u8g2_ClearDisplay(menu->u8g2);
-        MENU8G2_END_DRAW(menu)
+exit:
+    MENU8G2_BEGIN_DRAW(menu)
+        u8g2_ClearDisplay(menu->u8g2);
+    MENU8G2_END_DRAW(menu)
 
-        FULLSCREEN_EXIT;
-        return res;
+    FULLSCREEN_EXIT;
+    return res;
 }
 
 bool entry_verify_pin(menu8g2_t *prev, uint256_t pin_hash) {

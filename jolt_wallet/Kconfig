@@ -146,7 +146,7 @@ menu "Jolt Wallet"
         config JOLT_AES132_STRETCH_ITER
             int
             prompt "Number of encrpytion iterations to slow down pin derivation"
-            default 200
+            default 300
             help
                 A single iteration typically takes 2.4mS on device, but 
                 communication overhead and freeRTOS ticks makes this more
