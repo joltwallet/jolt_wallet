@@ -1,3 +1,3 @@
 # This is for the unit_tester
-COMPONENT_ADD_INCLUDEDIRS := main
-COMPONENT_SRCDIRS := main main
+COMPONENT_ADD_INCLUDEDIRS := jolt_wallet
+COMPONENT_SRCDIRS := jolt_wallet

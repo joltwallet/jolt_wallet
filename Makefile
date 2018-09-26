@@ -3,12 +3,12 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := joltwallet
+PROJECT_NAME := jolt_wallet
+
+EXTRA_COMPONENT_DIRS := jolt_wallet
 
 #COMPONENTS = 
 CFLAGS +=  \
-	 -I$(BUILD_DIR_BASE)/libwebsockets/include \
-	 -I$(PROJECT_PATH)/components/libwebsockets/lib \
 	 -D U8G2_16BIT
 
 include $(IDF_PATH)/make/project.mk
