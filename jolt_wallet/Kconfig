@@ -77,6 +77,12 @@ menu "Jolt Wallet"
             default 0x78
             help
                 I2C Display's Address
+        config JOLT_DISPLAY_PIN_RST
+           int
+           prompt "Display Reset GPIO"
+           default 16
+           help
+              GPIO thats connected to the display's RST pin.
     endmenu
 
     menu "App Compression"
