@@ -47,10 +47,10 @@
 #define LV_VDB2_ADR         0       /*Place VDB2 to a specific address (e.g. in external RAM) (0: allocate automatically into RAM; LV_VDB_ADR_INV: to replace it later with `lv_vdb_set_adr()`)*/
 
 /* Enable anti-aliasing (lines, and radiuses will be smoothed) */
-#define LV_ANTIALIAS        1       /*1: Enable anti-aliasing*/
+#define LV_ANTIALIAS        0       /*1: Enable anti-aliasing*/
 
 /*Screen refresh settings*/
-#define LV_REFR_PERIOD      35    /*Screen refresh period in milliseconds*/
+#define LV_REFR_PERIOD      15    /*Screen refresh period in milliseconds*/
 #define LV_INV_FIFO_SIZE    32    /*The average count of objects on a screen */
 
 /*=================
@@ -246,7 +246,7 @@
 #define USE_LV_BAR      1
 
 /*Line meter (dependencies: *;)*/
-#define USE_LV_LMETER   1
+#define USE_LV_LMETER   0
 
 /*Gauge (dependencies:bar, lmeter)*/
 #define USE_LV_GAUGE    0
@@ -261,7 +261,7 @@
 #define USE_LV_MBOX     0
 
 /*Text area (dependencies: lv_label, lv_page)*/
-#define USE_LV_TA       1
+#define USE_LV_TA       0
 #if USE_LV_TA != 0
 #define LV_TA_CURSOR_BLINK_TIME 400     /*ms*/
 #define LV_TA_PWD_SHOW_TIME     1500    /*ms*/
