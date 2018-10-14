@@ -5,10 +5,10 @@
 
 PROJECT_NAME := jolt_wallet
 
-EXTRA_COMPONENT_DIRS := jolt_wallet
+EXTRA_COMPONENT_DIRS := \
+	$(abspath jolt_wallet)
 
 #COMPONENTS = 
-CFLAGS +=  \
-	 -D U8G2_16BIT
+#CFLAGS += 
 
 include $(IDF_PATH)/make/project.mk
