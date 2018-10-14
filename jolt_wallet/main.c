@@ -27,13 +27,13 @@
 #include "vault.h"
 #include "console.h"
 #include "helpers.h"
-#include "syscore/filesystem.h"
 #include "gui/statusbar.h"
 #endif
 //#include "radio/wifi.h"
 #include "globals.h"
 //#include "hal/storage/storage.h"
 #include "hal/i2c.h"
+#include "syscore/filesystem.h"
 
 
 static void lv_tick_task(void);
@@ -67,8 +67,10 @@ static void display_init() {
     ssd1306_init(&disp_conf);
 
     /*inverse screen (180°) */
+#if CONFIG_JOLT_DISPLAY_FLIP
     ssd1306_set_scan_direction_fwd(&disp_conf, true);
     ssd1306_set_segment_remapping_enabled(&disp_conf, false);
+#endif
 
     lv_disp_drv_t disp_drv;
     lv_disp_drv_init(&disp_drv);
@@ -164,9 +166,7 @@ void app_main() {
 #endif
 
     // ==== Initialize the file system ====
-# if 0
-    filesystem_init();
-#endif
+    //filesystem_init();
 
     /* Create GUI */
 
