@@ -17,6 +17,7 @@
 
 #include "easy_input.h"
 
+#include "lv_conf.h"
 #include "lvgl/lvgl.h"
 #include "hal/lv_drivers/display/ssd1306.h"
 #include "jolt_gui/jolt_gui.h"
@@ -24,17 +25,17 @@
 #if 0
 #include "gui/gui.h"
 #include "gui/first_boot.h"
-#include "vault.h"
-#include "console.h"
 #include "gui/statusbar.h"
 #endif
 
+#include "console.h"
 #include "radio/wifi.h"
 #include "helpers.h" // todo; move jolt cast into wifi?
 #include "globals.h"
 #include "hal/i2c.h"
 #include "hal/storage/storage.h"
 #include "syscore/filesystem.h"
+#include "vault.h"
 
 
 static void lv_tick_task(void);
@@ -46,12 +47,11 @@ static const char TAG[] = "main";
 
 static ssd1306_t disp_conf = {
 	.protocol = SSD1306_PROTO_I2C,
-	//.screen = SH1106_SCREEN,
 	.screen = SSD1306_SCREEN,
 	.i2c_dev = CONFIG_JOLT_DISPLAY_ADDRESS,
 	.rst_pin = CONFIG_JOLT_DISPLAY_PIN_RST,
-	.width = 128,
-	.height = 64
+	.width = LV_HOR_RES,
+	.height = LV_VER_RES
 };
 
 static void display_init() {
@@ -157,11 +157,7 @@ void app_main() {
     wifi_connect();
 
     // Allocate space for the vault and see if a copy exists in NVS
-#if 0
-    if( false == vault_setup()) {
-        first_boot_menu();
-    }
-#endif
+    jolt_gui_store.first_boot = ( false == vault_setup() );
 
     // ==== Initialize the file system ====
     filesystem_init();
@@ -179,10 +175,8 @@ void app_main() {
     jolt_gui_create();
 
     // Initiate Console
-#if 0
     initialize_console();
     start_console();
-#endif
 
     // LittleVGL Task Handler
     for( ;; vTaskDelay(1) ) {
