@@ -143,7 +143,6 @@ void app_main() {
     lv_init();
     display_init();
     indev_init();
-    esp_register_freertos_tick_hook(lv_tick_task);
 
     /* Run Key/Value Storage Initialization */
     //storage_startup();
@@ -166,7 +165,11 @@ void app_main() {
 #endif
 
     // ==== Initialize the file system ====
-    //filesystem_init();
+    filesystem_init();
+
+    /* Register lv_tick_task after initializing filesystem because initial
+     * SPIFFS formatting temporarily disables cache */
+    esp_register_freertos_tick_hook(lv_tick_task);
 
     /* Create GUI */
 

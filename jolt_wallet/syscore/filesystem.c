@@ -20,8 +20,6 @@
 #include "../globals.h"
 #include "../jolt_gui/confirmation.h"
 #include "../jolt_gui/jolt_gui.h"
-//#include "jolt_gui/loading.h"
-//#include "../gui/statusbar.h"
 #include "../helpers.h"
 #include "../vault.h"
 #include "filesystem.h"
@@ -29,7 +27,7 @@
 
 static const char* TAG = "console_syscore_fs";
 
-
+/* Starts up the SPIFFS Filesystem */
 void filesystem_init() {
     esp_err_t ret;
     esp_vfs_spiffs_conf_t conf = {
@@ -38,7 +36,9 @@ void filesystem_init() {
       .max_files = 3,
       .format_if_mount_failed = true
     };
-    ret = esp_vfs_spiffs_register(&conf);
+    ESP_LOGI(TAG, "meow");
+    ret = esp_vfs_spiffs_register(&conf); // Will format system (nonblocking) if cannot mount SPIFFS
+    ESP_LOGI(TAG, "meow");
     if (ret != ESP_OK) {
         if (ret == ESP_FAIL) {
             ESP_LOGE(TAG, "Failed to mount or format filesystem");
