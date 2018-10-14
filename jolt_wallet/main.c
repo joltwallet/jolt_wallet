@@ -26,11 +26,11 @@
 #include "gui/first_boot.h"
 #include "vault.h"
 #include "console.h"
-#include "helpers.h"
 #include "gui/statusbar.h"
 #endif
 
-//#include "radio/wifi.h"
+#include "radio/wifi.h"
+#include "helpers.h" // todo; move jolt cast into wifi?
 #include "globals.h"
 #include "hal/i2c.h"
 #include "hal/storage/storage.h"
@@ -153,8 +153,8 @@ void app_main() {
      * to get ap_info before initializing wifi causes a boot loop. investigate
      * more robust solutions */
     esp_log_level_set("wifi", ESP_LOG_NONE);
-    //set_jolt_cast();
-    //wifi_connect();
+    set_jolt_cast();
+    wifi_connect();
 
     // Allocate space for the vault and see if a copy exists in NVS
 #if 0
