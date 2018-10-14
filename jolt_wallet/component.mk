@@ -10,7 +10,9 @@ COMPONENT_SRCDIRS := . \
 	radio \
 	syscore \
 	hal/lv_drivers \
-	hal/lv_drivers/display
+	hal/lv_drivers/display \
+	hal/storage
+#	hal/storage/aes132_library \
 
 COMPONENT_ADD_INCLUDEDIRS := .\
-	hal/aes132_library
+	hal/storage/aes132_library

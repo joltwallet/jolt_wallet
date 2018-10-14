@@ -3,7 +3,6 @@
  https://www.joltwallet.com/
  */
 
-#if 0
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,10 +17,10 @@
 #include "../helpers.h"
 #include "../globals.h"
 #include "../vault.h"
-#include "../gui/gui.h"
-#include "../gui/entry.h"
-#include "../gui/statusbar.h"
-#include "../gui/loading.h"
+#include "jolt_gui/jolt_gui.h"
+//#include "../gui/entry.h"
+//#include "../gui/statusbar.h"
+//#include "../gui/loading.h"
 
 #include "storage.h"
 
@@ -77,7 +76,6 @@ bool storage_get_mnemonic(char *buf, const uint16_t buf_len) {
     uint32_t pin_last = storage_get_pin_last();
     uint32_t pin_count = storage_get_pin_count();
     
-    SCREEN_SAVE;
 
     for(;;) { // Loop will exit upon successful PIN or cancellation
         uint32_t pin_attempts = pin_count - pin_last;
@@ -88,16 +86,18 @@ bool storage_get_mnemonic(char *buf, const uint16_t buf_len) {
         sprintf(title, "Enter Pin (%d/%d)", pin_attempts+1,
                 CONFIG_JOLT_DEFAULT_MAX_ATTEMPT);
         CONFIDENTIAL uint256_t pin_hash;
+#if 0
         if( !entry_pin(menu, pin_hash, title) ) {
             // User cancelled vault operation by pressing back
             res = false;
             goto exit;
         }
+#endif
         pin_count++;
         storage_set_pin_count(pin_count); // if this fails, it should reset device
 
-        loading_enable();
-        loading_text_title("Unlocking", TITLE);
+        //loading_enable();
+        //loading_text_title("Unlocking", TITLE);
         bool unlock_success;
 #if CONFIG_JOLT_STORE_INTERNAL
         unlock_success = storage_internal_get_mnemonic(bin, pin_hash);
@@ -105,7 +105,7 @@ bool storage_get_mnemonic(char *buf, const uint16_t buf_len) {
         unlock_success = storage_ataes132a_get_mnemonic(bin, pin_hash);
 #endif
         sodium_memzero(pin_hash, sizeof(pin_hash));
-        loading_disable();
+        //loading_disable();
 
         if( unlock_success ){ // Success
             storage_set_pin_last(pin_count);
@@ -118,11 +118,10 @@ bool storage_get_mnemonic(char *buf, const uint16_t buf_len) {
             goto exit;
         }
         else{
-            menu8g2_display_text_title(menu, "Wrong PIN", TITLE);
+            jolt_gui_text_create(TITLE, "Wrong PIN");
         }
     }
 exit:
-    SCREEN_RESTORE;
     return res;
 }
 
@@ -325,4 +324,3 @@ bool storage_erase_key(char *namespace, char *key) {
 #endif
     return res;
 }
-#endif

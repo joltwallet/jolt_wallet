@@ -10,13 +10,12 @@
 #include <string.h>
 
 #include "../globals.h"
-#include "../gui/entry.h"
-#include "../gui/gui.h"
+//#include "../gui/entry.h"
+#include "jolt_gui/jolt_gui.h"
 #include "../helpers.h"
 #include "../vault.h"
 #include "bipmnemonic.h"
 #include "jolttypes.h"
-#include "menu8g2.h"
 #include "storage.h"
 #include "storage_internal.h"
 #include "aes132_comm_marshaling.h"

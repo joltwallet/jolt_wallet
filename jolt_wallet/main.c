@@ -29,10 +29,11 @@
 #include "helpers.h"
 #include "gui/statusbar.h"
 #endif
+
 //#include "radio/wifi.h"
 #include "globals.h"
-//#include "hal/storage/storage.h"
 #include "hal/i2c.h"
+#include "hal/storage/storage.h"
 #include "syscore/filesystem.h"
 
 
@@ -129,8 +130,6 @@ static void indev_init() {
 
     indev = lv_indev_drv_register(&indev_drv);
     lv_indev_set_group(indev, jolt_gui_store.group.main);
-
-    return indev;
 }
 
 #ifndef UNIT_TESTING
@@ -145,7 +144,7 @@ void app_main() {
     indev_init();
 
     /* Run Key/Value Storage Initialization */
-    //storage_startup();
+    storage_startup();
 
     //u8g2_SetContrast( u8g2, get_display_brightness() );
 
@@ -175,9 +174,6 @@ void app_main() {
 
     //Create main screen obj
     ssd1306_set_whole_display_lighting(&disp_conf, false);
-    lv_obj_t * scr = lv_obj_create(NULL, NULL);
-    lv_scr_load(scr);
-
 
     ESP_LOGI(TAG, "Creating GUI");
     jolt_gui_create();
