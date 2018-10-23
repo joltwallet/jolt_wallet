@@ -17,7 +17,7 @@
 #include "globals.h"
 #include "console.h"
 #include "vault.h"
-#include "helpers.h"
+#include "jolt_helpers.h"
 
 #include "jolt_gui/jolt_gui.h"
 

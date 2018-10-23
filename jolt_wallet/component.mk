@@ -7,6 +7,7 @@ COMPONENT_SRCDIRS := . \
 	hal/aes132_library \
 	jolt_gui \
 	jolt_gui/custom_fonts \
+	jolt_gui/menus \
 	radio \
 	syscore \
 	hal/lv_drivers \

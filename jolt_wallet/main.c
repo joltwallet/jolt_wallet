@@ -14,6 +14,7 @@
 #include "freertos/task.h"
 #include "esp_freertos_hooks.h"
 
+#include <driver/adc.h>
 
 #include "easy_input.h"
 
@@ -30,10 +31,11 @@
 
 #include "console.h"
 #include "radio/wifi.h"
-#include "helpers.h" // todo; move jolt cast into wifi?
+#include "jolt_helpers.h" // todo; move jolt cast into wifi?
 #include "globals.h"
 #include "hal/i2c.h"
 #include "hal/storage/storage.h"
+#include "hal/hw_monitor.h"
 #include "syscore/filesystem.h"
 #include "vault.h"
 
@@ -64,13 +66,23 @@ static void display_init() {
 	io_config.intr_type    = GPIO_INTR_DISABLE;
 	ESP_ERROR_CHECK(gpio_config(&io_config));
 
+    /* These lines are for configuring the ADC for sensing battery voltage;
+     * refactor these to be somewhere else later */
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    // todo: use JOLT_CONFIG_VBATT_SENSE_PIN
+    adc1_config_channel_atten(ADC1_GPIO32_CHANNEL, ADC_ATTEN_DB_11);
 
-    ssd1306_init(&disp_conf);
+
+    ssd1306_init(&disp_conf); // todo error handling
 
     /*inverse screen (180°) */
 #if CONFIG_JOLT_DISPLAY_FLIP
+    ESP_LOGI(TAG, "Flipping Display");
     ssd1306_set_scan_direction_fwd(&disp_conf, true);
     ssd1306_set_segment_remapping_enabled(&disp_conf, false);
+#else
+    ssd1306_set_scan_direction_fwd(&disp_conf, false);
+    ssd1306_set_segment_remapping_enabled(&disp_conf, true);
 #endif
 
     lv_disp_drv_t disp_drv;
@@ -79,9 +91,10 @@ static void display_init() {
     disp_drv.disp_fill = ssd1306_fill;
     disp_drv.disp_map = ssd1306_map;
     lv_disp_drv_register(&disp_drv);
+    ssd1306_set_whole_display_lighting(&disp_conf, false);
+    ssd1306_set_contrast(&disp_conf, 1); // Set brightness to lowest setting; todo: change
 }
 
-static uint32_t last_key;
 static bool easy_input_read(lv_indev_data_t *data) {
     data->state = LV_INDEV_STATE_REL;
 
@@ -102,7 +115,7 @@ static bool easy_input_read(lv_indev_data_t *data) {
 		}
 		else if(input_buf & (1ULL << EASY_INPUT_ENTER)){
             ESP_LOGD(TAG, "enter");
-            data->key = LV_GROUP_KEY_ENTER;
+            lv_group_send_data(jolt_gui_store.group.enter, LV_GROUP_KEY_ENTER);
 		}
         else {
         }
@@ -130,6 +143,16 @@ static void indev_init() {
 
     indev = lv_indev_drv_register(&indev_drv);
     lv_indev_set_group(indev, jolt_gui_store.group.main);
+}
+
+void littlevgl_task() {
+    for( ;; vTaskDelay(1) ) {
+        lv_tick_inc(portTICK_RATE_MS);
+        lv_task_handler();
+        if(ssd1306_need_redraw()) {
+            ssd1306_load_frame_buffer(&disp_conf);
+        }
+    }
 }
 
 #ifndef UNIT_TESTING
@@ -164,27 +187,28 @@ void app_main() {
 
     /* Register lv_tick_task after initializing filesystem because initial
      * SPIFFS formatting temporarily disables cache */
-    esp_register_freertos_tick_hook(lv_tick_task);
+    /* Moving tick updater into explicit task; esp_register_freertos_tick_hook 
+     * causes SPIFFS to fail */
+    //esp_register_freertos_tick_hook(lv_tick_task);
 
     /* Create GUI */
 
     //Create main screen obj
-    ssd1306_set_whole_display_lighting(&disp_conf, false);
 
     ESP_LOGI(TAG, "Creating GUI");
-    jolt_gui_create();
+    jolt_gui_menu_home_create();
+
+    ESP_LOGI(TAG, "Starting Hardware Monitors");
+    xTaskCreate(jolt_hw_monitor_task,
+            "HW_Monitor", 32000, NULL, 3, NULL);
 
     // Initiate Console
     initialize_console();
     start_console();
 
-    // LittleVGL Task Handler
-    for( ;; vTaskDelay(1) ) {
-        lv_task_handler();
-        if(ssd1306_need_redraw()) {
-            ssd1306_load_frame_buffer(&disp_conf);
-        }
-    }
+    xTaskCreate(littlevgl_task,
+                "DrawTask", 28000,
+                NULL, 2, NULL);
 }
 #endif
 

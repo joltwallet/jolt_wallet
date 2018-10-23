@@ -18,7 +18,7 @@
 
 #include "jolttypes.h"
 #include "bipmnemonic.h"
-#include "helpers.h"
+#include "jolt_helpers.h"
 #include "globals.h"
 #include "vault.h"
 #include "hal/storage/storage.h"

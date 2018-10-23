@@ -10,9 +10,9 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
-//#include "vault.h"
+#include "vault.h"
 
-//extern vault_t *vault;
+extern vault_t *vault;
 
 extern volatile SemaphoreHandle_t disp_mutex;
 

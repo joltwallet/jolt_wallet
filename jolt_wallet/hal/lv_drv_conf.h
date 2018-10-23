@@ -168,7 +168,7 @@ static inline int lv_i2c_write(lv_i2c_handle_t i2c_dev, const uint8_t* reg, cons
         ESP_ERROR_CHECK(i2c_master_write_byte(cmd, *reg, ACK_CHECK_EN));
     } 
     if( data_out ) {
-        ESP_ERROR_CHECK(i2c_master_write(cmd, data_out, datalen, ACK_CHECK_EN));
+        ESP_ERROR_CHECK(i2c_master_write(cmd, (uint8_t *)data_out, datalen, ACK_CHECK_EN));
     }
     ESP_ERROR_CHECK(i2c_master_stop(cmd));
     ESP_ERROR_CHECK(i2c_master_cmd_begin(CONFIG_JOLT_I2C_MASTER_NUM, cmd,
@@ -190,6 +190,7 @@ static inline int lv_i2c_read(lv_i2c_handle_t i2c_dev, const uint8_t* reg, void*
     //Do the dependant port here
     // We don't read from ssd1306 displao
     ESP_LOGI("meow", "wasn't expecting lv_i2c_read");
+    printf("wasn't expecting lv_i2c_read\n");
     return 0;
 }
 

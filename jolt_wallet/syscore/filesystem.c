@@ -17,11 +17,11 @@
 #include "ymodem.h"
 
 #include "../console.h"
-#include "../globals.h"
-#include "../jolt_gui/confirmation.h"
-#include "../jolt_gui/jolt_gui.h"
-#include "../helpers.h"
-#include "../vault.h"
+#include "globals.h"
+#include "jolt_gui/confirmation.h"
+#include "jolt_gui/jolt_gui.h"
+#include "jolt_helpers.h"
+#include "vault.h"
 #include "filesystem.h"
 #include "heatshrink_decoder.h"
 
@@ -36,9 +36,7 @@ void filesystem_init() {
       .max_files = 3,
       .format_if_mount_failed = true
     };
-    ESP_LOGI(TAG, "meow");
     ret = esp_vfs_spiffs_register(&conf); // Will format system (nonblocking) if cannot mount SPIFFS
-    ESP_LOGI(TAG, "meow");
     if (ret != ESP_OK) {
         if (ret == ESP_FAIL) {
             ESP_LOGE(TAG, "Failed to mount or format filesystem");
@@ -58,7 +56,7 @@ void filesystem_init() {
     }
 }
 
-uint32_t get_all_fns(char **fns, uint32_t fns_len, const char *ext, bool remove_ext){
+uint32_t jolt_fs_get_all_fns(char **fns, uint32_t fns_len, const char *ext, bool remove_ext){
     /* Returns upto fns_len fns with extension ext and the number of files.
      * If fns is NULL, just return the file count.
      * If ext is NULL, return all files
@@ -82,7 +80,8 @@ uint32_t get_all_fns(char **fns, uint32_t fns_len, const char *ext, bool remove_
             //ent->d_name is a char array of form "cat.jpg"
             // Check if the file has extension ".elf"
             ext_ptr = ent->d_name + strlen(ent->d_name) - strlen(ext);
-            if( !ext || (strlen(ent->d_name)>strlen(ext)  && strcmp(ext_ptr, ext) == 0) ) {
+            if( !ext || (strlen(ent->d_name)>strlen(ext)  
+                        && strcmp(ext_ptr, ext) == 0) ) {
                 tot++;
             }
         }
@@ -93,7 +92,8 @@ uint32_t get_all_fns(char **fns, uint32_t fns_len, const char *ext, bool remove_
     while((ent = readdir(dir)) != NULL) {
         // Check if the file has extension ".elf"
         ext_ptr = ent->d_name + strlen(ent->d_name) - strlen(ext);
-        if( !ext || (strlen(ent->d_name)>strlen(ext)  && strcmp(ext_ptr, ext) == 0) ) {
+        if( !ext || (strlen(ent->d_name)>strlen(ext)  
+                    && strcmp(ext_ptr, ext) == 0) ) {
             uint8_t copy_len = strlen(ent->d_name)+1;
             if( remove_ext ) {
                 copy_len -= strlen(ext);
@@ -111,17 +111,16 @@ uint32_t get_all_fns(char **fns, uint32_t fns_len, const char *ext, bool remove_
     return tot;
 }
 
-char **malloc_char_array(int n) {
-    /* Allocate the pointers for a string array */
-    return (char **) calloc(n, sizeof(char*));
-}
+uint16_t jolt_fs_get_all_elf_fns(char ***fns) {
+    uint16_t n;
 
-void free_char_array(char **arr, int n) {
-    /* Frees the list created by get_all_fns(); */
-    for(uint32_t i=0; i<n; i++) {
-        free(arr[i]);
+    n = jolt_fs_get_all_fns(NULL, 0, ".elf", true);
+    ESP_LOGI(TAG, "Found %x apps.", n);
+    if( n > 0 ) {
+        *fns = jolt_h_malloc_char_array(n);
+        jolt_fs_get_all_fns(*fns, n, ".elf", true);
     }
-    free(arr);
+    return n;
 }
 
 static int file_upload(int argc, char** argv) {

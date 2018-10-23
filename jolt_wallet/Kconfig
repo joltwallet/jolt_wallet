@@ -280,4 +280,12 @@ menu "Jolt Wallet"
                 Factory reset WiFi pass
     endmenu
 
+    config JOLT_VBATT_SENSE_PIN
+        int
+        prompt "PIN to 1/2 voltage divider of VBATT"
+        default 32
+        help
+            Help text here
+
+
 endmenu

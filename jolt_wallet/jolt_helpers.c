@@ -17,7 +17,7 @@
 #include "jolttypes.h"
 #include "bipmnemonic.h"
 
-#include "helpers.h"
+#include "jolt_helpers.h"
 #include "hal/storage/storage.h"
 #include "globals.h"
 
@@ -113,3 +113,18 @@ void shuffle_arr(uint8_t *arr, int arr_len) {
     }
     sodium_memzero(&tmp, sizeof(uint8_t));
 }
+
+char **jolt_h_malloc_char_array(int n) {
+    /* Allocate the pointers for a string array */
+    return (char **) calloc(n, sizeof(char*));
+}
+
+void jolt_h_free_char_array(char **arr, int n) {
+    /* Frees the list created by get_all_fns(); */
+    for(uint32_t i=0; i<n; i++) {
+        free(arr[i]);
+    }
+    free(arr);
+}
+
+

@@ -2,3 +2,5 @@ sdkconfig*
 !sdkconfig.defaults
 build/
 *.DS_Store
+.*project
+.settings

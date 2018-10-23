@@ -19,8 +19,8 @@
 #include "nvs.h"
 
 #include "wifi.h"
-#include "../vault.h"
-#include "../helpers.h"
+#include "vault.h"
+#include "jolt_helpers.h"
 #include "hal/storage/storage.h"
 
 static const char *TAG = "wifi_task";
@@ -114,29 +114,6 @@ void wifi_connect(){
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
     ESP_ERROR_CHECK(esp_wifi_start());
     //ESP_ERROR_CHECK(esp_wifi_connect());
-}
-
-uint8_t get_wifi_strength(){
-    /* 0 - no wifi
-     * 1 - weak
-     * 2 - medium
-     * 3 - strong
-     */
-    //return 0; //todo: esp_wifi_sta_get_ap_info reboots on virgin boot
-    wifi_ap_record_t ap_info;
-    if(esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK){
-        return 0;
-    }
-
-    if (ap_info.rssi >= -55) {
-        return 3;
-    }
-    else if (ap_info.rssi >= -75) {
-        return 2;
-    }
-    else {
-        return 1;
-    }
 }
 
 void get_ap_info(char * ssid_info, size_t size){

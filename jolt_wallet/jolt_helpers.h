@@ -19,4 +19,7 @@ uint8_t get_display_brightness();
 void save_display_brightness(uint8_t brightness);
 void set_jolt_cast();
 
+char **jolt_h_malloc_char_array(int n);
+void jolt_h_free_char_array(char **arr, int n);
+
 #endif

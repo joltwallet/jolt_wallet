@@ -16,12 +16,12 @@
 #include "esp_spiffs.h"
 #include "elfloader.h"
 
-#include "../console.h"
-#include "../globals.h"
-#include "../jolt_gui/jolt_gui.h"
-#include "../helpers.h"
-#include "../jolt_lib.h"
-#include "../vault.h"
+#include "console.h"
+#include "globals.h"
+#include "jolt_gui/jolt_gui.h"
+#include "jolt_helpers.h"
+#include "jolt_lib.h"
+#include "vault.h"
 #include "filesystem.h"
 #include "jolt_lib.h"
 

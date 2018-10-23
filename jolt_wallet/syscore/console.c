@@ -19,11 +19,11 @@
 #include "filesystem.h"
 #include "launcher.h"
 
-#include "../globals.h"
-#include "../console.h"
-#include "../vault.h"
-#include "../helpers.h"
-#include "../radio/wifi.h"
+#include "globals.h"
+#include "console.h"
+#include "vault.h"
+#include "jolt_helpers.h"
+#include "radio/wifi.h"
 #include "hal/storage/storage.h"
 
 #include "../console.h"
