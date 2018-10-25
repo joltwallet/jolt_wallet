@@ -145,13 +145,17 @@ static void indev_init() {
     lv_indev_set_group(indev, jolt_gui_store.group.main);
 }
 
+
 void littlevgl_task() {
+    jolt_gui_store.mutex = xSemaphoreCreateMutex();
     for( ;; vTaskDelay(1) ) {
+        xSemaphoreTake( jolt_gui_store.mutex, portMAX_DELAY );
         lv_tick_inc(portTICK_RATE_MS);
         lv_task_handler();
         if(ssd1306_need_redraw()) {
             ssd1306_load_frame_buffer(&disp_conf);
         }
+        xSemaphoreGive( jolt_gui_store.mutex );
     }
 }
 
