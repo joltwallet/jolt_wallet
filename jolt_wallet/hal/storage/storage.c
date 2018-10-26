@@ -118,7 +118,7 @@ bool storage_get_mnemonic(char *buf, const uint16_t buf_len) {
             goto exit;
         }
         else{
-            jolt_gui_text_create(TITLE, "Wrong PIN");
+            jolt_gui_scr_text_create(TITLE, "Wrong PIN");
         }
     }
 exit:

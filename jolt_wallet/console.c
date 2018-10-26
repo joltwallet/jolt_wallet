@@ -114,12 +114,12 @@ void menu_console(lv_obj_t * list_btn){
 
     if(console_h){
         ESP_LOGI(TAG, "Console already running.");
-        jolt_gui_text_create(TITLE, "Console is already running.");
+        jolt_gui_scr_text_create(TITLE, "Console is already running.");
     }
     else{
         ESP_LOGI(TAG, "Starting console.");
         start_console();
-        jolt_gui_text_create(TITLE, "Console Started.");
+        jolt_gui_scr_text_create(TITLE, "Console Started.");
     }
 }
 

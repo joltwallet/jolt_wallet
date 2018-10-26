@@ -242,13 +242,6 @@ menu "Jolt Wallet"
                 bool "Encodes using QR alphanumeric XRB-"
         endchoice
 
-        config JOLT_QR_VERSION
-            int
-            prompt "QR Version"
-            default 6
-            help
-                Determines QR Code size
-
         config JOLT_QR_SCALE
             int
             prompt "Pixel-wise QR code scale multiplier"
