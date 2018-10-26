@@ -250,6 +250,30 @@ menu "Jolt Wallet"
                 Integer dimension multipler. Leave as 1 for 1 pixel per square
     endmenu
 
+    menu "Task Priority"
+        config JOLT_TASK_PRIORITY_LVGL
+            int
+            prompt "LittleVGL Task Priority"
+            default 17
+            help
+                help text here.
+
+        config JOLT_TASK_PRIORITY_HW_MONITORS
+            int
+            prompt "Hardware Monitors Task Priority"
+            default 2
+            help
+                help text here.
+
+        config JOLT_TASK_PRIORITY_CONSOLE
+            int
+            prompt "Console Task Priority"
+            default 19
+            help
+                help text here.
+
+    endmenu
+
     config JOLT_VAULT_RPC_QUEUE_LEN
         int
         prompt "Vault RPC queue length"
