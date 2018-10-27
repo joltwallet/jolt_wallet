@@ -33,6 +33,8 @@ static const char* TAG = "syscore_launcher";
 #define LOADER_FD_FREE free
 #endif
 
+static lv_action_t launcher_app_exit(lv_obj_t *btn);
+
 bool check_elf_valid(char *fn) {
     /* Checks ths signature file for a given basename fn*/
     // TODO implement
@@ -46,8 +48,11 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
      * Launches the app's function with same name as func
      */
     int return_code = -1;
-    ELFLoaderContext_t *ctx = NULL;
-    uint32_t *data = NULL;
+    if( NULL != jolt_gui_store.app.ctx ) {
+        ESP_LOGE(TAG, "An app is already running");
+        return -1;
+    }
+
     LOADER_FD_T program = NULL;
 
     // Parse Exec Filename
@@ -65,7 +70,7 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
     // todo: Make sure both files exist
     if( check_file_exists(exec_fn) != 1 ){
         ESP_LOGE(TAG, "Executable doesn't exist\n");
-        goto exit;
+        return -2;
     }
 
     // TODO: Verify File Signature Here
@@ -77,73 +82,66 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
     }
 #endif
 
-// Reading the whole App to memory is 1~2 orders of magnitude faster
-// than POSIX ops on file pointers
-#if CONFIG_ELFLOADER_MEMORY_POINTER
-
-#if CONFIG_JOLT_APP_COMPRESS
+    // Reading the whole App to memory is 1~2 orders of magnitude faster
+    // than POSIX ops on file pointers
     ESP_LOGI(TAG, "Decompressing %s", exec_fn);
     if( NULL == (program = decompress_file(exec_fn)) ) {
         ESP_LOGE(TAG, "Error decompressing %s", exec_fn);
-        goto exit;
+        return -3;
     }
     ESP_LOGI(TAG, "mem pointer: %p", program);
     ESP_LOGI(TAG, "first 4 bytes: 0x%08x", *(uint32_t *)program);
-    char *read_buf = program;
-    ESP_LOGI(TAG, "first 4 bytes: 0x%02x%02x%02x%02x", read_buf[0], read_buf[1], read_buf[2], read_buf[3]);
-#else
-    {
-        ESP_LOGI(TAG, "Reading in executable to memory");
-        FILE *f = NULL;
-        f = fopen(exec_fn, "rb");
-        fseek(f, 0, SEEK_END);
-        size_t fsize = ftell(f);
-        fseek(f, 0, SEEK_SET);
-        if( NULL == (program = malloc(fsize)) ) {
-            ESP_LOGE(TAG, "Couldn't allocate space for program buffer.");
-            fclose(f);
-            goto exit;
-        }
-        fread(program, fsize, 1, f);
-        fclose(f);
-    }
-#endif
-
-#elif CONFIG_ELFLOADER_POSIX
-    program = fopen(exec_fn, "rb");
-#endif
 
     ESP_LOGI(TAG, "elfLoader; Initializing");
-    if( NULL == (ctx = elfLoaderInit(program, &env)) ) {
-        goto exit;
+    if( NULL == (jolt_gui_store.app.ctx = elfLoaderInit(program, &env)) ) {
+        elfLoaderFree(jolt_gui_store.app.ctx);
+        jolt_gui_store.app.ctx = NULL;
+        LOADER_FD_FREE(program);
+        return -4;
     }
-    // todo: Load and Relocate in the background while the user enter's their pin
+
     ESP_LOGI(TAG, "elfLoader; Loading Sections");
-    if( NULL == elfLoaderLoad(ctx) ) {
-        goto exit;
+    if( NULL == elfLoaderLoad(jolt_gui_store.app.ctx) ) {
+        elfLoaderFree(jolt_gui_store.app.ctx);
+        jolt_gui_store.app.ctx = NULL;
+        LOADER_FD_FREE(program);
+        return -5;
     }
     ESP_LOGI(TAG, "elfLoader; Relocating");
-    if( NULL == elfLoaderRelocate(ctx) ) {
-        goto exit;
+    if( NULL == elfLoaderRelocate(jolt_gui_store.app.ctx) ) {
+        elfLoaderFree(jolt_gui_store.app.ctx);
+        jolt_gui_store.app.ctx = NULL;
+        LOADER_FD_FREE(program);
+        return -6;
     }
     ESP_LOGI(TAG, "elfLoader; Setting Entrypoint");
-    if( 0 != elfLoaderSetFunc(ctx, func) ) {
-        goto exit;
+    if( 0 != elfLoaderSetFunc(jolt_gui_store.app.ctx, func) ) {
+        elfLoaderFree(jolt_gui_store.app.ctx);
+        jolt_gui_store.app.ctx = NULL;
+        LOADER_FD_FREE(program);
+        return -7;
     }
     {
+        uint32_t *data = NULL;
         size_t data_len;
         uint32_t purpose, coin;
         char bip32_key[33];
 #define PATH_BYTE_LEN 8 // 4 bytes for purpose, 4 bytes for
-        data = elfLoaderLoadSectionByName(ctx, ".coin.path", &data_len);
+        data = elfLoaderLoadSectionByName(jolt_gui_store.app.ctx, ".coin.path", &data_len);
         if( NULL==data ) {
             ESP_LOGE(TAG, "Couldn't allocate for .coin.path");
-            goto exit;
+            elfLoaderFree(jolt_gui_store.app.ctx);
+            jolt_gui_store.app.ctx = NULL;
+            LOADER_FD_FREE(program);
+            return -8;
         }
         if( data_len <= (PATH_BYTE_LEN + 1) || 
                 data_len>=(PATH_BYTE_LEN+sizeof(bip32_key))) {
             ESP_LOGE(TAG, "Valid BIP32_Key not provided in ELF file.");
-            goto exit;
+            elfLoaderFree(jolt_gui_store.app.ctx);
+            jolt_gui_store.app.ctx = NULL;
+            LOADER_FD_FREE(program);
+            return -9;
         }
         purpose = *data;
         coin = *(data+1);
@@ -154,33 +152,33 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         ESP_LOGI(TAG,"Derivation Purpose: 0x%x. Coin Type: 0x%x",
                 purpose, coin);
         ESP_LOGI(TAG, "The following BIP32 Key is %d char long:%s.", bip32_key_len, bip32_key);
+        // todo: set the vault here
+#if 0
         if( !vault_set(purpose, coin, bip32_key) ) {
             ESP_LOGI(TAG, "User aborted app launch at PIN screen");
             goto exit;
         }
+#endif
     }
 
     LOADER_FD_FREE(program);
-    program = NULL;
 
     ESP_LOGI(TAG, "Launching App");
-    return_code = elfLoaderRun(ctx, app_argc, app_argv);
-    ESP_LOGI(TAG, "App closed");
+    /* todo: don't release app resources when it returns; release app resources when the menu is closed */
+    jolt_gui_store.app.scr = (lv_obj_t *)elfLoaderRun(jolt_gui_store.app.ctx, app_argc, app_argv);
+    jolt_gui_scr_set_back_action(jolt_gui_store.app.scr, launcher_app_exit);
 
-    return_code = 0;
+    return 0;
+}
 
-exit:
-    if( NULL != ctx ) {
-        elfLoaderFree(ctx);
-    }
-    if( NULL != program ){
-        LOADER_FD_FREE(program);
-    }
-    if( NULL != data ){
-        free(data);
-    }
-
-    return return_code;
+static lv_action_t launcher_app_exit(lv_obj_t *btn) {
+    /* Delete the app menu and free up the app memory */
+    ESP_LOGI(TAG, "Exitting App");
+    lv_obj_del(jolt_gui_store.app.scr);
+    jolt_gui_store.app.scr = NULL;
+    elfLoaderFree(jolt_gui_store.app.ctx);
+    jolt_gui_store.app.ctx = NULL;
+    return 0;
 }
 
 static int launcher_run(int argc, char** argv) {

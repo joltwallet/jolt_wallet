@@ -28,6 +28,7 @@
 #include "globals.h"
 #include "hal/storage/storage.h"
 #include "jolt_helpers.h"
+#include "jolt_gui/jolt_gui.h"
 #include "syscore/filesystem.h"
 #include "vault.h"
 
@@ -35,12 +36,16 @@ extern void *__floatsidf;
 extern void *__gtdf2;
 extern void *__ltdf2;
 extern void *__muldf3;
+extern void *__stack_chk_fail;
+extern void *__stack_chk_guard;
 
 const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL_PTR( __floatsidf ),
     EXPORT_SYMBOL_PTR( __gtdf2 ),
     EXPORT_SYMBOL_PTR( __ltdf2 ),
     EXPORT_SYMBOL_PTR( __muldf3 ),
+    EXPORT_SYMBOL_PTR( __stack_chk_fail ),
+    EXPORT_SYMBOL_PTR( __stack_chk_guard ),
     EXPORT_SYMBOL( _esp_error_check_failed ),
     EXPORT_SYMBOL( atoi ),
     EXPORT_SYMBOL( atol ),
@@ -82,6 +87,8 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( hd_node_copy ),
     EXPORT_SYMBOL( hd_node_iterate ),
     EXPORT_SYMBOL( heap_caps_calloc ),
+    EXPORT_SYMBOL( jolt_gui_scr_menu_add ),
+    EXPORT_SYMBOL( jolt_gui_scr_menu_create ),
     EXPORT_SYMBOL( linenoise ),
     EXPORT_SYMBOL( malloc ),
     EXPORT_SYMBOL( mbedtls_mpi_add_abs ),
