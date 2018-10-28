@@ -12,9 +12,8 @@ bool storage_startup();
 
 bool storage_exists_mnemonic();
 
-/* Get/Stores Mnemonic. Has access to pin_hash or will prompt for pin_hash */
-void storage_set_mnemonic(uint256_t bin, uint256_t pin_hash);
-bool storage_get_mnemonic(char *buf, const uint16_t buf_len);
+void storage_set_mnemonic(uint256_t bin, const uint256_t pin_hash);
+bool storage_get_mnemonic(const uint256_t bin, const uint256_t pin_hash);
 
 uint32_t storage_get_pin_count();
 void storage_set_pin_count();

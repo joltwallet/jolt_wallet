@@ -56,7 +56,7 @@ bool storage_exists_mnemonic() {
    return res;
 }
 
-void storage_set_mnemonic(uint256_t bin, uint256_t pin_hash) {
+void storage_set_mnemonic(uint256_t bin, const uint256_t pin_hash) {
     /* store binary mnemonic */
 #if CONFIG_JOLT_STORE_INTERNAL
     storage_internal_set_mnemonic(bin, pin_hash);
@@ -66,62 +66,14 @@ void storage_set_mnemonic(uint256_t bin, uint256_t pin_hash) {
     return;
 }
 
-bool storage_get_mnemonic(char *buf, const uint16_t buf_len) {
-    /* prompt user for pin, returns 256-bit mnemonic from storage 
-     * Returns true if mnemonic is returned; false if user cancelled
-     * */
+bool storage_get_mnemonic(const uint256_t bin, const uint256_t pin_hash) {
+    /* Gets mnemonic for supplied pin hash */
     bool res;
-    CONFIDENTIAL uint256_t bin; // binary mnemonic
-
-    uint32_t pin_last = storage_get_pin_last();
-    uint32_t pin_count = storage_get_pin_count();
-    
-
-    for(;;) { // Loop will exit upon successful PIN or cancellation
-        uint32_t pin_attempts = pin_count - pin_last;
-        if( pin_attempts >= CONFIG_JOLT_DEFAULT_MAX_ATTEMPT ) {
-            storage_factory_reset();
-        }
-        char title[20];
-        sprintf(title, "Enter Pin (%d/%d)", pin_attempts+1,
-                CONFIG_JOLT_DEFAULT_MAX_ATTEMPT);
-        CONFIDENTIAL uint256_t pin_hash;
-#if 0
-        if( !entry_pin(menu, pin_hash, title) ) {
-            // User cancelled vault operation by pressing back
-            res = false;
-            goto exit;
-        }
-#endif
-        pin_count++;
-        storage_set_pin_count(pin_count); // if this fails, it should reset device
-
-        //loading_enable();
-        //loading_text_title("Unlocking", TITLE);
-        bool unlock_success;
 #if CONFIG_JOLT_STORE_INTERNAL
-        unlock_success = storage_internal_get_mnemonic(bin, pin_hash);
+        res = storage_internal_get_mnemonic(bin, pin_hash);
 #elif CONFIG_JOLT_STORE_ATAES132A
-        unlock_success = storage_ataes132a_get_mnemonic(bin, pin_hash);
+        res = storage_ataes132a_get_mnemonic(bin, pin_hash);
 #endif
-        sodium_memzero(pin_hash, sizeof(pin_hash));
-        //loading_disable();
-
-        if( unlock_success ){ // Success
-            storage_set_pin_last(pin_count);
-            if( E_SUCCESS != bm_bin_to_mnemonic(buf, buf_len, bin, 256) ) {
-                esp_restart();
-            }
-            sodium_memzero(bin, sizeof(bin));
-            ESP_LOGI(TAG, "Correct PIN.");
-            res = true;
-            goto exit;
-        }
-        else{
-            jolt_gui_scr_text_create(TITLE, "Wrong PIN");
-        }
-    }
-exit:
     return res;
 }
 

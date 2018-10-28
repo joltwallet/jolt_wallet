@@ -215,7 +215,3 @@ void app_main() {
                 NULL, CONFIG_JOLT_TASK_PRIORITY_LVGL, NULL);
 }
 #endif
-
-static void lv_tick_task(void) {
-    lv_tick_inc(portTICK_RATE_MS);
-}

@@ -33,7 +33,8 @@ static const char* TAG = "syscore_launcher";
 #define LOADER_FD_FREE free
 #endif
 
-static lv_action_t launcher_app_exit(lv_obj_t *btn);
+static lv_action_t launch_app_exit(lv_obj_t *btn);
+static lv_action_t launch_app_from_store(lv_obj_t *btn);
 
 bool check_elf_valid(char *fn) {
     /* Checks ths signature file for a given basename fn*/
@@ -147,37 +148,57 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         coin = *(data+1);
         size_t bip32_key_len = data_len-PATH_BYTE_LEN; // Not including null terminator
         strncpy(bip32_key, &((char *)data)[PATH_BYTE_LEN], bip32_key_len);
-#undef PATH_BYTE_LEN
-        bip32_key[bip32_key_len] = '\0';
+        bip32_key[bip32_key_len] = '\0'; // Null terminate string
         ESP_LOGI(TAG,"Derivation Purpose: 0x%x. Coin Type: 0x%x",
                 purpose, coin);
-        ESP_LOGI(TAG, "The following BIP32 Key is %d char long:%s.", bip32_key_len, bip32_key);
-        // todo: set the vault here
+        ESP_LOGI(TAG, "The following BIP32 Key is %d char long:%s.",
+                bip32_key_len, bip32_key);
+#undef PATH_BYTE_LEN
+
+        /* now that all runtime data has been extracted from the decompressed 
+         * ELF file, we can free that memory */
+        LOADER_FD_FREE(program); // Unload decompressed ELF
+
+        jolt_gui_store.app.argc = app_argc;
+        jolt_gui_store.app.argv = app_argv;
+        vault_set(purpose, coin, bip32_key, 
+                launch_app_exit, launch_app_from_store);
+    }
 #if 0
         if( !vault_set(purpose, coin, bip32_key) ) {
             ESP_LOGI(TAG, "User aborted app launch at PIN screen");
             goto exit;
         }
-#endif
     }
-
-    LOADER_FD_FREE(program);
 
     ESP_LOGI(TAG, "Launching App");
     /* todo: don't release app resources when it returns; release app resources when the menu is closed */
     jolt_gui_store.app.scr = (lv_obj_t *)elfLoaderRun(jolt_gui_store.app.ctx, app_argc, app_argv);
-    jolt_gui_scr_set_back_action(jolt_gui_store.app.scr, launcher_app_exit);
+    jolt_gui_scr_set_back_action(jolt_gui_store.app.scr, launch_app_exit);
+#endif
 
     return 0;
 }
 
-static lv_action_t launcher_app_exit(lv_obj_t *btn) {
+static lv_action_t launch_app_from_store(lv_obj_t *btn) {
+    ESP_LOGI(TAG, "Launching App");
+    jolt_gui_store.app.scr = (lv_obj_t *)elfLoaderRun(jolt_gui_store.app.ctx, jolt_gui_store.app.argc, jolt_gui_store.app.argv);
+    jolt_gui_scr_set_back_action(jolt_gui_store.app.scr, launch_app_exit);
+    return 0;
+}
+
+static lv_action_t launch_app_exit(lv_obj_t *btn) {
     /* Delete the app menu and free up the app memory */
-    ESP_LOGI(TAG, "Exitting App");
-    lv_obj_del(jolt_gui_store.app.scr);
-    jolt_gui_store.app.scr = NULL;
-    elfLoaderFree(jolt_gui_store.app.ctx);
-    jolt_gui_store.app.ctx = NULL;
+    if( NULL != jolt_gui_store.app.scr ) {
+        ESP_LOGI(TAG, "Deleting App Screen.");
+        lv_obj_del(jolt_gui_store.app.scr);
+        jolt_gui_store.app.scr = NULL;
+    }
+    if( NULL != jolt_gui_store.app.ctx ) {
+        ESP_LOGI(TAG, "Exitting App");
+        elfLoaderFree(jolt_gui_store.app.ctx);
+        jolt_gui_store.app.ctx = NULL;
+    }
     return 0;
 }
 

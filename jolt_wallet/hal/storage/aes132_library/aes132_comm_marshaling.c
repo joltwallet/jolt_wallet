@@ -28,7 +28,7 @@
 
 #include "esp_log.h"
 #include "sodium.h"
-#include "hal/storage.h"
+#include "hal/storage/storage.h"
 
 static const char TAG[] = "aes132m";
 

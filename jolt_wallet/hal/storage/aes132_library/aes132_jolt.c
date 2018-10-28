@@ -10,7 +10,7 @@
 #include "esp_system.h"
 #include "jolttypes.h"
 #include "sodium.h"
-#include "hal/storage.h"
+#include "hal/storage/storage.h"
 
 static const char TAG[] = "aes132_jolt";
 static uint8_t *master_key = NULL;

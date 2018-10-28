@@ -9,6 +9,7 @@
 #include "nvs.h"
 #include "bipmnemonic.h"
 #include "jolttypes.h"
+#include "lvgl/lvgl.h"
 
 
 /* Structure to store anything that if modified could perform something
@@ -29,7 +30,8 @@ void vault_sem_take();
 void vault_sem_give();
 bool vault_setup();
 void vault_clear();
-bool vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key);
+void vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key,
+        lv_action_t failure_cb, lv_action_t success_cb);
 bool vault_refresh();
 
 #endif
