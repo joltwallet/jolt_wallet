@@ -34,8 +34,9 @@ const char TAG[] = "hal/monitor";
 void jolt_hw_monitor_task() {
     ESP_LOGI(TAG, "Starting hardware monitor task");
     jolt_hw_monitor_init();
-    for( ;; vTaskDelay(pdMS_TO_TICKS(CONFIG_JOLT_HW_MONITOR_UPDATE_PERIOD_MS)) ) {
+    for( ;; ) {
         jolt_hw_monitor_update();
+        vTaskDelay(pdMS_TO_TICKS(CONFIG_JOLT_HW_MONITOR_UPDATE_PERIOD_MS));
     }
 }
 
@@ -46,8 +47,9 @@ static void jolt_hw_monitor_get_battery_level(hardware_monitor_t *monitor) {
      * Cycles for demonstration purpose */
     static uint8_t level = 0;
     level = (level + 10) % 120;
-    int val = adc1_get_raw(ADC1_GPIO32_CHANNEL);
-    //printf("vbatt: %d\n", val);
+    int val = adc1_get_raw(JOLT_ADC1_VBATT);
+    ESP_LOGD(TAG, "vbatt: %d\n", val);
+    // todo: translate this raw adc value to a percentage
     // todo; average, use this value
     MONITOR_UPDATE(level);
 }
