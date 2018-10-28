@@ -2,6 +2,7 @@
 #define __JOLT_HAL_HW_MONITORS_H__
 
 #include <stdint.h>
+#include "sdkconfig.h"
 
 typedef struct hardware_monitor_t {
     uint8_t val;

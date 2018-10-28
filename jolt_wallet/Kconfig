@@ -77,12 +77,27 @@ menu "Jolt Wallet"
             default 0x3C
             help
                 I2C Display's Address prior to left shift.
+
         config JOLT_DISPLAY_PIN_RST
            int
            prompt "Display Reset GPIO"
            default 16
            help
               GPIO thats connected to the display's RST pin.
+
+        config JOLT_HW_MONITOR_UPDATE_PERIOD_MS
+            int
+            prompt "Number of milliseconds between hardware measurements like battery voltage, wifi strenght, etc."
+            default 100
+            help
+                help text here.
+
+        config JOLT_GUI_STATUSBAR_UPDATE_PERIOD_MS
+            int
+            prompt "Number of milliseconds between statusbar updates"
+            default 273
+            help
+                help text here
     endmenu
 
     menu "App Compression"
@@ -304,12 +319,36 @@ menu "Jolt Wallet"
                 Factory reset WiFi pass
     endmenu
 
-    config JOLT_VBATT_SENSE_PIN
-        int
-        prompt "PIN to 1/2 voltage divider of VBATT"
-        default 32
-        help
-            Help text here
+    menu "Battery"
+        config JOLT_VBATT_SENSE_PIN
+            int
+            prompt "PIN to 1/2 voltage divider of VBATT"
+            default 32
+            range 32 39
+            help
+                ADC1 GPIO pin that reads VBATT via a 1/2 voltage divider.
+        config JOLT_VBATT_MIN
+            int
+            prompt "Raw ADC value to be considered 0 percent"
+            default 2000
+            help
+                help text here
+        config JOLT_VBATT_MAX
+            int
+            prompt "Raw ADC value to be considered 100 percent"
+            default 2470
+            help
+                help text here
+        config JOLT_VBATT_AVG_WINDOW
+            int
+            prompt "Number of battery readings to average over"
+            default 10
+            range 1 255
+            help
+                To provide smoother battery voltage readings, we take many 
+                and average them.
+
+    endmenu
 
 
 endmenu

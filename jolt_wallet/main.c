@@ -69,9 +69,7 @@ static void display_init() {
     /* These lines are for configuring the ADC for sensing battery voltage;
      * refactor these to be somewhere else later */
     adc1_config_width(ADC_WIDTH_BIT_12);
-    // todo: use JOLT_CONFIG_VBATT_SENSE_PIN
-    adc1_config_channel_atten(ADC1_GPIO32_CHANNEL, ADC_ATTEN_DB_11);
-
+    adc1_config_channel_atten(JOLT_ADC1_VBATT, ADC_ATTEN_DB_11);
 
     ssd1306_init(&disp_conf); // todo error handling
 

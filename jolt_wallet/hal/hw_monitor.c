@@ -40,18 +40,40 @@ void jolt_hw_monitor_task() {
     }
 }
 
+/* Responds with a value between 0 and 100.
+ * If a value above 100 is returned, the battery is charging.
+ *
+ * Cycles for demonstration purpose */
 static void jolt_hw_monitor_get_battery_level(hardware_monitor_t *monitor) {
-    /* Responds with a value between 0 and 100.
-     * If a value above 100 is returned, the battery is charging.
-     *
-     * Cycles for demonstration purpose */
-    static uint8_t level = 0;
-    level = (level + 10) % 120;
-    int val = adc1_get_raw(JOLT_ADC1_VBATT);
-    ESP_LOGD(TAG, "vbatt: %d\n", val);
+    static uint16_t vals[CONFIG_JOLT_VBATT_AVG_WINDOW] = { 0 }; // store moving average
+    static uint8_t index = 0;
+
+    // todo: check charging gpio
+
+    // Get a new reading
+    index = (index + 1) % sizeof(vals);
+    vals[index] = adc1_get_raw(JOLT_ADC1_VBATT);
+
+    // compute average
+    uint32_t cum = 0;
+    uint8_t n = 0;
+    for(uint8_t i=0; i < sizeof(vals); i++) {
+        if( vals[i] != 0 ) {
+            cum += vals[i];
+            n++;
+        }
+    }
+    uint32_t avg = cum / n;
+
+    uint8_t percentage = 100*(avg - CONFIG_JOLT_VBATT_MIN) / (CONFIG_JOLT_VBATT_MAX - CONFIG_JOLT_VBATT_MIN);
+    if(percentage > 100) {
+        percentage = 100;
+    }
+
+    ESP_LOGD(TAG, "[vbatt] raw: %d   percent: %d\n", avg, percentage);
     // todo: translate this raw adc value to a percentage
-    // todo; average, use this value
-    MONITOR_UPDATE(level);
+    
+    MONITOR_UPDATE(percentage);
 }
 
 static void jolt_hw_monitor_get_bluetooth_level(hardware_monitor_t *monitor) {
