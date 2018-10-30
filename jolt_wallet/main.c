@@ -71,6 +71,7 @@ static void display_init() {
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(JOLT_ADC1_VBATT, ADC_ATTEN_DB_11);
 
+    ESP_LOGI(TAG, "Disp_conf %p", &disp_conf);
     ssd1306_init(&disp_conf); // todo error handling
 
     /*inverse screen (180°) */
@@ -148,7 +149,7 @@ void littlevgl_task() {
     for( uint8_t i = 0;; vTaskDelay(1) ) {
         i = (i+1) % 5;
         lv_tick_inc(portTICK_RATE_MS);
-        if( 0 == i ) {
+        if( 0 == i ) { // need to call this less frequently
             xSemaphoreTake( jolt_gui_store.mutex, portMAX_DELAY );
             lv_task_handler();
             xSemaphoreGive( jolt_gui_store.mutex );

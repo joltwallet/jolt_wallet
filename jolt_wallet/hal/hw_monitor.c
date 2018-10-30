@@ -47,17 +47,22 @@ void jolt_hw_monitor_task() {
 static void jolt_hw_monitor_get_battery_level(hardware_monitor_t *monitor) {
     static uint16_t vals[CONFIG_JOLT_VBATT_AVG_WINDOW] = { 0 }; // store moving average
     static uint8_t index = 0;
+#if 0
+    MONITOR_UPDATE(75);
+    return;
+#endif
 
     // todo: check charging gpio
 
     // Get a new reading
-    index = (index + 1) % sizeof(vals);
-    vals[index] = adc1_get_raw(JOLT_ADC1_VBATT);
+    index = (index + 1) % CONFIG_JOLT_VBATT_AVG_WINDOW;
+    vals[index] = (uint16_t)adc1_get_raw(JOLT_ADC1_VBATT);
+    vals[index] = 100;
 
     // compute average
     uint32_t cum = 0;
     uint8_t n = 0;
-    for(uint8_t i=0; i < sizeof(vals); i++) {
+    for(uint8_t i=0; i < CONFIG_JOLT_VBATT_AVG_WINDOW; i++) {
         if( vals[i] != 0 ) {
             cum += vals[i];
             n++;
@@ -65,13 +70,13 @@ static void jolt_hw_monitor_get_battery_level(hardware_monitor_t *monitor) {
     }
     uint32_t avg = cum / n;
 
-    uint8_t percentage = 100*(avg - CONFIG_JOLT_VBATT_MIN) / (CONFIG_JOLT_VBATT_MAX - CONFIG_JOLT_VBATT_MIN);
+    /* Note: this calculation represents a linear voltage drop assumption. */
+    uint8_t percentage = (uint8_t)(100*(avg - CONFIG_JOLT_VBATT_MIN) / (CONFIG_JOLT_VBATT_MAX - CONFIG_JOLT_VBATT_MIN));
     if(percentage > 100) {
         percentage = 100;
     }
 
     ESP_LOGD(TAG, "[vbatt] raw: %d   percent: %d\n", avg, percentage);
-    // todo: translate this raw adc value to a percentage
     
     MONITOR_UPDATE(percentage);
 }
