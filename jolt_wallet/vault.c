@@ -114,20 +114,25 @@ void vault_clear() {
 
 static lv_action_t cb_vault_set_success = NULL;
 
+/* Gets executed after a successful pin entry.
+ *     * Calls user success callback
+ */
 static lv_action_t pin_success_cb() {
-    /* jolt_gui_store.tmp.mnemonic_bin is populated
-     */
-    CONFIDENTIAL char passphrase[BM_PASSPHRASE_BUF_LEN] = { 0 };
+    /* Pin screen just populated jolt_gui_store.tmp.mnemonic_bin */
     CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN] = { 0 };
     CONFIDENTIAL uint512_t master_seed;
 
     // todo: get passphrase here
-    strlcpy(passphrase, "", sizeof(passphrase)); // dummy placeholder
+    strlcpy(jolt_gui_store.tmp.passphrase, "",
+            sizeof(jolt_gui_store.tmp.passphrase)); // dummy placeholder
     
     bm_bin_to_mnemonic(mnemonic, sizeof(mnemonic),
             jolt_gui_store.tmp.mnemonic_bin, 256);
-    // this is a computationally intense operation
-    bm_mnemonic_to_master_seed(master_seed, mnemonic, passphrase);
+
+    // this is a computationally intense operation;
+    // should really have a loading screen
+    bm_mnemonic_to_master_seed(master_seed, mnemonic,
+            jolt_gui_store.tmp.passphrase);
 
     vault_sem_take();
     bm_master_seed_to_node(&(vault->node), master_seed, vault->bip32_key,
@@ -135,10 +140,12 @@ static lv_action_t pin_success_cb() {
     vault->valid = true;
     vault_sem_give();
 
-    /* Clear all confidential variables */
+    /* We now have a child node;
+     * Clear all confidential variables */
     sodium_memzero(jolt_gui_store.tmp.mnemonic_bin,
             sizeof(jolt_gui_store.tmp.mnemonic_bin));
-    sodium_memzero(passphrase, sizeof(passphrase));
+    sodium_memzero(jolt_gui_store.tmp.passphrase,
+            sizeof(jolt_gui_store.tmp.passphrase));
     sodium_memzero(mnemonic, sizeof(mnemonic));
     sodium_memzero(master_seed, sizeof(master_seed));
 
@@ -170,6 +177,7 @@ void vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key,
 
     // todo: check if vault is valid and has same params
 
+    /* Populate Vault with derivation parameters */
     vault_sem_take();
     sodium_mprotect_readwrite(vault);
     vault->valid = false; // probably redundant
@@ -179,7 +187,13 @@ void vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key,
     sodium_mprotect_readonly(vault);
     vault_sem_give();
 
-    jolt_gui_scr_pin_create(failure_cb, success_cb);
+    /* Set success callback wrapper */
+    cb_vault_set_success = success_cb;
+
+    /* pin_success_cb: continues mnemonic retrieval
+     * failure_cb:
+     */
+    jolt_gui_scr_pin_create(failure_cb, pin_success_cb);
     return;
 #if 0
     bool res;

@@ -159,6 +159,7 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
          * ELF file, we can free that memory */
         LOADER_FD_FREE(program); // Unload decompressed ELF
 
+        /* Prepare vault for app launching. This creates the PIN entry screen */
         jolt_gui_store.app.argc = app_argc;
         jolt_gui_store.app.argv = app_argv;
         vault_set(purpose, coin, bip32_key, 

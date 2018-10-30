@@ -171,8 +171,10 @@ static inline int lv_i2c_write(lv_i2c_handle_t i2c_dev, const uint8_t* reg, cons
         ESP_ERROR_CHECK(i2c_master_write(cmd, (uint8_t *)data_out, datalen, ACK_CHECK_EN));
     }
     ESP_ERROR_CHECK(i2c_master_stop(cmd));
+    // todo: take i2c mutex
     ESP_ERROR_CHECK(i2c_master_cmd_begin(CONFIG_JOLT_I2C_MASTER_NUM, cmd,
             CONFIG_JOLT_I2C_TIMEOUT_MS / portTICK_RATE_MS));
+    // todo: give i2c mutex
     i2c_cmd_link_delete(cmd);
     return 0;
 }
@@ -188,10 +190,7 @@ static inline int lv_i2c_write(lv_i2c_handle_t i2c_dev, const uint8_t* reg, cons
 static inline int lv_i2c_read(lv_i2c_handle_t i2c_dev, const uint8_t* reg, void* data_in, uint16_t datalen)
 {
     //Do the dependant port here
-    // We don't read from ssd1306 displao
-    ESP_LOGI("meow", "wasn't expecting lv_i2c_read");
-    printf("wasn't expecting lv_i2c_read\n");
-    return 0;
+    return 1;
 }
 
 /**
@@ -205,8 +204,6 @@ static inline int lv_i2c_read(lv_i2c_handle_t i2c_dev, const uint8_t* reg, void*
 static inline int lv_i2c_write16(lv_i2c_handle_t i2c_dev, const uint16_t* reg, const void* data_out, uint16_t datalen)
 {
     //Do the dependant port here
-    // Not Used
-    ESP_LOGI("meow", "wasn't expecting lv_i2c_write16");
     return 1;
 }
 
@@ -221,8 +218,6 @@ static inline int lv_i2c_write16(lv_i2c_handle_t i2c_dev, const uint16_t* reg, c
 static inline int lv_i2c_read16(lv_i2c_handle_t i2c_dev, const uint16_t* reg, void* data_in, uint16_t datalen)
 {
     //Do the dependant port here
-    // Not Used
-    ESP_LOGI("meow", "wasn't expecting lv_i2c_read16");
     return 1;
 }
 

@@ -86,10 +86,10 @@ static void display_init() {
     lv_disp_drv_t disp_drv;
     lv_disp_drv_init(&disp_drv);
     disp_drv.disp_flush = ssd1306_flush;
-    disp_drv.disp_fill = ssd1306_fill;
-    disp_drv.disp_map = ssd1306_map;
+    disp_drv.vdb_wr = ssd1306_vdb_wr;
     lv_disp_drv_register(&disp_drv);
     ssd1306_set_whole_display_lighting(&disp_conf, false);
+    ssd1306_set_inversion(&disp_conf, true);
     ssd1306_set_contrast(&disp_conf, 1); // Set brightness to lowest setting; todo: change
 }
 
@@ -145,15 +145,14 @@ static void indev_init() {
 
 
 void littlevgl_task() {
-    jolt_gui_store.mutex = xSemaphoreCreateMutex();
-    for( ;; vTaskDelay(1) ) {
-        xSemaphoreTake( jolt_gui_store.mutex, portMAX_DELAY );
+    for( uint8_t i = 0;; vTaskDelay(1) ) {
+        i = (i+1) % 5;
         lv_tick_inc(portTICK_RATE_MS);
-        lv_task_handler();
-        if(ssd1306_need_redraw()) {
-            ssd1306_load_frame_buffer(&disp_conf);
+        if( 0 == i ) {
+            xSemaphoreTake( jolt_gui_store.mutex, portMAX_DELAY );
+            lv_task_handler();
+            xSemaphoreGive( jolt_gui_store.mutex );
         }
-        xSemaphoreGive( jolt_gui_store.mutex );
     }
 }
 
@@ -166,6 +165,7 @@ void app_main() {
     /* Initialize LVGL graphics system */
     lv_init();
     display_init();
+    jolt_gui_store.mutex = xSemaphoreCreateMutex();
     indev_init();
 
     /* Run Key/Value Storage Initialization */
@@ -209,7 +209,7 @@ void app_main() {
     start_console();
 
     xTaskCreate(littlevgl_task,
-                "DrawTask", 28000,
+                "DrawTask", 32000,
                 NULL, CONFIG_JOLT_TASK_PRIORITY_LVGL, NULL);
 }
 #endif
