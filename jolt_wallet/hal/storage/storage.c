@@ -44,6 +44,15 @@ bool storage_startup() {
    return res;
 }
 
+void storage_stretch_task(jolt_key_stretch_t *stretch) {
+#if CONFIG_JOLT_STORE_INTERNAL
+    storage_internal_stretch_task(stretch);
+#elif CONFIG_JOLT_STORE_ATAES132A
+    // todo
+#endif
+    vTaskDelete(NULL);
+}
+
 bool storage_exists_mnemonic() {
     /* Checks if a mnemonic has been previously setup on the device.
      * Returns true if mnemonic has been setup; false otherwise*/
@@ -265,7 +274,6 @@ void storage_factory_reset() {
     storage_ataes132a_factory_reset(); 
 #endif
 }
-
 
 bool storage_erase_key(char *namespace, char *key) {
     bool res;

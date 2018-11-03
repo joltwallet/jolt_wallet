@@ -92,6 +92,15 @@ menu "Jolt Wallet"
             help
                 help text here.
 
+    endmenu
+
+    menu "GUI"
+        config JOLT_GUI_LOADING_BAR_ANIM_MS
+            int
+            prompt "Loading bar animation catchup time in ms"
+            default 100
+            help
+                help text here
         config JOLT_GUI_STATUSBAR_UPDATE_PERIOD_MS
             int
             prompt "Number of milliseconds between statusbar updates"
@@ -291,6 +300,13 @@ menu "Jolt Wallet"
             int
             prompt "App Launcher Task Priority"
             default 10
+            help
+                help text here.
+
+        config JOLT_TASK_PRIORITY_STRETCH
+            int
+            prompt "PIN Stretch Task Priority"
+            default 2
             help
                 help text here.
 

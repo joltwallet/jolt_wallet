@@ -20,6 +20,7 @@
 #include "bipmnemonic.h"
 #include "jolttypes.h"
 #include "storage.h"
+#include "joltcrypto.h"
 
 static const char* TAG = "storage_internal";
 static const char* TITLE = "Storage Access";
@@ -51,6 +52,23 @@ bool storage_internal_startup() {
     return true;
 }
 
+/* To be called via xTaskCreate() */
+void storage_internal_stretch_task(jolt_key_stretch_t *stretch) {
+    CONFIDENTIAL uint512_t buf;
+    pbkdf2_hmac_sha512_progress((uint8_t *)"joltstretch", 11, 
+            stretch->key, 32,
+            buf, sizeof(buf), 2048, &(stretch->progress));
+    // fold buf in half via xor to make it 256 bit
+    for(uint8_t i=0; i < 32; i++) {
+        buf[i] ^= buf[i+32];
+    }
+    memcpy(stretch->key, buf, 32);
+
+    /* Clean up all stretching activities */
+    sodium_memzero(buf, sizeof(buf));
+    stretch->progress = 101; // Setup >100 percent to show its completely done
+}
+
 bool storage_internal_exists_mnemonic() {
     /* Returens true if mnemonic exists, false otherwise */
     bool res;
@@ -63,11 +81,7 @@ bool storage_internal_exists_mnemonic() {
 }
 
 void storage_internal_set_mnemonic(uint256_t bin, uint256_t pin_hash) {
-    // encrypt; only purpose is to reduce mnemonic redundancy to make a
-    // frozen data remanence attack infeasible. Also convenient pin
-    // checking. Nonce is irrelevant for this encryption.
-    //
-    // Also resets the pin_attempts counter
+    /* Only uses a crypto_secretbox for easy pin checking */
     CONFIDENTIAL unsigned char enc_bin[
             crypto_secretbox_MACBYTES + sizeof(uint256_t)];
     uint256_t nonce = {0};
@@ -80,10 +94,12 @@ void storage_internal_set_mnemonic(uint256_t bin, uint256_t pin_hash) {
     init_nvs_namespace(&h, "secret");
     nvs_erase_all(h);
     nvs_set_blob(h, "mnemonic", enc_bin, sizeof(enc_bin));
-    nvs_set_u8(h, "pin_attempts", 0);
+    nvs_set_u32(h, "pin_attempts", 0);
     nvs_commit(h);
     nvs_close(h);
     sodium_memzero(enc_bin, sizeof(enc_bin));
+    storage_set_pin_count(0);
+    storage_set_pin_last(0);
     return;
 }
 
@@ -103,16 +119,43 @@ bool storage_internal_get_mnemonic(uint256_t mnemonic, uint256_t pin_hash) {
      *  * Save 256-bits and convert it upon load instead of storing and loading 
      *    the whole mnemonic string
      */
+
+    /* Todo: move some of this logic into generic storage.c */
     CONFIDENTIAL unsigned char enc_mnemonic[
             crypto_secretbox_MACBYTES + sizeof(uint256_t)];
     size_t required_size = sizeof(enc_mnemonic);
     uint256_t nonce = {0};
+
+    /* Increment pin attempt counter before attempting decrypt */
+    uint32_t pin_count = storage_get_pin_count();
+    ESP_LOGI(TAG, "Attempt Counter Before attempting decrypt: %d", pin_count);
+    uint32_t last_count = storage_get_pin_last();
+    ESP_LOGI(TAG, "Last Counter Before attempting decrypt: %d", pin_count);
+    if(pin_count - last_count > CONFIG_JOLT_DEFAULT_MAX_ATTEMPT) {
+        ESP_LOGE(TAG, "Max PIN attempt limit reached. Factory Resetting.");
+        storage_factory_reset();
+    }
+
+    if(pin_count > pin_count + 1) {
+        // Overflow
+        ESP_LOGE(TAG, "Cannot increment PIN; max count achieved.");
+        esp_restart();
+    }
+    pin_count++;
+    ESP_LOGI(TAG, "Attempt Counter incremented to: %d. Writing to storage.", pin_count);
+    storage_set_pin_count(pin_count);
 
     ESP_LOGI(TAG, "Opening [secret] namespace to load encrypted mnemonic.");
     storage_get_blob(enc_mnemonic, &required_size, "secret", "mnemonic");
     uint8_t decrypt_result = crypto_secretbox_open_easy( (unsigned char *)mnemonic,
             enc_mnemonic, required_size, nonce, pin_hash);
     sodium_memzero(enc_mnemonic, sizeof(enc_mnemonic));
+
+    /* Save Pin Count if successful */
+    if( 0 == decrypt_result ) {
+        storage_set_pin_last(pin_count);
+    }
+
     return 0 == decrypt_result;
 }
 

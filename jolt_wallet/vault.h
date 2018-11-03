@@ -32,6 +32,6 @@ bool vault_setup();
 void vault_clear();
 void vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key,
         lv_action_t failure_cb, lv_action_t success_cb);
-bool vault_refresh();
+void vault_refresh(lv_action_t failure_cb, lv_action_t success_cb);
 
 #endif

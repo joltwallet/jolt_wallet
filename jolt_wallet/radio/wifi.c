@@ -136,10 +136,7 @@ void get_ap_info(char * ssid_info, size_t size){
 }
 
 bool set_wifi_credentials(char *ssid, char *pass) {
-    /* Requires a reboot for credentials to take effect */
-    if( !vault_refresh() ) {
-        return false;
-    }
+    //todo: require being unlocked
     storage_set_str(ssid, "user", "wifi_ssid");
     storage_set_str(pass, "user", "wifi_pass");
 

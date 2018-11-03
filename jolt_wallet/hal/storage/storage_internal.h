@@ -10,6 +10,8 @@
 
 bool storage_internal_startup();
 
+void storage_internal_stretch_task(jolt_key_stretch_t *jolt_key_stretch);
+
 bool storage_internal_exists_mnemonic();
 
 void storage_internal_set_mnemonic(uint256_t bin, uint256_t pin_hash);

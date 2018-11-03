@@ -15,6 +15,7 @@
 #include "esp_freertos_hooks.h"
 
 #include <driver/adc.h>
+#include "esp_adc_cal.h"
 
 #include "easy_input.h"
 

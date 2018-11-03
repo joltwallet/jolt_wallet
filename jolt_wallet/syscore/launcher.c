@@ -165,19 +165,6 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         vault_set(purpose, coin, bip32_key, 
                 launch_app_exit, launch_app_from_store);
     }
-#if 0
-        if( !vault_set(purpose, coin, bip32_key) ) {
-            ESP_LOGI(TAG, "User aborted app launch at PIN screen");
-            goto exit;
-        }
-    }
-
-    ESP_LOGI(TAG, "Launching App");
-    /* todo: don't release app resources when it returns; release app resources when the menu is closed */
-    jolt_gui_store.app.scr = (lv_obj_t *)elfLoaderRun(jolt_gui_store.app.ctx, app_argc, app_argv);
-    jolt_gui_scr_set_back_action(jolt_gui_store.app.scr, launch_app_exit);
-#endif
-
     return 0;
 }
 
