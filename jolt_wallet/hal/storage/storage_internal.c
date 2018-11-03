@@ -130,7 +130,7 @@ bool storage_internal_get_mnemonic(uint256_t mnemonic, uint256_t pin_hash) {
     uint32_t pin_count = storage_get_pin_count();
     ESP_LOGI(TAG, "Attempt Counter Before attempting decrypt: %d", pin_count);
     uint32_t last_count = storage_get_pin_last();
-    ESP_LOGI(TAG, "Last Counter Before attempting decrypt: %d", pin_count);
+    ESP_LOGI(TAG, "Last Counter Before attempting decrypt: %d", last_count);
     if(pin_count - last_count > CONFIG_JOLT_DEFAULT_MAX_ATTEMPT) {
         ESP_LOGE(TAG, "Max PIN attempt limit reached. Factory Resetting.");
         storage_factory_reset();
