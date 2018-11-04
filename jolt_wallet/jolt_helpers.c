@@ -95,6 +95,7 @@ uint8_t get_display_brightness() {
     /* Returns saved brightness or default */
     uint8_t brightness;
     storage_get_u8(&brightness, "user", "disp_bright", CONFIG_JOLT_DISPLAY_BRIGHTNESS);
+    ESP_LOGI(TAG,"brightness %d", brightness);
     return brightness;
 }
 

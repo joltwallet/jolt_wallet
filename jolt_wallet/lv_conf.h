@@ -317,7 +317,7 @@
 #endif
 
 /*Slider (dependencies: lv_bar)*/
-#define USE_LV_SLIDER    0
+#define USE_LV_SLIDER    1
 
 /*Switch (dependencies: lv_slider)*/
 #define USE_LV_SW       0

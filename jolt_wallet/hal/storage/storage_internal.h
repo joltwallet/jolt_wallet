@@ -10,7 +10,7 @@
 
 bool storage_internal_startup();
 
-void storage_internal_stretch_task(jolt_key_stretch_t *jolt_key_stretch);
+void storage_internal_stretch_task(jolt_key_stretch_t *stretch);
 
 bool storage_internal_exists_mnemonic();
 

@@ -24,12 +24,6 @@
 #include "hal/lv_drivers/display/ssd1306.h"
 #include "jolt_gui/jolt_gui.h"
 
-#if 0
-#include "gui/gui.h"
-#include "gui/first_boot.h"
-#include "gui/statusbar.h"
-#endif
-
 #include "console.h"
 #include "radio/wifi.h"
 #include "jolt_helpers.h" // todo; move jolt cast into wifi?
@@ -44,18 +38,10 @@
 static void lv_tick_task(void);
 
 // Definitions for variables in globals.h
-volatile QueueHandle_t input_queue;
+static QueueHandle_t input_queue;
+ssd1306_t disp_hal;
 
 static const char TAG[] = "main";
-
-static ssd1306_t disp_conf = {
-	.protocol = SSD1306_PROTO_I2C,
-	.screen = SSD1306_SCREEN,
-	.i2c_dev = CONFIG_JOLT_DISPLAY_ADDRESS,
-	.rst_pin = CONFIG_JOLT_DISPLAY_PIN_RST,
-	.width = LV_HOR_RES,
-	.height = LV_VER_RES
-};
 
 static void display_init() {
     /* Set reset pin as output */
@@ -72,27 +58,33 @@ static void display_init() {
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(JOLT_ADC1_VBATT, ADC_ATTEN_DB_11);
 
-    ESP_LOGI(TAG, "Disp_conf %p", &disp_conf);
-    ssd1306_init(&disp_conf); // todo error handling
+    disp_hal.protocol  = SSD1306_PROTO_I2C;
+    disp_hal.screen    = SSD1306_SCREEN;
+    disp_hal.i2c_dev   = CONFIG_JOLT_DISPLAY_ADDRESS;
+    disp_hal.rst_pin   = CONFIG_JOLT_DISPLAY_PIN_RST;
+    disp_hal.width     = LV_HOR_RES;
+    disp_hal.height    = LV_VER_RES;
+    ssd1306_init(&disp_hal); // todo error handling
 
     /*inverse screen (180°) */
 #if CONFIG_JOLT_DISPLAY_FLIP
     ESP_LOGI(TAG, "Flipping Display");
-    ssd1306_set_scan_direction_fwd(&disp_conf, true);
-    ssd1306_set_segment_remapping_enabled(&disp_conf, false);
+    ssd1306_set_scan_direction_fwd(&disp_hal, true);
+    ssd1306_set_segment_remapping_enabled(&disp_hal, false);
 #else
-    ssd1306_set_scan_direction_fwd(&disp_conf, false);
-    ssd1306_set_segment_remapping_enabled(&disp_conf, true);
+    ssd1306_set_scan_direction_fwd(&disp_hal, false);
+    ssd1306_set_segment_remapping_enabled(&disp_hal, true);
 #endif
 
-    lv_disp_drv_t disp_drv;
-    lv_disp_drv_init(&disp_drv);
-    disp_drv.disp_flush = ssd1306_flush;
-    disp_drv.vdb_wr = ssd1306_vdb_wr;
-    lv_disp_drv_register(&disp_drv);
-    ssd1306_set_whole_display_lighting(&disp_conf, false);
-    ssd1306_set_inversion(&disp_conf, true);
-    ssd1306_set_contrast(&disp_conf, 1); // Set brightness to lowest setting; todo: change
+    static lv_disp_drv_t lv_disp_drv;
+    lv_disp_drv_init(&lv_disp_drv);
+    lv_disp_drv.disp_flush = ssd1306_flush;
+    lv_disp_drv.vdb_wr = ssd1306_vdb_wr;
+    lv_disp_drv_register(&lv_disp_drv);
+
+    ssd1306_set_whole_display_lighting(&disp_hal, false);
+    ssd1306_set_inversion(&disp_hal, true);
+    ssd1306_set_contrast(&disp_hal, get_display_brightness());
 }
 
 static bool easy_input_read(lv_indev_data_t *data) {
@@ -129,8 +121,8 @@ static bool easy_input_read(lv_indev_data_t *data) {
 
 static void indev_init() {
     /* Setup Input Button Debouncing Code */
-    easy_input_queue_init((QueueHandle_t *)&input_queue);
-    easy_input_run( (QueueHandle_t *)&input_queue );
+    easy_input_queue_init(&input_queue);
+    easy_input_run( &input_queue );
 
     jolt_gui_group_create();
 
@@ -173,8 +165,6 @@ void app_main() {
     /* Run Key/Value Storage Initialization */
     storage_startup();
 
-    //u8g2_SetContrast( u8g2, get_display_brightness() );
-
     // Initialize Wireless
     /* todo: this must be before first_boot_setup otherwise attempting
      * to get ap_info before initializing wifi causes a boot loop. investigate
@@ -189,16 +179,7 @@ void app_main() {
     // ==== Initialize the file system ====
     filesystem_init();
 
-    /* Register lv_tick_task after initializing filesystem because initial
-     * SPIFFS formatting temporarily disables cache */
-    /* Moving tick updater into explicit task; esp_register_freertos_tick_hook 
-     * causes SPIFFS to fail */
-    //esp_register_freertos_tick_hook(lv_tick_task);
-
     /* Create GUI */
-
-    //Create main screen obj
-
     ESP_LOGI(TAG, "Creating GUI");
     jolt_gui_menu_home_create();
 

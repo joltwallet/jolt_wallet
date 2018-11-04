@@ -25,8 +25,12 @@ static uint8_t i2c_master_cmd_begin_s(i2c_port_t i2c_num,
 {
     uint8_t res = I2C_FUNCTION_RETCODE_COMM_FAIL;
     ESP_LOGD(TAG, "Taking display mutex");
-    xSemaphoreTake(disp_mutex, portMAX_DELAY);
-    switch( i2c_master_cmd_begin(i2c_num, cmd, ticks_to_wait) ) {
+    xSemaphoreTake(i2c_sem, portMAX_DELAY);
+    esp_err_t i2c_res =  i2c_master_cmd_begin(i2c_num, cmd, ticks_to_wait);
+    ESP_LOGD(TAG, "Giving display mutex");
+    xSemaphoreGive(i2c_sem);
+
+    switch( i2c_res ) {
         case ESP_OK:
             ESP_LOGD(TAG, "I2C buffer send success.");
             res = I2C_FUNCTION_RETCODE_SUCCESS;
@@ -47,8 +51,6 @@ static uint8_t i2c_master_cmd_begin_s(i2c_port_t i2c_num,
             res = I2C_FUNCTION_RETCODE_TIMEOUT;
             break;
     }
-    ESP_LOGD(TAG, "Giving display mutex");
-    xSemaphoreGive(disp_mutex);
     return res;
 }
 

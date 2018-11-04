@@ -27,7 +27,7 @@
 static const char* TAG = "console";
 static const char* TITLE = "Console";
 
-volatile TaskHandle_t console_h = NULL;
+TaskHandle_t console_h = NULL;
 
 
 void console_task() {

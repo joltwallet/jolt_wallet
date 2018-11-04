@@ -18,9 +18,6 @@
 #include "globals.h"
 #include "vault.h"
 #include "jolt_gui/jolt_gui.h"
-//#include "../gui/entry.h"
-//#include "../gui/statusbar.h"
-//#include "../gui/loading.h"
 
 #include "storage.h"
 
