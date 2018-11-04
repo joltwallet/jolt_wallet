@@ -184,14 +184,14 @@ void app_main() {
 
     ESP_LOGI(TAG, "Starting Hardware Monitors");
     xTaskCreate(jolt_hw_monitor_task,
-            "HW_Monitor", 32000, NULL, CONFIG_JOLT_TASK_PRIORITY_HW_MONITORS, NULL);
+            "HW_Monitor", 2000, NULL, CONFIG_JOLT_TASK_PRIORITY_HW_MONITORS, NULL);
 
     // Initiate Console
     initialize_console();
     start_console();
 
     xTaskCreate(littlevgl_task,
-                "DrawTask", 32000,
+                "DrawTask", 8000,
                 NULL, CONFIG_JOLT_TASK_PRIORITY_LVGL, NULL);
 }
 #endif

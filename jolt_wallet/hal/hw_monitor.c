@@ -108,11 +108,6 @@ void jolt_hw_monitor_get_lock_status(hardware_monitor_t *monitor) {
 
 /* Creates all the hardware_monitor mutex's and sets their updater functions */
 static void jolt_hw_monitor_init() {
-#if 0
-    for(uint8_t i=0; i < JOLT_GUI_STATUSBAR_INDEX_NUM; i++) {
-        jolt_gui_store.statusbar.indicators[i].mutex = xSemaphoreCreateMutex();
-    }
-#endif
     jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_BATTERY].update = 
             &jolt_hw_monitor_get_battery_level;
     jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_WIFI].update = 
