@@ -303,9 +303,9 @@ menu "Jolt Wallet"
             help
                 help text here.
 
-        config JOLT_TASK_PRIORITY_STRETCH
+        config JOLT_TASK_PRIORITY_DERIVATION
             int
-            prompt "PIN Stretch Task Priority"
+            prompt "PIN Stretch and Master Seed Derivation Task Priority"
             default 2
             help
                 help text here.

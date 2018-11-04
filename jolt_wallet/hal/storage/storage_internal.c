@@ -52,20 +52,20 @@ bool storage_internal_startup() {
 }
 
 /* To be called via xTaskCreate() */
-void storage_internal_stretch_task(jolt_key_stretch_t *stretch) {
+void storage_internal_stretch_task(jolt_derivation_t *stretch) {
     CONFIDENTIAL uint512_t buf;
     pbkdf2_hmac_sha512_progress((uint8_t *)"joltstretch", 11, 
-            stretch->key, 32,
+            stretch->data, 32,
             buf, sizeof(buf), 2048, &(stretch->progress));
     // fold buf in half via xor to make it 256 bit
     for(uint8_t i=0; i < 32; i++) {
         buf[i] ^= buf[i+32];
     }
-    memcpy(stretch->key, buf, 32);
+    memcpy(stretch->data, buf, 32);
 
     /* Clean up all stretching activities */
     sodium_memzero(buf, sizeof(buf));
-    stretch->progress = 101; // Setup >100 percent to show its completely done
+    stretch->progress = JOLT_DERIVATION_PROGRESS_DONE;
 }
 
 bool storage_internal_exists_mnemonic() {

@@ -7,10 +7,11 @@
 #define __JOLT_HAL_INTERNAL_STORAGE_H__
 
 #include "jolttypes.h"
+#include "storage.h"
 
 bool storage_internal_startup();
 
-void storage_internal_stretch_task(jolt_key_stretch_t *stretch);
+void storage_internal_stretch_task(jolt_derivation_t *stretch);
 
 bool storage_internal_exists_mnemonic();
 

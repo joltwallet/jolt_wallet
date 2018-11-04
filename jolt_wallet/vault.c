@@ -27,7 +27,6 @@
 static const char* TAG = "vault";
 static const char* TITLE = "Vault Access";
 
-static uint512_t master_seed;
 static lv_action_t back_cb;
 static lv_action_t enter_cb;
 
@@ -87,7 +86,7 @@ bool vault_setup() {
     vault_sem = xSemaphoreCreateMutex();
     vault_watchdog_sem = xSemaphoreCreateBinary();
     // todo: tweak this memory value
-    xTaskCreate(vault_watchdog_task, "VaultWatchDog", 20000, NULL, 16, NULL);
+    xTaskCreate(vault_watchdog_task, "VaultWatchDog", 10000, NULL, 16, NULL);
 
     // Checks if stored secret exists
     return storage_exists_mnemonic();
@@ -112,7 +111,47 @@ void vault_clear() {
     }
 }
 
+// Store the callback to perform when node derivation is complete
 static lv_action_t cb_vault_set_success = NULL;
+
+static void derivation_master_seed_task(jolt_derivation_t *status) {
+    bm_mnemonic_to_master_seed_progress(
+            jolt_gui_store.derivation.master_seed, 
+            jolt_gui_store.derivation.mnemonic,
+            jolt_gui_store.derivation.passphrase,
+            &(status->progress));
+    status->progress = JOLT_DERIVATION_PROGRESS_DONE;
+    vTaskDelete(NULL);
+}
+
+static lv_action_t post_mnemonic_to_master_seed(void *dummy) {
+    ESP_LOGI(TAG, "Hi!");
+    vault_sem_take();
+    bm_master_seed_to_node(&(vault->node), 
+            jolt_gui_store.derivation.master_seed, vault->bip32_key,
+            2, vault->purpose, vault->coin_type);
+    vault->valid = true;
+    vault_sem_give();
+
+    /* Clean up */
+    sodium_memzero(jolt_gui_store.derivation.mnemonic,
+            sizeof(jolt_gui_store.derivation.mnemonic));
+    sodium_memzero(jolt_gui_store.derivation.master_seed,
+            sizeof(jolt_gui_store.derivation.master_seed));
+    sodium_memzero(jolt_gui_store.derivation.passphrase,
+            sizeof(jolt_gui_store.derivation.passphrase));
+
+    if( NULL != cb_vault_set_success ) {
+        ESP_LOGI(TAG, "Calling Post-PIN Callback with valid vault.");
+        cb_vault_set_success(NULL);
+        cb_vault_set_success = NULL;
+    }
+    else {
+        ESP_LOGE(TAG, "No Post-PIN callback set");
+    }
+
+    return LV_RES_OK;
+}
 
 /* Gets executed after a successful pin entry.
  * Populates the vault node.
@@ -120,42 +159,31 @@ static lv_action_t cb_vault_set_success = NULL;
  */
 static lv_action_t pin_success_cb() {
     /* Pin screen just populated jolt_gui_store.derivation.mnemonic_bin */
-    CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN] = { 0 };
-    CONFIDENTIAL uint512_t master_seed;
 
     // todo: get passphrase here
     strlcpy(jolt_gui_store.derivation.passphrase, "",
             sizeof(jolt_gui_store.derivation.passphrase)); // dummy placeholder
-    
-    bm_bin_to_mnemonic(mnemonic, sizeof(mnemonic),
+
+    /* Convert Binary Mnemonic to String; Clear Binary */
+    bm_bin_to_mnemonic(jolt_gui_store.derivation.mnemonic, sizeof(jolt_gui_store.derivation.mnemonic),
             jolt_gui_store.derivation.mnemonic_bin, 256);
-
-    // this is a computationally intense operation;
-    // should really have a loading screen
-    bm_mnemonic_to_master_seed(master_seed, mnemonic,
-            jolt_gui_store.derivation.passphrase);
-
-    vault_sem_take();
-    bm_master_seed_to_node(&(vault->node), master_seed, vault->bip32_key,
-            2, vault->purpose, vault->coin_type);
-    vault->valid = true;
-    vault_sem_give();
-
-    /* We now have a child node;
-     * Clear all confidential variables */
-    sodium_memzero(jolt_gui_store.derivation.mnemonic_bin,
+    sodium_memzero(jolt_gui_store.derivation.mnemonic_bin, 
             sizeof(jolt_gui_store.derivation.mnemonic_bin));
-    sodium_memzero(jolt_gui_store.derivation.passphrase,
-            sizeof(jolt_gui_store.derivation.passphrase));
-    sodium_memzero(mnemonic, sizeof(mnemonic));
-    sodium_memzero(master_seed, sizeof(master_seed));
 
-    if( NULL != cb_vault_set_success ) {
-        cb_vault_set_success(NULL);
-        cb_vault_set_success = NULL;
-    }
+    static jolt_derivation_t status;
+    status.progress = 0;
+    status.data = NULL;
+    status.cb = post_mnemonic_to_master_seed; // Gets called after master_seed progress is complete
+    status.scr = jolt_gui_scr_loading_create("");
+    jolt_gui_scr_loading_update(status.scr, NULL, "Unlocking", 0);
 
-    return 0;
+    jolt_gui_progress_task_create(&status);
+    xTaskCreate(derivation_master_seed_task,
+            "MasterDeriv", 16000,
+            (void *)&status,
+            CONFIG_JOLT_TASK_PRIORITY_DERIVATION, &(status.derivation_task));
+
+    return LV_RES_OK;
 }
 
 void vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key,
@@ -169,12 +197,7 @@ void vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key,
      * If the vault is successfully set, the success callback will be executed.
      * On failure to set the vault, the failure callback will be executed.
      *
-     * SIGNATURE COMPLETED; CONTENTS INCOMPLETE
      */
-    //
-    // Inside this function (really inside get_master_seed()),
-    // the GUI is invoked for PIN and Passphrase.
-    CONFIDENTIAL uint512_t master_seed;
 
     // todo: check if vault is valid and has same params
 
@@ -188,14 +211,10 @@ void vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key,
     sodium_mprotect_readonly(vault);
     vault_sem_give();
 
-    /* Set success callback wrapper */
+    /* Set success callback */
     cb_vault_set_success = success_cb;
 
-    /* pin_success_cb: continues mnemonic retrieval
-     * failure_cb:
-     */
     jolt_gui_scr_pin_create(failure_cb, pin_success_cb);
-    return;
 }
 
 void vault_refresh(lv_action_t failure_cb, lv_action_t success_cb) {

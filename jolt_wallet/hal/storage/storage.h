@@ -7,24 +7,13 @@
 #define __JOLT_HAL_STORAGE_H__
 
 #include "jolttypes.h"
-#include "lvgl/lvgl.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+#include "jolt_gui/jolt_gui_stretch.h"
 
 bool storage_startup();
 
-typedef struct jolt_key_stretch_t{
-    lv_obj_t *scr; // Loading Screen Object
-    TaskHandle_t *stretch_task; // Task performing the stretching
-    lv_task_t *lv_task; // Gui update task monitoring progress
-    uint8_t progress; // Progress 0 - 100 updated by stretch_task
-    uint8_t *key; // 256-bits to stretch and store
-    void (*cb) (void *); // Callback to execute upon completion
-} jolt_key_stretch_t;
-
 /* Stretches and stores the value in jolt_gui_store.derivation.pin.
  * Creates and updates the loading screen as stretching progresses.*/ 
-void storage_stretch_task(jolt_key_stretch_t *stretch);
+void storage_stretch_task(jolt_derivation_t *stretch);
 
 bool storage_exists_mnemonic();
 

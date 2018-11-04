@@ -41,7 +41,7 @@ bool storage_startup() {
    return res;
 }
 
-void storage_stretch_task(jolt_key_stretch_t *stretch) {
+void storage_stretch_task(jolt_derivation_t *stretch) {
 #if CONFIG_JOLT_STORE_INTERNAL
     storage_internal_stretch_task(stretch);
 #elif CONFIG_JOLT_STORE_ATAES132A
