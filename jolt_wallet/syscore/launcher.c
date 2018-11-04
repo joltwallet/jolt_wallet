@@ -17,7 +17,7 @@
 #include "elfloader.h"
 
 #include "console.h"
-#include "globals.h"
+#include "jolt_globals.h"
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_helpers.h"
 #include "jolt_lib.h"

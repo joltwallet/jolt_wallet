@@ -10,7 +10,8 @@
 
 #include "esp_wifi.h"
 
-#include "globals.h"
+#include "jolt_globals.h"
+
 /**********************
  *  STATIC PROTOTYPES
  **********************/

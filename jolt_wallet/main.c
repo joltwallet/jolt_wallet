@@ -27,7 +27,7 @@
 #include "console.h"
 #include "radio/wifi.h"
 #include "jolt_helpers.h" // todo; move jolt cast into wifi?
-#include "globals.h"
+#include "jolt_globals.h"
 #include "hal/i2c.h"
 #include "hal/storage/storage.h"
 #include "hal/hw_monitor.h"
@@ -37,7 +37,6 @@
 
 static void lv_tick_task(void);
 
-// Definitions for variables in globals.h
 static QueueHandle_t input_queue;
 ssd1306_t disp_hal;
 

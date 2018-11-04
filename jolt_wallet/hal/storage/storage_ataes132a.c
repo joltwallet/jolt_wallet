@@ -9,8 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../globals.h"
-//#include "../gui/entry.h"
+#include "jolt_globals.h"
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_helpers.h"
 #include "vault.h"

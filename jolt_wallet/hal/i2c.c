@@ -7,11 +7,11 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
-#include "../globals.h"
+#include "jolt_globals.h"
 
 static const char TAG[] = "hal/i2c";
 
-volatile SemaphoreHandle_t disp_mutex;
+SemaphoreHandle_t i2c_sem;
 
 void i2c_driver_setup() {
     i2c_config_t conf;
@@ -29,6 +29,6 @@ void i2c_driver_setup() {
     ESP_LOGI(TAG, "i2c_driver_install %d", CONFIG_JOLT_I2C_MASTER_NUM);
     ESP_ERROR_CHECK(i2c_driver_install(CONFIG_JOLT_I2C_MASTER_NUM, conf.mode, 0, 0, 0));
 
-    disp_mutex = xSemaphoreCreateMutex(); // was originally just a mutex on the display buffer, but also now used as a general i2c mutex
+    i2c_sem = xSemaphoreCreateMutex();
 }
 

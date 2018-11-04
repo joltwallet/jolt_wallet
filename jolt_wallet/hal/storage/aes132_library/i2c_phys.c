@@ -9,7 +9,7 @@
 #include "driver/i2c.h" /* esp-idf i2c library */
 #include "esp_log.h"
 #include "esp_err.h"
-#include "../../globals.h"
+#include "jolt_globals.h"
 
 /** \brief I2C address used at AES132 library startup. */
 #define AES132_I2C_DEFAULT_ADDRESS   ((uint8_t) 0xA0)
@@ -25,10 +25,10 @@ static uint8_t i2c_master_cmd_begin_s(i2c_port_t i2c_num,
 {
     uint8_t res = I2C_FUNCTION_RETCODE_COMM_FAIL;
     ESP_LOGD(TAG, "Taking display mutex");
-    xSemaphoreTake(i2c_sem, portMAX_DELAY);
+    I2C_SEM_TAKE;
     esp_err_t i2c_res =  i2c_master_cmd_begin(i2c_num, cmd, ticks_to_wait);
     ESP_LOGD(TAG, "Giving display mutex");
-    xSemaphoreGive(i2c_sem);
+    I2C_SEM_GIVE;
 
     switch( i2c_res ) {
         case ESP_OK:

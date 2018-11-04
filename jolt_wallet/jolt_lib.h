@@ -25,7 +25,7 @@
 #include "sodium/private/curve25519_ref10.h"
 
 #include "console.h"
-#include "globals.h"
+#include "jolt_globals.h"
 #include "hal/storage/storage.h"
 #include "jolt_helpers.h"
 #include "jolt_gui/jolt_gui.h"

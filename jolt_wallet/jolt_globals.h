@@ -3,8 +3,8 @@
  https://www.joltwallet.com/
  */
 
-#ifndef __JOLT_GLOBALS_H__
-#define __JOLT_GLOBALS_H__
+#ifndef JOLT_GLOBALS_H__
+#define JOLT_GLOBALS_H__
 
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
@@ -20,7 +20,7 @@
 #define JOLT_ADC1_VBATT JOLT_ADC1(CONFIG_JOLT_VBATT_SENSE_PIN)
 
 vault_t *vault;
-SemaphoreHandle_t i2c_sem;
+
 extern ssd1306_t disp_hal;
 extern TaskHandle_t console_h;
 

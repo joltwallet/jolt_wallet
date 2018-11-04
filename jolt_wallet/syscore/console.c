@@ -19,7 +19,7 @@
 #include "filesystem.h"
 #include "launcher.h"
 
-#include "globals.h"
+#include "jolt_globals.h"
 #include "console.h"
 #include "vault.h"
 #include "jolt_helpers.h"

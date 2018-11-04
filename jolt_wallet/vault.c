@@ -19,7 +19,7 @@
 #include "jolttypes.h"
 #include "bipmnemonic.h"
 #include "jolt_helpers.h"
-#include "globals.h"
+#include "jolt_globals.h"
 #include "vault.h"
 #include "hal/storage/storage.h"
 #include "jolt_gui/jolt_gui.h"
