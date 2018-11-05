@@ -7,7 +7,7 @@
 #define __JOLT_CONSOLE_H__
 
 #include "esp_console.h"
-#include "lvgl.h"
+#include "lvgl/lvgl.h"
 
 void initialize_console();
 void menu_console(lv_obj_t * list_btn);

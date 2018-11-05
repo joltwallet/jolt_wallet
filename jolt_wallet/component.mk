@@ -11,5 +11,5 @@ COMPONENT_SRCDIRS := . \
 	radio \
 	syscore
 
-COMPONENT_ADD_INCLUDEDIRS := .\
+COMPONENT_ADD_INCLUDEDIRS := . \
 	hal/storage/aes132_library
