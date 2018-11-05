@@ -199,7 +199,19 @@ void vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key,
      *
      */
 
-    // todo: check if vault is valid and has same params
+    /* Don't require pin if logging into app with identical vault parameters */
+    vault_sem_take();
+    if( true == vault->valid
+            && vault->purpose   == purpose
+            && vault->coin_type == coin_type
+            && 0 == strcmp(vault->bip32_key, bip32_key) ) {
+        ESP_LOGI(TAG, "Vault is valid; kicking the dog.");
+        xSemaphoreGive(vault_watchdog_sem);
+        vault_sem_give();
+        success_cb(NULL);
+        return;
+    }
+    vault_sem_give();
 
     /* Populate Vault with derivation parameters */
     vault_sem_take();
