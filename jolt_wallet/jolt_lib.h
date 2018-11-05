@@ -1,8 +1,7 @@
 #ifndef __JOLT_LIB_H__
 #define __JOLT_LIB_H__
 
-#define EXPORT_SYMBOL(NAME) {#NAME, (void*) NAME}
-#define EXPORT_SYMBOL_PTR(NAME) {#NAME, (void*) &NAME}
+/* All of the functions available to an app */
 
 #include "elfloader.h"
 
@@ -31,6 +30,11 @@
 #include "jolt_gui/jolt_gui.h"
 #include "syscore/filesystem.h"
 #include "vault.h"
+
+#if JOLT_OS
+
+#define EXPORT_SYMBOL(NAME) {#NAME, (void*) NAME}
+#define EXPORT_SYMBOL_PTR(NAME) {#NAME, (void*) &NAME}
 
 extern void *__floatsidf;
 extern void *__gtdf2;
@@ -87,8 +91,32 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( hd_node_copy ),
     EXPORT_SYMBOL( hd_node_iterate ),
     EXPORT_SYMBOL( heap_caps_calloc ),
+    EXPORT_SYMBOL( jolt_gui_num_create ),
+    EXPORT_SYMBOL( jolt_gui_num_get_arr ),
+    EXPORT_SYMBOL( jolt_gui_num_set_back_action ),
+    EXPORT_SYMBOL( jolt_gui_num_set_decimal ),
+    EXPORT_SYMBOL( jolt_gui_num_set_enter_action ),
+    EXPORT_SYMBOL( jolt_gui_num_set_len ),
+    EXPORT_SYMBOL( jolt_gui_obj_title_create ),
+    EXPORT_SYMBOL( jolt_gui_parent_create ),
+    EXPORT_SYMBOL( jolt_gui_scr_del ),
+    EXPORT_SYMBOL( jolt_gui_scr_loading_create ),
+    EXPORT_SYMBOL( jolt_gui_scr_loading_update ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_add ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_create ),
+    EXPORT_SYMBOL( jolt_gui_scr_num_create ),
+    EXPORT_SYMBOL( jolt_gui_scr_num_get ),
+    EXPORT_SYMBOL( jolt_gui_scr_qr_create ),
+    EXPORT_SYMBOL( jolt_gui_scr_set_back_action ),
+    EXPORT_SYMBOL( jolt_gui_scr_set_enter_action ),
+    EXPORT_SYMBOL( jolt_gui_scr_slider_create ),
+    EXPORT_SYMBOL( jolt_gui_scr_slider_get_slider ),
+    EXPORT_SYMBOL( jolt_gui_scr_slider_get_value ),
+    EXPORT_SYMBOL( jolt_gui_scr_slider_set_range ),
+    EXPORT_SYMBOL( jolt_gui_scr_slider_set_value ),
+    EXPORT_SYMBOL( jolt_gui_scr_text_create ),
+    EXPORT_SYMBOL( jolt_gui_send_enter_main ),
+    EXPORT_SYMBOL( jolt_gui_send_left_main ),
     EXPORT_SYMBOL( linenoise ),
     EXPORT_SYMBOL( malloc ),
     EXPORT_SYMBOL( mbedtls_mpi_add_abs ),
@@ -179,5 +207,6 @@ const ELFLoaderSymbol_t exports[] = {
 };
 
 const ELFLoaderEnv_t env = { exports, sizeof(exports) / sizeof(*exports) };
+#endif
 
 #endif
