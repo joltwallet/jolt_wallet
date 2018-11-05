@@ -241,15 +241,16 @@ void vault_refresh(lv_action_t failure_cb, lv_action_t success_cb) {
      * Returns true on success,
      * false if user cancels (if node needs restored)
      */
+    cb_vault_set_success = success_cb;
     vault_sem_take();
     if( vault->valid ) {
         // Kick the dog
         ESP_LOGI(TAG, "Vault is valid; kicking the dog.");
         xSemaphoreGive(vault_watchdog_sem);
         vault_sem_give();
+        success_cb(NULL);
     }
     else {
-        cb_vault_set_success = success_cb;
         vault_sem_give();
         jolt_gui_scr_pin_create(failure_cb, pin_success_cb);
     }

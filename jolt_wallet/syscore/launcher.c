@@ -36,7 +36,7 @@ static const char* TAG = "syscore_launcher";
 static lv_action_t launch_app_exit(lv_obj_t *btn);
 static lv_action_t launch_app_from_store(lv_obj_t *btn);
 
-bool check_elf_valid(char *fn) {
+static bool check_elf_valid(char *fn) {
     /* Checks ths signature file for a given basename fn*/
     // TODO implement
     return false;
