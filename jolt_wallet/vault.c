@@ -80,6 +80,8 @@ bool vault_setup() {
         ESP_LOGE(TAG, "Unable to allocate space for the Vault");
         esp_restart();
     }
+    /* NOTE: ESP32 doesn't properly implement the mprotect features;
+     * awaiting for their implementation for additional security. */
     sodium_mprotect_readwrite(vault);
     sodium_memzero(vault, sizeof(vault_t));
     sodium_mprotect_readonly(vault);
@@ -125,12 +127,13 @@ static void derivation_master_seed_task(jolt_derivation_t *status) {
 }
 
 static lv_action_t post_mnemonic_to_master_seed(void *dummy) {
-    ESP_LOGI(TAG, "Hi!");
     vault_sem_take();
+    sodium_mprotect_readwrite(vault);
     bm_master_seed_to_node(&(vault->node), 
             jolt_gui_store.derivation.master_seed, vault->bip32_key,
             2, vault->purpose, vault->coin_type);
     vault->valid = true;
+    sodium_mprotect_readonly(vault);
     vault_sem_give();
 
     /* Clean up */
@@ -216,7 +219,7 @@ void vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key,
     /* Populate Vault with derivation parameters */
     vault_sem_take();
     sodium_mprotect_readwrite(vault);
-    vault->valid = false; // probably redundant
+    vault->valid = false;
     vault->purpose = purpose;
     vault->coin_type = coin_type;
     strlcpy( vault->bip32_key, bip32_key, sizeof(vault->bip32_key) );
