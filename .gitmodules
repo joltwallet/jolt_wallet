@@ -30,4 +30,4 @@
 	url = https://github.com/joltwallet/jolt_gui.git
 [submodule "jolt_wallet/hal/lv_drivers"]
 	path = jolt_wallet/hal/lv_drivers
-	url = https://github.com/littlevgl/lv_drivers.git
+	url = https://github.com/joltwallet/lv_drivers.git
