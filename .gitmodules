@@ -24,7 +24,7 @@
 	url = git@github.com:joltwallet/nano_rest.git
 [submodule "components/lvgl"]
 	path = jolt_wallet/lvgl
-	url = https://github.com/joltwallet/lvgl.git
+	url = https://github.com/littlevgl/lvgl.git
 [submodule "jolt_wallet/jolt_gui"]
 	path = jolt_wallet/jolt_gui
 	url = https://github.com/joltwallet/jolt_gui.git
