@@ -181,6 +181,7 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( lv_list_get_style ),
     EXPORT_SYMBOL( lv_list_remove ),
     EXPORT_SYMBOL( lv_list_set_anim_time ),
+    EXPORT_SYMBOL( lv_list_set_btn_selected ),
     EXPORT_SYMBOL( lv_list_set_sb_mode ),
     EXPORT_SYMBOL( lv_list_set_style ),
     EXPORT_SYMBOL( lv_list_up ),
