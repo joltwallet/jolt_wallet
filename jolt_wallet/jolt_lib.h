@@ -92,6 +92,9 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( hd_node_copy ),
     EXPORT_SYMBOL( hd_node_iterate ),
     EXPORT_SYMBOL( heap_caps_calloc ),
+#if JOLT_GUI_DEBUG_FUNCTIONS
+    EXPORT_SYMBOL( jolt_gui_debug_obj_print ),
+#endif
     EXPORT_SYMBOL( jolt_gui_num_create ),
     EXPORT_SYMBOL( jolt_gui_num_get_arr ),
     EXPORT_SYMBOL( jolt_gui_num_set_back_action ),
