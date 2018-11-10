@@ -142,9 +142,9 @@ void littlevgl_task() {
         i = (i+1) % 5;
         lv_tick_inc(portTICK_RATE_MS);
         if( 0 == i ) { // need to call this less frequently
-            xSemaphoreTake( jolt_gui_store.mutex, portMAX_DELAY );
+            jolt_gui_sem_take();
             lv_task_handler();
-            xSemaphoreGive( jolt_gui_store.mutex );
+            jolt_gui_sem_give();
         }
     }
 }

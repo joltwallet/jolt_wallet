@@ -120,6 +120,8 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( jolt_gui_scr_slider_set_range ),
     EXPORT_SYMBOL( jolt_gui_scr_slider_set_value ),
     EXPORT_SYMBOL( jolt_gui_scr_text_create ),
+    EXPORT_SYMBOL( jolt_gui_sem_give ),
+    EXPORT_SYMBOL( jolt_gui_sem_take ),
     EXPORT_SYMBOL( jolt_gui_send_enter_main ),
     EXPORT_SYMBOL( jolt_gui_send_left_main ),
     EXPORT_SYMBOL( linenoise ),
