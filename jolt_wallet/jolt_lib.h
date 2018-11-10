@@ -31,6 +31,9 @@
 #include "syscore/filesystem.h"
 #include "vault.h"
 
+
+#include "esp_http_client.h" // todo: replace with less open functions
+
 #if JOLT_OS
 
 #define EXPORT_SYMBOL(NAME) {#NAME, (void*) NAME}
@@ -84,6 +87,14 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( crypto_verify_32 ),
     EXPORT_SYMBOL( esp_console_deinit ),
     EXPORT_SYMBOL( esp_console_init ),
+    EXPORT_SYMBOL( esp_err_to_name ),
+    EXPORT_SYMBOL( esp_http_client_cleanup ),
+    EXPORT_SYMBOL( esp_http_client_get_content_length ),
+    EXPORT_SYMBOL( esp_http_client_get_status_code ),
+    EXPORT_SYMBOL( esp_http_client_init ),
+    EXPORT_SYMBOL( esp_http_client_perform ),
+    EXPORT_SYMBOL( esp_http_client_set_method ),
+    EXPORT_SYMBOL( esp_http_client_set_post_field ),
     EXPORT_SYMBOL( esp_log_timestamp ),
     EXPORT_SYMBOL( esp_log_write ),
     EXPORT_SYMBOL( esp_restart ),

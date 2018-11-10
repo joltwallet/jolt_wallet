@@ -138,14 +138,12 @@ static void indev_init() {
 
 
 void littlevgl_task() {
-    for( uint8_t i = 0;; vTaskDelay(1) ) {
-        i = (i+1) % 5;
+    TickType_t xLastWakeTime;
+    for( ;; vTaskDelayUntil( &xLastWakeTime, 1 ) ) {
+        jolt_gui_sem_take();
         lv_tick_inc(portTICK_RATE_MS);
-        if( 0 == i ) { // need to call this less frequently
-            jolt_gui_sem_take();
-            lv_task_handler();
-            jolt_gui_sem_give();
-        }
+        lv_task_handler();
+        jolt_gui_sem_give();
     }
 }
 
