@@ -255,25 +255,6 @@ menu "Jolt Wallet"
         help
             help text here
 
-    menu "QR"
-        choice
-            prompt "Select QR Encoding Method"
-            config JOLT_QR_TYPE_SIMPLE
-                bool "simple address encoding xrb_"
-            config JOLT_QR_TYPE_STANDARD
-                bool "Follows the Nano QR URI standard"
-            config JOLT_QR_TYPE_SHORT
-                bool "Encodes using QR alphanumeric XRB-"
-        endchoice
-
-        config JOLT_QR_SCALE
-            int
-            prompt "Pixel-wise QR code scale multiplier"
-            default 1
-            help
-                Integer dimension multipler. Leave as 1 for 1 pixel per square
-    endmenu
-
     menu "Task Priority"
         config JOLT_TASK_PRIORITY_LVGL
             int
