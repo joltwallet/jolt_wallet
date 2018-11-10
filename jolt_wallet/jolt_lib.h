@@ -303,6 +303,7 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( subconsole_cmd_init ),
     EXPORT_SYMBOL( subconsole_cmd_register ),
     EXPORT_SYMBOL( subconsole_cmd_run ),
+    EXPORT_SYMBOL( vTaskDelete ),
     EXPORT_SYMBOL_PTR( vault ),
     EXPORT_SYMBOL( vault_refresh ),
     EXPORT_SYMBOL( vault_sem_give ),
@@ -319,6 +320,7 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( xQueueGiveMutexRecursive ),
     EXPORT_SYMBOL( xQueueReceiveFromISR ),
     EXPORT_SYMBOL( xQueueTakeMutexRecursive ),
+    EXPORT_SYMBOL( xTaskCreatePinnedToCore ),
 };
 
 const ELFLoaderEnv_t env = { exports, sizeof(exports) / sizeof(*exports) };
