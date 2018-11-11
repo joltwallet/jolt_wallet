@@ -34,6 +34,12 @@
 #include "syscore/filesystem.h"
 #include "vault.h"
 
+const jolt_version_t JOLT_VERSION = {
+    .major = 0,
+    .minor = 1,
+    .patch = 0,
+    .release = JOLT_VERSION_DEV
+};
 
 static void lv_tick_task(void);
 
