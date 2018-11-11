@@ -50,13 +50,13 @@ static const char TAG[] = "main";
 
 static void display_init() {
     /* Set reset pin as output */
-	gpio_config_t io_config;
-	io_config.pin_bit_mask = (1 << CONFIG_JOLT_DISPLAY_PIN_RST);
-	io_config.mode         = GPIO_MODE_OUTPUT;
-	io_config.pull_up_en   = GPIO_PULLUP_DISABLE;
-	io_config.pull_down_en = GPIO_PULLDOWN_ENABLE;
-	io_config.intr_type    = GPIO_INTR_DISABLE;
-	ESP_ERROR_CHECK(gpio_config(&io_config));
+    gpio_config_t io_config;
+    io_config.pin_bit_mask = (1 << CONFIG_JOLT_DISPLAY_PIN_RST);
+    io_config.mode         = GPIO_MODE_OUTPUT;
+    io_config.pull_up_en   = GPIO_PULLUP_DISABLE;
+    io_config.pull_down_en = GPIO_PULLDOWN_ENABLE;
+    io_config.intr_type    = GPIO_INTR_DISABLE;
+    ESP_ERROR_CHECK(gpio_config(&io_config));
 
     /* These lines are for configuring the ADC for sensing battery voltage;
      * refactor these to be somewhere else later */
@@ -98,22 +98,22 @@ static bool easy_input_read(lv_indev_data_t *data) {
     uint64_t input_buf;
     if(xQueueReceive(input_queue, &input_buf, 0)) {
         data->state = LV_INDEV_STATE_PR;
-		if(input_buf & (1ULL << EASY_INPUT_BACK)){
+        if(input_buf & (1ULL << EASY_INPUT_BACK)){
             ESP_LOGD(TAG, "back");
             lv_group_send_data(jolt_gui_store.group.back, LV_GROUP_KEY_ENTER);
-		}
-		else if(input_buf & (1ULL << EASY_INPUT_UP)){
+        }
+        else if(input_buf & (1ULL << EASY_INPUT_UP)){
             ESP_LOGD(TAG, "up");
             data->key = LV_GROUP_KEY_UP;
-		}
-		else if(input_buf & (1ULL << EASY_INPUT_DOWN)){
+        }
+        else if(input_buf & (1ULL << EASY_INPUT_DOWN)){
             ESP_LOGD(TAG, "down");
             data->key = LV_GROUP_KEY_DOWN;
-		}
-		else if(input_buf & (1ULL << EASY_INPUT_ENTER)){
+        }
+        else if(input_buf & (1ULL << EASY_INPUT_ENTER)){
             ESP_LOGD(TAG, "enter");
             lv_group_send_data(jolt_gui_store.group.enter, LV_GROUP_KEY_ENTER);
-		}
+        }
         else {
         }
         if( xQueuePeek(input_queue, &input_buf, 0) ) {
