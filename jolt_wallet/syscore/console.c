@@ -23,7 +23,7 @@
 #include "console.h"
 #include "vault.h"
 #include "jolt_helpers.h"
-#include "radio/wifi.h"
+#include "hal/radio/wifi.h"
 #include "hal/storage/storage.h"
 
 #include "../console.h"

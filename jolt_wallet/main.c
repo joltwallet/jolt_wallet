@@ -25,7 +25,7 @@
 #include "jolt_gui/jolt_gui.h"
 
 #include "console.h"
-#include "radio/wifi.h"
+#include "hal/radio/wifi.h"
 #include "jolt_helpers.h" // todo; move jolt cast into wifi?
 #include "jolt_globals.h"
 #include "hal/i2c.h"
