@@ -103,7 +103,7 @@ void console_task() {
 
 volatile TaskHandle_t *start_console(){
     xTaskCreate(console_task,
-                "ConsoleTask", 28000,
+                "ConsoleTask", CONFIG_JOLT_TASK_STACK_SIZE_CONSOLE,
                 NULL, CONFIG_JOLT_TASK_PRIORITY_CONSOLE,
                 (TaskHandle_t *) &console_h);
     return  &console_h;

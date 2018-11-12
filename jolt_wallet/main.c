@@ -25,8 +25,9 @@
 #include "jolt_gui/jolt_gui.h"
 
 #include "console.h"
+#include "hal/radio/bluetooth.h"
 #include "hal/radio/wifi.h"
-#include "jolt_helpers.h" // todo; move jolt cast into wifi?
+#include "jolt_helpers.h"
 #include "jolt_globals.h"
 #include "hal/i2c.h"
 #include "hal/storage/storage.h"
@@ -40,8 +41,6 @@ const jolt_version_t JOLT_VERSION = {
     .patch = 0,
     .release = JOLT_VERSION_DEV
 };
-
-static void lv_tick_task(void);
 
 static QueueHandle_t input_queue;
 ssd1306_t disp_hal;
@@ -69,7 +68,7 @@ static void display_init() {
     disp_hal.rst_pin   = CONFIG_JOLT_DISPLAY_PIN_RST;
     disp_hal.width     = LV_HOR_RES;
     disp_hal.height    = LV_VER_RES;
-    ssd1306_init(&disp_hal); // todo error handling
+    ESP_ERROR_CHECK(ssd1306_init(&disp_hal));
 
     /*inverse screen (180°) */
 #if CONFIG_JOLT_DISPLAY_FLIP
@@ -144,6 +143,7 @@ static void indev_init() {
 
 
 void littlevgl_task() {
+    ESP_LOGI(TAG, "Starting draw loop");
     TickType_t xLastWakeTime;
     for( ;; vTaskDelayUntil( &xLastWakeTime, 1 ) ) {
         jolt_gui_sem_take();
@@ -151,6 +151,7 @@ void littlevgl_task() {
         lv_task_handler();
         jolt_gui_sem_give();
     }
+    ESP_LOGE(TAG, "Draw Loop Exitted"); // Should never reach here
 }
 
 #ifndef UNIT_TESTING
@@ -176,6 +177,8 @@ void app_main() {
     set_jolt_cast();
     wifi_connect();
 
+    //jolt_bluetooth_setup();
+
     // Allocate space for the vault and see if a copy exists in NVS
     jolt_gui_store.first_boot = ( false == vault_setup() );
 
@@ -188,14 +191,27 @@ void app_main() {
 
     ESP_LOGI(TAG, "Starting Hardware Monitors");
     xTaskCreate(jolt_hw_monitor_task,
-            "HW_Monitor", 2000, NULL, CONFIG_JOLT_TASK_PRIORITY_HW_MONITORS, NULL);
+            "HW_Monitor", CONFIG_JOLT_TASK_STACK_SIZE_HW_MONITORS,
+            NULL, CONFIG_JOLT_TASK_PRIORITY_HW_MONITORS, NULL);
 
     // Initiate Console
     initialize_console();
     start_console();
 
-    xTaskCreate(littlevgl_task,
-                "DrawTask", 8000,
+    BaseType_t ret;
+    ESP_LOGI(TAG, "Creating Screen Draw Task");
+    ret = xTaskCreate(littlevgl_task,
+                "DrawTask", CONFIG_JOLT_TASK_STACK_SIZE_LVGL,
                 NULL, CONFIG_JOLT_TASK_PRIORITY_LVGL, NULL);
+    if( pdPASS != ret ){
+        if( errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY == ret ) {
+            ESP_LOGE(TAG, "%s Couldn't allocate memory for Screen Drawing Task",
+                    __func__);
+        }
+        else {
+            ESP_LOGE(TAG, "%s Failed to start drawing task, error_code=%d",
+                    __func__, ret);
+        }
+    }
 }
 #endif

@@ -87,8 +87,10 @@ bool vault_setup() {
     sodium_mprotect_readonly(vault);
     vault_sem = xSemaphoreCreateMutex();
     vault_watchdog_sem = xSemaphoreCreateBinary();
-    // todo: tweak this memory value
-    xTaskCreate(vault_watchdog_task, "VaultWatchDog", 10000, NULL, 16, NULL);
+
+    xTaskCreate(vault_watchdog_task, "VaultWatchDog",
+            CONFIG_JOLT_TASK_STACK_SIZE_VAULT_WATCHDOG,
+            NULL, CONFIG_JOLT_TASK_PRIORITY_VAULT_WATCHDOG, NULL);
 
     // Checks if stored secret exists
     return storage_exists_mnemonic();
@@ -182,7 +184,7 @@ static lv_action_t pin_success_cb() {
 
     jolt_gui_progress_task_create(&status);
     xTaskCreate(derivation_master_seed_task,
-            "MasterDeriv", 16000,
+            "MasterDeriv", CONFIG_JOLT_TASK_STACK_SIZE_DERIVATION,
             (void *)&status,
             CONFIG_JOLT_TASK_PRIORITY_DERIVATION, &(status.derivation_task));
 

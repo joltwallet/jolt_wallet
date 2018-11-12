@@ -68,7 +68,6 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
 	strncat(sig_fn, fn_basename, sizeof(sig_fn)-strlen(sig_fn)-1-4);
     strcat(sig_fn, ".sig");
 
-    // todo: Make sure both files exist
     if( check_file_exists(exec_fn) != 1 ){
         ESP_LOGE(TAG, "Executable doesn't exist\n");
         return -2;
