@@ -144,8 +144,7 @@ static void indev_init() {
 
 void littlevgl_task() {
     ESP_LOGI(TAG, "Starting draw loop");
-    TickType_t xLastWakeTime;
-    for( ;; vTaskDelayUntil( &xLastWakeTime, 1 ) ) {
+    for( ;; vTaskDelay( 1 ) ) {
         jolt_gui_sem_take();
         lv_tick_inc(portTICK_RATE_MS);
         lv_task_handler();
