@@ -82,15 +82,44 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
     }
 #endif
 
-    // Reading the whole App to memory is 1~2 orders of magnitude faster
-    // than POSIX ops on file pointers
-    ESP_LOGI(TAG, "Decompressing %s", exec_fn);
-    if( NULL == (program = decompress_file(exec_fn)) ) {
-        ESP_LOGE(TAG, "Error decompressing %s", exec_fn);
-        return -3;
-    }
-    ESP_LOGI(TAG, "mem pointer: %p", program);
-    ESP_LOGI(TAG, "first 4 bytes: 0x%08x", *(uint32_t *)program);
+    /* Get a populated pointer-like data object into program */
+    #if CONFIG_ELFLOADER_MEMORY_POINTER
+        #if CONFIG_JOLT_APP_COMPRESS
+        {
+            ESP_LOGI(TAG, "Decompressing %s", exec_fn);
+            if( NULL == (program = decompress_file(exec_fn)) ) {
+                ESP_LOGE(TAG, "Error decompressing %s", exec_fn);
+                return -3;
+            }
+            ESP_LOGI(TAG, "mem pointer: %p", program);
+            ESP_LOGI(TAG, "first 4 bytes: 0x%08x", *(uint32_t *)program);
+        }
+        #else
+		{
+			ESP_LOGI(TAG, "Reading in executable to memory");
+			FILE *f = NULL;
+			f = fopen(exec_fn, "rb");
+			fseek(f, 0, SEEK_END);
+			size_t fsize = ftell(f);
+			fseek(f, 0, SEEK_SET);
+			if( NULL == (program = malloc(fsize)) ) {
+				ESP_LOGE(TAG, "Couldn't allocate space for program buffer.");
+				fclose(f);
+				goto exit;
+			}
+			fread(program, fsize, 1, f);
+			fclose(f);
+		}
+        #endif
+    #elif CONFIG_ELFLOADER_POSIX
+        ESP_LOGI(TAG, "Opening file descriptor to %s", exec_fn);
+        program = fopen(exec_fn, "rb");
+    #endif
+
+    #if CONFIG_ELFLOADER_PROFILER_EN
+         elfLoaderProfilerReset();
+         uint64_t elfLoader_time = esp_timer_get_time();
+    #endif
 
     ESP_LOGI(TAG, "elfLoader; Initializing");
     if( NULL == (jolt_gui_store.app.ctx = elfLoaderInit(program, &env)) ) {
@@ -121,6 +150,13 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         LOADER_FD_FREE(program);
         return -7;
     }
+
+    #if CONFIG_ELFLOADER_PROFILER_EN
+        elfLoader_time = esp_timer_get_time() - elfLoader_time;
+        ESP_LOGI(TAG, "ELF Application Loaded in %lld uS.", elfLoader_time);
+        elfLoaderProfilerPrint();
+    #endif
+
     {
         uint32_t *data = NULL;
         size_t data_len;
