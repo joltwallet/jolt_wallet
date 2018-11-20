@@ -176,7 +176,7 @@ void app_main() {
     set_jolt_cast();
     wifi_connect();
 
-    //jolt_bluetooth_setup();
+    jolt_bluetooth_setup();
 
     // Allocate space for the vault and see if a copy exists in NVS
     jolt_gui_store.first_boot = ( false == vault_setup() );
