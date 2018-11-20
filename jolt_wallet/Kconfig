@@ -112,7 +112,7 @@ menu "Jolt Wallet"
     menu "App Compression"
         config JOLT_APP_COMPRESS
             bool
-            depends on ELFLOADER_MEMORY_POINTER
+            #depends on ELFLOADER_MEMORY_POINTER
             prompt "Use heatshrink to decompress apps"
             default n
             help
