@@ -114,11 +114,11 @@ uint32_t jolt_fs_get_all_fns(char **fns, uint32_t fns_len, const char *ext, bool
 uint16_t jolt_fs_get_all_elf_fns(char ***fns) {
     uint16_t n;
 
-    n = jolt_fs_get_all_fns(NULL, 0, ".elf", true);
+    n = jolt_fs_get_all_fns(NULL, 0, ".jelf", true);
     ESP_LOGI(TAG, "Found %x apps.", n);
     if( n > 0 ) {
         *fns = jolt_h_malloc_char_array(n);
-        jolt_fs_get_all_fns(*fns, n, ".elf", true);
+        jolt_fs_get_all_fns(*fns, n, ".jelf", true);
     }
     return n;
 }

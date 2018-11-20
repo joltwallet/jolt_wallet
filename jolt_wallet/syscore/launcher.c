@@ -14,7 +14,7 @@
 #include "esp_log.h"
 #include "linenoise/linenoise.h"
 #include "esp_spiffs.h"
-#include "elfloader.h"
+#include "jelfloader.h"
 
 #include "console.h"
 #include "jolt_globals.h"
@@ -27,9 +27,9 @@
 
 static const char* TAG = "syscore_launcher";
 
-#ifdef CONFIG_ELFLOADER_POSIX
+#ifdef CONFIG_JELFLOADER_POSIX
 #define LOADER_FD_FREE fclose
-#elif CONFIG_ELFLOADER_MEMORY_POINTER
+#elif CONFIG_JELFLOADER_MEMORY_POINTER
 #define LOADER_FD_FREE free
 #endif
 
@@ -60,13 +60,7 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
 	char exec_fn[128] = SPIFFS_BASE_PATH;
 	strcat(exec_fn, "/");
 	strncat(exec_fn, fn_basename, sizeof(exec_fn)-strlen(exec_fn)-1-4);
-    strcat(exec_fn, ".elf");
-
-    // Parse Signature Filename
-    char sig_fn[128] = SPIFFS_BASE_PATH;
-	strcat(sig_fn, "/");
-	strncat(sig_fn, fn_basename, sizeof(sig_fn)-strlen(sig_fn)-1-4);
-    strcat(sig_fn, ".sig");
+    strcat(exec_fn, ".jelf");
 
     if( check_file_exists(exec_fn) != 1 ){
         ESP_LOGE(TAG, "Executable doesn't exist\n");
@@ -83,7 +77,7 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
 #endif
 
     /* Get a populated pointer-like data object into program */
-    #if CONFIG_ELFLOADER_MEMORY_POINTER
+    #if CONFIG_JELFLOADER_MEMORY_POINTER
         #if CONFIG_JOLT_APP_COMPRESS
         {
             ESP_LOGI(TAG, "Decompressing %s", exec_fn);
@@ -111,12 +105,12 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
 			fclose(f);
 		}
         #endif
-    #elif CONFIG_ELFLOADER_POSIX
+    #elif CONFIG_JELFLOADER_POSIX
         ESP_LOGI(TAG, "Opening file descriptor to %s", exec_fn);
         program = fopen(exec_fn, "rb");
     #endif
 
-    #if CONFIG_ELFLOADER_PROFILER_EN
+    #if CONFIG_JELFLOADER_PROFILER_EN
          elfLoaderProfilerReset();
          uint64_t elfLoader_time = esp_timer_get_time();
     #endif
@@ -129,6 +123,7 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         return -4;
     }
 
+#if 0
     ESP_LOGI(TAG, "elfLoader; Loading Sections");
     if( NULL == elfLoaderLoad(jolt_gui_store.app.ctx) ) {
         elfLoaderFree(jolt_gui_store.app.ctx);
@@ -151,7 +146,7 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         return -7;
     }
 
-    #if CONFIG_ELFLOADER_PROFILER_EN
+    #if CONFIG_JELFLOADER_PROFILER_EN
         elfLoader_time = esp_timer_get_time() - elfLoader_time;
         ESP_LOGI(TAG, "ELF Application Loaded in %lld uS.", elfLoader_time);
         elfLoaderProfilerPrint();
@@ -200,6 +195,7 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         vault_set(purpose, coin, bip32_key, 
                 launch_app_exit, launch_app_from_store);
     }
+#endif
     return 0;
 }
 
