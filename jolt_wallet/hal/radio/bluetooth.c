@@ -696,12 +696,18 @@ void jolt_bluetooth_setup() {
                 __func__, ret);
         return;
     }
+    else {
+        ESP_LOGI(TAG, "[bt] Initialized Controller");
+    }
 
     ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
     if (ret) {
         ESP_LOGE(TAG, "%s enable controller failed, error code = %x\n",
                 __func__, ret);
         return;
+    }
+    else {
+        ESP_LOGI(TAG, "[bt] Enabled Controller");
     }
 
     ret = esp_bluedroid_init();
@@ -710,12 +716,18 @@ void jolt_bluetooth_setup() {
                 __func__, ret);
         return;
     }
+    else {
+        ESP_LOGI(TAG, "[bt] Initialized Bluedroid");
+    }
 
     ret = esp_bluedroid_enable();
     if (ret) {
         ESP_LOGE(GATTS_TABLE_TAG, "%s enable bluetooth failed: %s\n",
                 __func__, esp_err_to_name(ret));
         return;
+    }
+    else {
+        ESP_LOGI(TAG, "[bt] Enabled Bluedroid");
     }
 
     //register the  callback function to the gap module
@@ -725,19 +737,28 @@ void jolt_bluetooth_setup() {
                 __func__, ret);
         return;
     }
+    else {
+        ESP_LOGI(TAG, "[bt] Registered GAP callback");
+    }
 
 
     ret = esp_ble_gatts_register_callback(gatts_event_handler);
     if(ret){
-        ESP_LOGE(GATTS_TABLE_TAG, "%s gattc register failed, error code = %x\n",
+        ESP_LOGE(GATTS_TABLE_TAG, "%s gatts register failed, error code = %x\n",
                 __func__, ret);
         return;
+    }
+    else {
+        ESP_LOGI(TAG, "[bt] Registered GATTS callback");
     }
 
     ret = esp_ble_gatts_app_register(ESP_SPP_APP_ID);
     if (ret){
-        ESP_LOGE(GATTS_TABLE_TAG, "%s gattc app register failed, error code = %x\n",
+        ESP_LOGE(GATTS_TABLE_TAG, "%s gatts app register failed, error code = %x\n",
                 __func__, ret);
+    }
+    else {
+        ESP_LOGI(TAG, "[bt] Registered GATTS App");
     }
 
 #if 0
@@ -749,5 +770,7 @@ void jolt_bluetooth_setup() {
 #endif
 
     spp_task_init();
+
+    ESP_LOGI(TAG, "Done setting up bluetooth.");
 
 }
