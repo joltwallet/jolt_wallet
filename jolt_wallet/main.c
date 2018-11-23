@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <esp_system.h>
+#include "esp_err.h"
 #include "esp_log.h"
 
 #include "freertos/FreeRTOS.h"
@@ -151,13 +152,18 @@ void littlevgl_task() {
         jolt_gui_sem_give();
     }
     ESP_LOGE(TAG, "Draw Loop Exitted"); // Should never reach here
+    abort();
 }
 
 #ifndef UNIT_TESTING
 // So our app_main() doesn't override the unit test app_main()
 void app_main() {
     /* Setup and Install I2C Driver and supporting objects */
-    i2c_driver_setup();
+    esp_err_t err;
+    err = i2c_driver_setup();
+    if( ESP_OK != err) {
+        ESP_LOGE(TAG, "Failed to install i2c driver");
+    }
 
     /* Initialize LVGL graphics system */
     lv_init();
