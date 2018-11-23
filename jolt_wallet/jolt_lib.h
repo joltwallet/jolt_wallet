@@ -36,8 +36,7 @@
 
 #if JOLT_OS
 
-#define EXPORT_SYMBOL(NAME) {#NAME, (void*) NAME}
-#define EXPORT_SYMBOL_PTR(NAME) {#NAME, (void*) &NAME}
+#define EXPORT_SYMBOL(NAME) {#NAME, (void*) &NAME}
 
 extern void *__floatsidf;
 extern void *__gtdf2;
@@ -48,12 +47,12 @@ extern void *__stack_chk_guard;
 
 
 const ELFLoaderSymbol_t exports[] = {
-    EXPORT_SYMBOL_PTR( __floatsidf ),
-    EXPORT_SYMBOL_PTR( __gtdf2 ),
-    EXPORT_SYMBOL_PTR( __ltdf2 ),
-    EXPORT_SYMBOL_PTR( __muldf3 ),
-    EXPORT_SYMBOL_PTR( __stack_chk_fail ),
-    EXPORT_SYMBOL_PTR( __stack_chk_guard ),
+    EXPORT_SYMBOL( __floatsidf ),
+    EXPORT_SYMBOL( __gtdf2 ),
+    EXPORT_SYMBOL( __ltdf2 ),
+    EXPORT_SYMBOL( __muldf3 ),
+    EXPORT_SYMBOL( __stack_chk_fail ),
+    EXPORT_SYMBOL( __stack_chk_guard ),
     EXPORT_SYMBOL( _esp_error_check_failed ),
     EXPORT_SYMBOL( atoi ),
     EXPORT_SYMBOL( atol ),
@@ -315,7 +314,7 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( subconsole_cmd_register ),
     EXPORT_SYMBOL( subconsole_cmd_run ),
     EXPORT_SYMBOL( vTaskDelete ),
-    EXPORT_SYMBOL_PTR( vault ),
+    EXPORT_SYMBOL( vault ),
     EXPORT_SYMBOL( vault_refresh ),
     EXPORT_SYMBOL( vault_sem_give ),
     EXPORT_SYMBOL( vault_sem_take ),
