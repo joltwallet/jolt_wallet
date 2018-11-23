@@ -12,16 +12,16 @@
 	url = https://github.com/joltwallet/elfloader.git
 [submodule "components/bip-mnemonic"]
 	path = components/bip-mnemonic
-	url = git@github.com:joltwallet/bip-mnemonic.git
+	url = https://github.com/joltwallet/bip-mnemonic.git
 [submodule "components/jolt-crypto"]
 	path = components/jolt-crypto
-	url = git@github.com:joltwallet/jolt-crypto.git
+	url = https://github.com/joltwallet/jolt-crypto.git
 [submodule "components/jolt-types"]
 	path = components/jolt-types
-	url = git@github.com:joltwallet/jolt-types.git
+	url = https://github.com/joltwallet/jolt-types.git
 [submodule "components/nano_rest"]
 	path = components/nano_rest
-	url = git@github.com:joltwallet/nano_rest.git
+	url = https://github.com/joltwallet/nano_rest.git
 [submodule "components/lvgl"]
 	path = jolt_wallet/lvgl
 	url = https://github.com/joltwallet/lvgl.git

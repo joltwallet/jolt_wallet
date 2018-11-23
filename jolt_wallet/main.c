@@ -26,7 +26,7 @@
 #include "jolt_gui/jolt_gui.h"
 
 #include "console.h"
-//#include "hal/radio/bluetooth.h"
+#include "hal/radio/bluetooth.h"
 #include "hal/radio/wifi.h"
 #include "jolt_helpers.h"
 #include "jolt_globals.h"
