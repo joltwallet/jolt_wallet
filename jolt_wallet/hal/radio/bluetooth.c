@@ -32,6 +32,8 @@
 #define SPP_STATUS_MAX_LEN         (20)
 #define SPP_DATA_BUFF_MAX_LEN      (2*1024)
 
+#define SUPPORT_HEARTBEAT true
+
 ///Attributes State Machine
 enum{
     SPP_IDX_SVC = 0,
@@ -73,10 +75,10 @@ enum{
 #define SPP_SVC_INST_ID	            0
 
 /// SPP Service
-static const uint16_t spp_service_uuid = 0xABF0;
+static const uint16_t spp_service_uuid = 0xFFE0;
 /// Characteristic UUID
-#define ESP_GATT_UUID_SPP_DATA_RECEIVE      0xABF1 // smartphone->jolt
-#define ESP_GATT_UUID_SPP_DATA_NOTIFY       0xABF2
+#define ESP_GATT_UUID_SPP_DATA_RECEIVE      0xFFE1 // smartphone->jolt
+#define ESP_GATT_UUID_SPP_DATA_NOTIFY       0xFFE2
 #define ESP_GATT_UUID_SPP_COMMAND_RECEIVE   0xABF3 // smartphone->jolt
 #define ESP_GATT_UUID_SPP_COMMAND_NOTIFY    0xABF4
 
@@ -88,7 +90,7 @@ static const uint16_t spp_service_uuid = 0xABF0;
 // esp_ble_adv_data_t
 static const uint8_t spp_adv_data[23] = {
     0x02,0x01,0x06, // Flags
-    0x03,0x03,0xF0,0xAB,
+    0x03,0x03,0xE0,0xFF,
     0x0F,0x04,'J','o','l','t'
 };
 
