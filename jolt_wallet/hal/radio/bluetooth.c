@@ -22,15 +22,19 @@
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
 
+#include "jolt_globals.h"
+#include "esp_console.h"
+
 
 #define spp_sprintf(s,...)         sprintf((char*)(s), ##__VA_ARGS__)
 #define SPP_DATA_MAX_LEN           (512)
 #define SPP_CMD_MAX_LEN            (20)
 #define SPP_STATUS_MAX_LEN         (20)
 #define SPP_DATA_BUFF_MAX_LEN      (2*1024)
+
 ///Attributes State Machine
 enum{
-    SPP_IDX_SVC,
+    SPP_IDX_SVC = 0,
 
     SPP_IDX_SPP_DATA_RECV_CHAR,
     SPP_IDX_SPP_DATA_RECV_VAL,
@@ -71,17 +75,19 @@ enum{
 /// SPP Service
 static const uint16_t spp_service_uuid = 0xABF0;
 /// Characteristic UUID
-#define ESP_GATT_UUID_SPP_DATA_RECEIVE      0xABF1
+#define ESP_GATT_UUID_SPP_DATA_RECEIVE      0xABF1 // smartphone->jolt
 #define ESP_GATT_UUID_SPP_DATA_NOTIFY       0xABF2
-#define ESP_GATT_UUID_SPP_COMMAND_RECEIVE   0xABF3
+#define ESP_GATT_UUID_SPP_COMMAND_RECEIVE   0xABF3 // smartphone->jolt
 #define ESP_GATT_UUID_SPP_COMMAND_NOTIFY    0xABF4
 
 #ifdef SUPPORT_HEARTBEAT
 #define ESP_GATT_UUID_SPP_HEARTBEAT         0xABF5
 #endif
 
+// Serial Port Profile Advertising Data
+// esp_ble_adv_data_t
 static const uint8_t spp_adv_data[23] = {
-    0x02,0x01,0x06,
+    0x02,0x01,0x06, // Flags
     0x03,0x03,0xF0,0xAB,
     0x0F,0x09,0x45,0x53,0x50,0x5f,0x53,0x50,0x50,0x5f,0x53,0x45,0x52,0x56,0x45,0x52
 };
@@ -89,7 +95,6 @@ static const uint8_t spp_adv_data[23] = {
 static uint16_t spp_mtu_size = 23;
 static uint16_t spp_conn_id = 0xffff;
 static esp_gatt_if_t spp_gatts_if = 0xff;
-QueueHandle_t spp_uart_queue = NULL;
 static xQueueHandle cmd_cmd_queue = NULL;
 
 #ifdef SUPPORT_HEARTBEAT
@@ -344,105 +349,6 @@ static void print_write_buffer(void)
     }
 }
 
-void uart_task(void *pvParameters)
-{
-    uart_event_t event;
-    uint8_t total_num = 0;
-    uint8_t current_num = 0;
-
-    for (;;) {
-        //Waiting for UART event.
-        if (xQueueReceive(spp_uart_queue, (void * )&event, (portTickType)portMAX_DELAY)) {
-            switch (event.type) {
-            //Event of UART receving data
-            case UART_DATA:
-                if ((event.size)&&(is_connected)) {
-                    uint8_t * temp = NULL;
-                    uint8_t * ntf_value_p = NULL;
-#ifdef SUPPORT_HEARTBEAT
-                    if(!enable_heart_ntf){
-                        ESP_LOGE(GATTS_TABLE_TAG, "%s do not enable heartbeat Notify\n", __func__);
-                        break;
-                    }
-#endif
-                    if(!enable_data_ntf){
-                        ESP_LOGE(GATTS_TABLE_TAG, "%s do not enable data Notify\n", __func__);
-                        break;
-                    }
-                    temp = (uint8_t *)malloc(sizeof(uint8_t)*event.size);
-                    if(temp == NULL){
-                        ESP_LOGE(GATTS_TABLE_TAG, "%s malloc.1 failed\n", __func__);
-                        break;
-                    }
-                    memset(temp,0x0,event.size);
-                    uart_read_bytes(UART_NUM_0,temp,event.size,portMAX_DELAY);
-                    if(event.size <= (spp_mtu_size - 3)){
-                        esp_ble_gatts_send_indicate(spp_gatts_if, spp_conn_id, spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL],event.size, temp, false);
-                    }else if(event.size > (spp_mtu_size - 3)){
-                        if((event.size%(spp_mtu_size - 7)) == 0){
-                            total_num = event.size/(spp_mtu_size - 7);
-                        }else{
-                            total_num = event.size/(spp_mtu_size - 7) + 1;
-                        }
-                        current_num = 1;
-                        ntf_value_p = (uint8_t *)malloc((spp_mtu_size-3)*sizeof(uint8_t));
-                        if(ntf_value_p == NULL){
-                            ESP_LOGE(GATTS_TABLE_TAG, "%s malloc.2 failed\n", __func__);
-                            free(temp);
-                            break;
-                        }
-                        while(current_num <= total_num){
-                            if(current_num < total_num){
-                                ntf_value_p[0] = '#';
-                                ntf_value_p[1] = '#';
-                                ntf_value_p[2] = total_num;
-                                ntf_value_p[3] = current_num;
-                                memcpy(ntf_value_p + 4,temp + (current_num - 1)*(spp_mtu_size-7),(spp_mtu_size-7));
-                                esp_ble_gatts_send_indicate(spp_gatts_if, spp_conn_id, spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL],(spp_mtu_size-3), ntf_value_p, false);
-                            }else if(current_num == total_num){
-                                ntf_value_p[0] = '#';
-                                ntf_value_p[1] = '#';
-                                ntf_value_p[2] = total_num;
-                                ntf_value_p[3] = current_num;
-                                memcpy(ntf_value_p + 4,temp + (current_num - 1)*(spp_mtu_size-7),(event.size - (current_num - 1)*(spp_mtu_size - 7)));
-                                esp_ble_gatts_send_indicate(spp_gatts_if, spp_conn_id, spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL],(event.size - (current_num - 1)*(spp_mtu_size - 7) + 4), ntf_value_p, false);
-                            }
-                            vTaskDelay(20 / portTICK_PERIOD_MS);
-                            current_num++;
-                        }
-                        free(ntf_value_p);
-                    }
-                    free(temp);
-                }
-                break;
-            default:
-                break;
-            }
-        }
-    }
-    vTaskDelete(NULL);
-}
-
-static void spp_uart_init(void)
-{
-    uart_config_t uart_config = {
-        .baud_rate = 115200,
-        .data_bits = UART_DATA_8_BITS,
-        .parity = UART_PARITY_DISABLE,
-        .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_RTS,
-        .rx_flow_ctrl_thresh = 122,
-    };
-
-    //Set UART parameters
-    uart_param_config(UART_NUM_0, &uart_config);
-    //Set UART pins
-    uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-    //Install UART driver, and get the queue.
-    uart_driver_install(UART_NUM_0, 4096, 8192, 10,&spp_uart_queue,0);
-    xTaskCreate(uart_task, "uTask", 2048, (void*)UART_NUM_0, 8, NULL);
-}
-
 #ifdef SUPPORT_HEARTBEAT
 void spp_heartbeat_task(void * arg)
 {
@@ -472,12 +378,43 @@ void spp_heartbeat_task(void * arg)
 void spp_cmd_task(void * arg)
 {
     uint8_t * cmd_id;
+    char *line;
 
     for(;;){
         vTaskDelay(50 / portTICK_PERIOD_MS);
-        if(xQueueReceive(cmd_cmd_queue, &cmd_id, portMAX_DELAY)) {
-            esp_log_buffer_char(GATTS_TABLE_TAG,(char *)(cmd_id),strlen((char *)cmd_id));
-            free(cmd_id);
+        if(xQueueReceive(cmd_cmd_queue, &line, portMAX_DELAY)) {
+            /* todo: refactor this, repeated code from console.c */
+            if (line == NULL) { /* Ignore empty lines */
+                continue;
+            }
+            if (strcmp(line, "exit") == 0){
+                printf("Exiting Console\n");
+                break;
+            }
+            
+            /* Try to run the command */
+            int ret;
+            esp_err_t err = esp_console_run(line, &ret);
+            if (err == ESP_ERR_NOT_FOUND) {
+                // The command could be an app to run console commands from
+                char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
+                printf("Unsuccessful command\n");
+                /*
+                // split_argv modifies line with NULL-terminators
+                size_t argc = esp_console_split_argv(line, argv, sizeof(argv));
+                if( launch_file(argv[0], "console", argc-1, argv+1) ) {
+                    printf("Unsuccessful command\n");
+                }
+                */
+            } else if (err == ESP_ERR_INVALID_ARG) {
+                // command was empty
+            } else if (err == ESP_OK && ret != ESP_OK) {
+                printf("Command returned non-zero error code: 0x%x\n", ret);
+            } else if (err != ESP_OK) {
+                printf("Internal error: 0x%x\n", err);
+            }
+
+            free(line);
         }
     }
     vTaskDelete(NULL);
@@ -485,15 +422,13 @@ void spp_cmd_task(void * arg)
 
 static void spp_task_init(void)
 {
-    spp_uart_init();
-
 #ifdef SUPPORT_HEARTBEAT
     cmd_heartbeat_queue = xQueueCreate(10, sizeof(uint32_t));
     xTaskCreate(spp_heartbeat_task, "spp_heartbeat_task", 2048, NULL, 10, NULL);
 #endif
 
-    cmd_cmd_queue = xQueueCreate(10, sizeof(uint32_t));
-    xTaskCreate(spp_cmd_task, "spp_cmd_task", 2048, NULL, 10, NULL);
+    cmd_cmd_queue = xQueueCreate(10, sizeof(char *));
+    xTaskCreate(spp_cmd_task, "spp_cmd_task", 4096, NULL, 10, NULL);
 }
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
@@ -544,16 +479,19 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             if(p_data->write.is_prep == false){
                 ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_WRITE_EVT : handle = %d\n", res);
                 if(res == SPP_IDX_SPP_COMMAND_VAL){
+                    /* Allocate memory for 1 MTU, and send it off to the cmd_cmd_queue */
+                    ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_COMMAND_VAL");
                     uint8_t * spp_cmd_buff = NULL;
                     spp_cmd_buff = (uint8_t *)malloc((spp_mtu_size - 3) * sizeof(uint8_t));
                     if(spp_cmd_buff == NULL){
                         ESP_LOGE(GATTS_TABLE_TAG, "%s malloc failed\n", __func__);
                         break;
                     }
-                    memset(spp_cmd_buff,0x0,(spp_mtu_size - 3));
-                    memcpy(spp_cmd_buff,p_data->write.value,p_data->write.len);
-                    xQueueSend(cmd_cmd_queue,&spp_cmd_buff,10/portTICK_PERIOD_MS);
+                    memset(spp_cmd_buff, 0, (spp_mtu_size - 3));
+                    memcpy(spp_cmd_buff, p_data->write.value, p_data->write.len);
+                    xQueueSend(cmd_cmd_queue, &spp_cmd_buff, 10/portTICK_PERIOD_MS);
                 }else if(res == SPP_IDX_SPP_DATA_NTF_CFG){
+                    ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_NTF_CFG");
                     if((p_data->write.len == 2)&&(p_data->write.value[0] == 0x01)&&(p_data->write.value[1] == 0x00)){
                         enable_data_ntf = true;
                     }else if((p_data->write.len == 2)&&(p_data->write.value[0] == 0x00)&&(p_data->write.value[1] == 0x00)){
@@ -562,24 +500,29 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                 }
 #ifdef SUPPORT_HEARTBEAT
                 else if(res == SPP_IDX_SPP_HEARTBEAT_CFG){
+                    ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_HEARTBEAT_CFG");
                     if((p_data->write.len == 2)&&(p_data->write.value[0] == 0x01)&&(p_data->write.value[1] == 0x00)){
                         enable_heart_ntf = true;
                     }else if((p_data->write.len == 2)&&(p_data->write.value[0] == 0x00)&&(p_data->write.value[1] == 0x00)){
                         enable_heart_ntf = false;
                     }
                 }else if(res == SPP_IDX_SPP_HEARTBEAT_VAL){
+                    ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_HEARTBEAT_VAL");
                     if((p_data->write.len == sizeof(heartbeat_s))&&(memcmp(heartbeat_s,p_data->write.value,sizeof(heartbeat_s)) == 0)){
                         heartbeat_count_num = 0;
                     }
                 }
 #endif
                 else if(res == SPP_IDX_SPP_DATA_RECV_VAL){
+                    ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_RECV_VAL");
 #ifdef SPP_DEBUG_MODE
                     esp_log_buffer_char(GATTS_TABLE_TAG,(char *)(p_data->write.value),p_data->write.len);
 #else
                     uart_write_bytes(UART_NUM_0, (char *)(p_data->write.value), p_data->write.len);
 #endif
                 }else{
+                    ESP_LOGI(GATTS_TABLE_TAG, "Unknown state machine attribute %d.",
+                            res);
                     //TODO:
                 }
             }else if((p_data->write.is_prep == true)&&(res == SPP_IDX_SPP_DATA_RECV_VAL)){

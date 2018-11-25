@@ -182,7 +182,6 @@ void app_main() {
     set_jolt_cast();
     wifi_connect();
 
-    jolt_bluetooth_setup();
 
     // Allocate space for the vault and see if a copy exists in NVS
     jolt_gui_store.first_boot = ( false == vault_setup() );
@@ -202,6 +201,8 @@ void app_main() {
     // Initiate Console
     initialize_console();
     start_console();
+
+    jolt_bluetooth_setup();
 
     BaseType_t ret;
     ESP_LOGI(TAG, "Creating Screen Draw Task");
