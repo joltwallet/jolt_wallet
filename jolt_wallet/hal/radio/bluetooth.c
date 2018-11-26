@@ -93,6 +93,7 @@ static esp_bd_addr_t spp_remote_bda = {0x0,};
 
 static uint16_t spp_handle_table[SPP_IDX_NB];
 
+/* Advertising Parameters */
 static esp_ble_adv_params_t spp_adv_params = {
     .adv_int_min        = 0x20,
     .adv_int_max        = 0x40,
@@ -117,30 +118,32 @@ struct gatts_profile_inst {
     esp_bt_uuid_t descr_uuid;
 };
 
+/* Singly linked list of received data? */
 typedef struct spp_receive_data_node{
     int32_t len;
     uint8_t *node_buff;
     struct spp_receive_data_node *next_node;
-}spp_receive_data_node_t;
+} spp_receive_data_node_t;
 
 static spp_receive_data_node_t *temp_spp_recv_data_node_p1 = NULL;
 static spp_receive_data_node_t *temp_spp_recv_data_node_p2 = NULL;
 
 typedef struct spp_receive_data_buff{
     int32_t node_num;
-    int32_t buff_size;
+    int32_t buf_size;
     spp_receive_data_node_t * first_node;
-}spp_receive_data_buff_t;
+} spp_receive_data_buff_t;
 
 static spp_receive_data_buff_t SppRecvDataBuff = {
     .node_num   = 0,
-    .buff_size  = 0,
+    .buf_size  = 0,
     .first_node = NULL
 };
 
+/* Forward Declare Static Functions */
 static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
-/* One gatt-based profile one app_id and one gatts_if, this array will store the gatts_if returned by ESP_GATTS_REG_EVT */
+/* Array to store each application profile; will store the gatts_if returned by ESP_GATTS_REG_EVT */
 static struct gatts_profile_inst spp_profile_tab[SPP_PROFILE_NUM] = {
     [SPP_PROFILE_APP_IDX] = {
         .gatts_cb = gatts_profile_event_handler,
@@ -148,10 +151,9 @@ static struct gatts_profile_inst spp_profile_tab[SPP_PROFILE_NUM] = {
     },
 };
 
-/*
- *  SPP PROFILE ATTRIBUTES
- ****************************************************************************************
- */
+/***************************
+ *  SPP PROFILE ATTRIBUTES *
+ ***************************/
 
 #define CHAR_DECLARATION_SIZE   (sizeof(uint8_t))
 static const uint16_t primary_service_uuid = ESP_GATT_UUID_PRI_SERVICE;
@@ -179,66 +181,156 @@ static const uint16_t spp_status_uuid = ESP_GATT_UUID_SPP_COMMAND_NOTIFY;
 static const uint8_t  spp_status_val[10] = {0x00};
 static const uint8_t  spp_status_ccc[2] = {0x00, 0x00};
 
-///Full HRS Database Description - Used to add attributes into the database
+/// Full HRS Database Description - Used to add attributes into the database
 static const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] =
 {
-    //SPP -  Service Declaration
-    [SPP_IDX_SVC]                      	=
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&primary_service_uuid, ESP_GATT_PERM_READ,
-    sizeof(spp_service_uuid), sizeof(spp_service_uuid), (uint8_t *)&spp_service_uuid}},
+    /* SPP -  Service Declaration */
+    [SPP_IDX_SVC] = {
+        .attr_control = {
+            // response of R/W operation will be replied by GATT stack automatically
+            .auto_rsp = ESP_GATT_AUTO_RSP
+        },
+        .att_desc = {
+            .uuid_length = ESP_UUID_LEN_16,
+            .uuid_p      = (uint8_t *)&primary_service_uuid, // UUID value
+            .perm        = ESP_GATT_PERM_READ,
+            .max_length  = sizeof(spp_service_uuid),
+            .length      = sizeof(spp_service_uuid),
+            .value       = (uint8_t *)&spp_service_uuid
+        }
+    },
 
     //SPP -  data receive characteristic Declaration
-    [SPP_IDX_SPP_DATA_RECV_CHAR]            =
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
-    CHAR_DECLARATION_SIZE,CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write}},
+    [SPP_IDX_SPP_DATA_RECV_CHAR] = {
+        {
+            ESP_GATT_AUTO_RSP
+        },
+        {
+            .uuid_length = ESP_UUID_LEN_16,
+            .uuid_p      = (uint8_t *)&character_declaration_uuid,
+            .perm        = ESP_GATT_PERM_READ,
+            .max_length  = CHAR_DECLARATION_SIZE,
+            .length      = CHAR_DECLARATION_SIZE, 
+            .value       = (uint8_t *)&char_prop_read_write
+        }
+    },
 
     //SPP -  data receive characteristic Value
-    [SPP_IDX_SPP_DATA_RECV_VAL]             	=
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&spp_data_receive_uuid,
-            ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
-    SPP_DATA_MAX_LEN,sizeof(spp_data_receive_val), (uint8_t *)spp_data_receive_val}},
+    [SPP_IDX_SPP_DATA_RECV_VAL] = {
+        {ESP_GATT_AUTO_RSP},
+        {
+            .uuid_length = ESP_UUID_LEN_16,
+            .uuid_p      = (uint8_t *)&spp_data_receive_uuid,
+            .perm        = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+            .max_length  = SPP_DATA_MAX_LEN,
+            .length      = sizeof(spp_data_receive_val),
+            .value       = (uint8_t *)spp_data_receive_val
+        }
+    },
 
     //SPP -  data notify characteristic Declaration
-    [SPP_IDX_SPP_DATA_NOTIFY_CHAR]  =
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid,
-                              ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
-    CHAR_DECLARATION_SIZE,CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_notify}},
+    [SPP_IDX_SPP_DATA_NOTIFY_CHAR]  = {
+        {ESP_GATT_AUTO_RSP},
+        {
+            .uuid_length = ESP_UUID_LEN_16,
+            .uuid_p      = (uint8_t *)&character_declaration_uuid,
+            .perm        = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+            .max_length  = CHAR_DECLARATION_SIZE,
+            .length      = CHAR_DECLARATION_SIZE,
+            .value       = (uint8_t *)&char_prop_read_notify
+        }
+    },
 
     //SPP -  data notify characteristic Value
-    [SPP_IDX_SPP_DATA_NTY_VAL]   =
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&spp_data_notify_uuid, ESP_GATT_PERM_READ,
-    SPP_DATA_MAX_LEN, sizeof(spp_data_notify_val), (uint8_t *)spp_data_notify_val}},
+    [SPP_IDX_SPP_DATA_NTY_VAL] = {
+        {ESP_GATT_AUTO_RSP},
+        {
+            .uuid_length = ESP_UUID_LEN_16,
+            .uuid_p      = (uint8_t *)&spp_data_notify_uuid,
+            .perm        = ESP_GATT_PERM_READ,
+            .max_length  = SPP_DATA_MAX_LEN,
+            .length      = sizeof(spp_data_notify_val),
+            .value       = (uint8_t *)spp_data_notify_val
+        }
+    },
 
     //SPP -  data notify characteristic - Client Characteristic Configuration Descriptor
-    [SPP_IDX_SPP_DATA_NTF_CFG]         =
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE,
-    sizeof(uint16_t),sizeof(spp_data_notify_ccc), (uint8_t *)spp_data_notify_ccc}},
+    [SPP_IDX_SPP_DATA_NTF_CFG] = {
+        {ESP_GATT_AUTO_RSP},
+        {
+            .uuid_length = ESP_UUID_LEN_16,
+            .uuid_p      = (uint8_t *)&character_client_config_uuid,
+            .perm        = ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE,
+            .max_length  = sizeof(uint16_t),
+            .length      = sizeof(spp_data_notify_ccc),
+            .value       = (uint8_t *)spp_data_notify_ccc
+        }
+    },
 
     //SPP -  command characteristic Declaration
-    [SPP_IDX_SPP_COMMAND_CHAR]            =
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
-    CHAR_DECLARATION_SIZE,CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_write}},
+    [SPP_IDX_SPP_COMMAND_CHAR] = {
+        {ESP_GATT_AUTO_RSP},
+        {
+            .uuid_length = ESP_UUID_LEN_16,
+            .uuid_p      = (uint8_t *)&character_declaration_uuid,
+            .perm        = ESP_GATT_PERM_READ,
+            .max_length  = CHAR_DECLARATION_SIZE,
+            .length      = CHAR_DECLARATION_SIZE,
+            .value       = (uint8_t *)&char_prop_read_write
+        }
+    },
 
     //SPP -  command characteristic Value
-    [SPP_IDX_SPP_COMMAND_VAL]                 =
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&spp_command_uuid, ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE,
-    SPP_CMD_MAX_LEN,sizeof(spp_command_val), (uint8_t *)spp_command_val}},
+    [SPP_IDX_SPP_COMMAND_VAL] = {
+        {ESP_GATT_AUTO_RSP},
+        {
+           .uuid_length =  ESP_UUID_LEN_16,
+           .uuid_p      =  (uint8_t *)&spp_command_uuid, 
+           .perm        =  ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE, 
+           .max_length  =  SPP_CMD_MAX_LEN,
+           .length      =  sizeof(spp_command_val),
+           .value       =  (uint8_t *)spp_command_val
+        }
+    },
 
     //SPP -  status characteristic Declaration
-    [SPP_IDX_SPP_STATUS_CHAR]            =
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
-    CHAR_DECLARATION_SIZE,CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_read_notify}},
+    [SPP_IDX_SPP_STATUS_CHAR] = {
+        {ESP_GATT_AUTO_RSP},
+        {
+            .uuid_length = ESP_UUID_LEN_16,
+            .uuid_p      = (uint8_t *)&character_declaration_uuid,
+            .perm        = ESP_GATT_PERM_READ,
+            .max_length  = CHAR_DECLARATION_SIZE,
+            .length      = CHAR_DECLARATION_SIZE, 
+            .value       = (uint8_t *)&char_prop_read_notify
+        }
+    },
 
     //SPP -  status characteristic Value
-    [SPP_IDX_SPP_STATUS_VAL]                 =
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&spp_status_uuid, ESP_GATT_PERM_READ,
-    SPP_STATUS_MAX_LEN,sizeof(spp_status_val), (uint8_t *)spp_status_val}},
+    [SPP_IDX_SPP_STATUS_VAL] = {
+        {ESP_GATT_AUTO_RSP},
+        {
+            .uuid_length = ESP_UUID_LEN_16,
+            .uuid_p      = (uint8_t *)&spp_status_uuid,
+            .perm        = ESP_GATT_PERM_READ,
+            .max_length  = SPP_STATUS_MAX_LEN,
+            .length      = sizeof(spp_status_val),
+            .value       = (uint8_t *)spp_status_val
+        }
+    },
 
     //SPP -  status characteristic - Client Characteristic Configuration Descriptor
-    [SPP_IDX_SPP_STATUS_CFG]         =
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid, ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE,
-    sizeof(uint16_t),sizeof(spp_status_ccc), (uint8_t *)spp_status_ccc}},
-
+    [SPP_IDX_SPP_STATUS_CFG] = {
+        {ESP_GATT_AUTO_RSP},
+        {
+            .uuid_length = ESP_UUID_LEN_16,
+            .uuid_p      = (uint8_t *)&character_client_config_uuid,
+            .perm        = ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE,
+            .max_length  = sizeof(uint16_t),
+            .length      = sizeof(spp_status_ccc),
+            .value       = (uint8_t *)spp_status_ccc
+        }
+    },
 };
 
 static uint8_t find_char_and_desr_index(uint16_t handle)
@@ -266,7 +358,7 @@ static bool store_wr_buffer(esp_ble_gatts_cb_param_t *p_data)
         temp_spp_recv_data_node_p2->next_node = temp_spp_recv_data_node_p1;
     }
     temp_spp_recv_data_node_p1->len = p_data->write.len;
-    SppRecvDataBuff.buff_size += p_data->write.len;
+    SppRecvDataBuff.buf_size += p_data->write.len;
     temp_spp_recv_data_node_p1->next_node = NULL;
     temp_spp_recv_data_node_p1->node_buff = (uint8_t *)malloc(p_data->write.len);
     temp_spp_recv_data_node_p2 = temp_spp_recv_data_node_p1;
@@ -293,7 +385,7 @@ static void free_write_buffer(void)
     }
 
     SppRecvDataBuff.node_num = 0;
-    SppRecvDataBuff.buff_size = 0;
+    SppRecvDataBuff.buf_size = 0;
     SppRecvDataBuff.first_node = NULL;
 }
 
@@ -307,8 +399,7 @@ static void print_write_buffer(void)
     }
 }
 
-void spp_cmd_task(void * arg)
-{
+static void spp_cmd_task(void * arg) {
     uint8_t * cmd_id;
     char *line;
 
@@ -350,12 +441,6 @@ void spp_cmd_task(void * arg)
         }
     }
     vTaskDelete(NULL);
-}
-
-static void spp_task_init(void)
-{
-    cmd_cmd_queue = xQueueCreate(10, sizeof(char *));
-    xTaskCreate(spp_cmd_task, "spp_cmd_task", 4096, NULL, 10, NULL);
 }
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
@@ -506,7 +591,6 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
     }
 }
 
-
 static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
     ESP_LOGI(GATTS_TABLE_TAG, "EVT %d, gatts if %d\n", event, gatts_if);
@@ -521,19 +605,16 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
         }
     }
 
-    do {
-        int idx;
-        for (idx = 0; idx < SPP_PROFILE_NUM; idx++) {
-            if (gatts_if == ESP_GATT_IF_NONE || /* ESP_GATT_IF_NONE, not specify a certain gatt_if, need to call every profile cb function */
-                    gatts_if == spp_profile_tab[idx].gatts_if) {
-                if (spp_profile_tab[idx].gatts_cb) {
-                    spp_profile_tab[idx].gatts_cb(event, gatts_if, param);
-                }
+    int idx;
+    for (idx = 0; idx < SPP_PROFILE_NUM; idx++) {
+        if (gatts_if == ESP_GATT_IF_NONE || /* ESP_GATT_IF_NONE, not specify a certain gatt_if, need to call every profile cb function */
+                gatts_if == spp_profile_tab[idx].gatts_if) {
+            if (spp_profile_tab[idx].gatts_cb) {
+                spp_profile_tab[idx].gatts_cb(event, gatts_if, param);
             }
         }
-    } while (0);
+    }
 }
-
 
 void jolt_bluetooth_setup() {
     esp_err_t ret;
@@ -618,7 +699,8 @@ void jolt_bluetooth_setup() {
     }
 #endif
 
-    spp_task_init();
+    cmd_cmd_queue = xQueueCreate(10, sizeof(char *));
+    xTaskCreate(spp_cmd_task, "spp_cmd_task", 4096, NULL, 10, NULL);
 
     ESP_LOGI(TAG, "Done setting up bluetooth.");
 
