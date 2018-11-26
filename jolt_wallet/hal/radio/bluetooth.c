@@ -25,6 +25,8 @@
 #include "jolt_globals.h"
 #include "esp_console.h"
 
+#include "spp_recv_buf.h"
+
 
 #define spp_sprintf(s,...)         sprintf((char*)(s), ##__VA_ARGS__)
 #define SPP_DATA_MAX_LEN           (512)
@@ -118,30 +120,9 @@ struct gatts_profile_inst {
     esp_bt_uuid_t descr_uuid;
 };
 
-/* Singly linked list of received data? */
-typedef struct spp_receive_data_node{
-    int32_t len;
-    uint8_t *node_buff;
-    struct spp_receive_data_node *next_node;
-} spp_receive_data_node_t;
-
-static spp_receive_data_node_t *temp_spp_recv_data_node_p1 = NULL;
-static spp_receive_data_node_t *temp_spp_recv_data_node_p2 = NULL;
-
-typedef struct spp_receive_data_buff{
-    int32_t node_num;
-    int32_t buf_size;
-    spp_receive_data_node_t * first_node;
-} spp_receive_data_buff_t;
-
-static spp_receive_data_buff_t SppRecvDataBuff = {
-    .node_num   = 0,
-    .buf_size  = 0,
-    .first_node = NULL
-};
-
 /* Forward Declare Static Functions */
-static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
+static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
+        esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
 /* Array to store each application profile; will store the gatts_if returned by ESP_GATTS_REG_EVT */
 static struct gatts_profile_inst spp_profile_tab[SPP_PROFILE_NUM] = {
@@ -163,27 +144,26 @@ static const uint16_t character_client_config_uuid = ESP_GATT_UUID_CHAR_CLIENT_C
 static const uint8_t char_prop_read_notify = ESP_GATT_CHAR_PROP_BIT_READ|ESP_GATT_CHAR_PROP_BIT_NOTIFY;
 static const uint8_t char_prop_read_write = ESP_GATT_CHAR_PROP_BIT_WRITE_NR|ESP_GATT_CHAR_PROP_BIT_READ;
 
-///SPP Service - data receive characteristic, read&write without response
+/* SPP Service - data receive characteristic, read&write without response */
 static const uint16_t spp_data_receive_uuid = ESP_GATT_UUID_SPP_DATA_RECEIVE;
 static const uint8_t  spp_data_receive_val[20] = {0x00};
 
-///SPP Service - data notify characteristic, notify&read
+/* SPP Service - data notify characteristic, notify&read */
 static const uint16_t spp_data_notify_uuid = ESP_GATT_UUID_SPP_DATA_NOTIFY;
 static const uint8_t  spp_data_notify_val[20] = {0x00};
 static const uint8_t  spp_data_notify_ccc[2] = {0x00, 0x00};
 
-///SPP Service - command characteristic, read&write without response
+/* SPP Service - command characteristic, read&write without response */
 static const uint16_t spp_command_uuid = ESP_GATT_UUID_SPP_COMMAND_RECEIVE;
 static const uint8_t  spp_command_val[10] = {0x00};
 
-///SPP Service - status characteristic, notify&read
+/* SPP Service - status characteristic, notify&read */
 static const uint16_t spp_status_uuid = ESP_GATT_UUID_SPP_COMMAND_NOTIFY;
 static const uint8_t  spp_status_val[10] = {0x00};
 static const uint8_t  spp_status_ccc[2] = {0x00, 0x00};
 
-/// Full HRS Database Description - Used to add attributes into the database
-static const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] =
-{
+/* Full HRS Database Description - Used to add attributes into the database */
+static const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
     /* SPP -  Service Declaration */
     [SPP_IDX_SVC] = {
         .attr_control = {
@@ -333,70 +313,13 @@ static const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] =
     },
 };
 
-static uint8_t find_char_and_desr_index(uint16_t handle)
-{
-    uint8_t error = 0xff;
-
-    for(int i = 0; i < SPP_IDX_NB ; i++){
-        if(handle == spp_handle_table[i]){
+static uint8_t find_char_and_desr_index(uint16_t handle) {
+    for(int i = 0; i < SPP_IDX_NB ; i++) {
+        if( handle == spp_handle_table[i]) {
             return i;
         }
     }
-
-    return error;
-}
-
-static bool store_wr_buffer(esp_ble_gatts_cb_param_t *p_data)
-{
-    temp_spp_recv_data_node_p1 = (spp_receive_data_node_t *)malloc(sizeof(spp_receive_data_node_t));
-
-    if(temp_spp_recv_data_node_p1 == NULL){
-        ESP_LOGI(GATTS_TABLE_TAG, "malloc error %s %d\n", __func__, __LINE__);
-        return false;
-    }
-    if(temp_spp_recv_data_node_p2 != NULL){
-        temp_spp_recv_data_node_p2->next_node = temp_spp_recv_data_node_p1;
-    }
-    temp_spp_recv_data_node_p1->len = p_data->write.len;
-    SppRecvDataBuff.buf_size += p_data->write.len;
-    temp_spp_recv_data_node_p1->next_node = NULL;
-    temp_spp_recv_data_node_p1->node_buff = (uint8_t *)malloc(p_data->write.len);
-    temp_spp_recv_data_node_p2 = temp_spp_recv_data_node_p1;
-    memcpy(temp_spp_recv_data_node_p1->node_buff,p_data->write.value,p_data->write.len);
-    if(SppRecvDataBuff.node_num == 0){
-        SppRecvDataBuff.first_node = temp_spp_recv_data_node_p1;
-        SppRecvDataBuff.node_num++;
-    }else{
-        SppRecvDataBuff.node_num++;
-    }
-
-    return true;
-}
-
-static void free_write_buffer(void)
-{
-    temp_spp_recv_data_node_p1 = SppRecvDataBuff.first_node;
-
-    while(temp_spp_recv_data_node_p1 != NULL){
-        temp_spp_recv_data_node_p2 = temp_spp_recv_data_node_p1->next_node;
-        free(temp_spp_recv_data_node_p1->node_buff);
-        free(temp_spp_recv_data_node_p1);
-        temp_spp_recv_data_node_p1 = temp_spp_recv_data_node_p2;
-    }
-
-    SppRecvDataBuff.node_num = 0;
-    SppRecvDataBuff.buf_size = 0;
-    SppRecvDataBuff.first_node = NULL;
-}
-
-static void print_write_buffer(void)
-{
-    temp_spp_recv_data_node_p1 = SppRecvDataBuff.first_node;
-
-    while(temp_spp_recv_data_node_p1 != NULL){
-        uart_write_bytes(UART_NUM_0, (char *)(temp_spp_recv_data_node_p1->node_buff), temp_spp_recv_data_node_p1->len);
-        temp_spp_recv_data_node_p1 = temp_spp_recv_data_node_p1->next_node;
-    }
+    return 0xff; // error
 }
 
 static void spp_cmd_task(void * arg) {
