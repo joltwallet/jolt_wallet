@@ -358,6 +358,15 @@ static void spp_cmd_task(void * arg) {
             }
 
             free(line);
+            esp_err_t res = esp_ble_gatts_send_indicate(
+                    spp_gatts_if,
+                    spp_conn_id,
+                    spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL],
+                    //spp_profile_tab[SPP_PROFILE_APP_IDX].char_handle,
+                    4, (uint8_t*)"meow", false);
+            if( ESP_OK != res ) {
+                ESP_LOGE(GATTS_TABLE_TAG, "Unable to indicate %d", res);
+            }
         }
     }
     vTaskDelete(NULL);
@@ -373,9 +382,11 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         esp_ble_gap_start_advertising(&spp_adv_params);
         break;
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
-        //advertising start complete event to indicate advertising start successfully or failed
+        /* advertising start complete event to indicate advertising 
+         * start successfully or failed. */
         if((err = param->adv_start_cmpl.status) != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed: %s\n", esp_err_to_name(err));
+            ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed: %s\n", 
+                    esp_err_to_name(err));
         }
         break;
     default:
@@ -383,6 +394,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     }
 }
 
+/* Only used to handle events for SPP_PROFILE_APP_IDX */
 static void gatts_profile_event_handler(esp_gatts_cb_event_t event, 
         esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) {
 
@@ -393,8 +405,10 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
     switch (event) {
     	case ESP_GATTS_REG_EVT:
         	esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
-        	esp_ble_gap_config_adv_data_raw((uint8_t *)spp_adv_data, sizeof(spp_adv_data));
-        	esp_ble_gatts_create_attr_tab(spp_gatt_db, gatts_if, SPP_IDX_NB, SPP_SVC_INST_ID);
+        	esp_ble_gap_config_adv_data_raw((uint8_t *)spp_adv_data,
+                    sizeof(spp_adv_data));
+        	esp_ble_gatts_create_attr_tab(spp_gatt_db, gatts_if, 
+                    SPP_IDX_NB, SPP_SVC_INST_ID);
        	    break;
     	case ESP_GATTS_READ_EVT:
             res = find_char_and_desr_index(p_data->read.handle);
@@ -434,6 +448,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
                     }
                 }
                 else if( res == SPP_IDX_SPP_DATA_RECV_VAL ) {
+                    /* Phone/Computer sent string to Jolt */
                     ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_RECV_VAL");
                     #ifdef SPP_DEBUG_MODE
                     esp_log_buffer_char(GATTS_TABLE_TAG,
@@ -441,7 +456,9 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
                     #else
                     uart_write_bytes(UART_NUM_0, 
                             (char *)(p_data->write.value), p_data->write.len);
+                    uart_write_bytes(UART_NUM_0, "\n", 1);
                     #endif
+
                 }
                 else{
                     ESP_LOGI(GATTS_TABLE_TAG, "Unknown state machine attribute %d.",
@@ -499,15 +516,21 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
     	case ESP_GATTS_CONGEST_EVT:
     	    break;
     	case ESP_GATTS_CREAT_ATTR_TAB_EVT:{
-    	    ESP_LOGI(GATTS_TABLE_TAG, "The number handle =%x\n",param->add_attr_tab.num_handle);
-    	    if (param->add_attr_tab.status != ESP_GATT_OK){
-    	        ESP_LOGE(GATTS_TABLE_TAG, "Create attribute table failed, error code=0x%x", param->add_attr_tab.status);
+    	    ESP_LOGI( GATTS_TABLE_TAG, "The number handle =%x\n",
+                    param->add_attr_tab.num_handle );
+    	    if ( param->add_attr_tab.status != ESP_GATT_OK ) {
+    	        ESP_LOGE(GATTS_TABLE_TAG, 
+                        "Create attribute table failed, error code=0x%x",
+                        param->add_attr_tab.status);
     	    }
     	    else if (param->add_attr_tab.num_handle != SPP_IDX_NB){
-    	        ESP_LOGE(GATTS_TABLE_TAG, "Create attribute table abnormally, num_handle (%d) doesn't equal to HRS_IDX_NB(%d)", param->add_attr_tab.num_handle, SPP_IDX_NB);
+                ESP_LOGE(GATTS_TABLE_TAG, "Create attribute table abnormally, "
+                        "num_handle (%d) doesn't equal to HRS_IDX_NB(%d)",
+                        param->add_attr_tab.num_handle, SPP_IDX_NB);
     	    }
     	    else {
-    	        memcpy(spp_handle_table, param->add_attr_tab.handles, sizeof(spp_handle_table));
+    	        memcpy(spp_handle_table, param->add_attr_tab.handles,
+                        sizeof(spp_handle_table));
     	        esp_ble_gatts_start_service(spp_handle_table[SPP_IDX_SVC]);
     	    }
     	    break;
@@ -517,25 +540,33 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
     }
 }
 
-static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
-{
+static void gatts_event_handler(esp_gatts_cb_event_t event, 
+        esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) {
+
     ESP_LOGI(GATTS_TABLE_TAG, "EVT %d, gatts if %d\n", event, gatts_if);
 
     /* If event is register event, store the gatts_if for each profile */
     if (event == ESP_GATTS_REG_EVT) {
         if (param->reg.status == ESP_GATT_OK) {
             spp_profile_tab[SPP_PROFILE_APP_IDX].gatts_if = gatts_if;
-        } else {
-            ESP_LOGI(GATTS_TABLE_TAG, "Reg app failed, app_id %04x, status %d\n",param->reg.app_id, param->reg.status);
+        } 
+        else {
+            ESP_LOGI(GATTS_TABLE_TAG, 
+                    "Reg app failed, app_id %04x, status %d\n",
+                    param->reg.app_id, param->reg.status);
             return;
         }
     }
 
+    /* Call the gatts_cb for the speicified gatts_if */
     int idx;
+    /* Iterate through the profiles */
     for (idx = 0; idx < SPP_PROFILE_NUM; idx++) {
-        if (gatts_if == ESP_GATT_IF_NONE || /* ESP_GATT_IF_NONE, not specify a certain gatt_if, need to call every profile cb function */
+        /* ESP_GATT_IF_NONE, not specify a certain gatt_if,
+         * need to call every profile cb function */
+        if (gatts_if == ESP_GATT_IF_NONE || 
                 gatts_if == spp_profile_tab[idx].gatts_if) {
-            if (spp_profile_tab[idx].gatts_cb) {
+            if ( NULL != spp_profile_tab[idx].gatts_cb) {
                 spp_profile_tab[idx].gatts_cb(event, gatts_if, param);
             }
         }
@@ -618,14 +649,6 @@ void jolt_bluetooth_setup() {
     else {
         ESP_LOGI(TAG, "[bt] Registered GATTS App");
     }
-
-#if 0
-    esp_err_t local_mtu_ret = esp_ble_gatt_set_local_mtu(500);
-    if (local_mtu_ret){
-        ESP_LOGE(GATTS_TABLE_TAG, "set local  MTU failed, error code = %x",
-                local_mtu_ret);
-    }
-#endif
 
     cmd_cmd_queue = xQueueCreate(10, sizeof(char *));
     xTaskCreate(spp_cmd_task, "spp_cmd_task", 4096, NULL, 10, NULL);
