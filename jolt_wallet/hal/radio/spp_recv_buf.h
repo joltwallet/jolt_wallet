@@ -6,5 +6,6 @@
 bool store_wr_buffer(esp_ble_gatts_cb_param_t *p_data);
 void free_write_buffer(void);
 void print_write_buffer(void);
+char *consolidate_write_buffer(void);
 
 #endif

@@ -56,9 +56,6 @@ enum{
 };
 
 
-
-
-
 #define GATTS_TABLE_TAG  "GATTS_SPP_DEMO"
 #define TAG  "GATTS_SPP_DEMO"
 
@@ -395,22 +392,17 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
     ESP_LOGI(GATTS_TABLE_TAG, "event = %x\n",event);
     switch (event) {
     	case ESP_GATTS_REG_EVT:
-    	    ESP_LOGI(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
         	esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
-
-        	ESP_LOGI(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
         	esp_ble_gap_config_adv_data_raw((uint8_t *)spp_adv_data, sizeof(spp_adv_data));
-
-        	ESP_LOGI(GATTS_TABLE_TAG, "%s %d\n", __func__, __LINE__);
         	esp_ble_gatts_create_attr_tab(spp_gatt_db, gatts_if, SPP_IDX_NB, SPP_SVC_INST_ID);
-       	break;
+       	    break;
     	case ESP_GATTS_READ_EVT:
             res = find_char_and_desr_index(p_data->read.handle);
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_READ_EVT : handle = %d\n", res);
             if(res == SPP_IDX_SPP_STATUS_VAL){
-                //TODO:client read the status characteristic
+                //TODO: client read the status characteristic
             }
-       	 break;
+       	    break;
     	case ESP_GATTS_WRITE_EVT: {
     	    res = find_char_and_desr_index(p_data->write.handle);
             if(p_data->write.is_prep == false){
@@ -427,27 +419,38 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
                     memset(spp_cmd_buff, 0, (spp_mtu_size - 3));
                     memcpy(spp_cmd_buff, p_data->write.value, p_data->write.len);
                     xQueueSend(cmd_cmd_queue, &spp_cmd_buff, 10/portTICK_PERIOD_MS);
-                }else if(res == SPP_IDX_SPP_DATA_NTF_CFG){
+                }
+                else if(res == SPP_IDX_SPP_DATA_NTF_CFG){
                     ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_NTF_CFG");
-                    if((p_data->write.len == 2)&&(p_data->write.value[0] == 0x01)&&(p_data->write.value[1] == 0x00)){
+                    if( (p_data->write.len == 2)
+                            &&(p_data->write.value[0] == 0x01)
+                            &&(p_data->write.value[1] == 0x00) ) {
                         enable_data_ntf = true;
-                    }else if((p_data->write.len == 2)&&(p_data->write.value[0] == 0x00)&&(p_data->write.value[1] == 0x00)){
+                    }
+                    else if( (p_data->write.len == 2)
+                            &&(p_data->write.value[0] == 0x00)
+                            &&(p_data->write.value[1] == 0x00) ) {
                         enable_data_ntf = false;
                     }
                 }
-                else if(res == SPP_IDX_SPP_DATA_RECV_VAL){
+                else if( res == SPP_IDX_SPP_DATA_RECV_VAL ) {
                     ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_RECV_VAL");
-#ifdef SPP_DEBUG_MODE
-                    esp_log_buffer_char(GATTS_TABLE_TAG,(char *)(p_data->write.value),p_data->write.len);
-#else
-                    uart_write_bytes(UART_NUM_0, (char *)(p_data->write.value), p_data->write.len);
-#endif
-                }else{
+                    #ifdef SPP_DEBUG_MODE
+                    esp_log_buffer_char(GATTS_TABLE_TAG,
+                            (char *)(p_data->write.value),p_data->write.len);
+                    #else
+                    uart_write_bytes(UART_NUM_0, 
+                            (char *)(p_data->write.value), p_data->write.len);
+                    #endif
+                }
+                else{
                     ESP_LOGI(GATTS_TABLE_TAG, "Unknown state machine attribute %d.",
                             res);
                     //TODO:
                 }
-            }else if((p_data->write.is_prep == true)&&(res == SPP_IDX_SPP_DATA_RECV_VAL)){
+            }
+            else if( (p_data->write.is_prep == true)
+                    && (res == SPP_IDX_SPP_DATA_RECV_VAL) ) {
                 ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_PREP_WRITE_EVT : handle = %d\n", res);
                 store_wr_buffer(p_data);
             }
@@ -539,6 +542,8 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
     }
 }
 
+/* To be called during Jolt startup
+ * Initialized/Registers all bluetooth related hardware/software */
 void jolt_bluetooth_setup() {
     esp_err_t ret;
 

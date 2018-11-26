@@ -85,4 +85,10 @@ void print_write_buffer(void) {
     }
 }
 
-
+/* Consolidates the write buffer into a single memory location*/
+char *consolidate_write_buffer(void) {
+    /* todo: finish writing this */
+    char *buf;
+    buf = (char *) malloc(SppRecvDataBuff.buf_size);
+    return buf;
+}
