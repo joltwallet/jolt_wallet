@@ -319,10 +319,33 @@ static uint8_t find_char_and_desr_index(uint16_t handle) {
     return 0xff; // error
 }
 
+static int my_writefn(void *cookie, const char *data, int n) {
+	esp_err_t res = esp_ble_gatts_send_indicate(
+			spp_gatts_if,
+			spp_conn_id,
+			spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL],
+			n, (uint8_t*) data, true);
+
+    if( ESP_OK != res ) {
+        return -1;
+    }
+    return 0;
+}
+
 static void spp_cmd_task(void * arg) {
     uint8_t * cmd_id;
     char *line;
 
+    FILE *ble_stdout = fwopen(NULL, my_writefn);
+    if( NULL == ble_stdout ) {
+        ESP_LOGE(GATTS_TABLE_TAG, "Couldn't open ble stdout");
+    }
+    //setbuf(ble_stdout, NULL); /* Disable Buffering */
+    stdout = ble_stdout;
+    //_GLOBAL_REENT->_stdout = ble_stdout;
+    //printf("meowmix\n");
+
+    //fprintf(stdout, "staring spp_cmd_task_loop\n");
     for(;;){
         vTaskDelay(50 / portTICK_PERIOD_MS);
         if(xQueueReceive(cmd_cmd_queue, &line, portMAX_DELAY)) {
@@ -358,15 +381,35 @@ static void spp_cmd_task(void * arg) {
             }
 
             free(line);
+            /* Can send up to 514 characters */
+#if 0
             esp_err_t res = esp_ble_gatts_send_indicate(
                     spp_gatts_if,
                     spp_conn_id,
                     spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL],
                     //spp_profile_tab[SPP_PROFILE_APP_IDX].char_handle,
-                    4, (uint8_t*)"meow", false);
+                    16*6, (uint8_t*)
+                    "meow00"
+                    "meow01"
+                    "meow02"
+                    "meow03"
+                    "meow04"
+                    "meow05"
+                    "meow06"
+                    "meow07"
+                    "meow08"
+                    "meow09"
+                    "meow0A"
+                    "meow0B"
+                    "meow0C"
+                    "meow0D"
+                    "meow0E"
+                    "meow0F"
+                    , false);
             if( ESP_OK != res ) {
                 ESP_LOGE(GATTS_TABLE_TAG, "Unable to indicate %d", res);
             }
+#endif
         }
     }
     vTaskDelete(NULL);
