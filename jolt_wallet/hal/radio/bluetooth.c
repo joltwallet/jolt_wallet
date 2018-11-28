@@ -320,11 +320,21 @@ static uint8_t find_char_and_desr_index(uint16_t handle) {
 }
 
 static int my_writefn(void *cookie, const char *data, int n) {
-	esp_err_t res = esp_ble_gatts_send_indicate(
-			spp_gatts_if,
-			spp_conn_id,
-			spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL],
-			n, (uint8_t*) data, true);
+    int idx = 0;
+    esp_err_t res;
+    do{
+        uint16_t print_len = n;
+        if( print_len > 512 ) {
+            print_len = 512;
+        }
+        res = esp_ble_gatts_send_indicate(
+                spp_gatts_if,
+                spp_conn_id,
+                spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL],
+                print_len, (uint8_t*) &data[idx], true);
+        idx += print_len;
+        n -= print_len;
+    } while(n>0);
 
     if( ESP_OK != res ) {
         return -1;
@@ -340,10 +350,8 @@ static void spp_cmd_task(void * arg) {
     if( NULL == ble_stdout ) {
         ESP_LOGE(GATTS_TABLE_TAG, "Couldn't open ble stdout");
     }
-    //setbuf(ble_stdout, NULL); /* Disable Buffering */
+    setlinebuf(ble_stdout); /* Flush buffer every \n */
     stdout = ble_stdout;
-    //_GLOBAL_REENT->_stdout = ble_stdout;
-    //printf("meowmix\n");
 
     //fprintf(stdout, "staring spp_cmd_task_loop\n");
     for(;;){
