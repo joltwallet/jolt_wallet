@@ -34,6 +34,8 @@
 #define SPP_STATUS_MAX_LEN         (20)
 #define SPP_DATA_BUFF_MAX_LEN      (2*1024)
 
+#define GATTS_SEND_REQUIRE_CONFIRM false
+
 ///Attributes State Machine
 enum{
     SPP_IDX_SVC = 0,
@@ -319,7 +321,7 @@ static uint8_t find_char_and_desr_index(uint16_t handle) {
     return 0xff; // error
 }
 
-static int my_writefn(void *cookie, const char *data, int n) {
+static int spp_write_fd(void *cookie, const char *data, int n) {
     int idx = 0;
     esp_err_t res;
     do{
@@ -331,7 +333,7 @@ static int my_writefn(void *cookie, const char *data, int n) {
                 spp_gatts_if,
                 spp_conn_id,
                 spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL],
-                print_len, (uint8_t*) &data[idx], true);
+                print_len, (uint8_t*) &data[idx], GATTS_SEND_REQUIRE_CONFIRM);
         idx += print_len;
         n -= print_len;
     } while(n>0);
@@ -346,14 +348,13 @@ static void spp_cmd_task(void * arg) {
     uint8_t * cmd_id;
     char *line;
 
-    FILE *ble_stdout = fwopen(NULL, my_writefn);
+    FILE *ble_stdout = fwopen(NULL, spp_write_fd);
     if( NULL == ble_stdout ) {
         ESP_LOGE(GATTS_TABLE_TAG, "Couldn't open ble stdout");
     }
     setlinebuf(ble_stdout); /* Flush buffer every \n */
     stdout = ble_stdout;
 
-    //fprintf(stdout, "staring spp_cmd_task_loop\n");
     for(;;){
         vTaskDelay(50 / portTICK_PERIOD_MS);
         if(xQueueReceive(cmd_cmd_queue, &line, portMAX_DELAY)) {
@@ -389,35 +390,6 @@ static void spp_cmd_task(void * arg) {
             }
 
             free(line);
-            /* Can send up to 514 characters */
-#if 0
-            esp_err_t res = esp_ble_gatts_send_indicate(
-                    spp_gatts_if,
-                    spp_conn_id,
-                    spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL],
-                    //spp_profile_tab[SPP_PROFILE_APP_IDX].char_handle,
-                    16*6, (uint8_t*)
-                    "meow00"
-                    "meow01"
-                    "meow02"
-                    "meow03"
-                    "meow04"
-                    "meow05"
-                    "meow06"
-                    "meow07"
-                    "meow08"
-                    "meow09"
-                    "meow0A"
-                    "meow0B"
-                    "meow0C"
-                    "meow0D"
-                    "meow0E"
-                    "meow0F"
-                    , false);
-            if( ESP_OK != res ) {
-                ESP_LOGE(GATTS_TABLE_TAG, "Unable to indicate %d", res);
-            }
-#endif
         }
     }
     vTaskDelete(NULL);
