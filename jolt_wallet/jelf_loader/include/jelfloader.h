@@ -25,7 +25,6 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const jelfLoaderEnv_t *env);
 jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx);
 jelfLoaderContext_t *jelfLoaderRelocate(jelfLoaderContext_t *ctx);
 
-jelfLoaderContext_t *jelfLoaderInitLoadAndRelocate(jelfLoaderContext_t *ctx);
 void jelfLoaderFree( jelfLoaderContext_t *ctx );
 
 #if CONFIG_JELFLOADER_PROFILER_EN

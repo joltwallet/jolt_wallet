@@ -736,6 +736,7 @@ err:
     PROFILER_STOP_READSYMBOL;
     return -1;
 }
+
 static Jelf_Addr findSymAddr(jelfLoaderContext_t* ctx, Jelf_Sym *sym) {
     PROFILER_START_FINDSYMADDR;
     PROFILER_INC_FINDSYMADDR;
@@ -1016,13 +1017,6 @@ jelfLoaderContext_t *jelfLoaderRelocate(jelfLoaderContext_t *ctx) {
     MSG("Successfully relocated %d sections.", count);
     return ctx;
 
-err:
-    return NULL;
-}
-
-jelfLoaderContext_t *jelfLoaderInitLoadAndRelocate(jelfLoaderContext_t *ctx) {
-    goto err;
-    return ctx;
 err:
     return NULL;
 }
