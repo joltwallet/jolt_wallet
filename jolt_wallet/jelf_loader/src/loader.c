@@ -21,7 +21,7 @@
 static const char* TAG = "JelfLoader";
 
 #define MSG(...)  ESP_LOGD(TAG,  __VA_ARGS__);
-#define ERR(...)  ESP_LOGE(TAG,  __VA_ARGS__);
+#define ERR(...)  ESP_LOGD(TAG,  __VA_ARGS__);
 
 #if CONFIG_JELFLOADER_PROFILER_EN
 
@@ -38,7 +38,6 @@ typedef struct profiler_timer_t{
 
 static profiler_timer_t profiler_readSection;
 static profiler_timer_t profiler_readSymbol;
-static profiler_timer_t profiler_readSymbolFunc;
 static profiler_timer_t profiler_relocateSymbol;
 static profiler_timer_t profiler_findSymAddr;
 static profiler_timer_t profiler_findSection;
@@ -70,7 +69,6 @@ static uint32_t profiler_max_r_addend;
 
 #define PROFILER_START_READSECTION     PROFILER_START(profiler_readSection)
 #define PROFILER_START_READSYMBOL      PROFILER_START(profiler_readSymbol)
-#define PROFILER_START_READSYMBOLFUNC  PROFILER_START(profiler_readSymbolFunc)
 #define PROFILER_START_RELOCATESYMBOL  PROFILER_START(profiler_relocateSymbol)
 #define PROFILER_START_FINDSYMADDR     PROFILER_START(profiler_findSymAddr)
 #define PROFILER_START_FINDSECTION     PROFILER_START(profiler_findSection)
@@ -78,7 +76,6 @@ static uint32_t profiler_max_r_addend;
 
 #define PROFILER_STOP_READSECTION      PROFILER_STOP(profiler_readSection)
 #define PROFILER_STOP_READSYMBOL       PROFILER_STOP(profiler_readSymbol)
-#define PROFILER_STOP_READSYMBOLFUNC   PROFILER_STOP(profiler_readSymbolFunc)
 #define PROFILER_STOP_RELOCATESYMBOL   PROFILER_STOP(profiler_relocateSymbol)
 #define PROFILER_STOP_FINDSYMADDR      PROFILER_STOP(profiler_findSymAddr)
 #define PROFILER_STOP_FINDSECTION      PROFILER_STOP(profiler_findSection)
@@ -86,7 +83,6 @@ static uint32_t profiler_max_r_addend;
 
 #define PROFILER_INC_READSECTION       PROFILER_INC(profiler_readSection)
 #define PROFILER_INC_READSYMBOL        PROFILER_INC(profiler_readSymbol)
-#define PROFILER_INC_READSYMBOLFUNC    PROFILER_INC(profiler_readSymbolFunc)
 #define PROFILER_INC_RELOCATESYMBOL    PROFILER_INC(profiler_relocateSymbol)
 #define PROFILER_INC_FINDSYMADDR       PROFILER_INC(profiler_findSymAddr)
 #define PROFILER_INC_FINDSECTION       PROFILER_INC(profiler_findSection)
@@ -105,7 +101,6 @@ static uint32_t profiler_max_r_addend;
 void jelfLoaderProfilerReset() {
     memset(&profiler_readSection, 0, sizeof(profiler_timer_t));
     memset(&profiler_readSymbol, 0, sizeof(profiler_timer_t));
-    memset(&profiler_readSymbolFunc, 0, sizeof(profiler_timer_t));
     memset(&profiler_relocateSymbol, 0, sizeof(profiler_timer_t));
     memset(&profiler_findSymAddr, 0, sizeof(profiler_timer_t));
     memset(&profiler_findSection, 0, sizeof(profiler_timer_t));
@@ -123,7 +118,6 @@ void jelfLoaderProfilerPrint() {
     total_time = 
         profiler_readSection.t      +
         profiler_readSymbol.t       +
-        profiler_readSymbolFunc.t   +
         profiler_relocateSymbol.t   +
         profiler_findSymAddr.t      + 
         profiler_relocateSection.t
@@ -134,7 +128,6 @@ void jelfLoaderProfilerPrint() {
             "Function Name          Time (uS)    Calls \n"
             "readSection:           %10lld    %8d\n"
             "readSymbol:            %10lld    %8d\n"
-            "readSymbolFunc:        %10lld    %8d\n"
             "relocateSymbol:        %10lld    %8d\n"
             "findSymAddr:           %10lld    %8d\n"
             "relocateSection:       %10lld    %8d\n"
@@ -147,7 +140,6 @@ void jelfLoaderProfilerPrint() {
             "-----------------------------\n\n",
             profiler_readSection.t,     profiler_readSection.n,
             profiler_readSymbol.t,      profiler_readSymbol.n,
-            profiler_readSymbolFunc.t,  profiler_readSymbolFunc.n,
             profiler_relocateSymbol.t,  profiler_relocateSymbol.n,
             profiler_findSymAddr.t,     profiler_findSymAddr.n,
             profiler_relocateSection.t, profiler_relocateSection.n,
@@ -229,6 +221,10 @@ struct jelfLoaderContext_t {
 
     jelfLoaderSection_t *section; // First element of singly linked list sections.
 
+#if CONFIG_JELFLOADER_POSIX && CONFIG_JELFLOADER_CACHE_SHT
+    Jelf_Shdr *shdr_cache;
+#endif
+
 #if CONFIG_JELFLOADER_POSIX && CONFIG_JELFLOADER_CACHE_LOCALITY
     locality_cache_t locality_cache[CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N];
 #endif
@@ -265,8 +261,8 @@ static int LOADER_GETDATA_CACHE(jelfLoaderContext_t *ctx,
                 && (off + size) <= (ctx->locality_cache[i].offset 
                                    + CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE) ) {
             PROFILER_CACHE_HIT;
-            MSG( "Hit! Hit Counter: %lld. Offset: 0x%06x", 
-                    profiler_cache_hit, (uint32_t)off );
+            MSG( "Hit! Hit Counter: %lld. Offset: 0x%06x. Size: 0x%06X", 
+                    profiler_cache_hit, (uint32_t)off, size );
             ctx->locality_cache[i].age = 0;
             off_t locality_offset;
             locality_offset = off - ctx->locality_cache[i].offset;
@@ -276,14 +272,15 @@ static int LOADER_GETDATA_CACHE(jelfLoaderContext_t *ctx,
     }
     
     PROFILER_CACHE_MISS;
-    MSG("Miss... Miss Counter: %lld. Offset: 0x%06x",
-            profiler_cache_miss, (uint32_t) off);
+    ERR("Miss... Miss Counter: %lld. Offset: 0x%06x. Size: 0x%06X",
+            profiler_cache_miss, (uint32_t) off, size);
     if( fseek(ctx->fd, off, SEEK_SET) != 0 ) {
         assert(0);
         goto err;
     }
     if( size > CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE ) {
         /* Can't fit desired data into a chunk, don't cache */
+        MSG("Can't fit read into locality cache chunk, reading directly to buffer.")
         amount_read = fread(buffer, 1, size, ctx->fd); 
     }
     else {
@@ -324,14 +321,20 @@ err:
 #define LOADER_ALLOC_EXEC(size) heap_caps_malloc(size, MALLOC_CAP_EXEC | MALLOC_CAP_32BIT)
 #define LOADER_ALLOC_DATA(size) heap_caps_malloc(size, MALLOC_CAP_8BIT)
 
-
 /******************************************************
  * More specific readers to handle proper bitshifting *
  ******************************************************/
-static int loader_shdr(jelfLoaderContext_t *ctx, size_t offset, Jelf_Shdr *h) {
-    /* correct */
-    uint8_t buf[JELF_SHDR_SIZE] = {0};
-    LOADER_GETDATA(ctx, offset, (char *)&buf, sizeof(buf));
+static int loader_shdr(jelfLoaderContext_t *ctx, size_t n, Jelf_Shdr *h) {
+    #if CONFIG_JELFLOADER_POSIX && CONFIG_JELFLOADER_CACHE_SHT
+        uint8_t *buf = (uint8_t*)ctx->shdr_cache + n * JELF_SHDR_SIZE;
+        MSG("loader_shdr cache: %p", ctx->shdr_cache); 
+        MSG("loader_shdr buf: %p", buf);
+    #else
+        off_t offset = (uint8_t*)ctx->e_shoff + n * JELF_SHDR_SIZE;
+        uint8_t buf[JELF_SHDR_SIZE] = {0};
+        LOADER_GETDATA(ctx, offset, (char *)&buf, sizeof(buf));
+    #endif
+
     h->sh_type   = (buf[0] >> 6) & 0x03;
     h->sh_flags  = (buf[0] >> 4) & 0x03;
     h->sh_offset = ((buf[0] & 0x0F) ) |
@@ -344,12 +347,14 @@ static int loader_shdr(jelfLoaderContext_t *ctx, size_t offset, Jelf_Shdr *h) {
     h->sh_info   = (buf[5] & 0x03F) |
             ((uint32_t)buf[6] << 6);
     return 0;
+
+#if !(CONFIG_JELFLOADER_POSIX && CONFIG_JELFLOADER_CACHE_SHT)
 err:
     return -1;
+#endif
 }
 
 static int loader_sym(jelfLoaderContext_t *ctx, size_t offset, Jelf_Sym *h) {
-    /* Unconfirmed/Untested */
     uint8_t buf[JELF_SYM_SIZE] = {0};
     LOADER_GETDATA(ctx, offset, (char *)&buf, sizeof(buf));
     h->st_name  = buf[0] | 
@@ -366,7 +371,6 @@ err:
 }
 
 static int loader_rela(jelfLoaderContext_t *ctx, size_t offset, Jelf_Rela *h) {
-    /* Unconfirmed/Untested */
     uint8_t buf[JELF_RELA_SIZE] = {0};
     LOADER_GETDATA(ctx, offset, (char *)&buf, sizeof(buf));
     h->r_offset = buf[0] |
@@ -407,8 +411,7 @@ static int readSection(jelfLoaderContext_t *ctx, int n, Jelf_Shdr *h ) {
     PROFILER_INC_READSECTION;
 
     /* Read Section Header */
-    off_t offset = ctx->e_shoff + n * JELF_SHDR_SIZE;
-    int res = loader_shdr(ctx, offset, h);
+    int res = loader_shdr(ctx, n, h); // Often a cache miss
     PROFILER_STOP_READSECTION;
     if ( 0 != res ){
         goto err;
@@ -451,7 +454,8 @@ int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv) {
     }
 
     /* Free up loading cache */
-    #if false && CONFIG_ELFLOADER_POSIX && CONFIG_ELFLOADER_CACHE_SECTIONS
+    // todo
+    #if CONFIG_JELFLOADER_POSIX && CONFIG_JELFLOADER_CACHE_SHT
     if( NULL != ctx->shdr_cache ) {
         free( ctx->shdr_cache );
         ctx->shdr_cache = NULL;
@@ -520,6 +524,7 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const jelfLoaderEnv_t *env) 
                     ERR("Insufficient memory for Locality Cache Data");
                     goto err;
                 }
+            ctx->locality_cache[i].valid = false;
         }
     }
     #endif
@@ -540,9 +545,27 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const jelfLoaderEnv_t *env) 
     assert( header.e_version_major == 0 );
     assert( header.e_version_minor == 1 );
     MSG( "SectionHeaderTableOffset: %08X", header.e_shoff );
+    MSG( "SectionHeaderTableEntries: %d", header.e_shnum );
     MSG( "Derivation Purpose: %08X", header.e_coin_purpose );
     MSG( "Derivation Path: %08X", header.e_coin_path );
     MSG( "bip32key: %s", header.e_bip32key);
+
+    #if CONFIG_JELFLOADER_POSIX && CONFIG_JELFLOADER_CACHE_SHT
+    {
+        /**************************************
+         * Cache sectionheadertable to memory *
+         **************************************/
+        size_t sht_size = header.e_shnum * JELF_SHDR_SIZE;
+        MSG("Allocating %d bytes for section header cache.", sht_size);
+        ctx->shdr_cache = malloc(sht_size);
+        if( NULL == ctx->shdr_cache  ) {
+            ERR("Insufficient memory for section header table cache");
+            goto err;
+        }
+        /* Populate the cache */
+        LOADER_GETDATA(ctx, header.e_shoff, (char *)(ctx->shdr_cache), sht_size);
+    }
+    #endif
 
     /* todo: load vault */
 
