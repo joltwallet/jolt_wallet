@@ -392,21 +392,6 @@ menu "Jolt Wallet"
     endmenu
 
     menu "JELF Loader"
-        choice
-            prompt "Select JELF Loading Method"
-            default JELFLOADER_MEMORY_POINTER
-            config JELFLOADER_POSIX
-                bool "Use file descriptors and operations like fread()"
-                help
-                    Operates directly out of flash using POSIX.
-            config JELFLOADER_MEMORY_POINTER
-                bool "Operate on memory pointers"
-                help
-                    Reader reads entire ELF file into memory and passes in a pointer
-                    to the beginning of the contents. 1~2 orders of magnitude faster
-                    than POSIX, but requires more RAM.
-        endchoice
-
         config JELFLOADER_PROFILER_EN
             bool
             prompt "Enable ELF Loader Profiling"
@@ -416,7 +401,6 @@ menu "Jolt Wallet"
 
         config JELFLOADER_CACHE_SHT
             bool
-            depends on JELFLOADER_POSIX
             prompt "Cache SectionHeaderTable"
             default n
             help
@@ -427,7 +411,6 @@ menu "Jolt Wallet"
 
         config JELFLOADER_CACHE_LOCALITY
             bool
-            depends on JELFLOADER_POSIX
             prompt "Read ahead as filesystem is accessed"
             default y
             help

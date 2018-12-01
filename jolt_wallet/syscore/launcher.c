@@ -27,11 +27,7 @@
 
 static const char* TAG = "syscore_launcher";
 
-#ifdef CONFIG_JELFLOADER_POSIX
-    #define LOADER_FD_FREE fclose
-#elif CONFIG_JELFLOADER_MEMORY_POINTER
-    #define LOADER_FD_FREE free
-#endif
+#define LOADER_FD_FREE fclose
 
 static lv_action_t launch_app_exit(lv_obj_t *btn);
 static lv_action_t launch_app_from_store(lv_obj_t *btn);
@@ -61,39 +57,7 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         return -2;
     }
 
-    /* Get a populated pointer-like data object into program */
-    #if CONFIG_JELFLOADER_MEMORY_POINTER
-        #if CONFIG_JOLT_APP_COMPRESS
-        {
-            ESP_LOGI(TAG, "Decompressing %s", exec_fn);
-            if( NULL == (program = decompress_file(exec_fn)) ) {
-                ESP_LOGE(TAG, "Error decompressing %s", exec_fn);
-                return -3;
-            }
-            ESP_LOGI(TAG, "mem pointer: %p", program);
-            ESP_LOGI(TAG, "first 4 bytes: 0x%08x", *(uint32_t *)program);
-        }
-        #else
-		{
-			ESP_LOGI(TAG, "Reading in executable to memory");
-			FILE *f = NULL;
-			f = fopen(exec_fn, "rb");
-			fseek(f, 0, SEEK_END);
-			size_t fsize = ftell(f);
-			fseek(f, 0, SEEK_SET);
-			if( NULL == (program = malloc(fsize)) ) {
-				ESP_LOGE(TAG, "Couldn't allocate space for program buffer.");
-				fclose(f);
-				goto exit;
-			}
-			fread(program, fsize, 1, f);
-			fclose(f);
-		}
-        #endif
-    #elif CONFIG_JELFLOADER_POSIX
-        ESP_LOGI(TAG, "Opening file descriptor to %s", exec_fn);
-        program = fopen(exec_fn, "rb");
-    #endif
+    program = fopen(exec_fn, "rb");
 
     #if CONFIG_JELFLOADER_PROFILER_EN
          jelfLoaderProfilerReset();

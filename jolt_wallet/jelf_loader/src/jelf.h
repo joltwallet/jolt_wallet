@@ -13,7 +13,7 @@ typedef uint32_t Jelf_Addr;
 #define EI_NIDENT 6
 typedef struct {
     unsigned char  e_ident[EI_NIDENT];  /* Magic number and other info */
-    uint8_t        e_signature[32];
+    uint8_t        e_signature[64];
     uint8_t        e_public_key[32];
     uint8_t        e_version_major;
     uint8_t        e_version_minor;
@@ -24,7 +24,7 @@ typedef struct {
     uint32_t       e_coin_path;
     char           e_bip32key[32];
 } Jelf_Ehdr;
-#define JELF_EHDR_SIZE 120
+#define JELF_EHDR_SIZE 152
 
 typedef struct {
     uint16_t         st_name;         /* Index, also Name */

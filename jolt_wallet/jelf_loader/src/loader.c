@@ -17,11 +17,12 @@
 #include "esp_system.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
+#include "sodium.h"
 
 static const char* TAG = "JelfLoader";
 
 #define MSG(...)  ESP_LOGD(TAG,  __VA_ARGS__);
-#define ERR(...)  ESP_LOGD(TAG,  __VA_ARGS__);
+#define ERR(...)  ESP_LOGE(TAG,  __VA_ARGS__);
 
 #if CONFIG_JELFLOADER_PROFILER_EN
 
@@ -221,16 +222,14 @@ struct jelfLoaderContext_t {
 
     jelfLoaderSection_t *section; // First element of singly linked list sections.
 
-#if CONFIG_JELFLOADER_POSIX && CONFIG_JELFLOADER_CACHE_SHT
+#if CONFIG_JELFLOADER_CACHE_SHT
     Jelf_Shdr *shdr_cache;
 #endif
 
-#if CONFIG_JELFLOADER_POSIX && CONFIG_JELFLOADER_CACHE_LOCALITY
+#if CONFIG_JELFLOADER_CACHE_LOCALITY
     locality_cache_t locality_cache[CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N];
 #endif
 };
-
-#if CONFIG_JELFLOADER_POSIX // Used file descriptors
 
 #if CONFIG_JELFLOADER_CACHE_LOCALITY
 static int LOADER_GETDATA_CACHE(jelfLoaderContext_t *ctx,
@@ -239,46 +238,48 @@ static int LOADER_GETDATA_CACHE(jelfLoaderContext_t *ctx,
     size_t amount_read;
     /* Check if the requested data is in the cache */
     locality_cache_t *lru = &(ctx->locality_cache[0]);
-
-    /* Increment age of all chunks */
-    for( i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
-        ctx->locality_cache[i].age++;
-    }
-
-    for( i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
-        if( false == ctx->locality_cache[i].valid ) {
-            lru = &(ctx->locality_cache[i]);
-            break;
+    if( NULL != lru->data ) {
+        /* Increment age of all chunks */
+        for( i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
+            ctx->locality_cache[i].age++;
         }
 
-        /* Store the LRU cache */
-        if( ctx->locality_cache[i].age > lru->age ) {
-            lru = &(ctx->locality_cache[i]);
-        }
+        for( i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
+            if( false == ctx->locality_cache[i].valid ) {
+                lru = &(ctx->locality_cache[i]);
+                break;
+            }
 
-        /* See if data is cached */
-        if( off >= ctx->locality_cache[i].offset
-                && (off + size) <= (ctx->locality_cache[i].offset 
-                                   + CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE) ) {
-            PROFILER_CACHE_HIT;
-            MSG( "Hit! Hit Counter: %lld. Offset: 0x%06x. Size: 0x%06X", 
-                    profiler_cache_hit, (uint32_t)off, size );
-            ctx->locality_cache[i].age = 0;
-            off_t locality_offset;
-            locality_offset = off - ctx->locality_cache[i].offset;
-            memcpy(buffer, ctx->locality_cache[i].data + locality_offset, size);
-            return 0;
+            /* Store the LRU cache */
+            if( ctx->locality_cache[i].age > lru->age ) {
+                lru = &(ctx->locality_cache[i]);
+            }
+
+            /* See if data is cached */
+            if( off >= ctx->locality_cache[i].offset
+                    && (off + size) <= (ctx->locality_cache[i].offset 
+                        + CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE) ) {
+                PROFILER_CACHE_HIT;
+                MSG( "Hit! Hit Counter: %lld. Offset: 0x%06x. Size: 0x%06X", 
+                        profiler_cache_hit, (uint32_t)off, size );
+                ctx->locality_cache[i].age = 0;
+                off_t locality_offset;
+                locality_offset = off - ctx->locality_cache[i].offset;
+                memcpy(buffer, ctx->locality_cache[i].data + locality_offset, size);
+                return 0;
+            }
         }
     }
     
     PROFILER_CACHE_MISS;
-    ERR("Miss... Miss Counter: %lld. Offset: 0x%06x. Size: 0x%06X",
+    MSG("Miss... Miss Counter: %lld. Offset: 0x%06x. Size: 0x%06X",
             profiler_cache_miss, (uint32_t) off, size);
     if( fseek(ctx->fd, off, SEEK_SET) != 0 ) {
         assert(0);
         goto err;
     }
-    if( size > CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE ) {
+    if( size > CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE ||
+            NULL == lru->data) {
         /* Can't fit desired data into a chunk, don't cache */
         MSG("Can't fit read into locality cache chunk, reading directly to buffer.")
         amount_read = fread(buffer, 1, size, ctx->fd); 
@@ -310,12 +311,6 @@ err:
     if(fread(buffer, 1, size, ctx->fd) != size) { assert(0); goto err; }
 #endif // CONFIG_JELFLOADER_CACHE_LOCALITY
 
-#elif CONFIG_JELFLOADER_MEMORY_POINTER
-    // operate directly on memory, much faster
-    #define LOADER_GETDATA(ctx, off, buffer, size) \
-            unalignedCpy(buffer, ctx->fd + off, size); if(0) goto err;
-#endif
-
 /* Allocation Macros */
 #define CEIL4(x) ((x+3)&~0x03)
 #define LOADER_ALLOC_EXEC(size) heap_caps_malloc(size, MALLOC_CAP_EXEC | MALLOC_CAP_32BIT)
@@ -325,7 +320,7 @@ err:
  * More specific readers to handle proper bitshifting *
  ******************************************************/
 static int loader_shdr(jelfLoaderContext_t *ctx, size_t n, Jelf_Shdr *h) {
-    #if CONFIG_JELFLOADER_POSIX && CONFIG_JELFLOADER_CACHE_SHT
+    #if CONFIG_JELFLOADER_CACHE_SHT
         uint8_t *buf = (uint8_t*)ctx->shdr_cache + n * JELF_SHDR_SIZE;
         MSG("loader_shdr cache: %p", ctx->shdr_cache); 
         MSG("loader_shdr buf: %p", buf);
@@ -348,7 +343,7 @@ static int loader_shdr(jelfLoaderContext_t *ctx, size_t n, Jelf_Shdr *h) {
             ((uint32_t)buf[6] << 6);
     return 0;
 
-#if !(CONFIG_JELFLOADER_POSIX && CONFIG_JELFLOADER_CACHE_SHT)
+#if !CONFIG_JELFLOADER_CACHE_SHT
 err:
     return -1;
 #endif
@@ -454,14 +449,13 @@ int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv) {
     }
 
     /* Free up loading cache */
-    // todo
-    #if CONFIG_JELFLOADER_POSIX && CONFIG_JELFLOADER_CACHE_SHT
+    #if CONFIG_JELFLOADER_CACHE_SHT
     if( NULL != ctx->shdr_cache ) {
         free( ctx->shdr_cache );
         ctx->shdr_cache = NULL;
     }
     #endif
-    #if CONFIG_ELFLOADER_POSIX && CONFIG_ELFLOADER_CACHE_LOCALITY
+    #if CONFIG_ELFLOADER_CACHE_LOCALITY
     for(uint8_t i=0; i < CONFIG_ELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
         if( NULL != ctx->locality_cache[i].data) {
             free(ctx->locality_cache[i].data);
@@ -512,23 +506,6 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const jelfLoaderEnv_t *env) 
     ctx->fd = fd;
     ctx->env = env;
 
-    /*****************************
-     * Initialize Locality Cache *
-     *****************************/
-    #if CONFIG_JELFLOADER_CACHE_LOCALITY
-    {
-        for(uint8_t i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
-            ctx->locality_cache[i].data = malloc(
-                    CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE );
-                if( NULL ==  ctx->locality_cache[i].data ) {
-                    ERR("Insufficient memory for Locality Cache Data");
-                    goto err;
-                }
-            ctx->locality_cache[i].valid = false;
-        }
-    }
-    #endif
-
     /*********************************************************************
      * Load the JELF header (Ehdr), located at the beginning of the file *
      *********************************************************************/
@@ -550,7 +527,59 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const jelfLoaderEnv_t *env) 
     MSG( "Derivation Path: %08X", header.e_coin_path );
     MSG( "bip32key: %s", header.e_bip32key);
 
-    #if CONFIG_JELFLOADER_POSIX && CONFIG_JELFLOADER_CACHE_SHT
+    /*******************
+     * Check Signature *
+     *******************/
+    // todo: first check to see if the public key is in the accepted database
+#if 1
+    {
+        crypto_sign_state state;
+        crypto_sign_init(&state);
+
+        Jelf_Ehdr header_no_sig;
+        memcpy(&header_no_sig, &header, sizeof(header));
+        memset(&header_no_sig.e_signature, 0, sizeof(header_no_sig.e_signature));
+
+        #define VERIFY_MSG_CHUNK_SIZE 4096
+        char buf[VERIFY_MSG_CHUNK_SIZE];
+        crypto_sign_update(&state, &header_no_sig, sizeof(header_no_sig));
+
+        size_t chunk_size;
+        while( (chunk_size = fread(buf, 1, VERIFY_MSG_CHUNK_SIZE,
+                ctx->fd)) > 0 ) {
+            crypto_sign_update(&state, &buf, chunk_size);
+        }
+        #undef VERIFY_MSG_CHUNK_SIZE
+
+        if ( 0 != crypto_sign_final_verify(&state,
+                    header.e_signature, header.e_public_key )) {
+            /* Bad Signature */
+            ERR("Bad Signature");
+            goto err;
+        }
+    }
+#endif
+    
+    /*****************************
+     * Initialize Locality Cache *
+     *****************************/
+    /* Locality cache is initialized after signature checking so that the 
+     * overall memory footprint is relatively consistent. */
+    #if CONFIG_JELFLOADER_CACHE_LOCALITY
+    {
+        for(uint8_t i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
+            ctx->locality_cache[i].data = malloc(
+                    CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE );
+                if( NULL ==  ctx->locality_cache[i].data ) {
+                    ERR("Insufficient memory for Locality Cache Data");
+                    goto err;
+                }
+            ctx->locality_cache[i].valid = false;
+        }
+    }
+    #endif
+
+    #if CONFIG_JELFLOADER_CACHE_SHT
     {
         /**************************************
          * Cache sectionheadertable to memory *
@@ -568,12 +597,6 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const jelfLoaderEnv_t *env) 
     #endif
 
     /* todo: load vault */
-
-    /*******************
-     * Check Signature *
-     *******************/
-    // header.e_signature
-    // todo
 
     /* Populate context with ELF Header information*/
     ctx->e_shnum = header.e_shnum; // Number of Sections
@@ -1025,7 +1048,7 @@ void jelfLoaderFree(jelfLoaderContext_t *ctx) {
     if (NULL == ctx) {
         return;
     }
-    #if CONFIG_JELFLOADER_POSIX && CONFIG_JELFLOADER_CACHE_LOCALITY
+    #if CONFIG_JELFLOADER_CACHE_LOCALITY
     for(uint8_t i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
         if( NULL != ctx->locality_cache[i].data) {
             free(ctx->locality_cache[i].data);
