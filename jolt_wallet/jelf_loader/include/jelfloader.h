@@ -21,7 +21,7 @@ int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv);
 int jelfLoaderRunAppMain(jelfLoaderContext_t *ctx);
 int jelfLoaderRunConsole(jelfLoaderContext_t *ctx, int argc, char **argv);
 
-jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const jelfLoaderEnv_t *env);
+jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name, const jelfLoaderEnv_t *env);
 jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx);
 jelfLoaderContext_t *jelfLoaderRelocate(jelfLoaderContext_t *ctx);
 

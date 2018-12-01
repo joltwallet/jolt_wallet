@@ -490,7 +490,8 @@ int jelfLoaderRunConsole(jelfLoaderContext_t *ctx, int argc, char **argv) {
  *         * offset to SectionHeaderTable, which maps an index to a offset in ELF where the section header begins.
  *         * offset to StringTable, which is a list of null terminated strings.
  */
-jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const jelfLoaderEnv_t *env) {
+jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
+        const jelfLoaderEnv_t *env) {
     Jelf_Ehdr header;
     jelfLoaderContext_t *ctx;
 
@@ -542,6 +543,8 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const jelfLoaderEnv_t *env) 
 
         #define VERIFY_MSG_CHUNK_SIZE 4096
         char buf[VERIFY_MSG_CHUNK_SIZE];
+
+        crypto_sign_update(&state, (uint8_t*)name, strlen(name));
         crypto_sign_update(&state, &header_no_sig, sizeof(header_no_sig));
 
         size_t chunk_size;

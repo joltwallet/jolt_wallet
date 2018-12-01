@@ -65,7 +65,8 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
     #endif
 
     ESP_LOGI(TAG, "jelfLoader; Initializing");
-    if( NULL == (jolt_gui_store.app.ctx = jelfLoaderInit(program, &env)) ) {
+    /* fn_basename is passed in for signature checking */
+    if( NULL == (jolt_gui_store.app.ctx = jelfLoaderInit(program, fn_basename, &env)) ) {
         jelfLoaderFree(jolt_gui_store.app.ctx);
         jolt_gui_store.app.ctx = NULL;
         LOADER_FD_FREE(program);
