@@ -28,19 +28,13 @@
 static const char* TAG = "syscore_launcher";
 
 #ifdef CONFIG_JELFLOADER_POSIX
-#define LOADER_FD_FREE fclose
+    #define LOADER_FD_FREE fclose
 #elif CONFIG_JELFLOADER_MEMORY_POINTER
-#define LOADER_FD_FREE free
+    #define LOADER_FD_FREE free
 #endif
 
 static lv_action_t launch_app_exit(lv_obj_t *btn);
 static lv_action_t launch_app_from_store(lv_obj_t *btn);
-
-static bool check_elf_valid(char *fn) {
-    /* Checks ths signature file for a given basename fn*/
-    // TODO implement
-    return false;
-}
 
 int launch_file(const char *fn_basename, const char *func, int app_argc, char** app_argv){
     /* Launches app specified without ".elf" suffix
@@ -66,15 +60,6 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         ESP_LOGE(TAG, "Executable doesn't exist\n");
         return -2;
     }
-
-    // TODO: Verify File Signature Here
-#if 0
-    if( check_file_exists(sig_fn) != 1 ){
-        ESP_LOGE(TAG, "Signature doesn't exist\n");
-        return_code = 2;
-        goto exit;
-    }
-#endif
 
     /* Get a populated pointer-like data object into program */
     #if CONFIG_JELFLOADER_MEMORY_POINTER
@@ -111,47 +96,52 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
     #endif
 
     #if CONFIG_JELFLOADER_PROFILER_EN
-         elfLoaderProfilerReset();
-         uint64_t elfLoader_time = esp_timer_get_time();
+         jelfLoaderProfilerReset();
+         uint64_t jelfLoader_time = esp_timer_get_time();
     #endif
 
-    ESP_LOGI(TAG, "elfLoader; Initializing");
-    if( NULL == (jolt_gui_store.app.ctx = elfLoaderInit(program, &env)) ) {
-        elfLoaderFree(jolt_gui_store.app.ctx);
+    ESP_LOGI(TAG, "jelfLoader; Initializing");
+    if( NULL == (jolt_gui_store.app.ctx = jelfLoaderInit(program, &env)) ) {
+        jelfLoaderFree(jolt_gui_store.app.ctx);
         jolt_gui_store.app.ctx = NULL;
         LOADER_FD_FREE(program);
         return -4;
     }
 
-#if 0
     ESP_LOGI(TAG, "elfLoader; Loading Sections");
-    if( NULL == elfLoaderLoad(jolt_gui_store.app.ctx) ) {
-        elfLoaderFree(jolt_gui_store.app.ctx);
+    if( NULL == jelfLoaderLoad(jolt_gui_store.app.ctx) ) {
+        jelfLoaderFree(jolt_gui_store.app.ctx);
         jolt_gui_store.app.ctx = NULL;
         LOADER_FD_FREE(program);
         return -5;
     }
     ESP_LOGI(TAG, "elfLoader; Relocating");
-    if( NULL == elfLoaderRelocate(jolt_gui_store.app.ctx) ) {
-        elfLoaderFree(jolt_gui_store.app.ctx);
+    if( NULL == jelfLoaderRelocate(jolt_gui_store.app.ctx) ) {
+        jelfLoaderFree(jolt_gui_store.app.ctx);
         jolt_gui_store.app.ctx = NULL;
         LOADER_FD_FREE(program);
         return -6;
     }
-    ESP_LOGI(TAG, "elfLoader; Setting Entrypoint");
-    if( 0 != elfLoaderSetFunc(jolt_gui_store.app.ctx, func) ) {
-        elfLoaderFree(jolt_gui_store.app.ctx);
-        jolt_gui_store.app.ctx = NULL;
-        LOADER_FD_FREE(program);
-        return -7;
-    }
 
     #if CONFIG_JELFLOADER_PROFILER_EN
-        elfLoader_time = esp_timer_get_time() - elfLoader_time;
-        ESP_LOGI(TAG, "ELF Application Loaded in %lld uS.", elfLoader_time);
-        elfLoaderProfilerPrint();
+        jelfLoader_time = esp_timer_get_time() - jelfLoader_time;
+        ESP_LOGI(TAG, "ELF Application Loaded in %lld uS.", jelfLoader_time);
+        jelfLoaderProfilerPrint();
     #endif
 
+    LOADER_FD_FREE(program); // Close/Free JELF File
+    /* Prepare vault for app launching. This creates the PIN entry screen */
+    jolt_gui_store.app.argc = app_argc;
+    jolt_gui_store.app.argv = app_argv;
+
+    // temporary debugging
+    launch_app_from_store(NULL);
+    /*
+    vault_set(purpose, coin, bip32_key, 
+            launch_app_exit, launch_app_from_store);
+            */
+
+#if 0
     {
         uint32_t *data = NULL;
         size_t data_len;
@@ -201,7 +191,7 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
 
 static lv_action_t launch_app_from_store(lv_obj_t *btn) {
     ESP_LOGI(TAG, "Launching App");
-    jolt_gui_store.app.scr = (lv_obj_t *)elfLoaderRun(jolt_gui_store.app.ctx, jolt_gui_store.app.argc, jolt_gui_store.app.argv);
+    jolt_gui_store.app.scr = (lv_obj_t *)jelfLoaderRun(jolt_gui_store.app.ctx, jolt_gui_store.app.argc, jolt_gui_store.app.argv);
     jolt_gui_scr_set_back_action(jolt_gui_store.app.scr, launch_app_exit);
     return LV_RES_OK;
 }
@@ -215,7 +205,7 @@ static lv_action_t launch_app_exit(lv_obj_t *btn) {
     }
     if( NULL != jolt_gui_store.app.ctx ) {
         ESP_LOGI(TAG, "Exitting App");
-        elfLoaderFree(jolt_gui_store.app.ctx);
+        jelfLoaderFree(jolt_gui_store.app.ctx);
         jolt_gui_store.app.ctx = NULL;
     }
     return LV_RES_OK;

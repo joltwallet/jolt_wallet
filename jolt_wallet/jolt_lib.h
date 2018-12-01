@@ -3,7 +3,7 @@
 
 /* All of the functions available to an app */
 
-#include "elfloader.h"
+#include "jelfloader.h"
 
 #include "bipmnemonic.h"
 #include "cJSON.h"
@@ -34,10 +34,10 @@
 
 #include "esp_http_client.h" // todo: replace with less open functions
 
-#if JOLT_OS
+const uint16_t _JELF_VERSION_MAJOR = 0;
+const uint16_t _JELF_VERSION_MINOR = 1;
 
-#define EXPORT_SYMBOL(NAME) {#NAME, (void*) NAME}
-#define EXPORT_SYMBOL_PTR(NAME) {#NAME, (void*) &NAME}
+#if JOLT_OS
 
 extern void *__floatsidf;
 extern void *__gtdf2;
@@ -46,14 +46,16 @@ extern void *__muldf3;
 extern void *__stack_chk_fail;
 extern void *__stack_chk_guard;
 
+#define EXPORT_SYMBOL(x) &x
 
-const ELFLoaderSymbol_t exports[] = {
-    EXPORT_SYMBOL_PTR( __floatsidf ),
-    EXPORT_SYMBOL_PTR( __gtdf2 ),
-    EXPORT_SYMBOL_PTR( __ltdf2 ),
-    EXPORT_SYMBOL_PTR( __muldf3 ),
-    EXPORT_SYMBOL_PTR( __stack_chk_fail ),
-    EXPORT_SYMBOL_PTR( __stack_chk_guard ),
+/* This order is very important; only *append* fuctions */
+static const void *exports[] = {
+    EXPORT_SYMBOL( __floatsidf ),
+    EXPORT_SYMBOL( __gtdf2 ),
+    EXPORT_SYMBOL( __ltdf2 ),
+    EXPORT_SYMBOL( __muldf3 ),
+    EXPORT_SYMBOL( __stack_chk_fail ),
+    EXPORT_SYMBOL( __stack_chk_guard ),
     EXPORT_SYMBOL( _esp_error_check_failed ),
     EXPORT_SYMBOL( atoi ),
     EXPORT_SYMBOL( atol ),
@@ -103,9 +105,7 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( hd_node_copy ),
     EXPORT_SYMBOL( hd_node_iterate ),
     EXPORT_SYMBOL( heap_caps_calloc ),
-#if JOLT_GUI_DEBUG_FUNCTIONS
     EXPORT_SYMBOL( jolt_gui_debug_obj_print ),
-#endif
     EXPORT_SYMBOL( jolt_gui_num_create ),
     EXPORT_SYMBOL( jolt_gui_num_get_arr ),
     EXPORT_SYMBOL( jolt_gui_num_set_back_action ),
@@ -315,7 +315,7 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( subconsole_cmd_register ),
     EXPORT_SYMBOL( subconsole_cmd_run ),
     EXPORT_SYMBOL( vTaskDelete ),
-    EXPORT_SYMBOL_PTR( vault ),
+    EXPORT_SYMBOL( vault ),
     EXPORT_SYMBOL( vault_refresh ),
     EXPORT_SYMBOL( vault_sem_give ),
     EXPORT_SYMBOL( vault_sem_take ),
@@ -334,7 +334,11 @@ const ELFLoaderSymbol_t exports[] = {
     EXPORT_SYMBOL( xTaskCreatePinnedToCore ),
 };
 
-const ELFLoaderEnv_t env = { exports, sizeof(exports) / sizeof(*exports) };
+const jelfLoaderEnv_t env = {
+    .exported = exports,
+    .exported_size = sizeof(exports) / sizeof(*exports)
+};
+
 #endif
 
 #endif
