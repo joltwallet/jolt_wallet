@@ -495,6 +495,12 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     Jelf_Ehdr header;
     jelfLoaderContext_t *ctx;
 
+    /* Size Check */
+    ESP_LOGI(TAG, "Jelf_Ehdr: %d", sizeof(Jelf_Ehdr));
+    ESP_LOGI(TAG, "Jelf_Sym:  %d", sizeof(Jelf_Sym));
+    ESP_LOGI(TAG, "Jelf_Shdr: %d", sizeof(Jelf_Shdr));
+    ESP_LOGI(TAG, "Jelf_Rela: %d", sizeof(Jelf_Rela));
+
     /***********************************************
      * Initialize the context object with pointers *
      ***********************************************/
@@ -532,7 +538,17 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
      * Check Signature *
      *******************/
     // todo: first check to see if the public key is in the accepted database
+    /* This isn't an INSECURE signature checking scheme; file could be changed 
+     * between checking and loading */
 #if 1
+    {
+        char pub_key[65] = { 0 };
+        sodium_bin2hex(pub_key, sizeof(pub_key), header.e_public_key, 32);
+        ESP_LOGI(TAG, "pub_key: %s", pub_key);
+        char sig[129] = { 0 };
+        sodium_bin2hex(sig, sizeof(sig), header.e_signature, 64);
+        ESP_LOGI(TAG, "signature: %s", sig);
+    }
     {
         crypto_sign_state state;
         crypto_sign_init(&state);
@@ -542,16 +558,20 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
         memset(&header_no_sig.e_signature, 0, sizeof(header_no_sig.e_signature));
 
         #define VERIFY_MSG_CHUNK_SIZE 4096
-        char buf[VERIFY_MSG_CHUNK_SIZE];
+        char *buf = malloc(VERIFY_MSG_CHUNK_SIZE);
+        if( NULL == buf ) {
+            goto err;
+        }
 
         crypto_sign_update(&state, (uint8_t*)name, strlen(name));
-        crypto_sign_update(&state, &header_no_sig, sizeof(header_no_sig));
+        crypto_sign_update(&state, (uint8_t*)&header_no_sig, sizeof(header_no_sig));
 
         size_t chunk_size;
         while( (chunk_size = fread(buf, 1, VERIFY_MSG_CHUNK_SIZE,
                 ctx->fd)) > 0 ) {
-            crypto_sign_update(&state, &buf, chunk_size);
+            crypto_sign_update(&state, (uint8_t*)buf, chunk_size);
         }
+        free(buf);
         #undef VERIFY_MSG_CHUNK_SIZE
 
         if ( 0 != crypto_sign_final_verify(&state,
