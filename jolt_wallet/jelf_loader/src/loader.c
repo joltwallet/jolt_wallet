@@ -552,13 +552,13 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
         /* First check to see if the public key is in the accepted database */
         uint256_t approved_pub_key;
         size_t required_size;
-        if( !storage_get_blob(NULL, &required_size, "secret", "pub_key") ) {
+        if( !storage_get_blob(NULL, &required_size, "user", "app_key") ) {
             ERR("Approved Public Key not found");
             goto err;
         }
         if( sizeof(approved_pub_key) != required_size ||
                 !storage_get_blob(approved_pub_key, &required_size,
-                    "secret", "pub_key")) {
+                    "user", "app_key")) {
             ERR("Stored Public Key Blob doesn't have expected len.");
             goto err;
         }
@@ -568,6 +568,7 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
         }
     }
     {
+        /* Verify File Signature */
         crypto_sign_state state;
         crypto_sign_init(&state);
 
