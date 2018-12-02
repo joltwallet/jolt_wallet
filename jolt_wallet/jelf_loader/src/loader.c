@@ -18,6 +18,8 @@
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "sodium.h"
+#include "jolttypes.h"
+#include "hal/storage/storage.h"
 
 static const char* TAG = "JelfLoader";
 
@@ -537,17 +539,33 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     /*******************
      * Check Signature *
      *******************/
-    // todo: first check to see if the public key is in the accepted database
-    /* This isn't an INSECURE signature checking scheme; file could be changed 
-     * between checking and loading */
-#if 1
     {
+        /* Debugging Information */
         char pub_key[65] = { 0 };
         sodium_bin2hex(pub_key, sizeof(pub_key), header.e_public_key, 32);
         ESP_LOGI(TAG, "pub_key: %s", pub_key);
         char sig[129] = { 0 };
         sodium_bin2hex(sig, sizeof(sig), header.e_signature, 64);
         ESP_LOGI(TAG, "signature: %s", sig);
+    }
+    {
+        /* First check to see if the public key is in the accepted database */
+        uint256_t approved_pub_key;
+        size_t required_size;
+        if( !storage_get_blob(NULL, &required_size, "secret", "pub_key") ) {
+            ERR("Approved Public Key not found");
+            goto err;
+        }
+        if( sizeof(approved_pub_key) != required_size ||
+                !storage_get_blob(approved_pub_key, &required_size,
+                    "secret", "pub_key")) {
+            ERR("Stored Public Key Blob doesn't have expected len.");
+            goto err;
+        }
+        if( 0 != sodium_memcmp(approved_pub_key, header.e_public_key, sizeof(uint256_t)) ){
+            ERR("Application Public Key doesn't match approved public key.");
+            goto err;
+        }
     }
     {
         crypto_sign_state state;
@@ -581,7 +599,6 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
             goto err;
         }
     }
-#endif
     
     /*****************************
      * Initialize Locality Cache *
