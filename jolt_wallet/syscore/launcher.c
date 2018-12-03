@@ -27,15 +27,12 @@
 
 static const char* TAG = "syscore_launcher";
 
-#define LOADER_FD_FREE fclose
 
 static lv_action_t launch_app_exit(lv_obj_t *btn);
 static lv_action_t launch_app_from_store(lv_obj_t *btn);
 
 int launch_file(const char *fn_basename, const char *func, int app_argc, char** app_argv){
-    /* Launches app specified without ".elf" suffix
-     * This is done so signature file can be checked easier
-     *
+    /* Launches app specified without ".elf" suffix. i.e. "app"
      * Launches the app's function with same name as func
      */
     int return_code = -1;
@@ -46,7 +43,8 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
 
     LOADER_FD_T program = NULL;
 
-    // Parse Exec Filename
+    /* Parse Exec Filename.
+     * Takes something like "app" into  "/spiffs/app.jelf" */
 	char exec_fn[128] = SPIFFS_BASE_PATH;
 	strcat(exec_fn, "/");
 	strncat(exec_fn, fn_basename, sizeof(exec_fn)-strlen(exec_fn)-1-4);
@@ -61,15 +59,15 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
 
     #if CONFIG_JELFLOADER_PROFILER_EN
          jelfLoaderProfilerReset();
-         uint64_t jelfLoader_time = esp_timer_get_time();
     #endif
+    uint64_t jelfLoader_time = esp_timer_get_time();
 
     ESP_LOGI(TAG, "jelfLoader; Initializing");
     /* fn_basename is passed in for signature checking */
     if( NULL == (jolt_gui_store.app.ctx = jelfLoaderInit(program, fn_basename, &env)) ) {
         jelfLoaderFree(jolt_gui_store.app.ctx);
         jolt_gui_store.app.ctx = NULL;
-        LOADER_FD_FREE(program);
+        fclose(program);
         return -4;
     }
 
@@ -77,80 +75,41 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
     if( NULL == jelfLoaderLoad(jolt_gui_store.app.ctx) ) {
         jelfLoaderFree(jolt_gui_store.app.ctx);
         jolt_gui_store.app.ctx = NULL;
-        LOADER_FD_FREE(program);
+        fclose(program);
         return -5;
     }
     ESP_LOGI(TAG, "elfLoader; Relocating");
     if( NULL == jelfLoaderRelocate(jolt_gui_store.app.ctx) ) {
         jelfLoaderFree(jolt_gui_store.app.ctx);
         jolt_gui_store.app.ctx = NULL;
-        LOADER_FD_FREE(program);
+        fclose(program);
         return -6;
     }
 
+    jelfLoader_time = esp_timer_get_time() - jelfLoader_time;
+    ESP_LOGI(TAG, "Application Loaded in %lld uS.", jelfLoader_time);
+
     #if CONFIG_JELFLOADER_PROFILER_EN
-        jelfLoader_time = esp_timer_get_time() - jelfLoader_time;
-        ESP_LOGI(TAG, "ELF Application Loaded in %lld uS.", jelfLoader_time);
         jelfLoaderProfilerPrint();
     #endif
 
-    LOADER_FD_FREE(program); // Close/Free JELF File
-    /* Prepare vault for app launching. This creates the PIN entry screen */
+    fclose(program);
+
+    /* Prepare vault for app launching. vault_set() creates the PIN entry screen */
     jolt_gui_store.app.argc = app_argc;
     jolt_gui_store.app.argv = app_argv;
 
-    // temporary debugging
-    launch_app_from_store(NULL);
-    /*
-    vault_set(purpose, coin, bip32_key, 
+    ESP_LOGI( TAG, "Derivation Purpose: 0x%x. Coin Type: 0x%x",
+            jolt_gui_store.app.ctx->coin_purpose,
+            jolt_gui_store.app.ctx->coin_path );
+    ESP_LOGI(TAG, "The following BIP32 Key is %d char long:%s.",
+            strlen(jolt_gui_store.app.ctx->bip32_key),
+            jolt_gui_store.app.ctx->bip32_key);
+    vault_set(jolt_gui_store.app.ctx->coin_purpose, 
+            jolt_gui_store.app.ctx->coin_path,
+            jolt_gui_store.app.ctx->bip32_key, 
             launch_app_exit, launch_app_from_store);
-            */
 
-#if 0
-    {
-        uint32_t *data = NULL;
-        size_t data_len;
-        uint32_t purpose, coin;
-        char bip32_key[33];
-#define PATH_BYTE_LEN 8 // 4 bytes for purpose, 4 bytes for
-        data = elfLoaderLoadSectionByName(jolt_gui_store.app.ctx, ".coin.path", &data_len);
-        if( NULL==data ) {
-            ESP_LOGE(TAG, "Couldn't allocate for .coin.path");
-            elfLoaderFree(jolt_gui_store.app.ctx);
-            jolt_gui_store.app.ctx = NULL;
-            LOADER_FD_FREE(program);
-            return -8;
-        }
-        if( data_len <= (PATH_BYTE_LEN + 1) || 
-                data_len>=(PATH_BYTE_LEN+sizeof(bip32_key))) {
-            ESP_LOGE(TAG, "Valid BIP32_Key not provided in ELF file.");
-            elfLoaderFree(jolt_gui_store.app.ctx);
-            jolt_gui_store.app.ctx = NULL;
-            LOADER_FD_FREE(program);
-            return -9;
-        }
-        purpose = *data;
-        coin = *(data+1);
-        size_t bip32_key_len = data_len-PATH_BYTE_LEN; // Not including null terminator
-        strncpy(bip32_key, &((char *)data)[PATH_BYTE_LEN], bip32_key_len);
-        bip32_key[bip32_key_len] = '\0'; // Null terminate string
-        ESP_LOGI(TAG,"Derivation Purpose: 0x%x. Coin Type: 0x%x",
-                purpose, coin);
-        ESP_LOGI(TAG, "The following BIP32 Key is %d char long:%s.",
-                bip32_key_len, bip32_key);
-#undef PATH_BYTE_LEN
-
-        /* now that all runtime data has been extracted from the decompressed 
-         * ELF file, we can free that memory */
-        LOADER_FD_FREE(program); // Unload decompressed ELF
-
-        /* Prepare vault for app launching. This creates the PIN entry screen */
-        jolt_gui_store.app.argc = app_argc;
-        jolt_gui_store.app.argv = app_argv;
-        vault_set(purpose, coin, bip32_key, 
-                launch_app_exit, launch_app_from_store);
-    }
-#endif
     return 0;
 }
 

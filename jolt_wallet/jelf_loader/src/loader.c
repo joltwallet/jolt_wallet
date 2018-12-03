@@ -187,59 +187,13 @@ void jelfLoaderProfilerPrint() {
 
 #endif
 
-/*********************
- * Struct Definition *
- *********************/
-
-/* LRU cache to read larger chunks of data from flash to memory */
-#if CONFIG_JELFLOADER_CACHE_LOCALITY
-typedef struct locality_cache_t{
-    char *data;
-    uint8_t age; // lower number means more recently used
-    size_t offset;
-    bool valid;
-} locality_cache_t;
-#endif
-
-/* Singly Linked List Used to cache sections needed at runtime */
-typedef struct jelfLoaderSection_t {
-    void *data;
-    uint16_t secIdx;
-    size_t size;
-    off_t relSecIdx;                  
-    struct jelfLoaderSection_t* next; // Next Header in Singly Linked List
-} jelfLoaderSection_t;
-
-struct jelfLoaderContext_t {
-    LOADER_FD_T fd;
-    void* exec;
-    const jelfLoaderEnv_t *env;
-
-    uint16_t entry_index;
-    uint16_t e_shnum;
-    off_t e_shoff;
-
-    size_t symtab_count;
-    off_t symtab_offset;
-
-    jelfLoaderSection_t *section; // First element of singly linked list sections.
-
-#if CONFIG_JELFLOADER_CACHE_SHT
-    Jelf_Shdr *shdr_cache;
-#endif
-
-#if CONFIG_JELFLOADER_CACHE_LOCALITY
-    locality_cache_t locality_cache[CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N];
-#endif
-};
-
 #if CONFIG_JELFLOADER_CACHE_LOCALITY
 static int LOADER_GETDATA_CACHE(jelfLoaderContext_t *ctx,
         size_t off, char *buffer, size_t size) {
     uint8_t i;
     size_t amount_read;
     /* Check if the requested data is in the cache */
-    locality_cache_t *lru = &(ctx->locality_cache[0]);
+    jelfLoader_locality_cache_t *lru = &(ctx->locality_cache[0]);
     if( NULL != lru->data ) {
         /* Increment age of all chunks */
         for( i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
@@ -397,8 +351,6 @@ static const char *type2String(int symt) {
 #undef STRCASE
 }
 
-/*** Read data functions ***/
-
 /* Reads section header and name for given section index
  * n - Section Index to query
  * h - Returns Section Header
@@ -439,117 +391,21 @@ static jelfLoaderSection_t *findSection(jelfLoaderContext_t* ctx, int index) {
     return NULL;
 }
 
-
-/********************
- * PUBLIC FUNCTIONS *
- ********************/
-
-int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv) {
-    if (!ctx->exec) {
-        MSG("No Entrypoint set.");
-        return 0;
-    }
-
-    /* Free up loading cache */
-    #if CONFIG_JELFLOADER_CACHE_SHT
-    if( NULL != ctx->shdr_cache ) {
-        free( ctx->shdr_cache );
-        ctx->shdr_cache = NULL;
-    }
-    #endif
-    #if CONFIG_ELFLOADER_CACHE_LOCALITY
-    for(uint8_t i=0; i < CONFIG_ELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
-        if( NULL != ctx->locality_cache[i].data) {
-            free(ctx->locality_cache[i].data);
-            ctx->locality_cache[i].data = NULL;
-        }
-    }
-    #endif
-
-    typedef int (*func_t)(int, char**);
-    func_t func = (func_t)ctx->exec;
-    MSG("Running...");
-    int r = func(argc, argv);
-    MSG("Result: %08X", r);
-    return r;
-}
-
-int jelfLoaderRunAppMain(jelfLoaderContext_t *ctx) {
-    return jelfLoaderRun(ctx, 0, NULL);
-}
-
-int jelfLoaderRunConsole(jelfLoaderContext_t *ctx, int argc, char **argv) {
-    /* Just more explicit way of running app */
-    return jelfLoaderRun(ctx, argc, argv);
-}
-
-/* First Operation: Performs the following:
- *     * Allocates space for the returned Context (constant size)
- *     * Populates Context with:
- *         * Pointer/FD to the beginning of the ELF file
- *         * Pointer to env, which is a table to exported host function_names and their pointer in memory. 
- *         * Number of sections in the ELF file.
- *         * offset to SectionHeaderTable, which maps an index to a offset in ELF where the section header begins.
- *         * offset to StringTable, which is a list of null terminated strings.
- */
-jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
-        const jelfLoaderEnv_t *env) {
-    Jelf_Ehdr header;
-    jelfLoaderContext_t *ctx;
-
-    /* Size Check */
-    ESP_LOGI(TAG, "Jelf_Ehdr: %d", sizeof(Jelf_Ehdr));
-    ESP_LOGI(TAG, "Jelf_Sym:  %d", sizeof(Jelf_Sym));
-    ESP_LOGI(TAG, "Jelf_Shdr: %d", sizeof(Jelf_Shdr));
-    ESP_LOGI(TAG, "Jelf_Rela: %d", sizeof(Jelf_Rela));
-
-    /***********************************************
-     * Initialize the context object with pointers *
-     ***********************************************/
-    ctx = malloc(sizeof(jelfLoaderContext_t));
-    if( NULL == ctx ) {
-        ERR( "Insufficient memory for ElfLoaderContext_t" );
-        goto err;
-    }
-    memset(ctx, 0, sizeof(jelfLoaderContext_t));
-    ctx->fd = fd;
-    ctx->env = env;
-
-    /*********************************************************************
-     * Load the JELF header (Ehdr), located at the beginning of the file *
-     *********************************************************************/
-    LOADER_GETDATA(ctx, 0, &header, JELF_EHDR_SIZE);
-
-    /* Make sure that we have a correct and compatible ELF header. */
-    char JelfMagic[] = { 0x7f, 'J', 'E', 'L', 'F', '\0' };
-    if ( 0 != memcmp(header.e_ident, JelfMagic, strlen(JelfMagic)) ) {
-        ERR("Bad JELF Identification");
-        ERR("File Magic Identifier: %s", header.e_ident);
-        goto err;
-    }
-    /* Debug Sanity Checks */
-    assert( header.e_version_major == 0 );
-    assert( header.e_version_minor == 1 );
-    MSG( "SectionHeaderTableOffset: %08X", header.e_shoff );
-    MSG( "SectionHeaderTableEntries: %d", header.e_shnum );
-    MSG( "Derivation Purpose: %08X", header.e_coin_purpose );
-    MSG( "Derivation Path: %08X", header.e_coin_path );
-    MSG( "bip32key: %s", header.e_bip32key);
-
-    /*******************
-     * Check Signature *
-     *******************/
+/* Checks the application's digital signature.
+ * Returns true on valid, false if signature/public_key is invalid. */
+static bool app_signature_check(jelfLoaderContext_t *ctx, 
+        Jelf_Ehdr *header, char *name) {
     {
         /* Debugging Information */
         char pub_key[65] = { 0 };
-        sodium_bin2hex(pub_key, sizeof(pub_key), header.e_public_key, 32);
+        sodium_bin2hex(pub_key, sizeof(pub_key), header->e_public_key, 32);
         ESP_LOGI(TAG, "pub_key: %s", pub_key);
         char sig[129] = { 0 };
-        sodium_bin2hex(sig, sizeof(sig), header.e_signature, 64);
+        sodium_bin2hex(sig, sizeof(sig), header->e_signature, 64);
         ESP_LOGI(TAG, "signature: %s", sig);
     }
     {
-        /* First check to see if the public key is in the accepted database */
+        /* First check to see if the public key is an accepted app key */
         uint256_t approved_pub_key;
         size_t required_size;
         if( !storage_get_blob(NULL, &required_size, "user", "app_key") ) {
@@ -562,7 +418,7 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
             ERR("Stored Public Key Blob doesn't have expected len.");
             goto err;
         }
-        if( 0 != sodium_memcmp(approved_pub_key, header.e_public_key, sizeof(uint256_t)) ){
+        if( 0 != sodium_memcmp(approved_pub_key, header->e_public_key, sizeof(uint256_t)) ){
             ERR("Application Public Key doesn't match approved public key.");
             goto err;
         }
@@ -573,9 +429,15 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
         crypto_sign_init(&state);
 
         Jelf_Ehdr header_no_sig;
-        memcpy(&header_no_sig, &header, sizeof(header));
+        memcpy(&header_no_sig, header, sizeof(header_no_sig));
         memset(&header_no_sig.e_signature, 0, sizeof(header_no_sig.e_signature));
 
+        /* Make sure we start reading from right after the JELF Header */
+        if( fseek(ctx->fd, JELF_EHDR_SIZE, SEEK_SET) != 0 ) {
+            goto err;
+        }
+
+        /* How much to read from the file at a time */
         #define VERIFY_MSG_CHUNK_SIZE 4096
         char *buf = malloc(VERIFY_MSG_CHUNK_SIZE);
         if( NULL == buf ) {
@@ -594,194 +456,15 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
         #undef VERIFY_MSG_CHUNK_SIZE
 
         if ( 0 != crypto_sign_final_verify(&state,
-                    header.e_signature, header.e_public_key )) {
+                    header->e_signature, header->e_public_key )) {
             /* Bad Signature */
             ERR("Bad Signature");
             goto err;
         }
     }
-    
-    /*****************************
-     * Initialize Locality Cache *
-     *****************************/
-    /* Locality cache is initialized after signature checking so that the 
-     * overall memory footprint is relatively consistent. */
-    #if CONFIG_JELFLOADER_CACHE_LOCALITY
-    {
-        for(uint8_t i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
-            ctx->locality_cache[i].data = malloc(
-                    CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE );
-                if( NULL ==  ctx->locality_cache[i].data ) {
-                    ERR("Insufficient memory for Locality Cache Data");
-                    goto err;
-                }
-            ctx->locality_cache[i].valid = false;
-        }
-    }
-    #endif
-
-    #if CONFIG_JELFLOADER_CACHE_SHT
-    {
-        /**************************************
-         * Cache sectionheadertable to memory *
-         **************************************/
-        size_t sht_size = header.e_shnum * JELF_SHDR_SIZE;
-        MSG("Allocating %d bytes for section header cache.", sht_size);
-        ctx->shdr_cache = malloc(sht_size);
-        if( NULL == ctx->shdr_cache  ) {
-            ERR("Insufficient memory for section header table cache");
-            goto err;
-        }
-        /* Populate the cache */
-        LOADER_GETDATA(ctx, header.e_shoff, (char *)(ctx->shdr_cache), sht_size);
-    }
-    #endif
-
-    /* todo: load vault */
-
-    /* Populate context with ELF Header information*/
-    ctx->e_shnum = header.e_shnum; // Number of Sections
-    ctx->e_shoff = header.e_shoff; // offset to SectionHeaderTable
-    ctx->entry_index = header.e_entry_offset;
-
-    return ctx;
-
+    return true;
 err:
-    if(NULL != ctx) {
-        jelfLoaderFree(ctx);
-    }
-    return NULL;
-}
-
-jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
-    /* todo: this is just copied over */
-    MSG("Scanning ELF sections         relAddr      size");
-    // Iterate through all section_headers
-    //for (int n = 1; n < ctx->e_shnum; n++) {
-    for (int n = 0; n < ctx->e_shnum; n++) {
-        MSG("Loading section %d", n);
-        Jelf_Shdr sectHdr = { 0 };
-
-        /***********************
-         * Read Section Header *
-         ***********************/
-        // Read the section header at index n
-        // Populates "secHdr" with the Section's Header
-        if ( 0 != readSection(ctx, n, &sectHdr) ) {
-            ERR("Error reading section");
-            goto err;
-        }
-
-        #if 0
-        /* Debug: Print out the bytes that make up sectHdr */
-        {
-            MSG("Type:   %d", sectHdr.sh_type);
-            MSG("Flags:  %d", sectHdr.sh_flags);
-            MSG("Offset: %d", sectHdr.sh_offset);
-            MSG("Size:   %d", sectHdr.sh_size);
-            MSG("Info:   %d", sectHdr.sh_info);
-        } 
-        #endif
-
-        /* This  section  occupies  memory during process execution */
-        if (sectHdr.sh_flags & SHF_ALLOC) {
-            MSG("Section %d has SHF_ALLOC flag.", n);
-            if (!sectHdr.sh_size) {
-                MSG("  section %2d no data", n);
-            } 
-            else {
-                /* Allocate space for Section Struct (not data) */
-                jelfLoaderSection_t* section = malloc(sizeof(jelfLoaderSection_t));
-                if( NULL == section ) {
-                    ERR("Error allocating space for SHF_ALLOC section");
-                    goto err;
-                }
-                memset(section, 0, sizeof(jelfLoaderSection_t));
-
-                /* Populate the Section Elements */
-                section->secIdx = n;
-                section->size = sectHdr.sh_size;
-
-                /* Add it to the beginning of the SinglyLinkedList */
-                section->next = ctx->section;
-                ctx->section = section;
-
-                /* Allocate memory */
-                MSG("Section %d attempting to allocate %d bytes.", n, sectHdr.sh_size);
-                section->data = ( sectHdr.sh_flags & SHF_EXECINSTR ) ?
-                        LOADER_ALLOC_EXEC(CEIL4(sectHdr.sh_size)) : // Executable Memory
-                        LOADER_ALLOC_DATA(CEIL4(sectHdr.sh_size)) ; // Normal Memory
-                if (!section->data) {
-                    ERR("Section %d malloc failed.", n);
-                    goto err;
-                }
-
-                /* Load Section into allocated data */
-                if (sectHdr.sh_type != SHT_NOBITS) {
-                    LOADER_GETDATA( ctx, sectHdr.sh_offset, section->data,
-                            CEIL4(sectHdr.sh_size) );
-                }
-
-                MSG("  section %2d %08X %6i", n,
-                        (unsigned int) section->data, sectHdr.sh_size);
-            }
-        }
-        /* Relocation Entries with Addends */
-        else if ( SHT_RELA == sectHdr.sh_type ) {
-            /* sh_info holds extra information that depends on sh_type.
-             * For sh_type SHT_RELA:
-             *     The section header index of the section to which the 
-             *     relocation applies.
-             */
-
-            /* If the index is greater than the number of sections that exist,
-             * it must be erroneous */
-            if (sectHdr.sh_info >= n) {
-                ERR("Rela section: bad linked section (%i -> %i)",
-                        n, sectHdr.sh_info);
-                goto err;
-            }
-
-            /* iterate through the singly linked list of sections until you
-             * find the one that matches sh_info */
-            jelfLoaderSection_t* section = findSection(ctx, sectHdr.sh_info);
-            if (section == NULL) { // Cannot find section
-                MSG("  section %2d -> %2d: ignoring", n, sectHdr.sh_info);
-            } else {
-                section->relSecIdx = n;
-                MSG("  section %2d -> %2d: ok", n, sectHdr.sh_info);
-            }
-        }
-        else if ( SHT_SYMTAB == sectHdr.sh_type ) {
-            MSG("  section %2d", n);
-                ctx->symtab_offset = sectHdr.sh_offset;
-                ctx->symtab_count = sectHdr.sh_size / JELF_SYM_SIZE;
-                MSG("symtab is %u bytes.", sectHdr.sh_size);
-                MSG("symtab contains %u entires.", ctx->symtab_count);
-        }
-    }
-    if (ctx->symtab_offset == 0 ) {
-        ERR("Missing .symtab");
-        goto err;
-    }
-    MSG("successfully loaded sections");
-
-    Jelf_Sym sym;
-    LOADER_GETDATA( ctx,
-            ctx->symtab_offset + ctx->entry_index * JELF_SYM_SIZE,
-            &sym, CEIL4(JELF_SYM_SIZE) );
-
-    jelfLoaderSection_t *symbol_section = findSection(ctx, sym.st_shndx);
-    if( NULL == symbol_section ) {
-        ERR("Error setting entrypoint.");
-        goto err;
-    }
-    ctx->exec = ((Jelf_Addr) symbol_section->data) + sym.st_value;
-    MSG("successfully set entrypoint");
-
-    return ctx;
-err:
-    return NULL;
+    return false;
 }
 
 static int readSymbol(jelfLoaderContext_t *ctx, int n, Jelf_Sym *sym) {
@@ -793,7 +476,10 @@ static int readSymbol(jelfLoaderContext_t *ctx, int n, Jelf_Sym *sym) {
     }
 
     off_t pos = ctx->symtab_offset + n * JELF_SYM_SIZE;
-    loader_sym(ctx, pos, sym);
+    if(!loader_sym(ctx, pos, sym)){
+        PROFILER_STOP_READSYMBOL;
+        return -1;
+    }
     PROFILER_STOP_READSYMBOL;
     return 0;
 err:
@@ -968,8 +654,6 @@ err:
     return -1;
 }
 
-
-
 static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
     PROFILER_START_RELOCATESECTION;
     PROFILER_INC_RELOCATESECTION;
@@ -1006,7 +690,7 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
     for (size_t relCount = 0; relCount < relEntries; relCount++) {
         off_t offset = sectHdr.sh_offset + relCount * (sizeof(rel));
         MSG("Reading in ELF32_Rela from offset 0x%x", (uint32_t)offset);
-        loader_rela(ctx, offset, &rel);      //todo: error handling
+        r |= loader_rela(ctx, offset, &rel);
         PROFILER_MAX_R_OFFSET(rel.r_offset);
         PROFILER_MAX_R_ADDEND(rel.r_addend);
 
@@ -1041,13 +725,13 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
                 "                     + %X",
                 rel.r_offset, symEntry, relType, type2String(relType),
                 relAddr, symAddr, sym.st_value, rel.r_addend);
-            r = -1;
+            r |= -1;
         }
         else if(relocateSymbol(relAddr, relType, symAddr, sym.st_value, &from, &to) != 0) {
             ERR("  %08X %04X %04X %-20s %08X %08X %08X %08X->%08X  + %X",
                     rel.r_offset, symEntry, relType, type2String(relType),
                     relAddr, symAddr, sym.st_value, from, to, rel.r_addend);
-            r = -1;
+            r |= -1;
         }
         else {
             MSG("  %08X %04X %04X %-20s %08X %08X %08X %08X->%08X  + %X",
@@ -1063,6 +747,291 @@ err:
     return -1;
 }
 
+
+/********************
+ * PUBLIC FUNCTIONS *
+ ********************/
+
+int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv) {
+    if (!ctx->exec) {
+        MSG("No Entrypoint set.");
+        return 0;
+    }
+
+    /* Free up loading cache */
+    #if CONFIG_JELFLOADER_CACHE_SHT
+    if( NULL != ctx->shdr_cache ) {
+        free( ctx->shdr_cache );
+        ctx->shdr_cache = NULL;
+    }
+    #endif
+    #if CONFIG_ELFLOADER_CACHE_LOCALITY
+    for(uint8_t i=0; i < CONFIG_ELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
+        if( NULL != ctx->locality_cache[i].data) {
+            free(ctx->locality_cache[i].data);
+            ctx->locality_cache[i].data = NULL;
+        }
+    }
+    #endif
+
+    typedef int (*func_t)(int, char**);
+    func_t func = (func_t)ctx->exec;
+    MSG("Running...");
+    int r = func(argc, argv);
+    MSG("Result: %08X", r);
+    return r;
+}
+
+int jelfLoaderRunAppMain(jelfLoaderContext_t *ctx) {
+    return jelfLoaderRun(ctx, 0, NULL);
+}
+
+int jelfLoaderRunConsole(jelfLoaderContext_t *ctx, int argc, char **argv) {
+    /* Just more explicit way of running app */
+    return jelfLoaderRun(ctx, argc, argv);
+}
+
+/* First Operation: Performs the following:
+ *     * Allocates space for the returned Context (constant size)
+ *     * Populates Context with:
+ *         * Pointer/FD to the beginning of the ELF file
+ *         * Pointer to env, which is a table to exported host function_names and their pointer in memory. 
+ *         * Number of sections in the ELF file.
+ *         * offset to SectionHeaderTable, which maps an index to a offset in ELF where the section header begins.
+ *         * offset to StringTable, which is a list of null terminated strings.
+ */
+jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
+        const jelfLoaderEnv_t *env) {
+    Jelf_Ehdr header;
+    jelfLoaderContext_t *ctx;
+
+    /* Size Check */
+    ESP_LOGI(TAG, "Jelf_Ehdr: %d", sizeof(Jelf_Ehdr));
+    ESP_LOGI(TAG, "Jelf_Sym:  %d", sizeof(Jelf_Sym));
+    ESP_LOGI(TAG, "Jelf_Shdr: %d", sizeof(Jelf_Shdr));
+    ESP_LOGI(TAG, "Jelf_Rela: %d", sizeof(Jelf_Rela));
+
+    /***********************************************
+     * Initialize the context object with pointers *
+     ***********************************************/
+    ctx = malloc(sizeof(jelfLoaderContext_t));
+    if( NULL == ctx ) {
+        ERR( "Insufficient memory for ElfLoaderContext_t" );
+        goto err;
+    }
+    memset(ctx, 0, sizeof(jelfLoaderContext_t));
+    ctx->fd = fd;
+    ctx->env = env;
+
+    /*********************************************************************
+     * Load the JELF header (Ehdr), located at the beginning of the file *
+     *********************************************************************/
+    LOADER_GETDATA(ctx, 0, &header, JELF_EHDR_SIZE);
+
+    /* Make sure that we have a correct and compatible ELF header. */
+    char JelfMagic[] = { 0x7f, 'J', 'E', 'L', 'F', '\0' };
+    if ( 0 != memcmp(header.e_ident, JelfMagic, strlen(JelfMagic)) ) {
+        ERR("Bad JELF Identification");
+        ERR("File Magic Identifier: %s", header.e_ident);
+        goto err;
+    }
+    /* Debug Sanity Checks */
+    assert( header.e_version_major == 0 );
+    assert( header.e_version_minor == 1 );
+    MSG( "SectionHeaderTableOffset: %08X", header.e_shoff );
+    MSG( "SectionHeaderTableEntries: %d", header.e_shnum );
+    MSG( "Derivation Purpose: %08X", header.e_coin_purpose );
+    MSG( "Derivation Path: %08X", header.e_coin_path );
+    MSG( "bip32key: %s", header.e_bip32key);
+
+    /*******************
+     * Check Signature *
+     *******************/
+    if( !app_signature_check(ctx, &header, name) ) {
+        goto err;
+    }
+    
+    /*****************************
+     * Initialize Locality Cache *
+     *****************************/
+    /* Locality cache is initialized after signature checking so that the 
+     * overall memory footprint is relatively consistent. */
+    #if CONFIG_JELFLOADER_CACHE_LOCALITY
+    {
+        for(uint8_t i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
+            ctx->locality_cache[i].data = malloc(
+                    CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE );
+                if( NULL ==  ctx->locality_cache[i].data ) {
+                    ERR("Insufficient memory for Locality Cache Data");
+                    goto err;
+                }
+            ctx->locality_cache[i].valid = false;
+        }
+    }
+    #endif
+
+    #if CONFIG_JELFLOADER_CACHE_SHT
+    {
+        /**************************************
+         * Cache sectionheadertable to memory *
+         **************************************/
+        size_t sht_size = header.e_shnum * JELF_SHDR_SIZE;
+        MSG("Allocating %d bytes for section header cache.", sht_size);
+        ctx->shdr_cache = malloc(sht_size);
+        if( NULL == ctx->shdr_cache  ) {
+            ERR("Insufficient memory for section header table cache");
+            goto err;
+        }
+        /* Populate the cache */
+        LOADER_GETDATA(ctx, header.e_shoff, (char *)(ctx->shdr_cache), sht_size);
+    }
+    #endif
+
+    /* Populate context with ELF Header information*/
+    ctx->e_shnum = header.e_shnum; // Number of Sections
+    ctx->e_shoff = header.e_shoff; // offset to SectionHeaderTable
+    ctx->entry_index = header.e_entry_offset;
+    ctx->coin_purpose = header.e_coin_purpose;
+    ctx->coin_path = header.e_coin_path;
+    strlcpy(ctx->bip32_key, header.e_bip32key, sizeof(ctx->bip32_key));
+
+    return ctx;
+
+err:
+    if(NULL != ctx) {
+        jelfLoaderFree(ctx);
+    }
+    return NULL;
+}
+
+jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
+    MSG("Scanning ELF sections         relAddr      size");
+    // Iterate through all section_headers
+    for (int n = 1; n < ctx->e_shnum; n++) {
+        MSG("Loading section %d", n);
+        Jelf_Shdr sectHdr = { 0 };
+
+        /***********************
+         * Read Section Header *
+         ***********************/
+        // Read the section header at index n
+        // Populates "secHdr" with the Section's Header
+        if ( 0 != readSection(ctx, n, &sectHdr) ) {
+            ERR("Error reading section");
+            goto err;
+        }
+
+        #if 0
+        /* Debug: Print out the bytes that make up sectHdr */
+        {
+            MSG("Type:   %d", sectHdr.sh_type);
+            MSG("Flags:  %d", sectHdr.sh_flags);
+            MSG("Offset: %d", sectHdr.sh_offset);
+            MSG("Size:   %d", sectHdr.sh_size);
+            MSG("Info:   %d", sectHdr.sh_info);
+        } 
+        #endif
+
+        /* This  section  occupies  memory during process execution */
+        if (sectHdr.sh_flags & SHF_ALLOC) {
+            MSG("Section %d has SHF_ALLOC flag.", n);
+            if (!sectHdr.sh_size) {
+                MSG("  section %2d no data", n);
+            } 
+            else {
+                /* Allocate space for Section Struct (not data) */
+                jelfLoaderSection_t* section = malloc(sizeof(jelfLoaderSection_t));
+                if( NULL == section ) {
+                    ERR("Error allocating space for SHF_ALLOC section");
+                    goto err;
+                }
+                memset(section, 0, sizeof(jelfLoaderSection_t));
+
+                /* Populate the Section Elements */
+                section->secIdx = n;
+                section->size = sectHdr.sh_size;
+
+                /* Add it to the beginning of the SinglyLinkedList */
+                section->next = ctx->section;
+                ctx->section = section;
+
+                /* Allocate memory */
+                MSG("Section %d attempting to allocate %d bytes.", n, sectHdr.sh_size);
+                section->data = ( sectHdr.sh_flags & SHF_EXECINSTR ) ?
+                        LOADER_ALLOC_EXEC(CEIL4(sectHdr.sh_size)) : // Executable Memory
+                        LOADER_ALLOC_DATA(CEIL4(sectHdr.sh_size)) ; // Normal Memory
+                if (!section->data) {
+                    ERR("Section %d malloc failed.", n);
+                    goto err;
+                }
+
+                /* Load Section into allocated data */
+                if (sectHdr.sh_type != SHT_NOBITS) {
+                    LOADER_GETDATA( ctx, sectHdr.sh_offset, section->data,
+                            CEIL4(sectHdr.sh_size) );
+                }
+
+                MSG("  section %2d %08X %6i", n,
+                        (unsigned int) section->data, sectHdr.sh_size);
+            }
+        }
+        /* Relocation Entries with Addends */
+        else if ( SHT_RELA == sectHdr.sh_type ) {
+            /* sh_info holds extra information that depends on sh_type.
+             * For sh_type SHT_RELA:
+             *     The section header index of the section to which the 
+             *     relocation applies.
+             */
+
+            /* If the index is greater than the number of sections that exist,
+             * it must be erroneous */
+            if (sectHdr.sh_info >= n) {
+                ERR("Rela section: bad linked section (%i -> %i)",
+                        n, sectHdr.sh_info);
+                goto err;
+            }
+
+            /* iterate through the singly linked list of sections until you
+             * find the one that matches sh_info */
+            jelfLoaderSection_t* section = findSection(ctx, sectHdr.sh_info);
+            if (section == NULL) { // Cannot find section
+                MSG("  section %2d -> %2d: ignoring", n, sectHdr.sh_info);
+            } else {
+                section->relSecIdx = n;
+                MSG("  section %2d -> %2d: ok", n, sectHdr.sh_info);
+            }
+        }
+        else if ( SHT_SYMTAB == sectHdr.sh_type ) {
+            MSG("  section %2d", n);
+                ctx->symtab_offset = sectHdr.sh_offset;
+                ctx->symtab_count = sectHdr.sh_size / JELF_SYM_SIZE;
+                MSG("symtab is %u bytes.", sectHdr.sh_size);
+                MSG("symtab contains %u entires.", ctx->symtab_count);
+        }
+    }
+    if (ctx->symtab_offset == 0 ) {
+        ERR("Missing .symtab");
+        goto err;
+    }
+    MSG("successfully loaded sections");
+
+    Jelf_Sym sym;
+    LOADER_GETDATA( ctx,
+            ctx->symtab_offset + ctx->entry_index * JELF_SYM_SIZE,
+            &sym, CEIL4(JELF_SYM_SIZE) );
+
+    jelfLoaderSection_t *symbol_section = findSection(ctx, sym.st_shndx);
+    if( NULL == symbol_section ) {
+        ERR("Error setting entrypoint.");
+        goto err;
+    }
+    ctx->exec = ((Jelf_Addr) symbol_section->data) + sym.st_value;
+    MSG("successfully set entrypoint");
+
+    return ctx;
+err:
+    return NULL;
+}
 
 jelfLoaderContext_t *jelfLoaderRelocate(jelfLoaderContext_t *ctx) {
     MSG("Relocating sections");

@@ -68,6 +68,4 @@ typedef struct {
 #define JELF_R_TYPE(val)       ((val) & 0x03)
 #define JELF_R_INFO(sym, type)     (((sym) << 2) + ((type) & 0x03))
 
-
-
 #endif
