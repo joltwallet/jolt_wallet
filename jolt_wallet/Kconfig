@@ -91,7 +91,13 @@ menu "Jolt Wallet"
             default 100
             help
                 help text here.
-
+        config JOLT_I2C_ERROR_RESET
+            bool
+            prompt "Reset if unable to contact display"
+            default y
+            help
+                If yes, Jolt will reboot on failure to communicate with the 
+                dislay. If no, it will continue operating as usual.
     endmenu
 
     menu "GUI"

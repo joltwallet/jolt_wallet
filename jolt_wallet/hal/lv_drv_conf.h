@@ -1,6 +1,5 @@
 /**
  * @file lv_drv_conf.h
- * 
  */
 
 #ifndef LV_DRV_CONF_H
@@ -10,18 +9,15 @@
 extern "C" {
 #endif
 
-#include "lv_conf.h"
-
-#undef ESP_ERROR_CHECK
-#define ESP_ERROR_CHECK(x)   do { esp_err_t rc = (x); if (rc != ESP_OK) { ESP_LOGE("err", "esp_err_t = %d", rc); assert(0 && #x);} } while(0);
-
 /*********************
  *      INCLUDES
  *********************/
 #include "sdkconfig.h"
 #include "stdint.h"
+#include "esp_err.h"
 #include "esp_log.h"
 #include "hal/i2c.h"
+#include "lv_conf.h"
 
 /*********************
  *       DEFINES
@@ -162,23 +158,68 @@ static inline uint8_t lv_gpio_read(lv_gpio_handle_t gpio)
 static inline int lv_i2c_write(lv_i2c_handle_t i2c_dev, const uint8_t* reg, const void* data_out, uint16_t datalen)
 {
     //Do the dependant port here
+    const char TAG[]="lv_drv_conf/i2c_write";
+
+#if !CONFIG_JOLT_I2C_ERROR_RESET
+    /* Upon a single fail, stop trying */
+    static bool prev_error = false;
+    if( prev_error  ) {
+        goto err;
+    }
+#endif
+
+    esp_err_t err;
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    ESP_ERROR_CHECK(i2c_master_start(cmd));
-    ESP_ERROR_CHECK(i2c_master_write_byte(cmd, (i2c_dev << 1) | WRITE_BIT, ACK_CHECK_EN));
+    err = i2c_master_start(cmd);
+    if( ESP_OK != err ) {
+        ESP_LOGE(TAG, "Failed i2c_maser_start");
+        goto err;
+    }
+
+    i2c_master_write_byte(cmd, (i2c_dev << 1) | WRITE_BIT, ACK_CHECK_EN);
+    if( ESP_OK != err ) {
+        ESP_LOGE(TAG, "Failed i2c_master_write_byte (Address + r/w)");
+        goto err;
+    }
+
     if ( reg ) {
-        ESP_ERROR_CHECK(i2c_master_write_byte(cmd, *reg, ACK_CHECK_EN));
+        err = i2c_master_write_byte(cmd, *reg, ACK_CHECK_EN);
+        if( ESP_OK != err ) {
+            ESP_LOGE(TAG, "Failed i2c_master_write_byte (Register Address)");
+            goto err;
+        }
     } 
     if( data_out ) {
-        ESP_ERROR_CHECK(i2c_master_write(cmd, (uint8_t *)data_out, datalen, ACK_CHECK_EN));
+        err = i2c_master_write(cmd, (uint8_t *)data_out, datalen, ACK_CHECK_EN);
+        if( ESP_OK != err ) {
+            ESP_LOGE(TAG, "Failed i2c_master_write (Data)");
+            goto err;
+        }
+
     }
-    ESP_ERROR_CHECK(i2c_master_stop(cmd));
+    err = i2c_master_stop(cmd);
+    if( ESP_OK != err ) {
+        ESP_LOGE(TAG, "Failed i2c_master_stop");
+        goto err;
+    }
 
     I2C_SEM_TAKE;
-    ESP_ERROR_CHECK(i2c_master_cmd_begin(CONFIG_JOLT_I2C_MASTER_NUM, cmd,
-            CONFIG_JOLT_I2C_TIMEOUT_MS / portTICK_RATE_MS));
+    err = i2c_master_cmd_begin(CONFIG_JOLT_I2C_MASTER_NUM, cmd,
+            CONFIG_JOLT_I2C_TIMEOUT_MS / portTICK_RATE_MS);
     I2C_SEM_GIVE;
+    if( ESP_OK != err ) {
+        ESP_LOGE(TAG, "Failed i2c_master_cmd_begin");
+        goto err;
+    }
     i2c_cmd_link_delete(cmd);
     return 0;
+err:
+#if CONFIG_JOLT_I2C_ERROR_RESET
+        abort();
+#else
+    prev_error = true;
+#endif
+    return -1;
 }
 
 /**
