@@ -3,7 +3,6 @@
  https://www.joltwallet.com/
  */
 
-#include "menu8g2.h"
 #include "sodium.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -15,21 +14,20 @@
 #include "esp_log.h"
 #include "linenoise/linenoise.h"
 
-#include "globals.h"
+#include "jolt_globals.h"
 #include "console.h"
 #include "vault.h"
-#include "helpers.h"
-#include "gui/gui.h"
-#include "gui/loading.h"
-#include "gui/statusbar.h"
-#include "gui/confirmation.h"
+#include "jolt_helpers.h"
+
+#include "jolt_gui/jolt_gui.h"
 
 #include "syscore/console.h"
 #include "syscore/launcher.h"
 
 static const char* TAG = "console";
+static const char* TITLE = "Console";
 
-volatile TaskHandle_t console_h = NULL;
+TaskHandle_t console_h = NULL;
 
 
 void console_task() {
@@ -105,29 +103,23 @@ void console_task() {
 
 volatile TaskHandle_t *start_console(){
     xTaskCreate(console_task,
-                "ConsoleTask", 28000,
-                NULL, 19,
+                "ConsoleTask", CONFIG_JOLT_TASK_STACK_SIZE_CONSOLE,
+                NULL, CONFIG_JOLT_TASK_PRIORITY_CONSOLE,
                 (TaskHandle_t *) &console_h);
     return  &console_h;
 }
 
-void menu_console(menu8g2_t *prev){
+void menu_console(lv_obj_t * list_btn){
     /* On-Device GUI for Starting Console */
-    menu8g2_t menu;
-    menu8g2_copy(&menu, prev);
 
     if(console_h){
         ESP_LOGI(TAG, "Console already running.");
-        menu8g2_display_text_title(&menu,
-                "Console is already running.",
-                "Console");
+        jolt_gui_scr_text_create(TITLE, "Console is already running.");
     }
     else{
         ESP_LOGI(TAG, "Starting console.");
         start_console();
-        menu8g2_display_text_title(&menu,
-                "Console Started.",
-                "Console");
+        jolt_gui_scr_text_create(TITLE, "Console Started.");
     }
 }
 

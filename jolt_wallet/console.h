@@ -7,9 +7,10 @@
 #define __JOLT_CONSOLE_H__
 
 #include "esp_console.h"
+#include "lvgl/lvgl.h"
 
 void initialize_console();
-void menu_console(menu8g2_t *prev);
+void menu_console(lv_obj_t * list_btn);
 bool console_check_range_argc(uint8_t argc, uint8_t min, uint8_t max);
 bool console_check_equal_argc(uint8_t argc, uint8_t expected);
 volatile TaskHandle_t *start_console();

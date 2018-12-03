@@ -16,20 +16,20 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
-#include "menu8g2.h"
 #include "jolttypes.h"
 #include "bipmnemonic.h"
-#include "helpers.h"
-#include "globals.h"
+#include "jolt_helpers.h"
+#include "jolt_globals.h"
 #include "vault.h"
-#include "hal/storage.h"
-#include "gui/gui.h"
-#include "gui/statusbar.h"
-#include "gui/loading.h"
-
+#include "hal/storage/storage.h"
+#include "jolt_gui/jolt_gui.h"
 
 static const char* TAG = "vault";
 static const char* TITLE = "Vault Access";
+
+static lv_action_t back_cb;
+static lv_action_t enter_cb;
+
 
 vault_t *vault = NULL;
 /* The following semaphores are not part of the vault object so we can use
@@ -37,7 +37,6 @@ vault_t *vault = NULL;
 static SemaphoreHandle_t vault_sem; // Used for general vault access
 static SemaphoreHandle_t vault_watchdog_sem; // Used to kick the dog
 
-static bool get_master_seed(uint512_t master_seed);
 
 void vault_sem_take() {
     /* Takes Vault semaphore; restarts device if timesout during take. */
@@ -81,12 +80,17 @@ bool vault_setup() {
         ESP_LOGE(TAG, "Unable to allocate space for the Vault");
         esp_restart();
     }
+    /* NOTE: ESP32 doesn't properly implement the mprotect features;
+     * awaiting for their implementation for additional security. */
     sodium_mprotect_readwrite(vault);
     sodium_memzero(vault, sizeof(vault_t));
     sodium_mprotect_readonly(vault);
     vault_sem = xSemaphoreCreateMutex();
     vault_watchdog_sem = xSemaphoreCreateBinary();
-    xTaskCreate(vault_watchdog_task, "VaultWatchDog", 20000, NULL, 16, NULL); // todo: tweak this memory value
+
+    xTaskCreate(vault_watchdog_task, "VaultWatchDog",
+            CONFIG_JOLT_TASK_STACK_SIZE_VAULT_WATCHDOG,
+            NULL, CONFIG_JOLT_TASK_PRIORITY_VAULT_WATCHDOG, NULL);
 
     // Checks if stored secret exists
     return storage_exists_mnemonic();
@@ -99,47 +103,138 @@ void vault_clear() {
      *      * coin_type
      *      * bip32_key
      */
-    vault_sem_take();
-    ESP_LOGI(TAG, "Clearing Vault.");
-    sodium_mprotect_readwrite(vault);
-    vault->valid = false;
-    sodium_memzero(&(vault->node), sizeof(hd_node_t));
-    sodium_mprotect_readonly(vault);
-    ESP_LOGI(TAG, "Clearing Vault Complete.");
-    vault_sem_give();
+    if(vault->valid) {
+        vault_sem_take();
+        ESP_LOGI(TAG, "Clearing Vault.");
+        sodium_mprotect_readwrite(vault);
+        vault->valid = false;
+        sodium_memzero(&(vault->node), sizeof(hd_node_t));
+        sodium_mprotect_readonly(vault);
+        ESP_LOGI(TAG, "Clearing Vault Complete.");
+        vault_sem_give();
+    }
 }
 
-bool vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key) {
-    // To only be called before launching an app, or when changing firmware
-    // settings.
-    //
-    // Inside this function (really inside get_master_seed()),
-    // the GUI is invoked for PIN and Passphrase.
-    //
-    // Returns true if successfully set
-    // Returns false if not set (user cancellation)
-    CONFIDENTIAL uint512_t master_seed;
-    bool res;
-    // Inside get_master_seed(), PIN and passphrase are prompted for
-    if(!get_master_seed(master_seed)) {
-        ESP_LOGI(TAG, "Failed to retrieve master seed");
-        res = false;
-        goto exit;
-    }
-    strlcpy( vault->bip32_key, bip32_key, sizeof(vault->bip32_key) );
-    vault->purpose = purpose;
-    vault->coin_type = coin_type;
-    bm_master_seed_to_node(&(vault->node), master_seed, vault->bip32_key,
+// Store the callback to perform when node derivation is complete
+static lv_action_t cb_vault_set_success = NULL;
+
+static void derivation_master_seed_task(jolt_derivation_t *status) {
+    bm_mnemonic_to_master_seed_progress(
+            jolt_gui_store.derivation.master_seed, 
+            jolt_gui_store.derivation.mnemonic,
+            jolt_gui_store.derivation.passphrase,
+            &(status->progress));
+    status->progress = JOLT_DERIVATION_PROGRESS_DONE;
+    vTaskDelete(NULL);
+}
+
+static lv_action_t post_mnemonic_to_master_seed(void *dummy) {
+    vault_sem_take();
+    sodium_mprotect_readwrite(vault);
+    bm_master_seed_to_node(&(vault->node), 
+            jolt_gui_store.derivation.master_seed, vault->bip32_key,
             2, vault->purpose, vault->coin_type);
     vault->valid = true;
-    res = true;
+    sodium_mprotect_readonly(vault);
+    vault_sem_give();
 
-exit:
-    sodium_memzero(master_seed, sizeof(master_seed));
-    return res;
+    /* Clean up */
+    sodium_memzero(jolt_gui_store.derivation.mnemonic,
+            sizeof(jolt_gui_store.derivation.mnemonic));
+    sodium_memzero(jolt_gui_store.derivation.master_seed,
+            sizeof(jolt_gui_store.derivation.master_seed));
+    sodium_memzero(jolt_gui_store.derivation.passphrase,
+            sizeof(jolt_gui_store.derivation.passphrase));
+
+    if( NULL != cb_vault_set_success ) {
+        ESP_LOGI(TAG, "Calling Post-PIN Callback with valid vault.");
+        cb_vault_set_success(NULL);
+        cb_vault_set_success = NULL;
+    }
+    else {
+        ESP_LOGE(TAG, "No Post-PIN callback set");
+    }
+
+    return LV_RES_OK;
 }
 
-bool vault_refresh() {
+/* Gets executed after a successful pin entry.
+ * Populates the vault node.
+ *     * Calls user success callback
+ */
+static lv_action_t pin_success_cb() {
+    /* Pin screen just populated jolt_gui_store.derivation.mnemonic_bin */
+
+    // todo: get passphrase here
+    strlcpy(jolt_gui_store.derivation.passphrase, "",
+            sizeof(jolt_gui_store.derivation.passphrase)); // dummy placeholder
+
+    /* Convert Binary Mnemonic to String; Clear Binary */
+    bm_bin_to_mnemonic(jolt_gui_store.derivation.mnemonic, sizeof(jolt_gui_store.derivation.mnemonic),
+            jolt_gui_store.derivation.mnemonic_bin, 256);
+    sodium_memzero(jolt_gui_store.derivation.mnemonic_bin, 
+            sizeof(jolt_gui_store.derivation.mnemonic_bin));
+
+    static jolt_derivation_t status;
+    status.progress = 0;
+    status.data = NULL;
+    status.cb = post_mnemonic_to_master_seed; // Gets called after master_seed progress is complete
+    status.scr = jolt_gui_scr_loading_create("");
+    jolt_gui_scr_loading_update(status.scr, NULL, "Unlocking", 0);
+
+    jolt_gui_progress_task_create(&status);
+    xTaskCreate(derivation_master_seed_task,
+            "MasterDeriv", CONFIG_JOLT_TASK_STACK_SIZE_DERIVATION,
+            (void *)&status,
+            CONFIG_JOLT_TASK_PRIORITY_DERIVATION, &(status.derivation_task));
+
+    return LV_RES_OK;
+}
+
+void vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key,
+        lv_action_t failure_cb, lv_action_t success_cb) {
+    /* 
+     * To only be called before launching an app, or when changing firmware
+     * settings.
+     * Since this *may* prompt the user for a PIN, it must be non-blocking
+     * to agree with the GUI.
+     *
+     * If the vault is successfully set, the success callback will be executed.
+     * On failure to set the vault, the failure callback will be executed.
+     *
+     */
+
+    /* Don't require pin if logging into app with identical vault parameters */
+    vault_sem_take();
+    if( true == vault->valid
+            && vault->purpose   == purpose
+            && vault->coin_type == coin_type
+            && 0 == strcmp(vault->bip32_key, bip32_key) ) {
+        ESP_LOGI(TAG, "Vault is valid; kicking the dog.");
+        xSemaphoreGive(vault_watchdog_sem);
+        vault_sem_give();
+        success_cb(NULL);
+        return;
+    }
+    vault_sem_give();
+
+    /* Populate Vault with derivation parameters */
+    vault_sem_take();
+    sodium_mprotect_readwrite(vault);
+    vault->valid = false;
+    vault->purpose = purpose;
+    vault->coin_type = coin_type;
+    strlcpy( vault->bip32_key, bip32_key, sizeof(vault->bip32_key) );
+    sodium_mprotect_readonly(vault);
+    vault_sem_give();
+
+    /* Set success callback */
+    cb_vault_set_success = success_cb;
+
+    jolt_gui_scr_pin_create(failure_cb, pin_success_cb);
+}
+
+void vault_refresh(lv_action_t failure_cb, lv_action_t success_cb) {
     /* Kicks dog if vault is valid.
      * Repopulates node (therefore prompting user for PIN otherwise
      *
@@ -148,71 +243,17 @@ bool vault_refresh() {
      * Returns true on success,
      * false if user cancels (if node needs restored)
      */
-    bool res;
+    cb_vault_set_success = success_cb;
     vault_sem_take();
-    ESP_LOGI(TAG, "Refreshing Vault");
     if( vault->valid ) {
         // Kick the dog
         ESP_LOGI(TAG, "Vault is valid; kicking the dog.");
         xSemaphoreGive(vault_watchdog_sem);
         vault_sem_give();
-        return true;
+        success_cb(NULL);
     }
     else {
-        // Give up semaphore while prompt using for PIN/Passphrase
         vault_sem_give();
-        ESP_LOGI(TAG, "Vault is invalid, prompting user for PIN.");
-        CONFIDENTIAL uint512_t master_seed;
-        // Inside get_master_seed(), PIN and passphrase are prompted for
-        if(!get_master_seed(master_seed)) {
-            return false;
-        }
-
-        vault_sem_take();
-        // Kick the dog first to avoid a potential race condition where the 
-        // watchdog resets a just-set node.
-        xSemaphoreGive(vault_watchdog_sem);
-
-        bm_master_seed_to_node(&(vault->node), master_seed, vault->bip32_key,
-            2, vault->purpose, vault->coin_type);
-        vault->valid = true;
-        vault_sem_give();
-        sodium_memzero(master_seed, sizeof(master_seed));
-        return true;
+        jolt_gui_scr_pin_create(failure_cb, pin_success_cb);
     }
-}
-
-static bool get_master_seed(uint512_t master_seed) {
-    // Command-level function to get the user's mnemonic
-    // WILL prompt user for PIN and/or passphrase
-    //
-    // Internally saves/restores display since PIN/Passphrase prompt
-    // overwrites screen buffer.
-    //
-    // Returns True if user successfully entered PIN/Passphrase
-    // Returns False if user cancels
-    bool res;
-    CONFIDENTIAL char passphrase[BM_PASSPHRASE_BUF_LEN] = "";
-    CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
-
-    SCREEN_SAVE;
-    
-    // storage_get_mnemonic prompts user for PIN
-    if( !storage_get_mnemonic(mnemonic, sizeof(mnemonic)) ) {
-        res = false;
-        goto exit;
-    }
-
-    // todo: fetch passphrase
-    strlcpy(passphrase, "", sizeof(passphrase)); // dummy placeholder
-
-    // Derive master seed
-    res = (E_SUCCESS == bm_mnemonic_to_master_seed(master_seed, mnemonic, passphrase));
-
-exit:
-    sodium_memzero(mnemonic, sizeof(mnemonic));
-    sodium_memzero(passphrase, sizeof(passphrase));
-
-    SCREEN_RESTORE;
-    return res;
 }
