@@ -365,6 +365,7 @@ bool storage_internal_set_blob(unsigned char *buf, size_t len,
 
 void storage_internal_factory_reset() {
     /* Erases everything */
+    ESP_ERROR_CHECK(nvs_flash_deinit());
     ESP_ERROR_CHECK(nvs_flash_erase());
     ESP_ERROR_CHECK(esp_spiffs_format(NULL));
 }
