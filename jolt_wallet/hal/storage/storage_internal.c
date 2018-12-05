@@ -20,6 +20,7 @@
 #include "jolttypes.h"
 #include "storage.h"
 #include "joltcrypto.h"
+#include "esp_spiffs.h"
 
 static const char* TAG = "storage_internal";
 static const char* TITLE = "Storage Access";
@@ -217,6 +218,7 @@ bool storage_internal_set_u8(uint8_t value, char *namespace, char *key) {
 
     init_nvs_namespace(&nvs, namespace);
     err = nvs_set_u8(nvs, key, value);
+    nvs_commit(nvs);
     nvs_close(nvs);
 
     return ESP_OK==err;
@@ -249,6 +251,7 @@ bool storage_internal_set_u16(uint16_t value, char *namespace, char *key) {
 
     init_nvs_namespace(&nvs, namespace);
     err = nvs_set_u16(nvs, key, value);
+    nvs_commit(nvs);
     nvs_close(nvs);
 
     return ESP_OK==err;
@@ -281,6 +284,7 @@ bool storage_internal_set_u32(uint32_t value, char *namespace, char *key) {
 
     init_nvs_namespace(&nvs, namespace);
     err = nvs_set_u32(nvs, key, value);
+    nvs_commit(nvs);
     nvs_close(nvs);
 
     return ESP_OK==err;
@@ -329,6 +333,7 @@ bool storage_internal_set_str(char *str, char *namespace, char *key) {
 
     init_nvs_namespace(&nvs, namespace);
     err = nvs_set_str(nvs, key, str);
+    nvs_commit(nvs);
     nvs_close(nvs);
 
     return ESP_OK==err;
@@ -351,6 +356,7 @@ bool storage_internal_set_blob(unsigned char *buf, size_t len,
 
     init_nvs_namespace(&nvs, namespace);
     err = nvs_set_blob(nvs, key, buf, len);
+    nvs_commit(nvs);
     nvs_close(nvs);
 
     return ESP_OK==err;
@@ -358,25 +364,10 @@ bool storage_internal_set_blob(unsigned char *buf, size_t len,
 
 
 void storage_internal_factory_reset() {
-    // todo: fix this up
-    nvs_handle h;
-
-    init_nvs_namespace(&h, "secret");
-    nvs_erase_all(h);
-    nvs_commit(h);
-    nvs_close(h);
-
-    init_nvs_namespace(&h, "user");
-    nvs_erase_all(h);
-    nvs_commit(h);
-    nvs_close(h);
-
-    init_nvs_namespace(&h, "nano");
-    nvs_erase_all(h);
-    nvs_commit(h);
-    nvs_close(h);
-
-    esp_restart();
+    /* Erases everything */
+    ESP_ERROR_CHECK(nvs_flash_deinit());
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ESP_ERROR_CHECK(esp_spiffs_format(NULL));
 }
 
 bool storage_internal_erase_key(char *namespace, char *key) {
@@ -385,6 +376,7 @@ bool storage_internal_erase_key(char *namespace, char *key) {
 
     init_nvs_namespace(&nvs, namespace);
     err = nvs_erase_key(nvs, key);
+    nvs_commit(nvs);
     nvs_close(nvs);
 
     return ESP_OK==err;

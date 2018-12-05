@@ -397,5 +397,47 @@ menu "Jolt Wallet"
 
     endmenu
 
+    menu "JELF Loader"
+        config JELFLOADER_PROFILER_EN
+            bool
+            prompt "Enable ELF Loader Profiling"
+            default n
+            help
+                Enable profiling tools. Takes up additional memory and some CPU cycles.
 
+        config JELFLOADER_CACHE_SHT
+            bool
+            prompt "Cache SectionHeaderTable"
+            default n
+            help
+                Allocates memory for every section read to reduce repeated flash reads.
+                Frees these sections after loading is complete. In general, its better 
+                to not enable this and increase number of chunks instead. Better 
+                performance gain per KB of ram.
+
+        config JELFLOADER_CACHE_LOCALITY
+            bool
+            prompt "Read ahead as filesystem is accessed"
+            default y
+            help
+                help text here.
+
+        config JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE
+            int
+            depends on JELFLOADER_CACHE_LOCALITY
+            prompt "Read ahead as filesystem is accessed"
+            default 1024
+            range 128 65536
+            help
+                chunk size for read ahead in bytes.
+
+        config JELFLOADER_CACHE_LOCALITY_CHUNK_N
+            int
+            depends on JELFLOADER_CACHE_LOCALITY
+            prompt "Number of chunks to cache"
+            default 5
+            range 0 255
+            help
+                number of chunks to cache.
+    endmenu
 endmenu

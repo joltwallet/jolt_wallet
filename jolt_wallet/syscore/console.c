@@ -25,11 +25,97 @@
 #include "jolt_helpers.h"
 #include "hal/radio/wifi.h"
 #include "hal/storage/storage.h"
+#include "sodium.h"
+
+#include "lvgl.h"
+#include "jolt_gui/jolt_gui.h"
 
 #include "../console.h"
+#include "mnemonic_restore.h"
 
 static const char* TAG = "console_syscore";
 
+static uint256_t app_key;
+
+static lv_action_t set_app_key_back_cb(lv_obj_t *btn) {
+    jolt_gui_scr_del();
+    return LV_RES_INV;
+}
+
+static lv_action_t set_app_key_enter_cb(lv_obj_t *btn) {
+    /* Todo: loading-like screen */
+    storage_factory_reset(); // todo: uncomment when bug resolved
+    if(!storage_set_blob(app_key, sizeof(app_key), "user", "app_key")){
+        printf("Error setting app_key.\n");
+    }
+    printf("Successfully set App Key.\n");
+    esp_restart();
+    return LV_RES_OK;
+}
+
+static int cmd_app_key(int argc, char** argv){
+    int return_code = 0;
+
+    /* Input Validation */
+    if( !console_check_range_argc(argc, 1, 2) ) {
+        return_code = 1;
+        goto exit;
+    }
+
+    /* Print App Key */
+    if( 1 == argc ) {
+        uint256_t approved_pub_key;
+        hex256_t pub_key_hex;
+        size_t required_size;
+        if( !storage_get_blob(NULL, &required_size, "user", "app_key") ) {
+            printf("Stored App Key not found\n");
+            return_code = 4;
+            goto exit;
+        }
+        if( sizeof(approved_pub_key) != required_size ||
+                !storage_get_blob(approved_pub_key, &required_size,
+                    "user", "app_key")) {
+            printf("Stored App Key Blob doesn't have expected len.\n");
+            return_code = 5;
+            goto exit;
+        }
+        sodium_bin2hex(pub_key_hex, sizeof(pub_key_hex),
+                approved_pub_key, sizeof(approved_pub_key));
+        printf("App Key: %s\n", pub_key_hex);
+        goto exit;
+    }
+
+    /* Set App Key */
+    if( strlen(argv[1]) != 64 ) {
+        printf("App Key must be 64 characters long in hexadecimal\n");
+        return_code = 2;
+        goto exit;
+    }
+    ESP_ERROR_CHECK(sodium_hex2bin(app_key, sizeof(app_key), argv[1], 64,
+                NULL, NULL, NULL));
+
+    /* Make sure we are not in an app */
+    if( NULL != jolt_gui_store.app.ctx ) {
+        printf("Cannot set app key while an app is running.\n");
+        return_code = 3;
+        goto exit;
+    }
+
+    /* Display Text; Pressing any button returns to previous screen */
+    lv_obj_t *scr;
+    char body[400];
+    snprintf(body, sizeof(body), "WARNING: This will perform a factory reset.\nSet app public key to: \n%s ?", argv[1]);
+
+    /* Prompt user */
+    jolt_gui_sem_take();
+    scr = jolt_gui_scr_text_create("Set App Key", body);
+    jolt_gui_scr_set_back_action(scr, set_app_key_back_cb);
+    jolt_gui_scr_set_enter_action(scr, set_app_key_enter_cb);
+    jolt_gui_sem_give();
+    // todo: delay until the user presses back instead of returning immediately
+exit:
+    return return_code;
+}
 
 static int free_mem(int argc, char** argv) {
     printf("Free: %d bytes\n", esp_get_free_heap_size());
@@ -85,111 +171,6 @@ static int wifi_update(int argc, char** argv) {
     }
 
     exit:
-        return return_code;
-}
-
-static int mnemonic_restore(int argc, char** argv) {
-    const char title[] = "Restore";
-    const char prompt[] = "Enter Mnemonic Word: ";
-    int return_code = 0;
-    char *line;
-    CONFIDENTIAL char user_words[24][11];
-    CONFIDENTIAL uint8_t index[24];
-
-#if 0
-    if( !menu_confirm_action(menu, "Begin mnemonic restore?") ) {
-        return_code = -1;
-        goto exit;
-    }
-#endif
-
-    // Generate Random Order for user to input mnemonic
-    for(uint8_t i=0; i< sizeof(index); i++){
-        index[i] = i;
-    }
-    shuffle_arr(index, sizeof(index));
-
-    //loading_enable();
-    for(uint8_t i=0; i < sizeof(index); i++){
-        uint8_t j = index[i];
-        // Humans like 1-indexing
-        char buf[10];
-        snprintf(buf, sizeof(buf), "Word %d", j + 1);
-        //loading_text_title(buf, title);
-
-        line = linenoise(prompt);
-        if (line == NULL) { /* Ignore empty lines */
-            continue;
-        }
-        if (strcmp(line, "exit_restore") == 0){
-            printf("Aborting mnemonic restore\n");
-            linenoiseFree(line);
-            return_code = 1;
-            goto exit;
-        }
-
-        strlcpy(user_words[j], line, sizeof(user_words[j]));
-        linenoiseFree(line);
-
-        // verify its a word in the word list
-        while(-1 == bm_search_wordlist(user_words[j], strlen(user_words[j]))) {
-            printf("Invalid word\n");
-            line = linenoise(prompt);
-            if (line == NULL) { /* Ignore empty lines */
-                continue;
-            }
-            if (strcmp(line, "exit_restore") == 0){
-                printf("Aborting mnemonic restore\n");
-                linenoiseFree(line);
-                return_code = 1;
-                goto exit;
-            }
-
-            strlcpy(user_words[j], line, sizeof(user_words[j]));
-            linenoiseFree(line);
-        }
-    }
-    sodium_memzero(index, sizeof(index));
-    //loading_disable();
-
-    // Join Mnemonic into single buffer
-    CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
-    size_t offset=0;
-    for(uint8_t i=0; i < sizeof(index); i++){
-        strlcpy(mnemonic + offset, user_words[i], sizeof(mnemonic) - offset);
-        offset += strlen(user_words[i]);
-        mnemonic[offset++] = ' ';
-    }
-    mnemonic[offset - 1] = '\0'; //null-terminate, remove last space
-
-    // prompt and verify new pin; result: pin_hash
-    CONFIDENTIAL uint256_t pin_hash;
-#if 0
-    if( !entry_verify_pin(&menu, pin_hash) ) {
-        return_code = -2;
-        goto exit;
-    }
-#endif
-
-#if 0
-    if( !menu_confirm_action(menu, "Save restored mnemonic and reboot? CAN NOT BE UNDONE.") ) {
-        return_code = -1;
-        goto exit;
-    }
-#endif
-
-    CONFIDENTIAL uint256_t bin;
-    jolt_err_t err = bm_mnemonic_to_bin(bin, sizeof(bin), mnemonic);
-
-    storage_set_mnemonic(bin, pin_hash);
-    sodium_memzero(bin, sizeof(bin));
-    sodium_memzero(index, sizeof(index));
-    sodium_memzero(mnemonic, sizeof(mnemonic));
-    esp_restart();
-
-    exit:
-        sodium_memzero(index, sizeof(index));
-        sodium_memzero(mnemonic, sizeof(mnemonic));
         return return_code;
 }
 
@@ -279,7 +260,7 @@ void console_syscore_register() {
         .command = "mnemonic_restore",
         .help = "Restore mnemonic seed.",
         .hint = NULL,
-        .func = &mnemonic_restore,
+        .func = &jolt_cmd_mnemonic_restore,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
@@ -296,6 +277,14 @@ void console_syscore_register() {
         .help = "Reboot device.",
         .hint = NULL,
         .func = &cmd_reboot,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "app_key",
+        .help = "Sets app public key. WILL ERASE ALL DATA.",
+        .hint = NULL,
+        .func = &cmd_app_key,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
