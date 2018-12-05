@@ -31,6 +31,7 @@
 #include "jolt_gui/jolt_gui.h"
 
 #include "../console.h"
+#include "mnemonic_restore.h"
 
 static const char* TAG = "console_syscore";
 
@@ -173,111 +174,6 @@ static int wifi_update(int argc, char** argv) {
         return return_code;
 }
 
-static int mnemonic_restore(int argc, char** argv) {
-    const char title[] = "Restore";
-    const char prompt[] = "Enter Mnemonic Word: ";
-    int return_code = 0;
-    char *line;
-    CONFIDENTIAL char user_words[24][11];
-    CONFIDENTIAL uint8_t index[24];
-
-#if 0
-    if( !menu_confirm_action(menu, "Begin mnemonic restore?") ) {
-        return_code = -1;
-        goto exit;
-    }
-#endif
-
-    // Generate Random Order for user to input mnemonic
-    for(uint8_t i=0; i< sizeof(index); i++){
-        index[i] = i;
-    }
-    shuffle_arr(index, sizeof(index));
-
-    //loading_enable();
-    for(uint8_t i=0; i < sizeof(index); i++){
-        uint8_t j = index[i];
-        // Humans like 1-indexing
-        char buf[10];
-        snprintf(buf, sizeof(buf), "Word %d", j + 1);
-        //loading_text_title(buf, title);
-
-        line = linenoise(prompt);
-        if (line == NULL) { /* Ignore empty lines */
-            continue;
-        }
-        if (strcmp(line, "exit_restore") == 0){
-            printf("Aborting mnemonic restore\n");
-            linenoiseFree(line);
-            return_code = 1;
-            goto exit;
-        }
-
-        strlcpy(user_words[j], line, sizeof(user_words[j]));
-        linenoiseFree(line);
-
-        // verify its a word in the word list
-        while(-1 == bm_search_wordlist(user_words[j], strlen(user_words[j]))) {
-            printf("Invalid word\n");
-            line = linenoise(prompt);
-            if (line == NULL) { /* Ignore empty lines */
-                continue;
-            }
-            if (strcmp(line, "exit_restore") == 0){
-                printf("Aborting mnemonic restore\n");
-                linenoiseFree(line);
-                return_code = 1;
-                goto exit;
-            }
-
-            strlcpy(user_words[j], line, sizeof(user_words[j]));
-            linenoiseFree(line);
-        }
-    }
-    sodium_memzero(index, sizeof(index));
-    //loading_disable();
-
-    // Join Mnemonic into single buffer
-    CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
-    size_t offset=0;
-    for(uint8_t i=0; i < sizeof(index); i++){
-        strlcpy(mnemonic + offset, user_words[i], sizeof(mnemonic) - offset);
-        offset += strlen(user_words[i]);
-        mnemonic[offset++] = ' ';
-    }
-    mnemonic[offset - 1] = '\0'; //null-terminate, remove last space
-
-    // prompt and verify new pin; result: pin_hash
-    CONFIDENTIAL uint256_t pin_hash;
-#if 0
-    if( !entry_verify_pin(&menu, pin_hash) ) {
-        return_code = -2;
-        goto exit;
-    }
-#endif
-
-#if 0
-    if( !menu_confirm_action(menu, "Save restored mnemonic and reboot? CAN NOT BE UNDONE.") ) {
-        return_code = -1;
-        goto exit;
-    }
-#endif
-
-    CONFIDENTIAL uint256_t bin;
-    jolt_err_t err = bm_mnemonic_to_bin(bin, sizeof(bin), mnemonic);
-
-    storage_set_mnemonic(bin, pin_hash);
-    sodium_memzero(bin, sizeof(bin));
-    sodium_memzero(index, sizeof(index));
-    sodium_memzero(mnemonic, sizeof(mnemonic));
-    esp_restart();
-
-    exit:
-        sodium_memzero(index, sizeof(index));
-        sodium_memzero(mnemonic, sizeof(mnemonic));
-        return return_code;
-}
-
 static int jolt_cast(int argc, char** argv) {
     /* (url, path, port) */
     int return_code;
@@ -364,7 +260,7 @@ void console_syscore_register() {
         .command = "mnemonic_restore",
         .help = "Restore mnemonic seed.",
         .hint = NULL,
-        .func = &mnemonic_restore,
+        .func = &jolt_cmd_mnemonic_restore,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
