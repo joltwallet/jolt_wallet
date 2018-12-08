@@ -199,10 +199,10 @@ void app_main() {
             NULL, CONFIG_JOLT_TASK_PRIORITY_HW_MONITORS, NULL);
 
     // Initiate Console
+    jolt_bluetooth_setup();
     initialize_console();
     start_console();
 
-    jolt_bluetooth_setup();
 
     BaseType_t ret;
     ESP_LOGI(TAG, "Creating Screen Draw Task");

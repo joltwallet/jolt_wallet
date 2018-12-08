@@ -14,8 +14,14 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_bt.h"
-#include "driver/uart.h"
 #include "string.h"
+#include "driver/uart.h"
+#include "esp_vfs_dev.h"
+#include <stdarg.h>
+#include <sys/errno.h>
+#include <sys/lock.h>
+#include <sys/fcntl.h>
+#include <sys/param.h>
 
 #include "esp_gap_ble_api.h"
 #include "esp_gatts_api.h"
@@ -26,6 +32,8 @@
 #include "esp_console.h"
 
 #include "spp_recv_buf.h"
+#include "linenoise/linenoise.h"
+#include "bluetooth.h"
 
 
 #define spp_sprintf(s,...)         sprintf((char*)(s), ##__VA_ARGS__)
@@ -35,6 +43,17 @@
 #define SPP_DATA_BUFF_MAX_LEN      (2*1024)
 
 #define GATTS_SEND_REQUIRE_CONFIRM false
+
+FILE *ble_stdin;
+FILE *ble_stdout;
+FILE *ble_stderr;
+
+static uint8_t find_char_and_desr_index(uint16_t);
+static void gap_event_handler(esp_gap_ble_cb_event_t, esp_ble_gap_cb_param_t *);
+static void gatts_profile_event_handler(esp_gatts_cb_event_t, 
+        esp_gatt_if_t, esp_ble_gatts_cb_param_t *);
+static void gatts_event_handler(esp_gatts_cb_event_t , 
+        esp_gatt_if_t, esp_ble_gatts_cb_param_t *);
 
 ///Attributes State Machine
 enum{
@@ -55,6 +74,28 @@ enum{
     SPP_IDX_SPP_STATUS_CFG,
 
     SPP_IDX_NB,
+};
+
+enum KEY_ACTION{
+	KEY_NULL = 0,	    /* NULL */
+	CTRL_A = 1,         /* Ctrl+a */
+	CTRL_B = 2,         /* Ctrl-b */
+	CTRL_C = 3,         /* Ctrl-c */
+	CTRL_D = 4,         /* Ctrl-d */
+	CTRL_E = 5,         /* Ctrl-e */
+	CTRL_F = 6,         /* Ctrl-f */
+	CTRL_H = 8,         /* Ctrl-h */
+	TAB = 9,            /* Tab */
+	CTRL_K = 11,        /* Ctrl+k */
+	CTRL_L = 12,        /* Ctrl+l */
+	ENTER = 10,         /* Enter (\n) */
+	CTRL_N = 14,        /* Ctrl-n */
+	CTRL_P = 16,        /* Ctrl-p */
+	CTRL_T = 20,        /* Ctrl-t */
+	CTRL_U = 21,        /* Ctrl+u */
+	CTRL_W = 23,        /* Ctrl+w */
+	ESC = 27,           /* Escape */
+	BACKSPACE =  127    /* Backspace */
 };
 
 
@@ -312,6 +353,236 @@ static const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
     },
 };
 
+
+
+/* DRIVER STUFF */
+static int     ble_open(const char * path, int flags, int mode );
+static int     ble_fstat( int fd, struct stat * st );
+static int     ble_close( int fd );
+static ssize_t ble_write( int fd, const void * data, size_t size );
+static ssize_t ble_read(  int fd, void* data, size_t size );
+
+
+// Token signifying that no character is available
+#define NONE -1
+
+static esp_line_endings_t s_tx_mode =
+#if CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF
+        ESP_LINE_ENDINGS_CRLF;
+#elif CONFIG_NEWLIB_STDOUT_LINE_ENDING_CR
+        ESP_LINE_ENDINGS_CR;
+#else
+        ESP_LINE_ENDINGS_LF;
+#endif
+
+// Newline conversion mode when receiving
+static esp_line_endings_t s_rx_mode =
+#if CONFIG_NEWLIB_STDIN_LINE_ENDING_CRLF
+        ESP_LINE_ENDINGS_CRLF;
+#elif CONFIG_NEWLIB_STDIN_LINE_ENDING_CR
+        ESP_LINE_ENDINGS_CR;
+#else
+        ESP_LINE_ENDINGS_LF;
+#endif
+
+// write bytes function type
+typedef void (*tx_func_t)(int, int);
+// read bytes function type
+typedef int (*rx_func_t)(int);
+
+// Basic functions for sending and receiving bytes over BLE
+static void ble_tx_char(int fd, int c);
+static int ble_rx_char(int fd);
+
+// Functions for sending and receiving bytes which use BLE driver
+static void ble_tx_char_via_driver(int fd, int c);
+static int ble_rx_char_via_driver(int fd);
+
+static _lock_t s_ble_read_lock;
+static _lock_t s_ble_write_lock;
+// One-character buffer used for newline conversion code
+static int s_peek_char = NONE;
+
+/* Lock ensuring that uart_select is used from only one task at the time */
+static _lock_t s_one_select_lock;
+
+/* Stuff for select() */
+static SemaphoreHandle_t *_signal_sem = NULL;
+static fd_set *_readfds = NULL;
+static fd_set *_writefds = NULL;
+static fd_set *_errorfds = NULL;
+static fd_set *_readfds_orig = NULL;
+static fd_set *_writefds_orig = NULL;
+static fd_set *_errorfds_orig = NULL;
+
+static int ble_open(const char * path, int flags, int mode) {
+    int fd = -1;
+    if (strcmp(path, "/0") == 0) {
+        fd = 0;
+    }
+    else {
+        errno = ENOENT;
+        return fd;
+    }
+    return fd;
+}
+
+static ssize_t ble_write(int fd, const void *data, size_t size) {
+	const char *data_c = (const char *)data;
+    _lock_acquire_recursive(&s_ble_write_lock);
+    int idx = 0;
+    esp_err_t res;
+    do{
+        uint16_t print_len = size;
+        if( print_len > 512 ) {
+            print_len = 512;
+        }
+        res = esp_ble_gatts_send_indicate(
+                spp_gatts_if,
+                spp_conn_id,
+                spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL],
+                print_len, (uint8_t*) &data_c[idx], GATTS_SEND_REQUIRE_CONFIRM);
+        // todo: res error handling
+        idx += print_len;
+        size -= print_len;
+    } while(size>0);
+
+    _lock_release_recursive(&s_ble_write_lock);
+    return size;
+}
+
+static int peek_c = NONE;
+static int ble_read_char(int fd) {
+    static uint32_t line_off = 0; // offset into most recent queue item
+    if ( peek_c != NONE ){
+        char tmp = (char) peek_c;
+        peek_c = NONE;
+        return tmp;
+    }
+    char c;
+    char *line; // pointer to queue item
+    if( !xQueuePeek(cmd_cmd_queue, &line, portMAX_DELAY) ){
+        /* no characters remaining */
+        line_off = 0;
+        return NONE;
+    }
+    else {
+        const char x[] = "receiving_data ";
+        uart_write_bytes(UART_NUM_0, 
+                x, strlen(x) );
+        //uart_write_bytes(UART_NUM_0, &c, 1);
+        //uart_write_bytes(UART_NUM_0, "\n", 1);
+    }
+    c = line[line_off];
+    line_off++;
+
+    char tmp[10] = { 0 };
+    sprintf(tmp, ": %02X\n", c);
+    uart_write_bytes(UART_NUM_0, tmp, strlen(tmp));
+
+    if( '\0' == c ) {
+        /* pop the element from the queue */
+        xQueueReceive(cmd_cmd_queue, &line, portMAX_DELAY);
+        line_off = 0;
+    }
+    return c;
+}
+
+/* When we peek ahead to handle \r\n */
+static void ble_return_char(int fd, int c){
+    peek_c = c;
+}
+
+static ssize_t ble_read(int fd, void* data, size_t size) {
+	char *data_c = (const char *)data;
+
+    _lock_acquire_recursive(&s_ble_write_lock);
+
+    size_t received = 0;
+    while(received < size){
+        int c = ble_read_char(fd);
+
+        if (c == '\r') {
+            if (s_rx_mode == ESP_LINE_ENDINGS_CR) {
+                // default
+                c = '\n';
+            } else if (s_rx_mode == ESP_LINE_ENDINGS_CRLF) {
+                /* look ahead */
+                int c2 = ble_read_char(fd);
+                if (c2 == NONE) {
+                    /* could not look ahead, put the current character back */
+                    ble_return_char(fd, (char)c);
+                    break;
+                }
+                if (c2 == '\n') {
+                    /* this was \r\n sequence. discard \r, return \n */
+                    c = '\n';
+                } else {
+                    /* \r followed by something else. put the second char back,
+                     * it will be processed on next iteration. return \r now.
+                     */
+                    ble_return_char(fd, (char)c2);
+                }
+            }
+        } else if (c == NONE) {
+            break;
+        }
+
+        data_c[received] = (char) c;
+        ++received;
+
+        if(c == '\0') {
+            --received;
+            break;
+        }
+
+        if (c == '\n') {
+            break;
+        }
+    }
+
+    _lock_release_recursive(&s_ble_write_lock);
+
+    {
+        char buf[100];
+        sprintf(buf, "ble_read returning %d\n", received);
+        uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+    }
+    if(received > 0){
+        return received;
+    }
+    errno = EWOULDBLOCK;
+    return -1;
+}
+static int ble_fstat(int fd, struct stat * st) {
+    assert(fd == 0);
+    st->st_mode = S_IFCHR;
+    return 0;
+}
+
+static int ble_close(int fd){
+    /* Dummy since you don't really close this */
+    assert(fd == 0);
+    return 0;
+}
+
+void esp_vfs_dev_ble_spp_register() {
+    esp_vfs_t vfs = {
+        .flags = ESP_VFS_FLAG_DEFAULT,
+        .write = &ble_write,
+        .open = &ble_open,
+        .fstat = &ble_fstat,
+        .close = &ble_close,
+        .read = &ble_read,
+#if 0
+        .start_select = &ble_start_select,
+        .end_select = &ble_end_select,
+#endif
+    };
+    ESP_ERROR_CHECK(esp_vfs_register("/dev/ble", &vfs, NULL));
+}
+/* END DRIVER STUFF */
+
 static uint8_t find_char_and_desr_index(uint16_t handle) {
     for(int i = 0; i < SPP_IDX_NB ; i++) {
         if( handle == spp_handle_table[i]) {
@@ -321,50 +592,48 @@ static uint8_t find_char_and_desr_index(uint16_t handle) {
     return 0xff; // error
 }
 
-static int spp_write_fd(void *cookie, const char *data, int n) {
-    int idx = 0;
-    esp_err_t res;
-    do{
-        uint16_t print_len = n;
-        if( print_len > 512 ) {
-            print_len = 512;
-        }
-        res = esp_ble_gatts_send_indicate(
-                spp_gatts_if,
-                spp_conn_id,
-                spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL],
-                print_len, (uint8_t*) &data[idx], GATTS_SEND_REQUIRE_CONFIRM);
-        idx += print_len;
-        n -= print_len;
-    } while(n>0);
-
-    if( ESP_OK != res ) {
-        return -1;
-    }
-    return 0;
-}
-
 static void spp_cmd_task(void * arg) {
     uint8_t * cmd_id;
     char *line;
 
-    FILE *ble_stdout = fwopen(NULL, spp_write_fd);
-    if( NULL == ble_stdout ) {
-        ESP_LOGE(GATTS_TABLE_TAG, "Couldn't open ble stdout");
-    }
-    setlinebuf(ble_stdout); /* Flush buffer every \n */
+    
+#if 0
+#else
+    esp_vfs_dev_ble_spp_register();
+    ble_stdin  = fopen("/dev/ble/0", "r");
+    ble_stdout = fopen("/dev/ble/0", "w");
+    ble_stderr = fopen("/dev/ble/0", "w");
+#endif
+    //setlinebuf(ble_stdout); /* Flush buffer every \n */
+    //setlinebuf(ble_stdin); /* Flush buffer every \n */
+    stdin = ble_stdin;
     stdout = ble_stdout;
+    stderr = ble_stderr;
+
+    //setvbuf(stdin, NULL, _IONBF, 0);
+    //setvbuf(stdout, NULL, _IONBF, 0);
+    //setvbuf(stderr, NULL, _IONBF, 0);
+    /*
+    {
+        char buf[100] = { 0 };
+        int n = fread(buf, 1, sizeof(buf), stdin);
+        const char x[] = "bloop\n";
+        uart_write_bytes(UART_NUM_0, x, strlen(x));
+        uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+        sprintf(buf, "Received %d bytes\n.", n);
+        uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+        vTaskDelay(portMAX_DELAY);
+    }
+    */
 
     for(;;){
-        vTaskDelay(50 / portTICK_PERIOD_MS);
-        if(xQueueReceive(cmd_cmd_queue, &line, portMAX_DELAY)) {
+        char* line = linenoise("meow");
+        uart_write_bytes(UART_NUM_0, line, strlen(line));
+        printf("line: %s\n", line);
+        //if(xQueueReceive(cmd_cmd_queue, &line, portMAX_DELAY)) {
             /* todo: refactor this, repeated code from console.c */
             if (line == NULL) { /* Ignore empty lines */
                 continue;
-            }
-            if (strcmp(line, "exit") == 0){
-                printf("Exiting Console\n");
-                break;
             }
             
             /* Try to run the command */
@@ -390,7 +659,7 @@ static void spp_cmd_task(void * arg) {
             }
 
             free(line);
-        }
+        //}
     }
     vTaskDelete(NULL);
 }
@@ -445,8 +714,10 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
             if(p_data->write.is_prep == false){
                 ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_WRITE_EVT : handle = %d\n", res);
                 if(res == SPP_IDX_SPP_COMMAND_VAL){
-                    /* Allocate memory for 1 MTU, and send it off to the cmd_cmd_queue */
-                    ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_COMMAND_VAL");
+                    /* Allocate memory for 1 MTU;
+                     * send it off to the cmd_cmd_queue */
+                    ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_COMMAND_VAL;"
+                            " Allocating %d bytes.", spp_mtu_size-3);
                     uint8_t * spp_cmd_buff = NULL;
                     spp_cmd_buff = (uint8_t *)malloc((spp_mtu_size - 3) * sizeof(uint8_t));
                     if(spp_cmd_buff == NULL){
@@ -505,6 +776,8 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
     	    break;
     	}
     	case ESP_GATTS_MTU_EVT:
+            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_MTU_EVENT;"
+                    "Setting MTU size to %d bytes.", p_data->mtu.mtu);
     	    spp_mtu_size = p_data->mtu.mtu;
     	    break;
     	case ESP_GATTS_CONF_EVT:
