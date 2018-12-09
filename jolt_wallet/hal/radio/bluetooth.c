@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
+#include "freertos/portmacro.h"
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -30,6 +31,7 @@
 
 #include "jolt_globals.h"
 #include "esp_console.h"
+#include "console.h"
 
 #include "spp_recv_buf.h"
 #include "linenoise/linenoise.h"
@@ -76,29 +78,6 @@ enum{
     SPP_IDX_NB,
 };
 
-enum KEY_ACTION{
-	KEY_NULL = 0,	    /* NULL */
-	CTRL_A = 1,         /* Ctrl+a */
-	CTRL_B = 2,         /* Ctrl-b */
-	CTRL_C = 3,         /* Ctrl-c */
-	CTRL_D = 4,         /* Ctrl-d */
-	CTRL_E = 5,         /* Ctrl-e */
-	CTRL_F = 6,         /* Ctrl-f */
-	CTRL_H = 8,         /* Ctrl-h */
-	TAB = 9,            /* Tab */
-	CTRL_K = 11,        /* Ctrl+k */
-	CTRL_L = 12,        /* Ctrl+l */
-	ENTER = 10,         /* Enter (\n) */
-	CTRL_N = 14,        /* Ctrl-n */
-	CTRL_P = 16,        /* Ctrl-p */
-	CTRL_T = 20,        /* Ctrl-t */
-	CTRL_U = 21,        /* Ctrl+u */
-	CTRL_W = 23,        /* Ctrl+w */
-	ESC = 27,           /* Escape */
-	BACKSPACE =  127    /* Backspace */
-};
-
-
 #define GATTS_TABLE_TAG  "GATTS_SPP_DEMO"
 #define TAG  "GATTS_SPP_DEMO"
 
@@ -127,7 +106,7 @@ static const uint8_t spp_adv_data[23] = {
 static uint16_t spp_mtu_size = 23;
 static uint16_t spp_conn_id = 0xffff;
 static esp_gatt_if_t spp_gatts_if = 0xff;
-static xQueueHandle cmd_cmd_queue = NULL;
+static xQueueHandle ble_in_queue = NULL;
 
 static bool enable_data_ntf = false;
 static bool is_connected = false;
@@ -461,30 +440,17 @@ static int ble_read_char(int fd) {
     }
     char c;
     char *line; // pointer to queue item
-    if( !xQueuePeek(cmd_cmd_queue, &line, portMAX_DELAY) ){
-        /* no characters remaining */
-        line_off = 0;
-        return NONE;
-    }
-    else {
-        const char x[] = "receiving_data ";
-        uart_write_bytes(UART_NUM_0, 
-                x, strlen(x) );
-        //uart_write_bytes(UART_NUM_0, &c, 1);
-        //uart_write_bytes(UART_NUM_0, "\n", 1);
-    }
-    c = line[line_off];
-    line_off++;
+    do{
+        xQueuePeek(ble_in_queue, &line, portMAX_DELAY);
+        c = line[line_off];
+        line_off++;
+        if( '\0' == c ) {
+            /* pop the element from the queue */
+            xQueueReceive(ble_in_queue, &line, portMAX_DELAY);
+            line_off = 0;
+        }
+    }while('\0' == c);
 
-    char tmp[10] = { 0 };
-    sprintf(tmp, ": %02X\n", c);
-    uart_write_bytes(UART_NUM_0, tmp, strlen(tmp));
-
-    if( '\0' == c ) {
-        /* pop the element from the queue */
-        xQueueReceive(cmd_cmd_queue, &line, portMAX_DELAY);
-        line_off = 0;
-    }
     return c;
 }
 
@@ -502,9 +468,12 @@ static ssize_t ble_read(int fd, void* data, size_t size) {
     while(received < size){
         int c = ble_read_char(fd);
 
-        if (c == '\r') {
+        ESP_LOGI(TAG, "Char: %02X; Off: %d", (char) c, received);
+        if ( '\r' == (char)c ) {
+            ESP_LOGI(TAG, "Carriage Return");
             if (s_rx_mode == ESP_LINE_ENDINGS_CR) {
                 // default
+                ESP_LOGI(TAG, "Replacing Carriage Return");
                 c = '\n';
             } else if (s_rx_mode == ESP_LINE_ENDINGS_CRLF) {
                 /* look ahead */
@@ -531,12 +500,7 @@ static ssize_t ble_read(int fd, void* data, size_t size) {
         data_c[received] = (char) c;
         ++received;
 
-        if(c == '\0') {
-            --received;
-            break;
-        }
-
-        if (c == '\n') {
+        if ( '\n' == (char)c) {
             break;
         }
     }
@@ -554,6 +518,7 @@ static ssize_t ble_read(int fd, void* data, size_t size) {
     errno = EWOULDBLOCK;
     return -1;
 }
+
 static int ble_fstat(int fd, struct stat * st) {
     assert(fd == 0);
     st->st_mode = S_IFCHR;
@@ -566,6 +531,133 @@ static int ble_close(int fd){
     return 0;
 }
 
+
+#define CONFIG_JOLT_BLE_SPP_SELECT_EN 0
+#if CONFIG_JOLT_BLE_SPP_SELECT_EN
+static portMUX_TYPE ble_selectlock = portMUX_INITIALIZER_UNLOCKED;
+static void ble_end_select();
+
+static portMUX_TYPE *ble_get_selectlock() {
+    return &ble_selectlock;
+}
+
+/* SELECT notes
+ *
+ */
+static void select_notif_callback(uart_port_t uart_num, uart_select_notif_t uart_select_notif, BaseType_t *task_woken)
+{
+    switch (uart_select_notif) {
+        case UART_SELECT_READ_NOTIF:
+            if (FD_ISSET(uart_num, _readfds_orig)) {
+                FD_SET(uart_num, _readfds);
+                esp_vfs_select_triggered_isr(_signal_sem, task_woken);
+            }
+            break;
+        case UART_SELECT_WRITE_NOTIF:
+            if (FD_ISSET(uart_num, _writefds_orig)) {
+                FD_SET(uart_num, _writefds);
+                esp_vfs_select_triggered_isr(_signal_sem, task_woken);
+            }
+            break;
+        case UART_SELECT_ERROR_NOTIF:
+            if (FD_ISSET(uart_num, _errorfds_orig)) {
+                FD_SET(uart_num, _errorfds);
+                esp_vfs_select_triggered_isr(_signal_sem, task_woken);
+            }
+            break;
+    }
+}
+
+static esp_err_t ble_start_select(int nfds, fd_set *readfds, fd_set *writefds,
+        fd_set *exceptfds, SemaphoreHandle_t *signal_sem){
+    /* Setting up the environment for detection of read/write/error conditions 
+     * on file descriptors belonging to BLE VFS.
+     */
+
+    if (_lock_try_acquire(&s_one_select_lock)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    portENTER_CRITICAL( ble_get_selectlock() );
+
+    #define FD_ERR_CHECK(x, y) \
+        if( x ) {\
+            portEXIT_CRITICAL(ble_get_selectlock());\
+            ble_end_select(); \
+            return y; \
+        }
+    #define FD_MEM_ALLOC(x, y) \
+        FD_ERR_CHECK( NULL == (x = malloc(sizeof(fd_set))), ESP_ERR_NO_MEM );
+
+    FD_ERR_CHECK(_readfds || _writefds || _errorfds ||
+            _readfds_orig || _writefds_orig || _errorfds_orig ||
+            _signal_sem,
+            ESP_ERR_INVALID_STATE);
+
+    FD_MEM_ALLOC(_readfds_orig);
+    FD_MEM_ALLOC(_writeds_orig);
+    FD_MEM_ALLOC(_errorfds_orig);
+
+    #undef FD_ERR_CHECK
+    #undef FD_MEM_ALLOC
+
+    /* Set Callbacks for all file descriptors*/
+    for (int i = 0; i < nfds; ++i) {
+        if (FD_ISSET(i, readfds) || FD_ISSET(i, writefds) || FD_ISSET(i, exceptfds)) {
+            ble_set_select_notif_callback(i, select_notif_callback);
+        }
+    }
+
+    _signal_sem = signal_sem;
+
+    _readfds = readfds;
+    _writefds = writefds;
+    _errorfds = exceptfds;
+
+    *_readfds_orig = *readfds;
+    *_writefds_orig = *writefds;
+    *_errorfds_orig = *exceptfds;
+
+	FD_ZERO(readfds);
+    FD_ZERO(writefds);
+    FD_ZERO(exceptfds);
+
+    // todo; more stuff here
+
+
+    return ESP_OK;
+}
+
+static void ble_end_select() {
+    portENTER_CRITICAL(ble_get_selectlock());
+    for (int i = 0; i < ble_NUM; ++i) {
+        ble_set_select_notif_callback(i, NULL);
+    }
+
+    _signal_sem = NULL;
+
+    _readfds = NULL;
+    _writefds = NULL;
+    _errorfds = NULL;
+
+    if (_readfds_orig) {
+        free(_readfds_orig);
+        _readfds_orig = NULL;
+    }
+
+    if (_writefds_orig) {
+        free(_writefds_orig);
+        _writefds_orig = NULL;
+    }
+
+    if (_errorfds_orig) {
+        free(_errorfds_orig);
+        _errorfds_orig = NULL;
+    }
+    portEXIT_CRITICAL(ble_get_selectlock());
+    _lock_release(&s_one_select_lock);    portENTER_CRITICAL(ble_get_selectlock());
+}
+#endif
+
 void esp_vfs_dev_ble_spp_register() {
     esp_vfs_t vfs = {
         .flags = ESP_VFS_FLAG_DEFAULT,
@@ -574,7 +666,7 @@ void esp_vfs_dev_ble_spp_register() {
         .fstat = &ble_fstat,
         .close = &ble_close,
         .read = &ble_read,
-#if 0
+#if CONFIG_JOLT_BLE_SPP_SELECT_EN
         .start_select = &ble_start_select,
         .end_select = &ble_end_select,
 #endif
@@ -596,71 +688,32 @@ static void spp_cmd_task(void * arg) {
     uint8_t * cmd_id;
     char *line;
 
-    
-#if 0
-#else
     esp_vfs_dev_ble_spp_register();
     ble_stdin  = fopen("/dev/ble/0", "r");
     ble_stdout = fopen("/dev/ble/0", "w");
     ble_stderr = fopen("/dev/ble/0", "w");
-#endif
-    //setlinebuf(ble_stdout); /* Flush buffer every \n */
-    //setlinebuf(ble_stdin); /* Flush buffer every \n */
-    stdin = ble_stdin;
-    stdout = ble_stdout;
-    stderr = ble_stderr;
 
-    //setvbuf(stdin, NULL, _IONBF, 0);
-    //setvbuf(stdout, NULL, _IONBF, 0);
-    //setvbuf(stderr, NULL, _IONBF, 0);
-    /*
-    {
-        char buf[100] = { 0 };
-        int n = fread(buf, 1, sizeof(buf), stdin);
-        const char x[] = "bloop\n";
-        uart_write_bytes(UART_NUM_0, x, strlen(x));
-        uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-        sprintf(buf, "Received %d bytes\n.", n);
-        uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-        vTaskDelay(portMAX_DELAY);
-    }
-    */
-
+    char *buf = NULL;
     for(;;){
-        char* line = linenoise("meow");
-        uart_write_bytes(UART_NUM_0, line, strlen(line));
-        printf("line: %s\n", line);
-        //if(xQueueReceive(cmd_cmd_queue, &line, portMAX_DELAY)) {
-            /* todo: refactor this, repeated code from console.c */
-            if (line == NULL) { /* Ignore empty lines */
-                continue;
+        if ( NULL == buf ) {
+            buf = calloc(1, CONFIG_JOLT_CONSOLE_MAX_CMD_LEN);
+        }
+        //ESP_LOGI(TAG, "spp_cmd_task buf pointer: %p", buf);
+        char *ptr = buf;
+        uint16_t i;
+        for(i=0; i<CONFIG_JOLT_CONSOLE_MAX_CMD_LEN; i++, ptr++){
+            fread(ptr, 1, 1, ble_stdin);
+            if('\n' == *ptr){
+                *ptr = '\0';
+                break;
             }
-            
-            /* Try to run the command */
-            int ret;
-            esp_err_t err = esp_console_run(line, &ret);
-            if (err == ESP_ERR_NOT_FOUND) {
-                // The command could be an app to run console commands from
-                char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
-                printf("Unsuccessful command\n");
-                /*
-                // split_argv modifies line with NULL-terminators
-                size_t argc = esp_console_split_argv(line, argv, sizeof(argv));
-                if( launch_file(argv[0], "console", argc-1, argv+1) ) {
-                    printf("Unsuccessful command\n");
-                }
-                */
-            } else if (err == ESP_ERR_INVALID_ARG) {
-                // command was empty
-            } else if (err == ESP_OK && ret != ESP_OK) {
-                printf("Command returned non-zero error code: 0x%x\n", ret);
-            } else if (err != ESP_OK) {
-                printf("Internal error: 0x%x\n", err);
-            }
-
-            free(line);
-        //}
+        }
+        if(i>0){
+            jolt_cmd_process(buf, ble_stdin, ble_stdout, ble_stderr);
+            buf = NULL;
+        }
     }
+
     vTaskDelete(NULL);
 }
 
@@ -715,7 +768,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
                 ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_WRITE_EVT : handle = %d\n", res);
                 if(res == SPP_IDX_SPP_COMMAND_VAL){
                     /* Allocate memory for 1 MTU;
-                     * send it off to the cmd_cmd_queue */
+                     * send it off to the ble_in_queue */
                     ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_COMMAND_VAL;"
                             " Allocating %d bytes.", spp_mtu_size-3);
                     uint8_t * spp_cmd_buff = NULL;
@@ -726,7 +779,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
                     }
                     memset(spp_cmd_buff, 0, (spp_mtu_size - 3));
                     memcpy(spp_cmd_buff, p_data->write.value, p_data->write.len);
-                    xQueueSend(cmd_cmd_queue, &spp_cmd_buff, 10/portTICK_PERIOD_MS);
+                    xQueueSend(ble_in_queue, &spp_cmd_buff, 10/portTICK_PERIOD_MS);
                 }
                 else if(res == SPP_IDX_SPP_DATA_NTF_CFG){
                     ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_NTF_CFG");
@@ -946,7 +999,7 @@ void jolt_bluetooth_setup() {
         ESP_LOGI(TAG, "[bt] Registered GATTS App");
     }
 
-    cmd_cmd_queue = xQueueCreate(10, sizeof(char *));
+    ble_in_queue = xQueueCreate(10, sizeof(char *));
     xTaskCreate(spp_cmd_task, "spp_cmd_task", 4096, NULL, 10, NULL);
 
     ESP_LOGI(TAG, "Done setting up bluetooth.");

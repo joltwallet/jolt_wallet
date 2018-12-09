@@ -28,9 +28,79 @@ static const char* TAG = "console";
 static const char* TITLE = "Console";
 
 TaskHandle_t console_h = NULL;
+QueueHandle_t jolt_cmd_queue = NULL;
+
+typedef struct jolt_cmd_t {
+    SemaphoreHandle_t complete;
+    int return_value;
+    char *data;
+    FILE *fd_in;
+    FILE *fd_out;
+    FILE *fd_err;
+} jolt_cmd_t;
+
+/* Executes the command string */
+static void jolt_process_cmd_task(void *param){
+    FILE *orig_stdin = stdin;
+    FILE *orig_stdout = stdout;
+    FILE *orig_stderr = stderr;
+
+    for(;;){
+        jolt_cmd_t *cmd;
+        xQueueReceive(jolt_cmd_queue, &cmd, portMAX_DELAY);
+        if(NULL == cmd->data){
+            goto exit;
+        }
+        if( NULL == cmd->fd_in ) {
+            stdin = orig_stdin;
+        }
+        else {
+            stdin = cmd->fd_in;
+        }
+        if( NULL == cmd->fd_out ) {
+            stdout = orig_stdout;
+        }
+        else {
+            stdout = cmd->fd_out;
+        }
+
+        if( NULL == cmd->fd_err ) {
+            stderr = orig_stderr;
+        }
+        else {
+            stderr = cmd->fd_err;
+        }
 
 
-void console_task() {
+        /* Try to run the command */
+        int ret;
+        esp_err_t err = esp_console_run(cmd->data, &ret);
+        if (err == ESP_ERR_NOT_FOUND) {
+            // The command could be an app to run console commands from
+            char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
+            // split_argv modifies line with NULL-terminators
+            size_t argc = esp_console_split_argv(cmd->data, argv, sizeof(argv));
+            if( launch_file(argv[0], "console", argc-1, argv+1) ) {
+                printf("Unsuccessful command\n");
+            }
+        } else if (err == ESP_ERR_INVALID_ARG) {
+            // command was empty
+        } else if (err == ESP_OK && ret != ESP_OK) {
+            printf("Command returned non-zero error code: 0x%x\n", ret);
+        } else if (err != ESP_OK) {
+            printf("Internal error: 0x%x\n", err);
+        }
+        free(cmd->data);
+        cmd->return_value = ret;
+
+        exit:
+            xSemaphoreGive(cmd->complete);
+    }
+
+    vTaskDelete(NULL);
+}
+
+static void console_task() {
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
      */
@@ -55,6 +125,8 @@ void console_task() {
         linenoiseSetDumbMode(1);
     }
     
+    //vTaskDelay(portMAX_DELAY);
+
     /* Main loop */
     for(;;) {
         /* Get a line using linenoise.
@@ -64,33 +136,11 @@ void console_task() {
         if (line == NULL) { /* Ignore empty lines */
             continue;
         }
-        if (strcmp(line, "exit") == 0){
-            printf("Exiting Console\n");
-            break;
-        }
         /* Add the command to the history */
         linenoiseHistoryAdd(line);
-        
-        /* Try to run the command */
-        int ret;
-        esp_err_t err = esp_console_run(line, &ret);
-        if (err == ESP_ERR_NOT_FOUND) {
-            // The command could be an app to run console commands from
-            char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
-            // split_argv modifies line with NULL-terminators
-            size_t argc = esp_console_split_argv(line, argv, sizeof(argv));
-            if( launch_file(argv[0], "console", argc-1, argv+1) ) {
-                printf("Unsuccessful command\n");
-            }
-        } else if (err == ESP_ERR_INVALID_ARG) {
-            // command was empty
-        } else if (err == ESP_OK && ret != ESP_OK) {
-            printf("Command returned non-zero error code: 0x%x\n", ret);
-        } else if (err != ESP_OK) {
-            printf("Internal error: 0x%x\n", err);
-        }
-        /* linenoise allocates line buffer on the heap, so need to free it */
-        linenoiseFree(line);
+
+        /* Send the command to the command queue; blocks unti cmd complete */
+        jolt_cmd_process(line, stdin, stdout, stderr);
     }
     
     #if CONFIG_JOLT_CONSOLE_OVERRIDE_LOGGING
@@ -101,7 +151,41 @@ void console_task() {
     vTaskDelete( NULL );
 }
 
-volatile TaskHandle_t *start_console(){
+/* Blocking function to process command */
+int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err) {
+    jolt_cmd_t cmd_obj;
+    jolt_cmd_t *cmd = &cmd_obj;
+    cmd->complete = xSemaphoreCreateBinary();
+    if(NULL == cmd->complete){
+        return -1;
+    }
+    cmd->data = line;
+    cmd->return_value = -1;
+    cmd->fd_in = in;
+    cmd->fd_out = out;
+    cmd->fd_err = err;
+    xQueueSend(jolt_cmd_queue, &cmd, portMAX_DELAY);
+    /* Wait until the process signals completion */
+    xSemaphoreTake(cmd->complete, portMAX_DELAY);
+
+    /* Cleanup */
+    /* Destroy the binary semaphore */
+    vSemaphoreDelete(cmd->complete);
+    return cmd->return_value;
+}
+
+volatile TaskHandle_t *console_start(){
+    if( NULL == jolt_cmd_queue ){
+        jolt_cmd_queue = xQueueCreate(10, sizeof(jolt_cmd_t *));
+    }
+
+    /* Start the Task that processes commands */
+    xTaskCreate(jolt_process_cmd_task,
+                "ConsoleCmdTask", CONFIG_JOLT_TASK_CMD_STACK_SIZE_CONSOLE,
+                NULL, CONFIG_JOLT_TASK_PRIORITY_CMD_CONSOLE,
+                NULL);
+
+    /* Start the Task that handles the UART Console IO */
     xTaskCreate(console_task,
                 "ConsoleTask", CONFIG_JOLT_TASK_STACK_SIZE_CONSOLE,
                 NULL, CONFIG_JOLT_TASK_PRIORITY_CONSOLE,
@@ -109,34 +193,12 @@ volatile TaskHandle_t *start_console(){
     return  &console_h;
 }
 
-void menu_console(lv_obj_t * list_btn){
-    /* On-Device GUI for Starting Console */
-
-    if(console_h){
-        ESP_LOGI(TAG, "Console already running.");
-        jolt_gui_scr_text_create(TITLE, "Console is already running.");
-    }
-    else{
-        ESP_LOGI(TAG, "Starting console.");
-        start_console();
-        jolt_gui_scr_text_create(TITLE, "Console Started.");
-    }
-}
-
-static void console_register_commands(){
-
+static void console_register_commands() {
     esp_console_register_help_command();
-    
     console_syscore_register();
-
-    /* Register app names */
-    // TODO
-
-    /* Register Coin Specific Commands */
-    // TODO deprecate this
 }
 
-void initialize_console() {
+void console_init() {
     /* Disable buffering on stdin and stdout */
     setvbuf(stdin, NULL, _IONBF, 0);
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -167,9 +229,9 @@ void initialize_console() {
     linenoiseSetMultiLine(1);
 
     /* Clear the screen */
-#if( JOLT_CONFIG_CONSOLE_STARTUP_CLEAR )
+    #if( JOLT_CONFIG_CONSOLE_STARTUP_CLEAR )
         linenoiseClearScreen();
-#endif
+    #endif
     
     /* Tell linenoise where to get command completions and hints */
     linenoiseSetCompletionCallback(&esp_console_get_completion);

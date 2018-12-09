@@ -200,8 +200,8 @@ void app_main() {
 
     // Initiate Console
     jolt_bluetooth_setup();
-    initialize_console();
-    start_console();
+    console_init();
+    console_start();
 
 
     BaseType_t ret;

@@ -9,16 +9,19 @@
 #include "esp_console.h"
 #include "lvgl/lvgl.h"
 
-void initialize_console();
-void menu_console(lv_obj_t * list_btn);
+void console_init();
 bool console_check_range_argc(uint8_t argc, uint8_t min, uint8_t max);
 bool console_check_equal_argc(uint8_t argc, uint8_t expected);
-volatile TaskHandle_t *start_console();
+volatile TaskHandle_t *console_start();
+
+int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err);
 
 typedef struct subconsole_t {
     esp_console_cmd_t cmd;
     struct subconsole_t *next;
 } subconsole_t;
+
+extern QueueHandle_t jolt_cmd_queue;
 
 subconsole_t *subconsole_cmd_init();
 int subconsole_cmd_register(subconsole_t *subconsole, esp_console_cmd_t *cmd);

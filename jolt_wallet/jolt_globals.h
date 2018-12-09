@@ -42,5 +42,4 @@ typedef struct jolt_version_t {
 } jolt_version_t;
 extern const jolt_version_t JOLT_VERSION;
 
-
 #endif
