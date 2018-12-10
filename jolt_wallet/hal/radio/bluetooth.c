@@ -409,6 +409,7 @@ static int ble_open(const char * path, int flags, int mode) {
 static ssize_t ble_write(int fd, const void *data, size_t size) {
 	const char *data_c = (const char *)data;
     _lock_acquire_recursive(&s_ble_write_lock);
+
     int idx = 0;
     esp_err_t res;
     do{
@@ -416,6 +417,7 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
         if( print_len > 512 ) {
             print_len = 512;
         }
+
         res = esp_ble_gatts_send_indicate(
                 spp_gatts_if,
                 spp_conn_id,
@@ -462,7 +464,7 @@ static void ble_return_char(int fd, int c){
 static ssize_t ble_read(int fd, void* data, size_t size) {
 	char *data_c = (const char *)data;
 
-    _lock_acquire_recursive(&s_ble_write_lock);
+    _lock_acquire_recursive(&s_ble_read_lock);
 
     size_t received = 0;
     while(received < size){
@@ -503,13 +505,15 @@ static ssize_t ble_read(int fd, void* data, size_t size) {
         }
     }
 
-    _lock_release_recursive(&s_ble_write_lock);
+    _lock_release_recursive(&s_ble_read_lock);
 
+#if 0
     {
         char buf[100];
         sprintf(buf, "ble_read returning %d\n", received);
         uart_write_bytes(UART_NUM_0, buf, strlen(buf));
     }
+#endif
     if(received > 0){
         return received;
     }

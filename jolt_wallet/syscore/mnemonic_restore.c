@@ -175,8 +175,8 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
     jolt_gui_sem_give();
 
 exit:
+    printf("Exiting Mnemonic Restore.\n");
     if( 0 != linenoise_h ) {
-        ESP_LOGI(TAG, "Deleting linenoise task");
         vTaskDelete(linenoise_h);
     }
     vQueueDelete(cmd_q);
