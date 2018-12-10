@@ -28,9 +28,9 @@
 #include "../console.h"
 
 /* Communication between jolt/cmd_line inputs and cmd task */
-#define BACK 0
-#define ENTER 1
-#define COMPLETE 2
+#define MNEMONIC_RESTORE_BACK 0
+#define MNEMONIC_RESTORE_ENTER 1
+#define MNEMONIC_RESTORE_COMPLETE 2
 
 static const char* TAG = "mnemonic_restore";
 
@@ -53,6 +53,7 @@ static lv_obj_t *jolt_gui_scr_mnemonic_restore_num_create(int n) {
     lv_obj_set_size(page, LV_HOR_RES, LV_VER_RES - CONFIG_JOLT_GUI_STATUSBAR_H);
     lv_obj_align(page, NULL, LV_ALIGN_IN_TOP_LEFT,
             0, CONFIG_JOLT_GUI_STATUSBAR_H);
+    lv_group_add_obj(jolt_gui_store.group.main, page);
 
     /* Create text for above the big number */
     lv_obj_t *header_label = lv_label_create(page, NULL);
@@ -78,17 +79,19 @@ static lv_obj_t *jolt_gui_scr_mnemonic_restore_num_create(int n) {
     lv_obj_align(number_label, NULL, LV_ALIGN_IN_BOTTOM_MID,
             0, 8);
 
+    lv_group_focus_obj(page);
+
     return parent;
 }
 
 static lv_action_t jolt_cmd_mnemonic_restore_back( lv_obj_t *btn ) {
-    const uint8_t val = BACK;
+    const uint8_t val = MNEMONIC_RESTORE_BACK;
     xQueueSend(cmd_q, (void *) &val, portMAX_DELAY);
     return LV_RES_OK;
 }
 
 static lv_action_t jolt_cmd_mnemonic_restore_enter( lv_obj_t *btn ) {
-    const uint8_t val = ENTER;
+    const uint8_t val = MNEMONIC_RESTORE_ENTER;
     xQueueSend(cmd_q, (void *) &val, portMAX_DELAY);
     return LV_RES_OK;
 }
@@ -96,7 +99,7 @@ static lv_action_t jolt_cmd_mnemonic_restore_enter( lv_obj_t *btn ) {
 /* Goal: populate the 24 words in ordered */
 static void linenoise_task( void *h ) {
     char *line;
-    uint8_t val_to_send = BACK;
+    uint8_t val_to_send = MNEMONIC_RESTORE_BACK;
     for(uint8_t i=0; i < sizeof(idx); i++){
         uint8_t j = idx[i];
         lv_obj_t * scr;
@@ -131,7 +134,7 @@ static void linenoise_task( void *h ) {
             in_wordlist = bm_search_wordlist(user_words[j], strlen(user_words[j]));
         }while( -1 == in_wordlist );
     }
-    val_to_send = COMPLETE;
+    val_to_send = MNEMONIC_RESTORE_COMPLETE;
 
 exit:
     sodium_memzero(idx, sizeof(idx));
@@ -164,7 +167,7 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
     /* Wait until user made a choice */
     uint8_t response;
     xQueueReceive(cmd_q, &response, portMAX_DELAY);
-    if( BACK == response ){
+    if( MNEMONIC_RESTORE_BACK == response ){
         /* Delete prompt screen and exit */
         jolt_gui_sem_take();
         jolt_gui_scr_del();
@@ -185,12 +188,12 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
 
     /* Wait for entry completion or cancellation */
     xQueueReceive(cmd_q, &response, portMAX_DELAY);
-    if( BACK == response ) {
+    if( MNEMONIC_RESTORE_BACK == response ) {
         jolt_gui_scr_del();
         return_code = -1;
         goto exit;
     }
-    else if ( COMPLETE == response ) {
+    else if ( MNEMONIC_RESTORE_COMPLETE == response ) {
     }
 
     // Join Mnemonic into single buffer
