@@ -53,6 +53,7 @@ static lv_action_t jolt_cmd_mnemonic_restore_enter( lv_obj_t *btn ) {
     return LV_RES_OK;
 }
 
+/* Goal: populate the 24 words in ordered */
 static void linenoise_task( void *h ) {
     char *line;
     uint8_t val_to_send = BACK;
@@ -77,20 +78,19 @@ static void linenoise_task( void *h ) {
                 printf("Invalid word\n");
             }
 
-            line = linenoise(prompt);
-            if (line == NULL) { /* Ignore empty lines */
-                linenoiseFree(line);
-                in_wordlist = -1;
-                continue;
-            }
-            if (strcmp(line, "exit_restore") == 0){
+            printf(prompt);
+            jolt_cmd_t cmd_obj;
+            jolt_cmd_t *cmd = &cmd_obj;
+            xQueueReceive(jolt_cmd_queue, cmd, portMAX_DELAY);
+            
+            if (strcmp(cmd->data, "exit_restore") == 0){
                 printf("Aborting mnemonic restore\n");
-                linenoiseFree(line);
+                jolt_cmd_del(cmd);
                 goto exit;
             }
 
-            strlcpy(user_words[j], line, sizeof(user_words[j]));
-            linenoiseFree(line);
+            strlcpy(user_words[j], cmd->data, sizeof(user_words[j]));
+            jolt_cmd_del(cmd);
             in_wordlist = bm_search_wordlist(user_words[j], strlen(user_words[j]));
         }while( -1 == in_wordlist );
     }
@@ -112,6 +112,7 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
     cmd_q = xQueueCreate( 3, sizeof( uint8_t  )  );
 
     /* Create prompt screen */
+    printf("To begin mnemonic restore, approve prompt on device.\n");
     jolt_gui_sem_take();
     lv_obj_t *scr;
     scr = jolt_gui_scr_text_create(title, "Begin mnemonic restore?");

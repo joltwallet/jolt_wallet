@@ -30,14 +30,6 @@ static const char* TITLE = "Console";
 TaskHandle_t console_h = NULL;
 QueueHandle_t jolt_cmd_queue = NULL;
 
-typedef struct jolt_cmd_t {
-    SemaphoreHandle_t complete;
-    int return_value;
-    char *data;
-    FILE *fd_in;
-    FILE *fd_out;
-    FILE *fd_err;
-} jolt_cmd_t;
 
 /* Executes the command string */
 static void jolt_process_cmd_task(void *param){
@@ -46,8 +38,10 @@ static void jolt_process_cmd_task(void *param){
     FILE *orig_stderr = stderr;
 
     for(;;){
-        jolt_cmd_t *cmd;
-        xQueueReceive(jolt_cmd_queue, &cmd, portMAX_DELAY);
+        int ret = 0;
+        jolt_cmd_t cmd_obj;
+        jolt_cmd_t *cmd = &cmd_obj;
+        xQueueReceive(jolt_cmd_queue, cmd, portMAX_DELAY);
         if(NULL == cmd->data){
             goto exit;
         }
@@ -63,7 +57,6 @@ static void jolt_process_cmd_task(void *param){
         else {
             stdout = cmd->fd_out;
         }
-
         if( NULL == cmd->fd_err ) {
             stderr = orig_stderr;
         }
@@ -71,9 +64,7 @@ static void jolt_process_cmd_task(void *param){
             stderr = cmd->fd_err;
         }
 
-
         /* Try to run the command */
-        int ret;
         esp_err_t err = esp_console_run(cmd->data, &ret);
         if (err == ESP_ERR_NOT_FOUND) {
             // The command could be an app to run console commands from
@@ -90,14 +81,22 @@ static void jolt_process_cmd_task(void *param){
         } else if (err != ESP_OK) {
             printf("Internal error: 0x%x\n", err);
         }
-        free(cmd->data);
         cmd->return_value = ret;
 
         exit:
-            xSemaphoreGive(cmd->complete);
+            jolt_cmd_del(cmd);
     }
 
     vTaskDelete(NULL);
+}
+
+void jolt_cmd_del(jolt_cmd_t *cmd){
+    if( NULL != cmd->data ){
+        free(cmd->data);
+    }
+    if( NULL != cmd->complete ){
+        xSemaphoreGive(cmd->complete);
+    }
 }
 
 static void console_task() {
@@ -140,7 +139,8 @@ static void console_task() {
         linenoiseHistoryAdd(line);
 
         /* Send the command to the command queue; blocks unti cmd complete */
-        jolt_cmd_process(line, stdin, stdout, stderr);
+        jolt_cmd_process(line, stdin, stdout, stderr, false);
+        vTaskDelay(50/portTICK_PERIOD_MS);
     }
     
     #if CONFIG_JOLT_CONSOLE_OVERRIDE_LOGGING
@@ -152,31 +152,33 @@ static void console_task() {
 }
 
 /* Blocking function to process command */
-int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err) {
-    jolt_cmd_t cmd_obj;
+int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err, bool block) {
+    jolt_cmd_t cmd_obj = {0};
     jolt_cmd_t *cmd = &cmd_obj;
-    cmd->complete = xSemaphoreCreateBinary();
-    if(NULL == cmd->complete){
-        return -1;
+    if(block){
+        cmd->complete = xSemaphoreCreateBinary();
+        if(NULL == cmd->complete){
+            return -1;
+        }
     }
     cmd->data = line;
     cmd->return_value = -1;
     cmd->fd_in = in;
     cmd->fd_out = out;
     cmd->fd_err = err;
-    xQueueSend(jolt_cmd_queue, &cmd, portMAX_DELAY);
+    xQueueSend(jolt_cmd_queue, cmd, portMAX_DELAY);
     /* Wait until the process signals completion */
-    xSemaphoreTake(cmd->complete, portMAX_DELAY);
-
-    /* Cleanup */
-    /* Destroy the binary semaphore */
-    vSemaphoreDelete(cmd->complete);
-    return cmd->return_value;
+    if(block){
+        xSemaphoreTake(cmd->complete, portMAX_DELAY);
+        vSemaphoreDelete(cmd->complete);
+        return cmd->return_value;
+    }
+    return 0;
 }
 
 volatile TaskHandle_t *console_start(){
     if( NULL == jolt_cmd_queue ){
-        jolt_cmd_queue = xQueueCreate(10, sizeof(jolt_cmd_t *));
+        jolt_cmd_queue = xQueueCreate(10, sizeof(jolt_cmd_t));
     }
 
     /* Start the Task that processes commands */

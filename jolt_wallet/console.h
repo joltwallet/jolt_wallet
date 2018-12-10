@@ -9,12 +9,22 @@
 #include "esp_console.h"
 #include "lvgl/lvgl.h"
 
+typedef struct jolt_cmd_t {
+    SemaphoreHandle_t complete;
+    int return_value;
+    char *data;
+    FILE *fd_in;
+    FILE *fd_out;
+    FILE *fd_err;
+} jolt_cmd_t;
+
 void console_init();
 bool console_check_range_argc(uint8_t argc, uint8_t min, uint8_t max);
 bool console_check_equal_argc(uint8_t argc, uint8_t expected);
 volatile TaskHandle_t *console_start();
 
-int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err);
+int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err, bool block);
+void jolt_cmd_del(jolt_cmd_t *cmd);
 
 typedef struct subconsole_t {
     esp_console_cmd_t cmd;

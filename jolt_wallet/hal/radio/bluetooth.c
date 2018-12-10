@@ -468,12 +468,10 @@ static ssize_t ble_read(int fd, void* data, size_t size) {
     while(received < size){
         int c = ble_read_char(fd);
 
-        ESP_LOGI(TAG, "Char: %02X; Off: %d", (char) c, received);
+        ESP_LOGD(TAG, "Char: %02X; Off: %d", (char) c, received);
         if ( '\r' == (char)c ) {
-            ESP_LOGI(TAG, "Carriage Return");
             if (s_rx_mode == ESP_LINE_ENDINGS_CR) {
                 // default
-                ESP_LOGI(TAG, "Replacing Carriage Return");
                 c = '\n';
             } else if (s_rx_mode == ESP_LINE_ENDINGS_CRLF) {
                 /* look ahead */
@@ -709,7 +707,7 @@ static void spp_cmd_task(void * arg) {
             }
         }
         if(i>0){
-            jolt_cmd_process(buf, ble_stdin, ble_stdout, ble_stderr);
+            jolt_cmd_process(buf, ble_stdin, ble_stdout, ble_stderr, false);
             buf = NULL;
         }
     }
@@ -746,7 +744,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
     esp_ble_gatts_cb_param_t *p_data = (esp_ble_gatts_cb_param_t *) param;
     uint8_t res = 0xff;
 
-    ESP_LOGI(GATTS_TABLE_TAG, "event = %x\n",event);
+    ESP_LOGD(GATTS_TABLE_TAG, "event = %x\n",event);
     switch (event) {
     	case ESP_GATTS_REG_EVT:
         	esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
@@ -765,11 +763,11 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
     	case ESP_GATTS_WRITE_EVT: {
     	    res = find_char_and_desr_index(p_data->write.handle);
             if(p_data->write.is_prep == false){
-                ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_WRITE_EVT : handle = %d\n", res);
+                ESP_LOGD(GATTS_TABLE_TAG, "ESP_GATTS_WRITE_EVT : handle = %d\n", res);
                 if(res == SPP_IDX_SPP_COMMAND_VAL){
                     /* Allocate memory for 1 MTU;
                      * send it off to the ble_in_queue */
-                    ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_COMMAND_VAL;"
+                    ESP_LOGD(GATTS_TABLE_TAG, "SPP_IDX_SPP_COMMAND_VAL;"
                             " Allocating %d bytes.", spp_mtu_size-3);
                     uint8_t * spp_cmd_buff = NULL;
                     spp_cmd_buff = (uint8_t *)malloc((spp_mtu_size - 3) * sizeof(uint8_t));
@@ -782,7 +780,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
                     xQueueSend(ble_in_queue, &spp_cmd_buff, 10/portTICK_PERIOD_MS);
                 }
                 else if(res == SPP_IDX_SPP_DATA_NTF_CFG){
-                    ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_NTF_CFG");
+                    ESP_LOGD(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_NTF_CFG");
                     if( (p_data->write.len == 2)
                             &&(p_data->write.value[0] == 0x01)
                             &&(p_data->write.value[1] == 0x00) ) {
@@ -796,7 +794,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
                 }
                 else if( res == SPP_IDX_SPP_DATA_RECV_VAL ) {
                     /* Phone/Computer sent string to Jolt */
-                    ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_RECV_VAL");
+                    ESP_LOGD(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_RECV_VAL");
                     #ifdef SPP_DEBUG_MODE
                     esp_log_buffer_char(GATTS_TABLE_TAG,
                             (char *)(p_data->write.value),p_data->write.len);
