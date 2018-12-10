@@ -35,7 +35,7 @@
 static const char* TAG = "mnemonic_restore";
 
 static const char title[] = "Restore";
-static const char prompt[] = "Enter Mnemonic Word: ";
+static const char prompt[] = "Enter Mnemonic Word ";
 
 static QueueHandle_t cmd_q;
 static CONFIDENTIAL uint8_t idx[24];
@@ -168,6 +168,10 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
 
     CONFIDENTIAL uint256_t bin;
     jolt_err_t err = bm_mnemonic_to_bin(bin, sizeof(bin), mnemonic);
+    if(E_SUCCESS != err){
+        ESP_LOGE(TAG, "Error processing mnemonic.\n");
+        goto exit;
+    }
     sodium_memzero(mnemonic, sizeof(mnemonic));
 
     jolt_gui_sem_take();

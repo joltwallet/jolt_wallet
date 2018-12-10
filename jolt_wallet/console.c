@@ -138,8 +138,12 @@ static void console_task() {
         /* Add the command to the history */
         linenoiseHistoryAdd(line);
 
-        /* Send the command to the command queue; blocks unti cmd complete */
-        jolt_cmd_process(line, stdin, stdout, stderr, false);
+        /* Send the command to the command queue */
+        bool block = false;
+        if(0 == strcmp(line, "upload")){
+            block = true;
+        }
+        jolt_cmd_process(line, stdin, stdout, stderr, block);
         vTaskDelay(50/portTICK_PERIOD_MS);
     }
     
@@ -151,7 +155,6 @@ static void console_task() {
     vTaskDelete( NULL );
 }
 
-/* Blocking function to process command */
 int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err, bool block) {
     jolt_cmd_t cmd_obj = {0};
     jolt_cmd_t *cmd = &cmd_obj;
