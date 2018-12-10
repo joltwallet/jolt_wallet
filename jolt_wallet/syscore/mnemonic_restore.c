@@ -146,6 +146,7 @@ exit:
 int jolt_cmd_mnemonic_restore(int argc, char** argv) {
     int return_code = 0;
     TaskHandle_t linenoise_h = 0;
+    CONFIDENTIAL uint256_t bin;
     memset( idx, 0, sizeof( idx ) );
     memset(user_words, 0, sizeof(user_words));
 
@@ -206,7 +207,6 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
     }
     mnemonic[offset - 1] = '\0'; //null-terminate, remove last space
 
-    CONFIDENTIAL uint256_t bin;
     jolt_err_t err = bm_mnemonic_to_bin(bin, sizeof(bin), mnemonic);
     if(E_SUCCESS != err){
         ESP_LOGE(TAG, "Error processing mnemonic.\n");
@@ -214,6 +214,7 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
     }
     sodium_memzero(mnemonic, sizeof(mnemonic));
 
+    /* Leverages a lot of the same intial-boot code */
     jolt_gui_sem_take();
     jolt_gui_restore_sequence( bin );
     jolt_gui_sem_give();
@@ -226,6 +227,7 @@ exit:
     vQueueDelete(cmd_q);
     sodium_memzero(idx, sizeof(idx));
     sodium_memzero(mnemonic, sizeof(mnemonic));
+    sodium_memzero(bin, sizeof(bin));
     return return_code;
 }
 
