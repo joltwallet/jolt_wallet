@@ -41,6 +41,46 @@ static QueueHandle_t cmd_q;
 static CONFIDENTIAL uint8_t idx[24];
 static CONFIDENTIAL char user_words[24][11];
 
+static lv_obj_t *jolt_gui_scr_mnemonic_restore_num_create(int n) {
+    assert( n <= 24 );
+    assert( n >= 1 );
+
+    lv_obj_t *parent = jolt_gui_parent_create();
+    jolt_gui_obj_title_create(parent, title);
+
+    /* Create Page */
+    lv_obj_t *page = lv_page_create(parent, NULL);
+    lv_obj_set_size(page, LV_HOR_RES, LV_VER_RES - CONFIG_JOLT_GUI_STATUSBAR_H);
+    lv_obj_align(page, NULL, LV_ALIGN_IN_TOP_LEFT,
+            0, CONFIG_JOLT_GUI_STATUSBAR_H);
+
+    /* Create text for above the big number */
+    lv_obj_t *header_label = lv_label_create(page, NULL);
+    lv_label_set_text(header_label, "Enter Word");
+    lv_obj_align(header_label, NULL, LV_ALIGN_IN_TOP_MID,
+            0, 0);
+
+    /* Create text for big number */
+    char number_str[3] = { 0 }; 
+    itoa( n, number_str, 10 );
+    lv_obj_t *number_label = lv_label_create(page, NULL);
+    lv_label_set_text(number_label, number_str);
+
+    /* Set a Big Font Style for number*/
+    static lv_style_t number_style;
+    lv_style_t *old_style = lv_label_get_style(number_label);
+    lv_style_copy(&number_style, old_style);
+    number_style.text.font = &lv_font_dejavu_40;
+    lv_label_set_style(number_label, &number_style);
+
+    /* Align Number to Center bottom of screen */
+    /* Dejavu_40 has 9 blank lines below digits */
+    lv_obj_align(number_label, NULL, LV_ALIGN_IN_BOTTOM_MID,
+            0, 8);
+
+    return parent;
+}
+
 static lv_action_t jolt_cmd_mnemonic_restore_back( lv_obj_t *btn ) {
     const uint8_t val = BACK;
     xQueueSend(cmd_q, (void *) &val, portMAX_DELAY);
@@ -61,13 +101,10 @@ static void linenoise_task( void *h ) {
         uint8_t j = idx[i];
         lv_obj_t * scr;
 
-        /* Human-friendly 1-idxing */
-        char buf[10];
-        snprintf(buf, sizeof(buf), "Word %d", j + 1);
-
+        /* Create Jolt Screen */ 
         jolt_gui_sem_take();
         jolt_gui_scr_del();
-        scr = jolt_gui_scr_text_create(title, buf);
+        scr = jolt_gui_scr_mnemonic_restore_num_create(j+1); /*Human-friendly 1-idxing */
         jolt_gui_scr_set_back_action(scr,  jolt_cmd_mnemonic_restore_back);
         jolt_gui_scr_set_enter_action(scr,  NULL);
         jolt_gui_sem_give();
