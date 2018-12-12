@@ -36,6 +36,8 @@
 #include "syscore/filesystem.h"
 #include "vault.h"
 
+#include "jolt_lib.h"
+
 const jolt_version_t JOLT_VERSION = {
     .major = 0,
     .minor = 1,

@@ -20,11 +20,11 @@
 	path = components/nano_rest
 	url = https://github.com/joltwallet/nano_rest.git
 [submodule "components/lvgl"]
-	path = jolt_wallet/lvgl
+	path = jolt_os/lvgl
 	url = https://github.com/joltwallet/lvgl.git
 [submodule "jolt_wallet/jolt_gui"]
-	path = jolt_wallet/jolt_gui
+	path = jolt_os/jolt_gui
 	url = https://github.com/joltwallet/jolt_gui.git
 [submodule "jolt_wallet/hal/lv_drivers"]
-	path = jolt_wallet/hal/lv_drivers
+	path = jolt_os/hal/lv_drivers
 	url = https://github.com/joltwallet/lv_drivers.git

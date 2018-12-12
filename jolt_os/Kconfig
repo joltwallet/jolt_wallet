@@ -1,4 +1,4 @@
-menu "Jolt Wallet"
+menu "JoltOS"
     menu "I2C"
         config JOLT_I2C_MASTER_NUM
             int
