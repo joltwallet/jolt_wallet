@@ -61,7 +61,7 @@ lv_action_t jolt_gui_scr_del() {
         }
     }
     lv_obj_del(parent);
-    return 0;
+    return LV_RES_INV;
 }
 
 /* Creates a dummy invisible object to anchor lvgl objects on the screen */
