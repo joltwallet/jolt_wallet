@@ -50,7 +50,8 @@ typedef struct jolt_version_t {
     };
     release_type_t release;
 } jolt_version_t;
-extern const jolt_version_t JOLT_VERSION;
+
+//extern const jolt_version_t JOLT_VERSION;
 
 #if JOLT_OS
 
@@ -349,7 +350,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( xTaskCreatePinnedToCore ),
 };
 
-const jelfLoaderEnv_t env = {
+static const jelfLoaderEnv_t env = {
     .exported = exports,
     .exported_size = sizeof(exports) / sizeof(*exports)
 };
@@ -357,7 +358,7 @@ const jelfLoaderEnv_t env = {
 #else
 
 // Dummy place holder
-const jelfLoaderEnv_t env;
+static const jelfLoaderEnv_t env;
 
 #endif
 
