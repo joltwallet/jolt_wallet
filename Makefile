@@ -1,12 +1,7 @@
-#
-# This is a project Makefile. It is assumed the directory this Makefile resides in is a
-# project subdirectory.
-#
-
-PROJECT_NAME := jolt_wallet
+PROJECT_NAME := jolt_os
 
 EXTRA_COMPONENT_DIRS := \
-	$(abspath jolt_wallet)
+	$(abspath jolt_os)
 
 #COMPONENTS = 
 CFLAGS += \

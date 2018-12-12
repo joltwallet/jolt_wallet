@@ -1,4 +1,5 @@
-# Add coin directories and subdirectoreis below
+COMPONENT_NAME := jolt_os
+
 COMPONENT_SRCDIRS := . \
 	hal \
 	hal/lv_drivers \
