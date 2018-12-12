@@ -1,7 +1,8 @@
 PROJECT_NAME := jolt_os
 
 EXTRA_COMPONENT_DIRS := \
-	$(abspath jolt_os)
+	$(abspath jolt_os) \
+	$(abspath lvgl)
 
 #COMPONENTS = 
 CFLAGS += \
