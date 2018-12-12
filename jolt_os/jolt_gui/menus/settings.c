@@ -27,18 +27,8 @@ static lv_action_t factory_reset_back( lv_obj_t *btn ) {
     return LV_RES_INV;
 }
 
-static void factory_reset_task( void *p ){
-    storage_factory_reset();
-    esp_restart();
-    // Should Never Reach Here
-    vTaskDelete(NULL);
-}
-
 static lv_action_t factory_reset_enter( lv_obj_t *btn ) {
-    jolt_gui_scr_preloading_create("Factory Reset", "Erasing...");
-    xTaskCreate(factory_reset_task, "factory_rst",
-                CONFIG_JOLT_TASK_STACK_SIZE_FACTORY_RESET,
-                NULL, CONFIG_JOLT_TASK_PRIORITY_FACTORY_RESET, NULL);
+    storage_factory_reset( true, NULL );
     return LV_RES_OK;
 }
 

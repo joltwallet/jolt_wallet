@@ -98,7 +98,7 @@ lv_obj_t *jolt_gui_scr_pin_create(lv_action_t failure_cb, lv_action_t success_cb
     char title[20];
     uint32_t pin_attempts = storage_get_pin_count() - storage_get_pin_last();
     if( pin_attempts >= CONFIG_JOLT_DEFAULT_MAX_ATTEMPT ) {
-        storage_factory_reset();
+        storage_factory_reset( true, NULL );
     }
     /* Store the callbacks */
     user_back_cb = failure_cb;

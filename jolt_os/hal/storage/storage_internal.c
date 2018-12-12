@@ -30,6 +30,7 @@ static jolt_err_t init_nvs_namespace(nvs_handle *nvs_h, const char *namespace) {
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
         // NVS partition was truncated and needs to be erased
+        ESP_LOGE(TAG, "Corrupt NVS partition; erasing...");
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
@@ -38,7 +39,7 @@ static jolt_err_t init_nvs_namespace(nvs_handle *nvs_h, const char *namespace) {
     // Open
     err = nvs_open(namespace, NVS_READWRITE, nvs_h);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error (%d) opening NVS handle with namespace %s!", err, namespace);
+        ESP_LOGE(TAG, "Error (%s) opening NVS handle with namespace %s!", esp_err_to_name(err), namespace);
         esp_restart();
         return E_FAILURE;
     } else {
@@ -133,7 +134,7 @@ bool storage_internal_get_mnemonic(uint256_t mnemonic, uint256_t pin_hash) {
     ESP_LOGI(TAG, "Last Counter Before attempting decrypt: %d", last_count);
     if(pin_count - last_count > CONFIG_JOLT_DEFAULT_MAX_ATTEMPT) {
         ESP_LOGE(TAG, "Max PIN attempt limit reached. Factory Resetting.");
-        storage_factory_reset();
+        storage_factory_reset( true, NULL );
     }
 
     if(pin_count > pin_count + 1) {
@@ -164,14 +165,14 @@ uint32_t storage_internal_get_pin_count() {
      * Factory resets on failure to retrieve pin_count value. */
     uint32_t pin_count;
     if( !storage_get_u32(&pin_count, "secret", "pin_count", UINT32_MAX) ) {
-        storage_factory_reset();
+        storage_factory_reset( true, NULL );
     }
     return pin_count;
 }
 
 void storage_internal_set_pin_count(uint32_t count) {
     if( !storage_set_u32(count, "secret", "pin_count") ) {
-        storage_factory_reset();
+        storage_factory_reset( true, NULL );
     }
 }
 
@@ -180,14 +181,14 @@ uint32_t storage_internal_get_pin_last() {
      */
     uint32_t pin_last;
     if( !storage_get_u32(&pin_last, "secret", "pin_last", 0) ) {
-        storage_factory_reset();
+        storage_factory_reset( true, NULL );
     }
     return pin_last;
 }
 
 void storage_internal_set_pin_last(uint32_t count) {
     if( !storage_set_u32(count, "secret", "pin_last") ) {
-        storage_factory_reset();
+        storage_factory_reset( true, NULL );
     }
 }
 
@@ -361,7 +362,6 @@ bool storage_internal_set_blob(unsigned char *buf, size_t len,
 
     return ESP_OK==err;
 }
-
 
 void storage_internal_factory_reset() {
     /* Erases everything */
