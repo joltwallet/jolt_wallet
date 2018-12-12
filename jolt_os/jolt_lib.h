@@ -339,6 +339,11 @@ const jelfLoaderEnv_t env = {
     .exported_size = sizeof(exports) / sizeof(*exports)
 };
 
+#else
+
+// Dummy place holder
+jelfLoaderEnv_t env = { 0 };
+
 #endif
 
 #endif
