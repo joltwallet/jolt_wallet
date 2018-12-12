@@ -115,7 +115,8 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
 
 static lv_action_t launch_app_from_store(lv_obj_t *btn) {
     ESP_LOGI(TAG, "Launching App");
-    jolt_gui_store.app.scr = (lv_obj_t *)jelfLoaderRun(jolt_gui_store.app.ctx, jolt_gui_store.app.argc, jolt_gui_store.app.argv);
+    jolt_gui_store.app.scr = (lv_obj_t *)jelfLoaderRun(jolt_gui_store.app.ctx,
+            jolt_gui_store.app.argc, jolt_gui_store.app.argv);
     jolt_gui_scr_set_back_action(jolt_gui_store.app.scr, launch_app_exit);
     return LV_RES_OK;
 }
