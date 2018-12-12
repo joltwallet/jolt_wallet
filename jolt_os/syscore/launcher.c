@@ -30,7 +30,7 @@ static const char* TAG = "syscore_launcher";
 static lv_action_t launch_app_exit(lv_obj_t *btn);
 static lv_action_t launch_app_from_store(lv_obj_t *btn);
 
-int launch_file(const char *fn_basename, const char *func, int app_argc, char** app_argv){
+int launch_file(const char *fn_basename, int app_argc, char** app_argv){
     /* Launches app specified without ".elf" suffix. i.e. "app"
      * Launches the app's function with same name as func
      */
@@ -53,6 +53,11 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
         ESP_LOGE(TAG, "Executable doesn't exist\n");
         return -2;
     }
+
+    jolt_gui_sem_take();
+    lv_obj_t *preloading_scr = jolt_gui_scr_preloading_create(
+            fn_basename, "Launching...");
+    jolt_gui_sem_give();
 
     program = fopen(exec_fn, "rb");
 
@@ -93,6 +98,10 @@ int launch_file(const char *fn_basename, const char *func, int app_argc, char** 
     #endif
 
     fclose(program);
+
+    jolt_gui_sem_take();
+    lv_obj_del(preloading_scr);
+    jolt_gui_sem_give();
 
     /* Prepare vault for app launching. vault_set() creates the PIN entry screen */
     jolt_gui_store.app.argc = app_argc;
@@ -136,27 +145,22 @@ static lv_action_t launch_app_exit(lv_obj_t *btn) {
 }
 
 static int launcher_run(int argc, char** argv) {
-    /* Takes in 2 arguments (elf_fn, entry_point)
+    /* Takes in 1 argument (elf_fn, )
      * the elf suffix will be added to elf_fn.
      * if entry_point is not provided, defaults to app_main
      */
     int return_code;
 
-    char entry_point[64] = "app_main";
-    if(argc >= 3) {
-        strlcpy(entry_point, argv[2], sizeof(entry_point));
-    }
-
-    int app_argc = argc - 3;
+    int app_argc = argc - 2;
     char **app_argv = NULL;
     if( app_argc <= 0 ) {
         app_argc = 0;
     }
     else{
-        app_argv = argv + 3;
+        app_argv = argv + 2;
     }
 
-    return_code = launch_file(argv[1], entry_point, app_argc, app_argv);
+    return_code = launch_file(argv[1], app_argc, app_argv);
 
     return return_code;
 }

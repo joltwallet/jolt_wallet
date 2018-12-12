@@ -71,7 +71,7 @@ static void jolt_process_cmd_task(void *param){
             char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
             // split_argv modifies line with NULL-terminators
             size_t argc = esp_console_split_argv(cmd->data, argv, sizeof(argv));
-            if( launch_file(argv[0], "console", argc-1, argv+1) ) {
+            if( launch_file(argv[0], argc-1, argv+1) ) {
                 printf("Unsuccessful command\n");
             }
         } else if (err == ESP_ERR_INVALID_ARG) {
