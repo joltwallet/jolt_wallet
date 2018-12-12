@@ -165,13 +165,14 @@ static lv_action_t post_mnemonic_to_master_seed(void *dummy) {
 static lv_action_t pin_success_cb() {
     /* Pin screen just populated jolt_gui_store.derivation.mnemonic_bin */
 
-    // todo: get passphrase here
+    // todo: get passphrase here; empty might be fine for standalone derivation
     strlcpy(jolt_gui_store.derivation.passphrase, "",
             sizeof(jolt_gui_store.derivation.passphrase)); // dummy placeholder
 
     /* Convert Binary Mnemonic to String; Clear Binary */
     bm_bin_to_mnemonic(jolt_gui_store.derivation.mnemonic, sizeof(jolt_gui_store.derivation.mnemonic),
             jolt_gui_store.derivation.mnemonic_bin, 256);
+    ESP_LOGI(TAG, "ClearText Mnemonic: %s", jolt_gui_store.derivation.mnemonic);
     sodium_memzero(jolt_gui_store.derivation.mnemonic_bin, 
             sizeof(jolt_gui_store.derivation.mnemonic_bin));
 
