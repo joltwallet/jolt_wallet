@@ -34,8 +34,23 @@
 
 #include "esp_http_client.h" // todo: replace with less open functions
 
-const uint16_t _JELF_VERSION_MAJOR = 0;
-const uint16_t _JELF_VERSION_MINOR = 1;
+typedef enum release_type_t {
+    JOLT_VERSION_RELEASE = 0,
+    JOLT_VERSION_DEV = 1,
+} release_type_t;
+
+typedef struct jolt_version_t {
+    union {
+        struct {
+            uint8_t major;
+            uint8_t minor;
+            uint8_t patch;
+        };
+        uint32_t version; // For easy comparison
+    };
+    release_type_t release;
+} jolt_version_t;
+extern const jolt_version_t JOLT_VERSION;
 
 #if JOLT_OS
 
@@ -342,7 +357,7 @@ const jelfLoaderEnv_t env = {
 #else
 
 // Dummy place holder
-jelfLoaderEnv_t env = { 0 };
+const jelfLoaderEnv_t env;
 
 #endif
 

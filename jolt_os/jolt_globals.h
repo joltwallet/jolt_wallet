@@ -24,22 +24,4 @@ vault_t *vault;
 extern ssd1306_t disp_hal;
 extern TaskHandle_t console_h;
 
-typedef enum release_type_t {
-    JOLT_VERSION_RELEASE = 0,
-    JOLT_VERSION_DEV = 1,
-} release_type_t;
-
-typedef struct jolt_version_t {
-    union {
-        struct {
-            uint8_t major;
-            uint8_t minor;
-            uint8_t patch;
-        };
-        uint32_t version; // For easy comparison
-    };
-    release_type_t release;
-} jolt_version_t;
-extern const jolt_version_t JOLT_VERSION;
-
 #endif
