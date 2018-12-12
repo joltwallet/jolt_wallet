@@ -6,7 +6,7 @@
 #ifndef __JOLT_SYSCORE_LAUNCHER_H__
 #define __JOLT_SYSCORE_LAUNCHER_H__
 
-int launch_file(const char *fn_basename, const char *func, int app_argc, char** app_argv);
+int launch_file(const char *fn_basename, int app_argc, char** app_argv);
 void console_syscore_launcher_register();
 
 #endif

@@ -89,4 +89,41 @@ lv_obj_t *jolt_gui_scr_loading_create(const char *title) {
     return parent;
 }
 
+lv_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text) {
+    lv_obj_t *parent = jolt_gui_parent_create();
+
+    /* Create Title */
+    lv_obj_t *title_label = jolt_gui_obj_title_create(parent, title);
+
+    /* Create Container */
+    lv_obj_t *cont = lv_cont_create(parent, NULL);
+    lv_obj_set_size(cont, LV_HOR_RES, 
+            LV_VER_RES - CONFIG_JOLT_GUI_STATUSBAR_H);
+	lv_obj_align(cont, NULL, LV_ALIGN_IN_TOP_LEFT,
+            0, CONFIG_JOLT_GUI_STATUSBAR_H);
+
+    /* Create PreLoading Object */
+    lv_obj_t *preload = lv_preload_create(cont, NULL);
+    lv_obj_set_size(preload, 30, 30);
+	lv_obj_align(preload, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
+
+    lv_group_add_obj(jolt_gui_store.group.main, cont);
+    lv_group_focus_obj(cont);
+
+    /* Create Loading Label */
+    lv_obj_t *label = lv_label_create(cont, NULL);
+    lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
+    lv_label_set_text(label, text);
+    lv_label_set_long_mode(label, LV_LABEL_LONG_ROLL);
+    lv_style_t *label_style = lv_obj_get_style(label);
+    lv_obj_set_size(label, CONFIG_JOLT_GUI_LOADING_TEXT_W,
+            label_style->text.font->h_px);
+	lv_obj_align(label, preload, LV_ALIGN_OUT_TOP_MID, 0, -6);
+
+    jolt_gui_scr_set_back_action(parent, NULL);
+    jolt_gui_scr_set_enter_action(parent, NULL);
+
+    return parent;
+}
+
 

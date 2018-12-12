@@ -25,12 +25,22 @@ static lv_action_t jolt_gui_test_battery_create(lv_obj_t *btn);
  **********************/
 static const char TAG[] = "menu_home";
 
+static void launch_app_task(void *fn){
+    char *fn_c = fn;
+    launch_file(fn, 0, NULL); // puts the app back into the gui task
+    vTaskDelete(NULL);
+}
+
 /* App launching is spawned in a different task because it's a bit intense.
  * Also launch_file is a blocking function*/
 static lv_action_t launch_file_proxy(lv_obj_t *btn) {
     char *fn = lv_list_get_btn_text( btn );
     ESP_LOGI(TAG, "Launching %s", fn);
-    launch_file(fn, "app_main", 0, NULL); // puts the app back into the gui task
+    // todo: make these values in Kconfig
+    xTaskCreate(launch_app_task,
+            "app_launcher", 12000,
+            (void *)fn, 2, NULL);
+
     return 0;
 }
 

@@ -23,4 +23,6 @@ void jolt_gui_scr_loading_update(lv_obj_t *parent,
         const char *title, const char *text,
         uint8_t percentage);
 
+lv_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text);
+
 #endif
