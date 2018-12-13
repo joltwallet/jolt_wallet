@@ -158,21 +158,20 @@ void jelfLoaderProfilerPrint() {
 
 #define PROFILER_START_READSECTION
 #define PROFILER_START_READSYMBOL
-#define PROFILER_START_READSYMBOLFUNC
 #define PROFILER_START_RELOCATESYMBOL 
 #define PROFILER_START_FINDSYMADDR 
+#define PROFILER_START_FINDSECTION
 #define PROFILER_START_RELOCATESECTION 
 
 #define PROFILER_STOP_READSECTION
 #define PROFILER_STOP_READSYMBOL
-#define PROFILER_STOP_READSYMBOLFUNC
 #define PROFILER_STOP_RELOCATESYMBOL 
 #define PROFILER_STOP_FINDSYMADDR 
+#define PROFILER_STOP_FINDSECTION
 #define PROFILER_STOP_RELOCATESECTION 
 
 #define PROFILER_INC_READSECTION
 #define PROFILER_INC_READSYMBOL
-#define PROFILER_INC_READSYMBOLFUNC
 #define PROFILER_INC_RELOCATESYMBOL
 #define PROFILER_INC_FINDSYMADDR
 #define PROFILER_INC_FINDSECTION 
@@ -216,8 +215,10 @@ static int LOADER_GETDATA_CACHE(jelfLoaderContext_t *ctx,
                     && (off + size) <= (ctx->locality_cache[i].offset 
                         + CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE) ) {
                 PROFILER_CACHE_HIT;
+                #if CONFIG_JELFLOADER_PROFILER_EN
                 MSG( "Hit! Hit Counter: %lld. Offset: 0x%06x. Size: 0x%06X", 
                         profiler_cache_hit, (uint32_t)off, size );
+                #endif
                 ctx->locality_cache[i].age = 0;
                 off_t locality_offset;
                 locality_offset = off - ctx->locality_cache[i].offset;
@@ -228,8 +229,11 @@ static int LOADER_GETDATA_CACHE(jelfLoaderContext_t *ctx,
     }
     
     PROFILER_CACHE_MISS;
+    #if CONFIG_JELFLOADER_PROFILER_EN
     MSG("Miss... Miss Counter: %lld. Offset: 0x%06x. Size: 0x%06X",
             profiler_cache_miss, (uint32_t) off, size);
+    #endif
+
     if( fseek(ctx->fd, off, SEEK_SET) != 0 ) {
         assert(0);
         goto err;
