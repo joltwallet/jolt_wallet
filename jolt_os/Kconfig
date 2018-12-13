@@ -116,17 +116,16 @@ menu "JoltOS"
     endmenu
 
     menu "App Compression"
-        config JOLT_APP_COMPRESS
+        config JOLT_COMPRESSION_ENABLE
             bool
-            #depends on ELFLOADER_MEMORY_POINTER
-            prompt "Use heatshrink to decompress apps"
-            default n
+            prompt "Use heatshrink to decompress data"
+            default y
             help
                 help text here
 
         config JOLT_HEATSHRINK_BUFFER
             int
-            depends on JOLT_APP_COMPRESS
+            depends on JOLT_COMPRESSION_ENABLE
             prompt "Heatshrink Decompress Buffer Size"
             default 256
             help
@@ -134,7 +133,7 @@ menu "JoltOS"
 
         config JOLT_HEATSHRINK_WINDOW
             int
-            depends on JOLT_APP_COMPRESS
+            depends on JOLT_COMPRESSION_ENABLE
             prompt "Heatshrink Window Size"
             default 8
             help
@@ -142,11 +141,20 @@ menu "JoltOS"
 
         config JOLT_HEATSHRINK_LOOKAHEAD
             int
-            depends on JOLT_APP_COMPRESS
+            depends on JOLT_COMPRESSION_ENABLE
             prompt "Heatshrink Lookahead"
             default 4
             help
                 help text here
+
+        config JOLT_COMPRESSION_AUTO
+            bool
+            depends on JOLT_COMPRESSION_ENABLE
+            prompt "Automatically decompress .hs files"
+            default y
+            help
+                help text here
+
     endmenu
 
     config JOLT_DEFAULT_TIMEOUT_S
