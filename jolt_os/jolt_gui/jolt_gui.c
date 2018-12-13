@@ -114,22 +114,27 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
     if( NULL == parent ) {
         parent = lv_scr_act();
     }
+    // todo: create a non-transparent background
     lv_obj_t *label = lv_label_create(parent, NULL);
 
     static lv_style_t label_style;
-    lv_style_copy(&label_style, &lv_style_plain);
-    label_style.body.main_color = LV_COLOR_WHITE;
+    lv_style_copy(&label_style, &lv_style_transp);
     label_style.body.padding.ver = 0;
     label_style.body.padding.inner = 0;
-    label_style.text.font = &lv_font_monospace_8;
+    label_style.text.font = &unifont;
     label_style.body.border.opa = LV_OPA_TRANSP;
     label_style.body.border.part = 0;
 
     lv_label_set_long_mode(label, LV_LABEL_LONG_ROLL);
     lv_label_set_body_draw(label, true); // draw background
     lv_label_set_style(label, &label_style);
+
+    lv_obj_align(label, NULL, LV_ALIGN_IN_TOP_LEFT,
+            2, -4);
+#if 0
     lv_obj_align(label, jolt_gui_store.statusbar.container,
             LV_ALIGN_IN_LEFT_MID, 2, 0);
+#endif
     lv_label_set_text(label, title);
     lv_obj_set_size(label, CONFIG_JOLT_GUI_TITLE_W, label_style.text.font->h_px);
 
