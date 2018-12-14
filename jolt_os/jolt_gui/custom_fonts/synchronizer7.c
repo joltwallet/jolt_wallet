@@ -1061,7 +1061,7 @@ static const lv_font_glyph_dsc_t synchronizer7_glyph_dsc[] =
   {.w_px = 5,	.glyph_index = 658},	/*Unicode: U+007e (~)*/
 };
 
-lv_font_t synchronizer7 = 
+lv_font_t lv_font_synchronizer7 = 
 {    
     .unicode_first = 32,	/*First Unicode letter in this font*/
     .unicode_last = 126,	/*Last Unicode letter in this font*/

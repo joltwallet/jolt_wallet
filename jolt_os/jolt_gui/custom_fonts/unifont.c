@@ -2702,7 +2702,7 @@ static const lv_font_glyph_dsc_t unifont_glyph_dsc[] =
 
 };
 
-lv_font_t unifont =
+lv_font_t lv_font_unifont =
 {
     .unicode_first = 0,	/*First Unicode letter in this font*/
     .unicode_last = 127,	/*Last Unicode letter in this font*/

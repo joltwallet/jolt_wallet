@@ -1724,7 +1724,7 @@ static const lv_font_glyph_dsc_t shylock_10_glyph_dsc[] =
 
 };
 
-lv_font_t shylock_10 =
+lv_font_t lv_font_shylock_10 =
 {
     .unicode_first = 32,	/*First Unicode letter in this font*/
     .unicode_last = 126,	/*Last Unicode letter in this font*/

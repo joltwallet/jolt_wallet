@@ -348,7 +348,7 @@ static void roller_init(void)
     static lv_style_t bg;
     lv_style_copy(&bg, &light_frame);
     bg.body.padding.hor = 2; // Width Padding of the entire roller
-    bg.text.font = &crox3hb;
+    bg.text.font = &lv_font_crox3hb;
     bg.text.line_space = 1; // Distance between options... sort of
 
     theme.roller.bg = &bg;

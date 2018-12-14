@@ -1439,7 +1439,7 @@ static const lv_font_glyph_dsc_t scientifica_11_glyph_dsc[] =
 
 };
 
-lv_font_t scientifica_11 =
+lv_font_t lv_font_scientifica_11 =
 {
     .unicode_first = 32,	/*First Unicode letter in this font*/
     .unicode_last = 126,	/*Last Unicode letter in this font*/

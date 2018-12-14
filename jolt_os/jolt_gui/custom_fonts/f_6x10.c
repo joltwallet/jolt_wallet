@@ -1251,7 +1251,7 @@ static const lv_font_glyph_dsc_t f_6x10_glyph_dsc[] =
   {.w_px = 6, .glyph_index = 940},  /*Unicode: U+007E (~)*/
 };
 
-lv_font_t f_6x10 =
+lv_font_t lv_font_f_6x10 =
 {
   .unicode_first = 32,  /*First Unicode letter in this font*/
   .unicode_last = 126,  /*Last Unicode letter in this font*/

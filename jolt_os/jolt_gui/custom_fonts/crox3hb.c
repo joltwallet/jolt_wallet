@@ -1,7 +1,7 @@
 
 #include "lvgl/lv_misc/lv_font.h"
 
-#if USE_CROX3HB != 0  /*Can be enabled in lv_conf.h*/
+#if USE_LV_FONT_CROX3HB != 0  /*Can be enabled in lv_conf.h*/
 
 static const uint8_t crox3hb_glyph_bitmap[] =
 {
@@ -4789,7 +4789,7 @@ static const lv_font_glyph_dsc_t crox3hb_glyph_dsc[] =
 
 };
 
-lv_font_t crox3hb =
+lv_font_t lv_font_crox3hb =
 {
     .unicode_first = 32,	/*First Unicode letter in this font*/
     .unicode_last = 255,	/*Last Unicode letter in this font*/

@@ -128,7 +128,7 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
     lv_style_copy(&label_style, &lv_style_transp);
     label_style.body.padding.ver = 0;
     label_style.body.padding.inner = 0;
-    label_style.text.font = &unifont;
+    label_style.text.font = LV_FONT_TITLE;
     label_style.body.border.opa = LV_OPA_TRANSP;
     label_style.body.border.part = 0;
 

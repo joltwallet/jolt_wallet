@@ -165,25 +165,28 @@
 #define USE_LV_FONT_UNIFONT 1
 #define USE_LV_FONT_SCIENTIFICA_11 1
 #define USE_LV_FONT_SHYLOCK_10 1
+#define USE_LV_FONT_BUS_6 1
 
-#define \
-        LV_FONT_DECLARE(f_6x10) \
-        LV_FONT_DECLARE(synchronizer7) \
+#define LV_FONT_CUSTOM_DECLARE \
         LV_FONT_DECLARE(jolt_gui_symbols) \
-        LV_FONT_DECLARE(crox3hb) \
-        LV_FONT_DECLARE(unifont) \
-        LV_FONT_DECLARE(scientifica_11) \
-        LV_FONT_DECLARE(shylock_10)
+        LV_FONT_DECLARE(lv_font_f_6x10) \
+        LV_FONT_DECLARE(lv_font_synchronizer7) \
+        LV_FONT_DECLARE(lv_font_jolt_gui_symbols) \
+        LV_FONT_DECLARE(lv_font_crox3hb) \
+        LV_FONT_DECLARE(lv_font_unifont) \
+        LV_FONT_DECLARE(lv_font_scientifica_11) \
+        LV_FONT_DECLARE(lv_font_shylock_10) \
+        LV_FONT_DECLARE(lv_font_bus_6)
 
-//#define LV_FONT_DEFAULT        &synchronizer7     /*Always set a default font from the built-in fonts*/
-#define LV_FONT_DEFAULT        &unifont     /*Always set a default font from the built-in fonts*/
+#define LV_FONT_DEFAULT        &lv_font_synchronizer7     /*Always set a default font from the built-in fonts*/
+#define LV_FONT_TITLE          &lv_font_unifont
 
 /*===================
  *  LV_OBJ SETTINGS
  *==================*/
 #define LV_OBJ_FREE_NUM_TYPE    uint32_t    /*Type of free number attribute (comment out disable free number)*/
 #define LV_OBJ_FREE_PTR         1           /*Enable the free pointer attribute*/
-#define LV_OBJ_REALIGN          1           /*Enable `lv_obj_realaign()` based on `lv_obj_align()` parameters*/
+#define LV_OBJ_REALIGN          0           /*Enable `lv_obj_realaign()` based on `lv_obj_align()` parameters*/
 
 /*==================
  *  LV OBJ X USAGE
