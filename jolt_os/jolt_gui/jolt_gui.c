@@ -114,7 +114,14 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
     if( NULL == parent ) {
         parent = lv_scr_act();
     }
-    // todo: create a non-transparent background
+    /* Create a non-transparent background to block out old titles */
+    lv_obj_t *title_cont = lv_cont_create(parent, NULL);
+    lv_obj_align(title_cont, NULL, LV_ALIGN_IN_TOP_LEFT,
+            2, 0);
+
+    lv_obj_set_size(title_cont,
+            CONFIG_JOLT_GUI_TITLE_W, CONFIG_JOLT_GUI_STATUSBAR_H-1);
+
     lv_obj_t *label = lv_label_create(parent, NULL);
 
     static lv_style_t label_style;
@@ -129,8 +136,8 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
     lv_label_set_body_draw(label, true); // draw background
     lv_label_set_style(label, &label_style);
 
-    lv_obj_align(label, NULL, LV_ALIGN_IN_TOP_LEFT,
-            2, -4);
+    lv_obj_align(label, title_cont, LV_ALIGN_IN_TOP_LEFT,
+            0, -4);
 #if 0
     lv_obj_align(label, jolt_gui_store.statusbar.container,
             LV_ALIGN_IN_LEFT_MID, 2, 0);

@@ -1,5 +1,7 @@
 #include "lvgl/lv_misc/lv_font.h"
 
+#if USE_LV_FONT_SHYLOCK_10 != 0  /*Can be enabled in lv_conf.h*/
+
 /***********************************************************************************
  * 6x10.bdf 10 px Font in U+0020 to U+007E range with 1 bpp 
 ***********************************************************************************/
@@ -1262,3 +1264,5 @@ lv_font_t f_6x10 =
   .bpp = 1,  /*Bit per pixel*/
   .next_page = NULL  /*Pointer to a font extension*/
 };
+
+#endif

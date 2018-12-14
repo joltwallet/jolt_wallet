@@ -161,20 +161,22 @@
  * #define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(my_font_1) \
  *                                LV_FONT_DECLARE(my_font_2) \
  */
-#define USE_CROX3HB 1
-#define USE_CROX2T 0
-#define USE_CROX1H 0
-#define USE_PROFONT_10 0
-#define USE_UNIFONT 1
+#define USE_LV_FONT_CROX3HB 1
+#define USE_LV_FONT_UNIFONT 1
+#define USE_LV_FONT_SCIENTIFICA_11 1
+#define USE_LV_FONT_SHYLOCK_10 1
 
-#define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(orange_kid) \
+#define \
         LV_FONT_DECLARE(f_6x10) \
         LV_FONT_DECLARE(synchronizer7) \
         LV_FONT_DECLARE(jolt_gui_symbols) \
         LV_FONT_DECLARE(crox3hb) \
-        LV_FONT_DECLARE(unifont)
+        LV_FONT_DECLARE(unifont) \
+        LV_FONT_DECLARE(scientifica_11) \
+        LV_FONT_DECLARE(shylock_10)
 
-#define LV_FONT_DEFAULT        &synchronizer7     /*Always set a default font from the built-in fonts*/
+//#define LV_FONT_DEFAULT        &synchronizer7     /*Always set a default font from the built-in fonts*/
+#define LV_FONT_DEFAULT        &unifont     /*Always set a default font from the built-in fonts*/
 
 /*===================
  *  LV_OBJ SETTINGS

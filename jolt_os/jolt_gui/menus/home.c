@@ -46,7 +46,7 @@ static lv_action_t launch_file_proxy(lv_obj_t *btn) {
 
 void jolt_gui_menu_home_create() {
     /* Set Jolt ssd1306 theme */
-    lv_theme_t *th = lv_theme_jolt_init(100, &synchronizer7);
+    lv_theme_t *th = lv_theme_jolt_init(100, NULL);
     lv_theme_set_current(th);  
 
     // Don't need to set group since indev driver sends direct keypresses
