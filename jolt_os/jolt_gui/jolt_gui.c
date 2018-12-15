@@ -122,7 +122,7 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
     lv_obj_set_size(title_cont,
             CONFIG_JOLT_GUI_TITLE_W, CONFIG_JOLT_GUI_STATUSBAR_H-1);
 
-    lv_obj_t *label = lv_label_create(parent, NULL);
+    lv_obj_t *label = lv_label_create(title_cont, NULL);
 
     static lv_style_t label_style;
     lv_style_copy(&label_style, &lv_style_transp);

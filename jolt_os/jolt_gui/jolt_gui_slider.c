@@ -1,5 +1,8 @@
 #include "jolt_gui.h"
 #include "jolt_gui_slider.h"
+#include "esp_log.h"
+
+static const char TAG[] = "JOLT_SLIDER";
 
 lv_obj_t *jolt_gui_scr_slider_get_slider(lv_obj_t *scr) {
     lv_obj_t *child = NULL;
@@ -8,18 +11,24 @@ lv_obj_t *jolt_gui_scr_slider_get_slider(lv_obj_t *scr) {
     lv_obj_t *cont = NULL;
     lv_obj_t *slider = NULL;
 
-	while( NULL != (child = lv_obj_get_child(scr, child)) ) {
-		lv_obj_get_type(child, &obj_type);
-		if( 0 == strcmp("lv_cont", obj_type.type[0]) ) {
+    while( NULL != (child = lv_obj_get_child(scr, child)) ) {
+        lv_obj_get_type(child, &obj_type);
+        if( 0 == strcmp("lv_cont", obj_type.type[0]) ) {
             cont = child;
-		}
-	}
-	while( NULL != (child = lv_obj_get_child(cont, child)) ) {
-		lv_obj_get_type(child, &obj_type);
-		if( 0 == strcmp("lv_slider", obj_type.type[0]) ) {
+            break;
+        }
+    }
+    child = NULL;
+    while( NULL != (child = lv_obj_get_child(cont, child)) ) {
+        lv_obj_get_type(child, &obj_type);
+        if( 0 == strcmp("lv_slider", obj_type.type[0]) ) {
             slider = child;
-		}
-	}
+        }
+    }
+
+    if( NULL == slider  ) {
+        ESP_LOGE(TAG, "Couldn't find slider.");
+    }
 
     return slider;
 }
@@ -36,6 +45,7 @@ void jolt_gui_scr_slider_set_value(lv_obj_t *scr, int16_t value) {
 
 void jolt_gui_scr_slider_set_range(lv_obj_t *scr, int16_t min, int16_t max) {
     lv_obj_t *slider = jolt_gui_scr_slider_get_slider(scr);
+    ESP_LOGI(TAG, "slider: %p", slider);
     lv_slider_set_range(slider, min, max);
 }
 
@@ -50,7 +60,7 @@ lv_obj_t *jolt_gui_scr_slider_create(const char *title, lv_action_t cb) {
     lv_obj_t *cont = lv_cont_create(parent, NULL);
     lv_obj_set_size(cont, LV_HOR_RES, 
             LV_VER_RES - CONFIG_JOLT_GUI_STATUSBAR_H);
-	lv_obj_align(cont, NULL, LV_ALIGN_IN_TOP_LEFT,
+    lv_obj_align(cont, NULL, LV_ALIGN_IN_TOP_LEFT,
             0, CONFIG_JOLT_GUI_STATUSBAR_H);
 
     /* Create Slider */
@@ -58,7 +68,7 @@ lv_obj_t *jolt_gui_scr_slider_create(const char *title, lv_action_t cb) {
     lv_slider_set_range(slider, 0, 10);
     lv_obj_set_size(slider,
             CONFIG_JOLT_GUI_LOADING_BAR_W, CONFIG_JOLT_GUI_LOADING_BAR_H);
-	lv_obj_align(slider, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -10);
+    lv_obj_align(slider, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -10);
     lv_slider_set_action(slider, cb);
     lv_slider_set_value(slider, 0);
 
