@@ -114,16 +114,19 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
     if( NULL == parent ) {
         parent = lv_scr_act();
     }
+
     /* Create a non-transparent background to block out old titles */
     lv_obj_t *title_cont = lv_cont_create(parent, NULL);
     lv_obj_align(title_cont, NULL, LV_ALIGN_IN_TOP_LEFT,
             2, 0);
 
+    /* Container to block out previous menu title */
     lv_obj_set_size(title_cont,
             CONFIG_JOLT_GUI_TITLE_W, CONFIG_JOLT_GUI_STATUSBAR_H-1);
 
     lv_obj_t *label = lv_label_create(title_cont, NULL);
 
+#if 0
     static lv_style_t label_style;
     lv_style_copy(&label_style, &lv_style_transp);
     label_style.body.padding.ver = 0;
@@ -131,19 +134,19 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
     label_style.text.font = LV_FONT_TITLE;
     label_style.body.border.opa = LV_OPA_TRANSP;
     label_style.body.border.part = 0;
+#else
+
+    lv_style_t *label_style = lv_obj_get_style(label);
+#endif
 
     lv_label_set_long_mode(label, LV_LABEL_LONG_ROLL);
-    lv_label_set_body_draw(label, true); // draw background
-    lv_label_set_style(label, &label_style);
+    lv_label_set_body_draw(label, false); // dont draw background
+    //lv_label_set_style(label, &label_style);
 
-    lv_obj_align(label, title_cont, LV_ALIGN_IN_TOP_LEFT,
-            0, -4);
-#if 0
-    lv_obj_align(label, jolt_gui_store.statusbar.container,
-            LV_ALIGN_IN_LEFT_MID, 2, 0);
-#endif
+    /* The Y-offset may need to be adjusted to the specific font */
+    lv_obj_align(label, title_cont, LV_ALIGN_IN_LEFT_MID, 0, 0);
     lv_label_set_text(label, title);
-    lv_obj_set_size(label, CONFIG_JOLT_GUI_TITLE_W, label_style.text.font->h_px);
+    lv_obj_set_size(label, CONFIG_JOLT_GUI_TITLE_W, label_style->text.font->h_px);
 
     return label;
 }

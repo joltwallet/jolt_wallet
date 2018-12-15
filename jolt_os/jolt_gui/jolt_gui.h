@@ -69,6 +69,8 @@ struct {
     } derivation; // used for message passing; do not keep data here for long.
 } jolt_gui_store;
 
+extern lv_theme_t *jolt_gui_theme;
+
 void jolt_gui_sem_take();
 void jolt_gui_sem_give();
 

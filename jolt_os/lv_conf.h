@@ -161,25 +161,27 @@
  * #define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(my_font_1) \
  *                                LV_FONT_DECLARE(my_font_2) \
  */
-#define USE_LV_FONT_CROX3HB 1
-#define USE_LV_FONT_UNIFONT 1
-#define USE_LV_FONT_SCIENTIFICA_11 1
-#define USE_LV_FONT_SHYLOCK_10 1
-#define USE_LV_FONT_BUS_6 1
+#define USE_LV_FONT_SYNCHRONIZER7 0
+#define USE_LV_FONT_CROX3HB 1 /* Used for Pin Entry Roller Digits */
+#define USE_LV_FONT_UNIFONT 0
+#define USE_LV_FONT_SCIENTIFICA_11 0
+#define USE_LV_FONT_SHYLOCK_10 0
+#define USE_LV_FONT_BUS_6 0
+#define USE_LV_FONT_PIXELMIX_7 1
 
 #define LV_FONT_CUSTOM_DECLARE \
         LV_FONT_DECLARE(jolt_gui_symbols) \
-        LV_FONT_DECLARE(lv_font_f_6x10) \
         LV_FONT_DECLARE(lv_font_synchronizer7) \
         LV_FONT_DECLARE(lv_font_jolt_gui_symbols) \
         LV_FONT_DECLARE(lv_font_crox3hb) \
         LV_FONT_DECLARE(lv_font_unifont) \
         LV_FONT_DECLARE(lv_font_scientifica_11) \
         LV_FONT_DECLARE(lv_font_shylock_10) \
-        LV_FONT_DECLARE(lv_font_bus_6)
+        LV_FONT_DECLARE(lv_font_bus_6) \
+        LV_FONT_DECLARE(lv_font_pixelmix_7)
 
-#define LV_FONT_DEFAULT        &lv_font_synchronizer7     /*Always set a default font from the built-in fonts*/
-#define LV_FONT_TITLE          &lv_font_unifont
+#define LV_FONT_DEFAULT        &lv_font_pixelmix_7
+#define LV_FONT_TITLE          &lv_font_pixelmix_7
 
 /*===================
  *  LV_OBJ SETTINGS

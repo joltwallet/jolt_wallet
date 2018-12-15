@@ -12,6 +12,7 @@
 #include "jolt_globals.h"
 #include <driver/adc.h>
 
+lv_theme_t *jolt_gui_theme = NULL;
 /**********************
  *  STATIC PROTOTYPES
  **********************/
@@ -46,8 +47,8 @@ static lv_action_t launch_file_proxy(lv_obj_t *btn) {
 
 void jolt_gui_menu_home_create() {
     /* Set Jolt ssd1306 theme */
-    lv_theme_t *th = lv_theme_jolt_init(100, NULL);
-    lv_theme_set_current(th);  
+    jolt_gui_theme = lv_theme_jolt_init(100, NULL);
+    lv_theme_set_current(jolt_gui_theme);  
 
     // Don't need to set group since indev driver sends direct keypresses
     lv_obj_t *btn_back = lv_btn_create(lv_scr_act(), NULL);

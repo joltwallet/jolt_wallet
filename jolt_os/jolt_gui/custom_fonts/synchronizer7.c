@@ -1,6 +1,8 @@
 
 #include "lvgl/lv_misc/lv_font.h"
 
+#if USE_LV_FONT_SYNCHRONIZER7 != 0  /*Can be enabled in lv_conf.h*/
+
 /***********************************************************************************
  * synchronizer_nbp.ttf 7 px Font in U+0020 ( ) .. U+007e (~)  range with 1 bpp
 ***********************************************************************************/
@@ -1074,3 +1076,5 @@ lv_font_t lv_font_synchronizer7 =
     .bpp = 1,				/*Bit per pixel*/
     .next_page = NULL,		/*Pointer to a font extension*/
 };
+
+#endif
