@@ -4,13 +4,15 @@
 #include "jolt_gui.h"
 #include "lvgl/lvgl.h"
 
-lv_obj_t *jolt_gui_scr_slider_get_slider(lv_obj_t *scr);
+lv_obj_t *jolt_gui_scr_slider_get_slider(lv_obj_t *parent);
 
-lv_obj_t *jolt_gui_scr_slider_create(const char *title, lv_action_t cb);
+lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_action_t cb);
 
 void jolt_gui_scr_slider_set_value(lv_obj_t *scr, int16_t value);
 
 int16_t jolt_gui_scr_slider_get_value(lv_obj_t *scr);
+
+void jolt_gui_scr_slider_set_label(lv_obj_t *scr, const char *text);
 
 void jolt_gui_scr_slider_set_range(lv_obj_t *scr, int16_t min, int16_t max);
 #endif

@@ -140,7 +140,7 @@
 
 #define USE_LV_FONT_DEJAVU_20              1
 #define USE_LV_FONT_DEJAVU_20_LATIN_SUP    1
-#define USE_LV_FONT_DEJAVU_20_CYRILLIC     1
+#define USE_LV_FONT_DEJAVU_20_CYRILLIC     0
 #define USE_LV_FONT_SYMBOL_20              1
 
 #define USE_LV_FONT_DEJAVU_30              0
@@ -153,7 +153,7 @@
 #define USE_LV_FONT_DEJAVU_40_CYRILLIC     0
 #define USE_LV_FONT_SYMBOL_40              0
 
-#define USE_LV_FONT_MONOSPACE_8            1
+#define USE_LV_FONT_MONOSPACE_8            0
 
 /* Optionally declare your custom fonts here.
  * You can use these fonts as default font too
