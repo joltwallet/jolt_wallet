@@ -35,6 +35,7 @@ void jolt_gui_stretch(const char *title, const char *label, uint8_t *key,
     status.data = key;
     status.cb = complete_cb;
     status.scr = jolt_gui_scr_loading_create(title);
+    // todo error checking
     jolt_gui_scr_loading_update(status.scr, NULL, label, 0);
 
     jolt_gui_progress_task_create(&status);

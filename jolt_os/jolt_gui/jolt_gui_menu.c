@@ -1,38 +1,48 @@
 #include "jolt_gui_menu.h"
 #include "jolt_gui.h"
 
+/* Menu Screen Structure:
+ * * SCREEN
+ *   +--CONT_TITLE
+ *   |   +--LABEL_0 (title)
+ *   +--CONT_BODY
+ *       +--LIST
+ */
+static const char TAG[] = "scr_menu";
+
 /* Creates a standard Jolt Menu Screen */
 lv_obj_t *jolt_gui_scr_menu_create(const char *title) {
-    lv_obj_t *parent = jolt_gui_parent_create();
+    JOLT_GUI_SCR_PREAMBLE( title );
 
     /* Create List */
-    lv_obj_t *menu = lv_list_create(parent, NULL);
+    // todo, get these values from parent
+    lv_obj_t *menu = lv_list_create(cont_body, NULL);
+    JOLT_GUI_OBJ_CHECK(menu);
+    lv_obj_set_free_num(menu, JOLT_GUI_OBJ_ID_LIST);
     lv_obj_set_size(menu, LV_HOR_RES, LV_VER_RES - CONFIG_JOLT_GUI_STATUSBAR_H);
     lv_list_set_sb_mode(menu, LV_SB_MODE_AUTO);
-    lv_obj_align(menu, NULL, 
-            LV_ALIGN_IN_TOP_LEFT, 0, CONFIG_JOLT_GUI_STATUSBAR_H);
+    lv_obj_align(menu, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
 
-    /* Create and Stylize Statusbar Title */
-    jolt_gui_obj_title_create(parent, title);
+    // Nothing to focus on yet
 
     jolt_gui_scr_set_enter_action(parent, jolt_gui_send_enter_main);
     jolt_gui_scr_set_back_action(parent, jolt_gui_scr_del);
+
+exit:
     return parent;
 }
 
 /* Gets the list object of a menu screen */
-lv_obj_t *jolt_gui_scr_menu_get_list(lv_obj_t *par) {
-    lv_obj_t *child = NULL;
-    lv_obj_type_t obj_type;
-    do {
-        child = lv_obj_get_child_back(par, child); //the menu should be the first child
-        if ( NULL == child ) {
-            // cannot find the child list
-            return NULL;
-        }
-        lv_obj_get_type(child, &obj_type);
-    } while(strcmp("lv_list", obj_type.type[0]));
-    return child;
+lv_obj_t *jolt_gui_scr_menu_get_list(lv_obj_t *parent) {
+    lv_obj_t *menu = NULL;
+    {
+        lv_obj_t *cont_body = NULL;
+        cont_body  = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_CONT_BODY);
+        menu       = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_LIST);
+    }
+
+exit:
+    return menu;
 }
 
 /* Adds an item to a Jolt Menu Screen */
@@ -43,13 +53,16 @@ lv_obj_t *jolt_gui_scr_menu_add(lv_obj_t *par, const void *img_src,
         return NULL;
     }
     lv_obj_t *res = lv_list_add(list, img_src, txt, rel_action);
+    if( NULL == res ){
+        goto exit;
+    }
 
     /* Add the list to the group after the first element has been added
      * so that the first item is properly highlighted. */
     if( NULL == lv_obj_get_group( list ) ) {
-        lv_group_add_obj(jolt_gui_store.group.main, list);
-        lv_group_focus_obj( list );
+        jolt_gui_group_add( list );
     }
 
+exit:
     return res;
 }

@@ -135,8 +135,12 @@ static void test_loading_task(void *param) {
 
 static lv_action_t jolt_gui_test_loading_create(lv_obj_t *btn) {
     lv_obj_t *scr = jolt_gui_scr_loading_create("Loading Test");
+    if(NULL == scr){
+        ESP_LOGE(TAG, "NULL Loading Screen");
+        return 1;
+    }
     xTaskCreate(test_loading_task,
-                "TestLoading", 2000,
+                "TestLoading", 4096,
                 (void *) scr, 10, NULL);
     return 0;
 }

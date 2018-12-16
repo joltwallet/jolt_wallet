@@ -1,5 +1,14 @@
 #include "jolt_gui.h"
 
+/* QR Screen Structure:
+ * * SCREEN
+ *   +--CONT_TITLE
+ *   |   +--LABEL_0 (title)
+ *   +--CONT_BODY
+ *       +--IMG_QR
+ */
+
+static const char TAG[] = "scr_qr";
 static const uint8_t color_header[] = {
     0x04, 0x02, 0x04, 0xff,     /*Color of index 0*/
     0xff, 0xff, 0xff, 0xff,     /*Color of index 1*/
@@ -45,8 +54,17 @@ static lv_img_dsc_t *jolt_gui_qr_to_img_dsc(QRCode *qrcode) {
 
 /* Callback for back button */
 static lv_action_t delete_screen(lv_obj_t *btn) {
+    lv_obj_t *img = NULL;
+    {
+        /* Find Image Object */
+        lv_obj_t *parent = NULL;
+        lv_obj_t *cont_body = NULL;
+        parent     = lv_obj_get_parent( btn );
+        cont_body  = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_CONT_BODY);
+        img        = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_IMG_QR);
+    }
+
     /* free memory use by img */
-    lv_obj_t *img = lv_obj_get_parent(btn);
     lv_img_ext_t *ext = lv_obj_get_ext_attr(img);
     uint8_t *data = ((lv_img_dsc_t *)(ext->src))->data;
 
@@ -54,38 +72,29 @@ static lv_action_t delete_screen(lv_obj_t *btn) {
     free(data);
 
     jolt_gui_scr_del();
+
+exit:
     return 0;
 }
 
 static lv_obj_t *jolt_gui_qr_fullscreen_create( const char *title, 
         lv_img_dsc_t *qrcode_img) {
-    lv_obj_t *parent = jolt_gui_parent_create();
-    if( NULL == parent ) goto exit;
+    JOLT_GUI_SCR_PREAMBLE( title );
 
-
-    lv_obj_t *cont = lv_cont_create(parent, NULL);
-    if( NULL == cont ) goto exit;
-    lv_obj_set_size(cont, LV_HOR_RES, LV_VER_RES-CONFIG_JOLT_GUI_STATUSBAR_H);
-    lv_obj_align(cont, jolt_gui_store.statusbar.container, 
-            LV_ALIGN_OUT_BOTTOM_LEFT, 0, 0);
-
-    lv_obj_t *img = lv_img_create(cont, NULL);
-    if( NULL == img ) goto exit;
+    lv_obj_t *img = lv_img_create(cont_body, NULL);
+    JOLT_GUI_OBJ_CHECK(img);
+    lv_obj_set_free_num(img, JOLT_GUI_OBJ_ID_IMG_QR);
     lv_img_set_src( img, qrcode_img );
     lv_img_set_auto_size(img, true);
     lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);
 
-    lv_group_add_obj(jolt_gui_store.group.main, parent);
-    lv_group_focus_obj(parent);
-
-    /* Set img as parent of back action so that we can easily get img
-     * attributes while deleting */
-    if( NULL == jolt_gui_scr_set_back_action(img, delete_screen) ) goto exit;
+    if( NULL == jolt_gui_scr_set_back_action(parent, delete_screen) ) goto exit;
     if( NULL == jolt_gui_scr_set_enter_action(parent, NULL) ) goto exit;
 
     if( NULL == jolt_gui_obj_title_create(parent, title) ) goto exit;
 
     return parent;
+
 exit:
     if( parent ) {
         lv_obj_del(parent);

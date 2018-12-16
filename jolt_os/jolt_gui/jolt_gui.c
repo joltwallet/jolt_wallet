@@ -33,9 +33,9 @@
     #define MSG(...) printf(__VA_ARGS__)
 #endif
 
-/**********************
- *   GLOBAL FUNCTIONS
- **********************/
+/*********************
+ * Screen Management *
+ *********************/
 
 lv_action_t jolt_gui_scr_del() {
     lv_obj_t *scrn = lv_group_get_focused(jolt_gui_store.group.main);
@@ -57,12 +57,22 @@ lv_action_t jolt_gui_scr_del() {
             parent = tmp;
         }
         if( tmp == jolt_gui_store.main_menu ) {
+            // todo: refresh main menu
+            // don't delete the main menu
             return 0;
         }
+    }
+    void *free_ptr = lv_obj_get_free_ptr( parent );
+    if( NULL != free_ptr ){
+        free(free_ptr);
     }
     lv_obj_del(parent);
     return LV_RES_INV;
 }
+
+/**************************************
+ * STANDARD SCREEN CREATION FUNCTIONS *
+ **************************************/
 
 /* Creates a dummy invisible object to anchor lvgl objects on the screen */
 lv_obj_t *jolt_gui_parent_create() {
@@ -73,84 +83,63 @@ lv_obj_t *jolt_gui_parent_create() {
     return parent;
 }
 
-lv_obj_t *jolt_gui_scr_text_create(const char *title, const char *body) {
-    /* Creates a page with scrollable text */
-    lv_obj_t *parent = jolt_gui_parent_create();
-    /* Create Statusbar Title */
-    if( NULL != title ) {
-        jolt_gui_obj_title_create(parent, title);
-    }
-
-    /* Create Page */
-    lv_obj_t *page = lv_page_create(parent, NULL);
-    lv_obj_set_size(page, LV_HOR_RES, LV_VER_RES - CONFIG_JOLT_GUI_STATUSBAR_H);
-    lv_obj_align(page, NULL, LV_ALIGN_IN_TOP_LEFT,
-            0, CONFIG_JOLT_GUI_STATUSBAR_H);
-    lv_page_set_sb_mode(page, LV_SB_MODE_AUTO);
-    lv_group_add_obj(jolt_gui_store.group.main, page);
-    lv_page_set_arrow_scroll(page, true);
-
-    /* Create Text Label on Page */
-    lv_obj_t *label = lv_label_create(page, NULL);
-    lv_label_set_long_mode(label, LV_LABEL_LONG_BREAK);
-    {
-        // Compute Width of Label
-        lv_style_t *sb = lv_page_get_style(page, LV_PAGE_STYLE_SB);
-        lv_obj_set_width(label, lv_page_get_scrl_width(page) - 
-                sb->body.padding.inner - sb->body.padding.hor);  
-    }
-    lv_label_set_text(label, body);
-
-    lv_group_focus_obj(page);
-
-    jolt_gui_scr_set_back_action(parent, jolt_gui_scr_del);
-    jolt_gui_scr_set_enter_action(parent, NULL);
-
-    return parent;
-}
-
-/* Creates the statusbar title label for a screen */
+/* Creates the statusbar title label for a screen. Returns the 
+ * label object. */
 lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
+    lv_obj_t *label = NULL;
+
     if( NULL == parent ) {
         parent = lv_scr_act();
     }
 
     /* Create a non-transparent background to block out old titles */
     lv_obj_t *title_cont = lv_cont_create(parent, NULL);
+    JOLT_GUI_OBJ_CHECK(title_cont);
+    lv_obj_set_free_num(title_cont, JOLT_GUI_OBJ_ID_CONT_TITLE);
     lv_obj_align(title_cont, NULL, LV_ALIGN_IN_TOP_LEFT,
             2, 0);
-
-    /* Container to block out previous menu title */
     lv_obj_set_size(title_cont,
             CONFIG_JOLT_GUI_TITLE_W, CONFIG_JOLT_GUI_STATUSBAR_H-1);
 
-    lv_obj_t *label = lv_label_create(title_cont, NULL);
-
-#if 0
-    static lv_style_t label_style;
-    lv_style_copy(&label_style, &lv_style_transp);
-    label_style.body.padding.ver = 0;
-    label_style.body.padding.inner = 0;
-    label_style.text.font = LV_FONT_TITLE;
-    label_style.body.border.opa = LV_OPA_TRANSP;
-    label_style.body.border.part = 0;
-#else
-
+    label = lv_label_create(title_cont, NULL);
+    JOLT_GUI_OBJ_CHECK(label);
+    lv_obj_set_free_num(label, JOLT_GUI_OBJ_ID_LABEL_0);
     lv_style_t *label_style = lv_obj_get_style(label);
-#endif
-
     lv_label_set_long_mode(label, LV_LABEL_LONG_ROLL);
     lv_label_set_body_draw(label, false); // dont draw background
-    //lv_label_set_style(label, &label_style);
 
     /* The Y-offset may need to be adjusted to the specific font */
     lv_obj_align(label, title_cont, LV_ALIGN_IN_LEFT_MID, 0, 0);
-    lv_label_set_text(label, title);
+    if( NULL == title ){
+        lv_label_set_text(label, "");
+    }
+    else{
+        lv_label_set_text(label, title);
+    }
     lv_obj_set_size(label, CONFIG_JOLT_GUI_TITLE_W, label_style->text.font->h_px);
 
+exit:
     return label;
 }
 
+/* Creates the body container */ 
+lv_obj_t *jolt_gui_obj_cont_body_create( lv_obj_t *parent ) {
+    lv_obj_t *cont = lv_cont_create(parent, NULL);
+    if( NULL == cont ) {
+        goto exit;
+    }
+    lv_obj_set_free_num(cont, JOLT_GUI_OBJ_ID_CONT_BODY);
+    lv_obj_set_size(cont, LV_HOR_RES, 
+            LV_VER_RES - CONFIG_JOLT_GUI_STATUSBAR_H);
+	lv_obj_align(cont, NULL, LV_ALIGN_IN_TOP_LEFT,
+            0, CONFIG_JOLT_GUI_STATUSBAR_H);
+exit:
+    return cont;
+}
+
+/***************
+ * Group Stuff *
+ ***************/
 static void group_mod_cb(lv_style_t *style) {
     style->body.border.part = 0;
 }
@@ -165,6 +154,16 @@ void jolt_gui_group_create() {
     lv_group_set_refocus_policy(jolt_gui_store.group.enter, LV_GROUP_REFOCUS_POLICY_PREV);
     lv_group_set_style_mod_cb(jolt_gui_store.group.main, group_mod_cb);
 }
+
+/* Adds object to main group */
+void jolt_gui_group_add( lv_obj_t *obj ){
+    lv_group_add_obj(jolt_gui_store.group.main, obj);
+    lv_group_focus_obj( obj );
+}
+
+/**********
+ * Action *
+ **********/
 
 static lv_obj_t *jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb, 
         lv_group_t *g) {
@@ -212,10 +211,53 @@ lv_action_t jolt_gui_send_left_main(lv_obj_t *btn) {
     return 0;
 }
 
+/********
+ * MISC *
+ ********/
 void jolt_gui_sem_take() {
     xSemaphoreTake( jolt_gui_store.mutex, portMAX_DELAY );
 }
 void jolt_gui_sem_give() {
     xSemaphoreGive( jolt_gui_store.mutex );
+}
+
+/* Finds the first child object with the free_num identifier.
+ * Returns NULL if child not found. */
+lv_obj_t *jolt_gui_find(lv_obj_t *parent, LV_OBJ_FREE_NUM_TYPE id) {
+    lv_obj_t *child = NULL;
+    ESP_LOGD(TAG, "Search Parent %p has %d children", parent, lv_obj_count_children(parent));
+	while( NULL != (child = lv_obj_get_child(parent, child)) ) {
+        LV_OBJ_FREE_NUM_TYPE child_id;
+        child_id = lv_obj_get_free_num(child);
+        ESP_LOGD(TAG, "Child: %p %s", child, jolt_gui_obj_id_str(child_id));
+        if( child_id == id) {
+            break;
+        }
+    }
+    return child;
+}
+
+/* Convert the enumerated value to a constant string */
+const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val) {
+#define STRCASE(name) case name: return #name;
+    switch(val){
+        STRCASE(JOLT_GUI_OBJ_ID_UNINITIALIZED)
+        STRCASE(JOLT_GUI_OBJ_ID_CONT_TITLE)   
+        STRCASE(JOLT_GUI_OBJ_ID_CONT_BODY)    
+        STRCASE(JOLT_GUI_OBJ_ID_PAGE)         
+        STRCASE(JOLT_GUI_OBJ_ID_LABEL_0)      
+        STRCASE(JOLT_GUI_OBJ_ID_LABEL_1)      
+        STRCASE(JOLT_GUI_OBJ_ID_LABEL_2)      
+        STRCASE(JOLT_GUI_OBJ_ID_LABEL_3)      
+        STRCASE(JOLT_GUI_OBJ_ID_LABEL_4)      
+        STRCASE(JOLT_GUI_OBJ_ID_BAR_LOADING)  
+        STRCASE(JOLT_GUI_OBJ_ID_PRELOADING)   
+        STRCASE(JOLT_GUI_OBJ_ID_IMG_QR)       
+        STRCASE(JOLT_GUI_OBJ_ID_SLIDER)
+        STRCASE(JOLT_GUI_OBJ_ID_LIST)
+        default:
+            return "<unknown>";
+    }
+#undef STRCASE
 }
 

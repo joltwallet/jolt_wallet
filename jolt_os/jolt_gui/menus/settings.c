@@ -74,7 +74,7 @@ static lv_action_t menu_screen_brightness_create() {
         }
     }
 
-    lv_obj_t *scr = jolt_gui_scr_slider_create("Brightness", screen_brightness_update);
+    lv_obj_t *scr = jolt_gui_scr_slider_create("Brightness", NULL, screen_brightness_update);
     jolt_gui_scr_slider_set_range(scr, 0, sizeof(brightness_levels)-1);
     jolt_gui_scr_slider_set_value(scr, slider_pos);
     jolt_gui_scr_set_back_action(scr, screen_brightness_back);
