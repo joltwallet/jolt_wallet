@@ -116,7 +116,7 @@ lv_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text) {
     lv_style_t *label_style = lv_obj_get_style(label);
     lv_obj_set_size(label, CONFIG_JOLT_GUI_LOADING_TEXT_W,
             label_style->text.font->h_px);
-	lv_obj_align(label, NULL, LV_ALIGN_OUT_TOP_MID, 0, -6);
+	lv_obj_align(label, preload, LV_ALIGN_OUT_TOP_MID, 0, -6);
 
     jolt_gui_scr_set_back_action(parent, NULL);
     jolt_gui_scr_set_enter_action(parent, NULL);
