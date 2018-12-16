@@ -69,32 +69,26 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
     ESP_LOGI(TAG, "jelfLoader; Initializing");
     /* fn_basename is passed in for signature checking */
     if( NULL == (jolt_gui_store.app.ctx = jelfLoaderInit(program, fn_basename, &env)) ) {
-        jelfLoaderFree(jolt_gui_store.app.ctx);
-        jolt_gui_store.app.ctx = NULL;
-        fclose(program);
-        return -4;
+        return_code = -4;
+        goto err;
     }
 
     ESP_LOGI(TAG, "elfLoader; Loading Sections");
     if( NULL == jelfLoaderLoad(jolt_gui_store.app.ctx) ) {
-        jelfLoaderFree(jolt_gui_store.app.ctx);
-        jolt_gui_store.app.ctx = NULL;
-        fclose(program);
-        return -5;
+        return_code = -5;
+        goto err;
     }
     ESP_LOGI(TAG, "elfLoader; Relocating");
     if( NULL == jelfLoaderRelocate(jolt_gui_store.app.ctx) ) {
-        jelfLoaderFree(jolt_gui_store.app.ctx);
-        jolt_gui_store.app.ctx = NULL;
-        fclose(program);
-        return -6;
+        return_code = -6;
+        goto err;
     }
 
     jelfLoader_time = esp_timer_get_time() - jelfLoader_time;
     ESP_LOGI(TAG, "Application Loaded in %lld uS.", jelfLoader_time);
 
     #if CONFIG_JELFLOADER_PROFILER_EN
-        jelfLoaderProfilerPrint();
+    jelfLoaderProfilerPrint();
     #endif
 
     fclose(program);
@@ -119,6 +113,20 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
             launch_app_exit, launch_app_from_store);
 
     return 0;
+
+err:
+    if(jolt_gui_store.app.ctx != NULL){
+        jelfLoaderFree(jolt_gui_store.app.ctx);
+    }
+    jolt_gui_store.app.ctx = NULL;
+    if( NULL != program) {
+       fclose(program);
+    }
+    jolt_gui_sem_take();
+    lv_obj_del(preloading_scr);
+    jolt_gui_sem_give();
+
+    return return_code;
 }
 
 static lv_action_t launch_app_from_store(lv_obj_t *btn) {
