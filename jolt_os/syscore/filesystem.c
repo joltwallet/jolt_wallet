@@ -168,9 +168,8 @@ static int file_upload(int argc, char** argv) {
     }
     #if CONFIG_JOLT_COMPRESSION_AUTO 
     if( 0 == strcmp( orig_fn+strlen(orig_fn)-3, ".hs" ) ) {
-        if( 0 != decompress_hs_file(orig_fn) ){
-            remove(orig_fn);
-        }
+        decompress_hs_file(orig_fn);
+        remove(orig_fn);
     }
     #endif
 
