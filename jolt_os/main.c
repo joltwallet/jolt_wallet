@@ -36,6 +36,8 @@
 #include "syscore/filesystem.h"
 #include "vault.h"
 
+#include "esp_ota_ops.h"
+
 #include "jolt_lib.h"
 
 const jolt_version_t JOLT_VERSION = {
@@ -160,6 +162,14 @@ void littlevgl_task() {
 #ifndef UNIT_TESTING
 // So our app_main() doesn't override the unit test app_main()
 void app_main() {
+    /* Check currently running partition */
+    {
+        esp_partition_t *partition = esp_ota_get_running_partition();
+        ESP_LOGI(TAG, "Currently Running %s at 0x%08X.",
+                partition->label, partition->address);
+        ESP_LOGI(TAG, "Partition is %sencrypted.",
+                partition->encrypted ? "" : "not ");
+    }
     /* Setup and Install I2C Driver and supporting objects */
     esp_err_t err;
     err = i2c_driver_setup();
