@@ -298,7 +298,9 @@ int Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getname,
                     }
                     else write_len = packet_length;
 
-                    int written_bytes = write_fun((char*)(packet_data + PACKET_HEADER), 1, write_len, ffd);
+                    int written_bytes = write_fun(
+                            (char*)(packet_data + PACKET_HEADER), 
+                            1, write_len, ffd);
                     if (written_bytes != write_len) { //failed
                       /* End session */
                       send_CA();

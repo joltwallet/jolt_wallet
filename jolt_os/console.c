@@ -140,7 +140,8 @@ static void console_task() {
 
         /* Send the command to the command queue */
         bool block = false;
-        if(0 == strcmp(line, "upload")){
+        if( 0 == strcmp(line, "upload") ||
+                0 == strcmp(line, "firmware_upload") ){
             block = true;
         }
         jolt_cmd_process(line, stdin, stdout, stderr, block);

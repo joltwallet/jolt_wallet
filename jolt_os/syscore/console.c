@@ -195,6 +195,8 @@ static int jolt_cast(int argc, char** argv) {
 
     // Confirm Inputs
     snprintf(buf, sizeof(buf), "Update jolt_cast server domain to:\n%s", argv[1]);
+
+    // todo: require use confirmation on all input
 #if 0
     if( !menu_confirm_action(menu, buf) ) {
         return_code = -1;
@@ -228,13 +230,23 @@ static int cmd_reboot(int argc, char** argv) {
     return 0;
 }
 
-static int cmd_firmware_update(int argc, char** argv) {
+static int cmd_firmware_upload(int argc, char** argv) {
+    esp_err_t err;
+
     jolt_gui_sem_take();
     lv_obj_t *preloading_scr = jolt_gui_scr_preloading_create(
             "JoltOS Update", "Updating System...");
     jolt_gui_sem_give();
 
-    TaskHandle_t task_h = jolt_ota_ymodem_create_task();
+    err = jolt_ota_ymodem();
+    if( ESP_OK == err ) {
+        ESP_LOGI(TAG, "OTA Success; rebooting...");
+        esp_restart();
+    }
+    else {
+        ESP_LOGE(TAG, "OTA Failure");
+    }
+
     return 0;
 }
 
@@ -306,10 +318,10 @@ void console_syscore_register() {
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
     cmd = (esp_console_cmd_t) {
-        .command = "firmware_update",
+        .command = "firmware_upload",
         .help = "Update JoltOS",
         .hint = NULL,
-        .func = &cmd_firmware_update,
+        .func = &cmd_firmware_upload,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 

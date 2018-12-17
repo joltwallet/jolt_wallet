@@ -9,6 +9,5 @@ void jolt_ota_get_bootloader_hash( uint256_t hash );
 esp_err_t jolt_ota_init_handle( );
 esp_err_t jolt_ota_get_handle( esp_ota_handle_t *ota_handle );
 esp_err_t jolt_ota_ymodem();
-TaskHandle_t jolt_ota_ymodem_create_task();
 
 #endif

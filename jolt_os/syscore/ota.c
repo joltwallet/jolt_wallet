@@ -26,7 +26,7 @@ static esp_partition_t *update_partition = NULL;
 
 /* Static Function Declaration */
 static int ota_write_wrapper(const void *ptr, 
-        size_t size, size_t nmemb, esp_ota_handle_t update_handle);
+        size_t size, size_t nmemb, esp_ota_handle_t cookie);
 static void jolt_ota_clear_globals();
 static void jolt_ota_ymodem_task( void *param );
 
@@ -50,14 +50,14 @@ void jolt_ota_get_bootloader_hash( uint256_t hash ) {
     esp_partition_get_sha256(&partition, hash);
 }
 
-static int ota_write_wrapper(const void *ptr, 
-        size_t size, size_t nmemb, esp_ota_handle_t update_handle) {
+static int ota_write_wrapper(const void *data, 
+        size_t size, size_t nmemb, esp_ota_handle_t cookie) {
     /* wraps esp_ota_write into a fwrite-like interface */
-
     esp_err_t err;
     nmemb *= size;
-    err = esp_ota_write( update_handle, ptr, nmemb);
+    err = esp_ota_write( cookie, data, nmemb );
     if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Error in esp_ota_write");
         return -1;
     }
     return nmemb;
@@ -78,27 +78,6 @@ static void jolt_ota_clear_globals() {
     }
 }
 
-static void jolt_ota_ymodem_task( void *param ){
-    esp_err_t err;
-    err = jolt_ota_ymodem();
-    if( ESP_OK == err ) {
-        ESP_LOGI(TAG, "OTA Success; rebooting...");
-        esp_restart();
-    }
-    else {
-        ESP_LOGE(TAG, "OTA Failed.");
-        jolt_ota_clear_globals();
-        // todo: wipe the failed partition here
-    }
-    vTaskDelete(NULL);
-}
-
-TaskHandle_t jolt_ota_ymodem_create_task() {
-    TaskHandle_t task_handle = NULL;
-    xTaskCreate(jolt_ota_ymodem_task, "ymodemOTA", 8192, NULL, 5, &task_handle);
-    return task_handle;
-}
-
 esp_err_t jolt_ota_ymodem() {
     /* Performs OTA update over Ymodem */
     esp_err_t err = ESP_FAIL;
@@ -115,8 +94,9 @@ esp_err_t jolt_ota_ymodem() {
      * Receive and Write data to partition *
      ***************************************/
     size_t binary_file_length;
+    char name[64] = { 0 };
     binary_file_length = Ymodem_Receive_Write(jolt_ota_handle,
-            update_partition->size, NULL, &ota_write_wrapper);
+            update_partition->size, name, &ota_write_wrapper);
     if( binary_file_length <= 0 ) {
         ESP_LOGE(TAG, "Error during firmware transfer.");
         goto exit;
