@@ -73,9 +73,9 @@
 typedef int (write_fun_t)(const void *, size_t, size_t, const void *);
 
 int Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getname,
-        write_fun_t write_fun) ;
+        write_fun_t write_fun, uint8_t *progress) ;
 
-int Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname);
+int Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname, uint8_t *progress);
 int Ymodem_Transmit (char* sendFileName, unsigned int sizeFile, FILE *ffd);
 
 

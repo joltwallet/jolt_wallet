@@ -94,9 +94,8 @@ esp_err_t jolt_ota_ymodem() {
      * Receive and Write data to partition *
      ***************************************/
     size_t binary_file_length;
-    char name[64] = { 0 };
     binary_file_length = Ymodem_Receive_Write(jolt_ota_handle,
-            update_partition->size, name, &ota_write_wrapper);
+            update_partition->size, NULL, &ota_write_wrapper, NULL);
     if( binary_file_length <= 0 ) {
         ESP_LOGE(TAG, "Error during firmware transfer.");
         goto exit;

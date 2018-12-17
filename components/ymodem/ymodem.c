@@ -188,7 +188,7 @@ static int32_t Receive_Packet (uint8_t *data, int *length, uint32_t timeout)
 // Receive a file using the ymodem protocol.
 //-----------------------------------------------------------------
 int Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getname,
-        write_fun_t write_fun) {
+        write_fun_t write_fun, uint8_t *progress) {
   uint8_t packet_data[PACKET_1K_SIZE + PACKET_OVERHEAD];
   uint8_t *file_ptr;
   char file_size[128];
@@ -199,6 +199,10 @@ int Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getname,
   
   for (session_done = 0, errors = 0; ;) {
     for (packets_received = 0, file_done = 0; ;) {
+      if(size > 0 && NULL != progress){
+        /* update progress value */
+        progress = file_len * 100 / size;
+      }
       switch (Receive_Packet(packet_data, &packet_length, NAK_TIMEOUT)) {
         case 0:  // normal return
           switch (packet_length) {
@@ -347,8 +351,8 @@ exit:
 
 // Receive a file using the ymodem protocol.
 //-----------------------------------------------------------------
-int Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname) {
-    return Ymodem_Receive_Write(ffd, maxsize, getname, &fwrite);
+int Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname, uint8_t *progress) {
+    return Ymodem_Receive_Write(ffd, maxsize, getname, &fwrite, progress);
 }
 
 
