@@ -38,17 +38,6 @@
 #include "esp_spiffs.h"
 
 
-//----------------------------------
-static void IRAM_ATTR LED_toggle() {
-#if YMODEM_LED_ACT
-	if (GPIO.out & (1 << YMODEM_LED_ACT)) {
-		GPIO.out_w1tc = (1 << YMODEM_LED_ACT);
-	} else {
-		GPIO.out_w1ts = (1 << YMODEM_LED_ACT);
-	}
-#endif
-}
-
 //------------------------------------------------------------------------
 static unsigned short crc16(const unsigned char *buf, unsigned long count)
 {
@@ -198,8 +187,8 @@ static int32_t Receive_Packet (uint8_t *data, int *length, uint32_t timeout)
 
 // Receive a file using the ymodem protocol.
 //-----------------------------------------------------------------
-int Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname)
-{
+int Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getname,
+        write_fun_t write_fun) {
   uint8_t packet_data[PACKET_1K_SIZE + PACKET_OVERHEAD];
   uint8_t *file_ptr;
   char file_size[128];
@@ -210,7 +199,6 @@ int Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname)
   
   for (session_done = 0, errors = 0; ;) {
     for (packets_received = 0, file_done = 0; ;) {
-      LED_toggle();
       switch (Receive_Packet(packet_data, &packet_length, NAK_TIMEOUT)) {
         case 0:  // normal return
           switch (packet_length) {
@@ -310,14 +298,13 @@ int Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname)
                     }
                     else write_len = packet_length;
 
-                    int written_bytes = fwrite((char*)(packet_data + PACKET_HEADER), 1, write_len, ffd);
+                    int written_bytes = write_fun((char*)(packet_data + PACKET_HEADER), 1, write_len, ffd);
                     if (written_bytes != write_len) { //failed
                       /* End session */
                       send_CA();
                       size = -6;
                       goto exit;
                     }
-                    LED_toggle();
                   }
                   //success
                   errors = 0;
@@ -353,11 +340,15 @@ int Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname)
     if (session_done != 0) break;
   }
 exit:
-  #if YMODEM_LED_ACT
-  gpio_set_level(YMODEM_LED_ACT, YMODEM_LED_ACT_ON ^ 1);
-  #endif
   return size;
 }
+
+// Receive a file using the ymodem protocol.
+//-----------------------------------------------------------------
+int Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname) {
+    return Ymodem_Receive_Write(ffd, maxsize, getname, &fwrite);
+}
+
 
 //------------------------------------------------------------------------------------
 static void Ymodem_PrepareIntialPacket(uint8_t *data, char *fileName, uint32_t length)
@@ -469,7 +460,6 @@ int Ymodem_Transmit (char* sendFileName, unsigned int sizeFile, FILE *ffd)
   err = 0;
   do {
     Send_Byte(CRC16);
-    LED_toggle();
   } while (Receive_Byte(&receivedC, NAK_TIMEOUT) < 0 && err++ < 45);
 
   if (err >= 45 || receivedC != CRC16) {
@@ -496,7 +486,6 @@ int Ymodem_Transmit (char* sendFileName, unsigned int sizeFile, FILE *ffd)
       return -2;                  // timeout or wrong response
     }
     else if (err == 2) return 98; // abort
-    LED_toggle();
   }while (err != 1);
 
   // After initial block the receiver sends 'C' after ACK
@@ -531,7 +520,6 @@ int Ymodem_Transmit (char* sendFileName, unsigned int sizeFile, FILE *ffd)
       }
       else if (err == 2) return -5; // abort
     }while(err != 1);
-    LED_toggle();
   }
   
   // === Send EOT ==============================================================
@@ -557,7 +545,6 @@ int Ymodem_Transmit (char* sendFileName, unsigned int sizeFile, FILE *ffd)
     return -8;
   }
 
-  LED_toggle();
   Ymodem_PrepareLastPacket(packet_data);
   do 
   {
@@ -573,8 +560,5 @@ int Ymodem_Transmit (char* sendFileName, unsigned int sizeFile, FILE *ffd)
     else if (err == 2) return -10; // abort
   }while (err != 1);
   
-  #if YMODEM_LED_ACT
-  gpio_set_level(YMODEM_LED_ACT, YMODEM_LED_ACT_ON ^ 1);
-  #endif
   return 0; // file transmitted successfully
 }

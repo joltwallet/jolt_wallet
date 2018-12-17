@@ -30,6 +30,8 @@
 #include "lvgl.h"
 #include "jolt_gui/jolt_gui.h"
 
+#include "ota.h"
+
 #include "../console.h"
 #include "mnemonic_restore.h"
 
@@ -226,6 +228,16 @@ static int cmd_reboot(int argc, char** argv) {
     return 0;
 }
 
+static int cmd_firmware_update(int argc, char** argv) {
+    jolt_gui_sem_take();
+    lv_obj_t *preloading_scr = jolt_gui_scr_preloading_create(
+            "JoltOS Update", "Updating System...");
+    jolt_gui_sem_give();
+
+    TaskHandle_t task_h = jolt_ota_ymodem_create_task();
+    return 0;
+}
+
 void console_syscore_register() {
     esp_console_cmd_t cmd;
 
@@ -290,6 +302,14 @@ void console_syscore_register() {
         .help = "Sets app public key. WILL ERASE ALL DATA.",
         .hint = NULL,
         .func = &cmd_app_key,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "firmware_update",
+        .help = "Update JoltOS",
+        .hint = NULL,
+        .func = &cmd_firmware_update,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
