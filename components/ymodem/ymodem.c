@@ -36,6 +36,7 @@
 #include "driver/gpio.h"
 #include <driver/uart.h>
 #include "esp_spiffs.h"
+#include "esp_log.h"
 
 
 //------------------------------------------------------------------------
@@ -346,6 +347,7 @@ int Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getname,
     if (session_done != 0) break;
   }
 exit:
+  ESP_LOGI("ymodem", "%d errors corrected during transfer.", errors);
   return size;
 }
 

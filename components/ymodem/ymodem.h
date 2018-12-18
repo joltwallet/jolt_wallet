@@ -34,13 +34,6 @@
 
 // === UART DEFINES ====
 #define EX_UART_NUM UART_NUM_0
-#define BUF_SIZE (1080)
-
-// === LED pin used to show transfer activity ===
-// === Set to 0 if you don't want to use it   ===
-#define YMODEM_LED_ACT 0
-#define YMODEM_LED_ACT_ON 1	// pin level for LED ON
-
 
 // ==== Y-MODEM defines ====
 #define PACKET_SEQNO_INDEX      (1)
