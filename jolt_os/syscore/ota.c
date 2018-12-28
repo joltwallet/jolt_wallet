@@ -10,6 +10,7 @@
 #include "esp_http_client.h"
 #include "esp_flash_partitions.h"
 #include "esp_partition.h"
+#include "string.h"
 
 #include "jolttypes.h"
 #include "ymodem.h"
@@ -25,8 +26,9 @@ static esp_ota_handle_t jolt_ota_handle = 0; // underlying uint32_t
 static esp_partition_t *update_partition = NULL;
 
 /* Static Function Declaration */
-static int ota_write_wrapper(const void *ptr, 
-        size_t size, size_t nmemb, esp_ota_handle_t cookie);
+static int ota_write_wrapper(const void *data, 
+        int32_t size, int32_t nmemb, esp_ota_handle_t cookie);
+
 static void jolt_ota_clear_globals();
 static void jolt_ota_ymodem_task( void *param );
 
@@ -51,11 +53,45 @@ void jolt_ota_get_bootloader_hash( uint256_t hash ) {
 }
 
 static int ota_write_wrapper(const void *data, 
-        size_t size, size_t nmemb, esp_ota_handle_t cookie) {
+        int32_t size, int32_t nmemb, esp_ota_handle_t cookie) {
     /* wraps esp_ota_write into a fwrite-like interface */
-    esp_err_t err;
+    const uint32_t buf_size = 10240;
+    static uint8_t *buf = NULL;
+    static uint8_t *cur = NULL;
+    static uint32_t occupied;
+    if(NULL == buf){
+        buf = malloc(buf_size);
+        if(NULL == buf){
+            ESP_ERROR_CHECK(ESP_FAIL);
+        }
+        cur = buf;
+        occupied = 0;
+    }
+
+    esp_err_t err = ESP_OK;
     nmemb *= size;
-    err = esp_ota_write( cookie, data, nmemb );
+    if(nmemb >= 0){
+        if( (nmemb + occupied) > buf_size ){
+            // clear and write the buffer
+            err = esp_ota_write( cookie, buf, occupied );
+            cur = buf;
+            occupied = 0;
+        }
+        memcpy(cur, data, nmemb);
+        cur += nmemb;
+        occupied += nmemb;
+    }
+    else {
+        // interpretted as an ending operation
+        // flush the buffer and free buf
+        if(occupied > 0){
+            err = esp_ota_write( cookie, buf, occupied );
+        }
+        free(buf);
+        buf = NULL;
+        cur = NULL;
+        occupied = 0;
+    }
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error in esp_ota_write");
         return -1;
@@ -105,6 +141,7 @@ esp_err_t jolt_ota_ymodem() {
     /*****************************
      * Close the jolt_ota_handle *
      *****************************/
+    ota_write_wrapper(NULL, 1, -1, jolt_ota_handle); 
     if (esp_ota_end(jolt_ota_handle) != ESP_OK) {
         ESP_LOGE(TAG, "esp_ota_end failed!");
         jolt_ota_handle = 0;
