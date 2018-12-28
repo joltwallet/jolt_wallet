@@ -40,7 +40,7 @@
 
 
 //------------------------------------------------------------------------
-static unsigned short crc16(const unsigned char *buf, unsigned long count)
+static unsigned short IRAM_ATTR crc16(const unsigned char *buf, unsigned long count)
 {
   unsigned short crc = 0;
   int i;
@@ -57,7 +57,7 @@ static unsigned short crc16(const unsigned char *buf, unsigned long count)
 }
 
 //--------------------------------------------------------------
-static int32_t Receive_Byte (unsigned char *c, uint32_t timeout)
+static int32_t IRAM_ATTR Receive_Byte (unsigned char *c, uint32_t timeout)
 {
 	unsigned char ch;
     int len = uart_read_bytes(EX_UART_NUM, &ch, 1, timeout / portTICK_RATE_MS);
@@ -68,43 +68,43 @@ static int32_t Receive_Byte (unsigned char *c, uint32_t timeout)
 }
 
 //------------------------
-static void uart_consume()
+static void IRAM_ATTR uart_consume()
 {
 	uint8_t ch[64];
     while (uart_read_bytes(EX_UART_NUM, ch, 64, 100 / portTICK_RATE_MS) > 0) ;
 }
 
 //--------------------------------
-static uint32_t Send_Byte (char c)
+static uint32_t IRAM_ATTR Send_Byte (char c)
 {
   uart_write_bytes(EX_UART_NUM, &c, 1);
   return 0;
 }
 
 //----------------------------
-static void send_CA ( void ) {
+static void IRAM_ATTR send_CA ( void ) {
   Send_Byte(CA);
   Send_Byte(CA);
 }
 
 //-----------------------------
-static void send_ACK ( void ) {
+static void IRAM_ATTR send_ACK ( void ) {
   Send_Byte(ACK);
 }
 
 //----------------------------------
-static void send_ACKCRC16 ( void ) {
+static void IRAM_ATTR send_ACKCRC16 ( void ) {
   Send_Byte(ACK);
   Send_Byte(CRC16);
 }
 
 //-----------------------------
-static void send_NAK ( void ) {
+static void IRAM_ATTR send_NAK ( void ) {
   Send_Byte(NAK);
 }
 
 //-------------------------------
-static void send_CRC16 ( void ) {
+static void IRAM_ATTR send_CRC16 ( void ) {
   Send_Byte(CRC16);
 }
 
@@ -123,7 +123,7 @@ static void send_CRC16 ( void ) {
   *        -2: abort by user
   */
 //--------------------------------------------------------------------------
-static int32_t Receive_Packet (uint8_t *data, int *length, uint32_t timeout)
+static int32_t IRAM_ATTR Receive_Packet (uint8_t *data, int *length, uint32_t timeout)
 {
   int count, packet_size, i;
   unsigned char ch;
@@ -188,7 +188,7 @@ static int32_t Receive_Packet (uint8_t *data, int *length, uint32_t timeout)
 
 // Receive a file using the ymodem protocol.
 //-----------------------------------------------------------------
-int Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getname,
+int IRAM_ATTR Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getname,
         write_fun_t write_fun, uint8_t *progress) {
   uint8_t packet_data[PACKET_1K_SIZE + PACKET_OVERHEAD];
   uint8_t *file_ptr;
@@ -353,13 +353,13 @@ exit:
 
 // Receive a file using the ymodem protocol.
 //-----------------------------------------------------------------
-int Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname, uint8_t *progress) {
+int IRAM_ATTR Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname, uint8_t *progress) {
     return Ymodem_Receive_Write(ffd, maxsize, getname, &fwrite, progress);
 }
 
 
 //------------------------------------------------------------------------------------
-static void Ymodem_PrepareIntialPacket(uint8_t *data, char *fileName, uint32_t length)
+static void IRAM_ATTR Ymodem_PrepareIntialPacket(uint8_t *data, char *fileName, uint32_t length)
 {
   uint16_t tempCRC;
 
@@ -384,7 +384,7 @@ static void Ymodem_PrepareIntialPacket(uint8_t *data, char *fileName, uint32_t l
 }
 
 //-------------------------------------------------
-static void Ymodem_PrepareLastPacket(uint8_t *data)
+static void IRAM_ATTR Ymodem_PrepareLastPacket(uint8_t *data)
 {
   uint16_t tempCRC;
   
@@ -399,7 +399,7 @@ static void Ymodem_PrepareLastPacket(uint8_t *data)
 }
 
 //-----------------------------------------------------------------------------------------
-static void Ymodem_PreparePacket(uint8_t *data, uint8_t pktNo, uint32_t sizeBlk, FILE *ffd)
+static void IRAM_ATTR Ymodem_PreparePacket(uint8_t *data, uint8_t pktNo, uint32_t sizeBlk, FILE *ffd)
 {
   uint16_t i, size;
   uint16_t tempCRC;
@@ -426,7 +426,7 @@ static void Ymodem_PreparePacket(uint8_t *data, uint8_t pktNo, uint32_t sizeBlk,
 }
 
 //-------------------------------------------------------------
-static uint8_t Ymodem_WaitResponse(uint8_t ackchr, uint8_t tmo)
+static uint8_t IRAM_ATTR Ymodem_WaitResponse(uint8_t ackchr, uint8_t tmo)
 {
   unsigned char receivedC;
   uint32_t errors = 0;
@@ -456,7 +456,7 @@ static uint8_t Ymodem_WaitResponse(uint8_t ackchr, uint8_t tmo)
 
 
 //------------------------------------------------------------------------
-int Ymodem_Transmit (char* sendFileName, unsigned int sizeFile, FILE *ffd)
+int IRAM_ATTR Ymodem_Transmit (char* sendFileName, unsigned int sizeFile, FILE *ffd)
 {
   uint8_t packet_data[PACKET_1K_SIZE + PACKET_OVERHEAD];
   uint16_t blkNumber;

@@ -74,7 +74,7 @@
 
 /*Text settings*/
 #define LV_TXT_UTF8             1                /*Enable UTF-8 coded Unicode character usage */
-#define LV_TXT_BREAK_CHARS     " ,.;:-_"         /*Can break texts on these chars*/
+#define LV_TXT_BREAK_CHARS     " ,.;:-"         /*Can break texts on these chars*/
 
 /*Graphics feature usage*/
 #define USE_LV_ANIMATION        1               /*1: Enable all animations*/

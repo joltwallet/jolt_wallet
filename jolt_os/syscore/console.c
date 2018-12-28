@@ -237,6 +237,7 @@ static int cmd_firmware_upload(int argc, char** argv) {
     lv_obj_t *preloading_scr = jolt_gui_scr_preloading_create(
             "JoltOS Update", "Updating System...");
     jolt_gui_sem_give();
+    vTaskDelay(pdMS_TO_TICKS(80)); // Give the GL a moment to draw screen
 
     err = jolt_ota_ymodem();
     if( ESP_OK == err ) {
@@ -246,6 +247,9 @@ static int cmd_firmware_upload(int argc, char** argv) {
     else {
         ESP_LOGE(TAG, "OTA Failure");
     }
+
+    setvbuf(stdin, NULL, _IONBF, 0);
+    setvbuf(stdout, NULL, _IONBF, 0);
 
     return 0;
 }
