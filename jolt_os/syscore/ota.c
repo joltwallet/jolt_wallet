@@ -55,7 +55,7 @@ void jolt_ota_get_bootloader_hash( uint256_t hash ) {
 static int ota_write_wrapper(const void *data, 
         int32_t size, int32_t nmemb, esp_ota_handle_t cookie) {
     /* wraps esp_ota_write into a fwrite-like interface */
-    const uint32_t buf_size = 10240;
+    const uint32_t buf_size = 4096;
     static uint8_t *buf = NULL;
     static uint8_t *cur = NULL;
     static uint32_t occupied;
