@@ -271,13 +271,16 @@ int IRAM_ATTR Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getna
                         *name = '\0';
                         #if CONFIG_JOLT_COMPRESSION_AUTO 
                         /* Check if the suffix is ".gz" */
-                        if( 0 == strcmp( getname+strlen(getname)-3, ".gz" ) ) {
+                        if( 0 == strcmp( name-3, ".gz" ) ) {
                             d = decompress_obj_init(write_fun, ffd);
                             if(NULL == d){
                               send_CA();
                               size = -12;
                               goto exit;
                             }
+                            // remove the ".gz" suffix
+                            name -=3;
+                            *name = '\0';
                         }
                         #endif
                     }
