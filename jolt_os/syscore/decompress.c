@@ -83,6 +83,7 @@ int decompress_obj_chunk(decomp_t *d, uint8_t *data, size_t len) {
     return amount_written;
 }
 
+#if 0
 /* Decompress a ".hs" file.
  * Requires full filename including spiffs path */
 int decompress_hs_file(char *src_fn){
@@ -287,4 +288,4 @@ uint8_t *decompress_fn_to_mem(char *fn) {
     fclose(f);
     return mem;
 }
-
+#endif

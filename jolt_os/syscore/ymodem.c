@@ -37,6 +37,7 @@
 #include <driver/uart.h>
 #include "esp_spiffs.h"
 #include "esp_log.h"
+#include "syscore/decompress.h"
 
 
 //------------------------------------------------------------------------
@@ -197,6 +198,14 @@ int IRAM_ATTR Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getna
   int packet_length = 0;
   file_len = 0;
   int eof_cnt = 0;
+
+  #if CONFIG_JOLT_COMPRESSION_AUTO 
+  static decomp_t *d = NULL;
+  char name[65];
+  if( NULL == getname ){
+    getname = name;
+  }
+  #endif
   
   for (session_done = 0, errors = 0; ;) {
     for (packets_received = 0, file_done = 0; ;) {
@@ -253,13 +262,27 @@ int IRAM_ATTR Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getna
                     errors = 0;
                     // ** Filename packet has valid data
                     if (getname) {
-                      for (i = 0, file_ptr = packet_data + PACKET_HEADER; ((*file_ptr != 0) && (i < 64));) {
-                        *getname = *file_ptr++;
-                        getname++;
-                      }
-                      *getname = '\0';
+                        char *name = getname;
+                        for (i = 0, file_ptr = packet_data + PACKET_HEADER;
+                                ((*file_ptr != 0) && (i < 64));) {
+                            *name = *file_ptr++;
+                            name++;
+                        }
+                        *name = '\0';
+                        #if CONFIG_JOLT_COMPRESSION_AUTO 
+                        /* Check if the suffix is ".gz" */
+                        if( 0 == strcmp( getname+strlen(getname)-3, ".gz" ) ) {
+                            d = decompress_obj_init(write_fun, ffd);
+                            if(NULL == d){
+                              send_CA();
+                              size = -12;
+                              goto exit;
+                            }
+                        }
+                        #endif
                     }
-                    for (i = 0, file_ptr = packet_data + PACKET_HEADER; (*file_ptr != 0) && (i < packet_length);) {
+                    for (i = 0, file_ptr = packet_data + PACKET_HEADER;
+                            (*file_ptr != 0) && (i < packet_length);) {
                       file_ptr++;
                     }
                     for (i = 0, file_ptr ++; (*file_ptr != ' ') && (i < FILE_SIZE_LENGTH);) {
@@ -303,9 +326,21 @@ int IRAM_ATTR Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getna
                     }
                     else write_len = packet_length;
 
-                    int written_bytes = write_fun(
-                            (char*)(packet_data + PACKET_HEADER), 
-                            1, write_len, ffd);
+                    int written_bytes; 
+                    #if CONFIG_JOLT_COMPRESSION_AUTO 
+                    if( NULL != d ){
+                        decompress_obj_chunk( d,
+                                (uint8_t*)(packet_data + PACKET_HEADER), 
+                                write_len );
+                        written_bytes = write_len; // tmp workaround
+                    }
+                    else
+                    #endif
+                    {
+                        written_bytes = write_fun(
+                                (char*)(packet_data + PACKET_HEADER), 
+                                1, write_len, ffd);
+                    }
                     if (written_bytes != write_len) { //failed
                       /* End session */
                       send_CA();
@@ -346,8 +381,11 @@ int IRAM_ATTR Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getna
     }
     if (session_done != 0) break;
   }
+  #if CONFIG_JOLT_COMPRESSION_AUTO 
+  decompress_obj_del( d );
+  #endif
 exit:
-  ESP_LOGI("ymodem", "%d errors corrected during transfer.", errors);
+  ESP_LOGI("ymodem", "\n%d errors corrected during transfer.", errors);
   return size;
 }
 

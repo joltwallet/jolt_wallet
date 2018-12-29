@@ -18,16 +18,19 @@ int decompress_obj_chunk( decomp_t *d, uint8_t *data, size_t len );
  * do anything to clean up cookie/writer things.*/
 void decompress_obj_del ( decomp_t *d);
 
+#if 0
 /* Decompresses the compressed src file and writes it to dst file descriptor.*/
 int decompress_fd_to_fd(FILE *dst, FILE *src);
+#endif
 
 
 
-
+#if 0
 int decompress_hs_file(char *src_fn);
 int decompress_fd_to_fd(FILE *compressed, FILE *decompressed);
 int decompress_fd_to_alloc_mem(FILE *fd, uint8_t *mem, const size_t mem_len);
 uint8_t *decompress_fn_to_mem(char *fn);
 size_t decompress_check_size(FILE *fd);
+#endif
 
 #endif

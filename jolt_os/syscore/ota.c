@@ -11,7 +11,6 @@
 #include "esp_flash_partitions.h"
 #include "esp_partition.h"
 #include "string.h"
-#include "syscore/decompress.h"
 
 #include "jolttypes.h"
 #include "ymodem.h"
@@ -27,8 +26,6 @@ static esp_ota_handle_t jolt_ota_handle = 0; // underlying uint32_t
 static esp_partition_t *update_partition = NULL;
 
 /* Static Function Declaration */
-static int ota_decompress_write_wrapper(const void *data, 
-        int32_t size, int32_t nmemb, esp_ota_handle_t cookie);
 static int ota_ymodem_write_wrapper(const void *data, 
         int32_t size, int32_t nmemb, esp_ota_handle_t cookie);
 
@@ -55,34 +52,12 @@ void jolt_ota_get_bootloader_hash( uint256_t hash ) {
     esp_partition_get_sha256(&partition, hash);
 }
 
-static int ota_decompress_write_wrapper(const void *data_buf, 
+static int ota_ymodem_write_wrapper(const void *data_buf, 
         int32_t size, int32_t nmemb, esp_ota_handle_t cookie) {
     // todo: error handling
     size *= nmemb;
     esp_ota_write( cookie, data_buf, size );
     return nmemb;
-}
-
-/* Writer function for ymodem */
-static int ota_ymodem_write_wrapper(const void *data_buf, 
-        int32_t size, int32_t nmemb, esp_ota_handle_t cookie) {
-    static decomp_t *d = NULL;
-    if( NULL == d ) {
-        d = decompress_obj_init(&ota_decompress_write_wrapper, cookie);
-        if( NULL == d ){
-            return -1;
-        }
-    }
-
-    size *= nmemb;
-    if( size >= 0 ){
-        decompress_obj_chunk(d, data_buf, size);
-    }
-    else {
-        decompress_obj_del( d );
-    }
-
-    return size;
 }
 
 /* Clears global variables */
@@ -127,7 +102,7 @@ esp_err_t jolt_ota_ymodem() {
     /*****************************
      * Close the jolt_ota_handle *
      *****************************/
-    ota_ymodem_write_wrapper(NULL, 1, -1, jolt_ota_handle); 
+    //ota_ymodem_write_wrapper(NULL, 1, -1, jolt_ota_handle); 
     if (esp_ota_end(jolt_ota_handle) != ESP_OK) {
         ESP_LOGE(TAG, "esp_ota_end failed!");
         jolt_ota_handle = 0;
