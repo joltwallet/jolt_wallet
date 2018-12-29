@@ -140,12 +140,12 @@ static void console_task() {
 
         /* Send the command to the command queue */
         bool block = false;
-        if( 0 == strcmp(line, "upload") ||
-                0 == strcmp(line, "firmware_upload") ){
+        const char blocking_prefix[] = "upload";
+        if( 0 == strncmp(line, blocking_prefix, strlen(blocking_prefix)) ) {
             block = true;
         }
         jolt_cmd_process(line, stdin, stdout, stderr, block);
-        vTaskDelay(50/portTICK_PERIOD_MS);
+        vTaskDelay(50/portTICK_PERIOD_MS); // give enough time for quick commands to execute
     }
     
     #if CONFIG_JOLT_CONSOLE_OVERRIDE_LOGGING

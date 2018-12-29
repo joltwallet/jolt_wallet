@@ -230,7 +230,7 @@ static int cmd_reboot(int argc, char** argv) {
     return 0;
 }
 
-static int cmd_firmware_upload(int argc, char** argv) {
+static int cmd_upload_firmware(int argc, char** argv) {
     esp_err_t err;
 
     jolt_gui_sem_take();
@@ -238,9 +238,6 @@ static int cmd_firmware_upload(int argc, char** argv) {
             "JoltOS Update", "Updating System...");
     jolt_gui_sem_give();
     vTaskDelay(pdMS_TO_TICKS(80)); // Give the GL a moment to draw screen
-
-    //setvbuf(stdin, NULL, _IONBF, 4096);
-    //setvbuf(stdout, NULL, _IONBF, 4096);
 
     err = jolt_ota_ymodem();
     if( ESP_OK == err ) {
@@ -250,9 +247,6 @@ static int cmd_firmware_upload(int argc, char** argv) {
     else {
         ESP_LOGE(TAG, "OTA Failure");
     }
-
-    setvbuf(stdin, NULL, _IONBF, 0);
-    setvbuf(stdout, NULL, _IONBF, 0);
 
     return 0;
 }
@@ -325,10 +319,10 @@ void console_syscore_register() {
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
     cmd = (esp_console_cmd_t) {
-        .command = "firmware_upload",
+        .command = "upload_firmware",
         .help = "Update JoltOS",
         .hint = NULL,
-        .func = &cmd_firmware_upload,
+        .func = &cmd_upload_firmware,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 

@@ -11,7 +11,6 @@
 #include "esp_flash_partitions.h"
 #include "esp_partition.h"
 #include "string.h"
-//#include "rom/miniz.h"
 #include "syscore/decompress.h"
 
 #include "jolttypes.h"
@@ -28,6 +27,8 @@ static esp_ota_handle_t jolt_ota_handle = 0; // underlying uint32_t
 static esp_partition_t *update_partition = NULL;
 
 /* Static Function Declaration */
+static int ota_decompress_write_wrapper(const void *data, 
+        int32_t size, int32_t nmemb, esp_ota_handle_t cookie);
 static int ota_ymodem_write_wrapper(const void *data, 
         int32_t size, int32_t nmemb, esp_ota_handle_t cookie);
 
@@ -54,8 +55,6 @@ void jolt_ota_get_bootloader_hash( uint256_t hash ) {
     esp_partition_get_sha256(&partition, hash);
 }
 
-//#define MINIZ_INFLATE_BUF_SIZE 4096
-#if 1
 static int ota_decompress_write_wrapper(const void *data_buf, 
         int32_t size, int32_t nmemb, esp_ota_handle_t cookie) {
     // todo: error handling
@@ -71,7 +70,7 @@ static int ota_ymodem_write_wrapper(const void *data_buf,
     if( NULL == d ) {
         d = decompress_obj_init(&ota_decompress_write_wrapper, cookie);
         if( NULL == d ){
-            // throw some error
+            return -1;
         }
     }
 
@@ -85,56 +84,6 @@ static int ota_ymodem_write_wrapper(const void *data_buf,
 
     return size;
 }
-#else
-static int ota_write_wrapper(const void *data_buf, 
-        int32_t size, int32_t nmemb, esp_ota_handle_t cookie) {
-    nmemb *= size;
-    uint32_t length = nmemb;
-
-    static uint8_t *out_buf = NULL;
-    static uint8_t *next_out;
-    static tinfl_decompressor inflator;
-
-    if(NULL == out_buf){
-        out_buf = malloc(MINIZ_INFLATE_BUF_SIZE);
-        if(NULL == out_buf){
-            ESP_ERROR_CHECK(ESP_FAIL);
-        }
-        next_out = out_buf;
-        tinfl_init(&inflator);
-    }
-
-    int status = TINFL_STATUS_NEEDS_MORE_INPUT;
-    if(nmemb >= 0){
-        while(length > 0 ) {
-            size_t in_bytes = length; /* input remaining */
-            size_t out_bytes = out_buf + MINIZ_INFLATE_BUF_SIZE - next_out;
-            int flags = TINFL_FLAG_PARSE_ZLIB_HEADER | TINFL_FLAG_HAS_MORE_INPUT;
-
-            status = tinfl_decompress(&inflator, data_buf, &in_bytes,
-                             out_buf, next_out, &out_bytes,
-                             flags);
-            if(TINFL_STATUS_FAILED == status || in_bytes == 0){
-                ESP_ERROR_CHECK(ESP_FAIL);
-            }
-            length -= in_bytes;
-            data_buf += in_bytes;
-
-            next_out += out_bytes;
-            size_t bytes_in_out_buf = next_out - out_buf;
-            if (status <= TINFL_STATUS_DONE || bytes_in_out_buf == MINIZ_INFLATE_BUF_SIZE) {
-                // Output buffer full, or done
-                esp_err_t err;
-                err = esp_ota_write( cookie, out_buf, bytes_in_out_buf );
-                next_out = out_buf;
-            }
-        }
-    }
-    else{
-    }
-    return nmemb;
-}
-#endif
 
 /* Clears global variables */
 static void jolt_ota_clear_globals() {
