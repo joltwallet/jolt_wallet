@@ -53,7 +53,7 @@ void jolt_ota_get_bootloader_hash( uint256_t hash ) {
     esp_partition_get_sha256(&partition, hash);
 }
 
-#define MINIZ_INFLATE_BUF_SIZE 32768
+#define MINIZ_INFLATE_BUF_SIZE 4096
 static int ota_write_wrapper(const void *data_buf, 
         int32_t size, int32_t nmemb, esp_ota_handle_t cookie) {
     nmemb *= size;

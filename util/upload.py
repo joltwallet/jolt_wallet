@@ -39,6 +39,8 @@ def parse_args():
             help='Compression Level to Apply (0-10)')
     parser.add_argument('--baud', '-b', type=int, default=1500000,
             help='Baudrate to communicate with Jolt at.')
+    parser.add_argument('--wbits', '-w', type=int, default=12,
+            help='log2 of Window (dictionary) size.')
     args = parser.parse_args()
     dargs = vars(args)
     return (args, dargs)
@@ -60,12 +62,17 @@ def main():
     data = orig_data
 
     if args.compress:
-        log.info("Compressing at level %d", args.level)
-        compressed_data = zlib.compress(orig_data, args.level)
+        w_bits = 12
+        log.info("Compressing at level %d with window (dict) size %d", args.level, 2**args.wbits)
+        compressor = zlib.compressobj(level=args.level, method=zlib.DEFLATED,
+                wbits=args.wbits, memLevel=zlib.DEF_MEM_LEVEL, strategy=zlib.Z_DEFAULT_STRATEGY)
+        compressed_data = compressor.compress(orig_data)
+        compressed_data += compressor.flush()
         compress_percentage = 100*(1-(len(compressed_data)/len(orig_data)))
         log.info("Compressed data to %d bytes (%.2f%% smaller)" % \
                 (len(compressed_data), compress_percentage) )
         data = compressed_data
+
 
     c_fn = args.file + '.gz'
     with open(c_fn, 'wb') as f:
