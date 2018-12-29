@@ -239,6 +239,9 @@ static int cmd_firmware_upload(int argc, char** argv) {
     jolt_gui_sem_give();
     vTaskDelay(pdMS_TO_TICKS(80)); // Give the GL a moment to draw screen
 
+    //setvbuf(stdin, NULL, _IONBF, 4096);
+    //setvbuf(stdout, NULL, _IONBF, 4096);
+
     err = jolt_ota_ymodem();
     if( ESP_OK == err ) {
         ESP_LOGI(TAG, "OTA Success; rebooting...");
