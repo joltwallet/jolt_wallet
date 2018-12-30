@@ -133,22 +133,22 @@
 /* More info about fonts: https://littlevgl.com/basics#fonts
  * To enable a built-in font use 1,2,4 or 8 values
  * which will determine the bit-per-pixel */
-#define USE_LV_FONT_DEJAVU_10              1
+#define USE_LV_FONT_DEJAVU_10              0
 #define USE_LV_FONT_DEJAVU_10_LATIN_SUP    0
 #define USE_LV_FONT_DEJAVU_10_CYRILLIC     0
-#define USE_LV_FONT_SYMBOL_10              1
+#define USE_LV_FONT_SYMBOL_10              0
 
 #define USE_LV_FONT_DEJAVU_20              0
 #define USE_LV_FONT_DEJAVU_20_LATIN_SUP    0
 #define USE_LV_FONT_DEJAVU_20_CYRILLIC     0
-#define USE_LV_FONT_SYMBOL_20              1
+#define USE_LV_FONT_SYMBOL_20              0
 
 #define USE_LV_FONT_DEJAVU_30              0
 #define USE_LV_FONT_DEJAVU_30_LATIN_SUP    0
 #define USE_LV_FONT_DEJAVU_30_CYRILLIC     0
 #define USE_LV_FONT_SYMBOL_30              0
 
-#define USE_LV_FONT_DEJAVU_40              1
+#define USE_LV_FONT_DEJAVU_40              0
 #define USE_LV_FONT_DEJAVU_40_LATIN_SUP    0
 #define USE_LV_FONT_DEJAVU_40_CYRILLIC     0
 #define USE_LV_FONT_SYMBOL_40              0
@@ -163,6 +163,7 @@
  */
 #define USE_LV_FONT_SYNCHRONIZER7 0
 #define USE_LV_FONT_CROX3HB_NUMERIC 1 /* Used for Pin Entry Roller Digits */
+#define USE_LV_FONT_DEJAVU_40_NUMERIC 1 /* Used for Misc big numbers */
 #define USE_LV_FONT_UNIFONT 0
 #define USE_LV_FONT_SCIENTIFICA_11 0
 #define USE_LV_FONT_SHYLOCK_10 0
@@ -174,6 +175,7 @@
         LV_FONT_DECLARE(lv_font_synchronizer7) \
         LV_FONT_DECLARE(lv_font_jolt_gui_symbols) \
         LV_FONT_DECLARE(lv_font_crox3hb_numeric) \
+        LV_FONT_DECLARE(lv_font_dejavu_40_numeric) \
         LV_FONT_DECLARE(lv_font_unifont) \
         LV_FONT_DECLARE(lv_font_scientifica_11) \
         LV_FONT_DECLARE(lv_font_shylock_10) \

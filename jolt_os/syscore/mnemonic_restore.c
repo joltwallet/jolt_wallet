@@ -45,42 +45,32 @@ static lv_obj_t *jolt_gui_scr_mnemonic_restore_num_create(int n) {
     assert( n <= 24 );
     assert( n >= 1 );
 
-    lv_obj_t *parent = jolt_gui_parent_create();
-    jolt_gui_obj_title_create(parent, title);
-
-    /* Create Page */
-    lv_obj_t *page = lv_page_create(parent, NULL);
-    lv_obj_set_size(page, LV_HOR_RES, LV_VER_RES - CONFIG_JOLT_GUI_STATUSBAR_H);
-    lv_obj_align(page, NULL, LV_ALIGN_IN_TOP_LEFT,
-            0, CONFIG_JOLT_GUI_STATUSBAR_H);
-    lv_group_add_obj(jolt_gui_store.group.main, page);
+    JOLT_GUI_SCR_PREAMBLE( title );
 
     /* Create text for above the big number */
-    lv_obj_t *header_label = lv_label_create(page, NULL);
+    lv_obj_t *header_label = lv_label_create(cont_body, NULL);
+    JOLT_GUI_OBJ_CHECK( header_label );
     lv_label_set_text(header_label, "Enter Word");
-    lv_obj_align(header_label, NULL, LV_ALIGN_IN_TOP_MID,
-            0, 0);
+    lv_obj_align(header_label, NULL, LV_ALIGN_IN_TOP_MID, 0, 6);
 
     /* Create text for big number */
     char number_str[3] = { 0 }; 
     itoa( n, number_str, 10 );
-    lv_obj_t *number_label = lv_label_create(page, NULL);
+    lv_obj_t *number_label = lv_label_create(cont_body, NULL);
+    JOLT_GUI_OBJ_CHECK( number_label );
     lv_label_set_text(number_label, number_str);
 
     /* Set a Big Font Style for number*/
     static lv_style_t number_style;
     lv_style_t *old_style = lv_label_get_style(number_label);
     lv_style_copy(&number_style, old_style);
-    number_style.text.font = &lv_font_dejavu_40;
+    number_style.text.font = &lv_font_dejavu_40_numeric;
     lv_label_set_style(number_label, &number_style);
 
-    /* Align Number to Center bottom of screen */
-    /* Dejavu_40 has 9 blank lines below digits */
-    lv_obj_align(number_label, NULL, LV_ALIGN_IN_BOTTOM_MID,
-            0, 8);
+    /* Align Big Number to Center bottom of screen */
+    lv_obj_align(number_label, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
 
-    lv_group_focus_obj(page);
-
+exit:
     return parent;
 }
 
