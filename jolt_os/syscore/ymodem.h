@@ -65,9 +65,9 @@
 #define YM_MAX_FILESIZE         (10*1024*1024)
 
 int Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getname,
-        write_fun_t write_fun, uint8_t *progress) ;
+        write_fun_t write_fun, int8_t *progress) ;
 
-int Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname, uint8_t *progress);
+int Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname, int8_t *progress);
 int Ymodem_Transmit (char* sendFileName, unsigned int sizeFile, FILE *ffd);
 
 

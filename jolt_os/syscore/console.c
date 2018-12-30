@@ -34,6 +34,7 @@
 
 #include "../console.h"
 #include "mnemonic_restore.h"
+#include "syscore/cmd/upload_firmware.h"
 
 static const char* TAG = "console_syscore";
 
@@ -230,26 +231,6 @@ static int cmd_reboot(int argc, char** argv) {
     return 0;
 }
 
-static int cmd_upload_firmware(int argc, char** argv) {
-    esp_err_t err;
-
-    jolt_gui_sem_take();
-    lv_obj_t *preloading_scr = jolt_gui_scr_preloading_create(
-            "JoltOS Update", "Updating System...");
-    jolt_gui_sem_give();
-    vTaskDelay(pdMS_TO_TICKS(80)); // Give the GL a moment to draw screen
-
-    err = jolt_ota_ymodem();
-    if( ESP_OK == err ) {
-        ESP_LOGI(TAG, "OTA Success; rebooting...");
-        esp_restart();
-    }
-    else {
-        ESP_LOGE(TAG, "OTA Failure");
-    }
-
-    return 0;
-}
 
 void console_syscore_register() {
     esp_console_cmd_t cmd;

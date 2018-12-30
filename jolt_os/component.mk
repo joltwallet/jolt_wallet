@@ -11,7 +11,8 @@ COMPONENT_SRCDIRS := . \
     jolt_gui \
     jolt_gui/custom_fonts \
     jolt_gui/menus \
-    syscore
+    syscore \
+    syscore/cmd
 
 COMPONENT_ADD_INCLUDEDIRS := . \
     hal/storage/aes132_library \

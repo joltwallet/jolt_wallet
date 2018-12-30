@@ -75,7 +75,7 @@ static void jolt_ota_clear_globals() {
     }
 }
 
-esp_err_t jolt_ota_ymodem() {
+esp_err_t jolt_ota_ymodem(int8_t *progress) {
     /* Performs OTA update over Ymodem */
     esp_err_t err = ESP_FAIL;
 
@@ -92,7 +92,7 @@ esp_err_t jolt_ota_ymodem() {
      ***************************************/
     size_t binary_file_length;
     binary_file_length = Ymodem_Receive_Write(jolt_ota_handle,
-            update_partition->size, NULL, &ota_ymodem_write_wrapper, NULL);
+            update_partition->size, NULL, &ota_ymodem_write_wrapper, progress);
     if( binary_file_length <= 0 ) {
         ESP_LOGE(TAG, "Error during firmware transfer.");
         goto exit;

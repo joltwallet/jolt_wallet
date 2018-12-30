@@ -31,6 +31,9 @@
 #include <fcntl.h>
 #include <string.h>
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 #include "ymodem.h"
 #include "rom/crc.h"
 #include "driver/gpio.h"
@@ -190,7 +193,7 @@ static int32_t IRAM_ATTR Receive_Packet (uint8_t *data, int *length, uint32_t ti
 // Receive a file using the ymodem protocol.
 //-----------------------------------------------------------------
 int IRAM_ATTR Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getname,
-        write_fun_t write_fun, uint8_t *progress) {
+        write_fun_t write_fun, int8_t *progress) {
   uint8_t packet_data[PACKET_1K_SIZE + PACKET_OVERHEAD];
   uint8_t *file_ptr;
   char file_size[128];
@@ -211,7 +214,7 @@ int IRAM_ATTR Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getna
     for (packets_received = 0, file_done = 0; ;) {
       if(size > 0 && NULL != progress){
         /* update progress value */
-        progress = file_len * 100 / size;
+        *progress = file_len * 100 / size;
       }
       switch (Receive_Packet(packet_data, &packet_length, NAK_TIMEOUT)) {
         case 0:  // normal return
@@ -354,6 +357,7 @@ int IRAM_ATTR Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getna
                   //success
                   errors = 0;
                   send_ACK();
+                  taskYIELD();
                 }
                 packets_received++;
               }
@@ -389,12 +393,15 @@ int IRAM_ATTR Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getna
   #endif
 exit:
   ESP_LOGI("ymodem", "\n%d errors corrected during transfer.", errors);
+  if( NULL != progress) {
+      *progress = -1;
+  }
   return size;
 }
 
 // Receive a file using the ymodem protocol.
 //-----------------------------------------------------------------
-int IRAM_ATTR Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname, uint8_t *progress) {
+int IRAM_ATTR Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname, int8_t *progress) {
     return Ymodem_Receive_Write(ffd, maxsize, getname, &fwrite, progress);
 }
 
