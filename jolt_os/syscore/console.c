@@ -12,6 +12,7 @@
 #include "driver/uart.h"
 #include "esp_vfs_dev.h"
 #include "esp_log.h"
+#include "esp_clk.h"
 #include "linenoise/linenoise.h"
 
 #include "bipmnemonic.h"
@@ -144,6 +145,7 @@ static int task_status(int argc, char** argv) {
 static int cpu_status(int argc, char** argv) {
     /* Gets Task CPU usage statistics */
     char pcWriteBuffer[1024];
+    printf("Current Freq: %d Hz.\n", esp_clk_cpu_freq());
     printf("Task            Abs Time (uS)           %%Time\n"
            "*********************************************\n");
     vTaskGetRunTimeStats( pcWriteBuffer );

@@ -213,6 +213,19 @@ void console_init() {
     esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
     esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+
+#if 1
+    uart_config_t uart_config = {
+			.baud_rate = 1500000,
+			.data_bits = UART_DATA_8_BITS,
+			.parity = UART_PARITY_DISABLE,
+			.stop_bits = UART_STOP_BITS_1,
+			.flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+            //.use_ref_tick = true,
+	};
+	// Configure UART parameters
+	ESP_ERROR_CHECK(uart_param_config(CONFIG_CONSOLE_UART_NUM, &uart_config));
+#endif
     
     /* Install UART driver for interrupt-driven reads and writes */
     ESP_ERROR_CHECK( uart_driver_install(CONFIG_CONSOLE_UART_NUM,
