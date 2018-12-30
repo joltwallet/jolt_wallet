@@ -91,8 +91,6 @@ static lv_obj_t *jolt_gui_qr_fullscreen_create( const char *title,
     if( NULL == jolt_gui_scr_set_back_action(parent, delete_screen) ) goto exit;
     if( NULL == jolt_gui_scr_set_enter_action(parent, NULL) ) goto exit;
 
-    if( NULL == jolt_gui_obj_title_create(parent, title) ) goto exit;
-
     return parent;
 
 exit:
