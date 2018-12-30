@@ -104,7 +104,7 @@ lv_obj_t *jolt_gui_scr_pin_create(lv_action_t failure_cb, lv_action_t success_cb
     user_back_cb = failure_cb;
     user_enter_cb = success_cb;
 
-    sprintf(title, "Enter Pin (%d/%d)", pin_attempts+1,
+    sprintf(title, "PIN (%d/%d)", pin_attempts+1,
             CONFIG_JOLT_DEFAULT_MAX_ATTEMPT);
 
     lv_obj_t *parent = jolt_gui_scr_num_create( title,

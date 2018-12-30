@@ -44,7 +44,7 @@ static lv_obj_t *digit_create(lv_obj_t *parent) {
             "\n9\n8\n7\n6\n5\n4\n3\n2\n1\n0"
             );
     lv_roller_set_selected(roller, 19, false); // Set it to the middle 0 entry
-    //lv_roller_set_action(roller, digit_entry_cb);
+    lv_roller_set_align(roller, LV_LABEL_ALIGN_CENTER);
     return roller;
 }
 
