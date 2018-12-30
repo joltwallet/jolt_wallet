@@ -413,10 +413,13 @@ static bool app_signature_check(jelfLoaderContext_t *ctx,
         uint256_t approved_pub_key;
         size_t required_size;
         if( !storage_get_blob(NULL, &required_size, "user", "app_key") ) {
-            ERR("Approved Public Key not found");
-            goto err;
+            ERR("Approved Public Key not found; using default");
+            ESP_ERROR_CHECK(sodium_hex2bin(
+                    approved_pub_key, sizeof(approved_pub_key),
+                    CONFIG_JOLT_APP_KEY_DEFAULT, 64, NULL, NULL, NULL));
+
         }
-        if( sizeof(approved_pub_key) != required_size ||
+        else if( sizeof(approved_pub_key) != required_size ||
                 !storage_get_blob(approved_pub_key, &required_size,
                     "user", "app_key")) {
             ERR("Stored Public Key Blob doesn't have expected len.");

@@ -485,4 +485,12 @@ menu "JoltOS"
             help
                 number of chunks to cache.
     endmenu
+
+    config JOLT_APP_KEY_DEFAULT
+        string
+        prompt "Default Application Public Key"
+        default "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8"
+        help
+            Only launch apps with signatures that match this public key.
+
 endmenu
