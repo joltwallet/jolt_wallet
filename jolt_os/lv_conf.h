@@ -138,10 +138,10 @@
 #define USE_LV_FONT_DEJAVU_10_CYRILLIC     0
 #define USE_LV_FONT_SYMBOL_10              1
 
-#define USE_LV_FONT_DEJAVU_20              1
-#define USE_LV_FONT_DEJAVU_20_LATIN_SUP    1
+#define USE_LV_FONT_DEJAVU_20              0
+#define USE_LV_FONT_DEJAVU_20_LATIN_SUP    0
 #define USE_LV_FONT_DEJAVU_20_CYRILLIC     0
-#define USE_LV_FONT_SYMBOL_20              1
+#define USE_LV_FONT_SYMBOL_20              0
 
 #define USE_LV_FONT_DEJAVU_30              0
 #define USE_LV_FONT_DEJAVU_30_LATIN_SUP    0

@@ -20,6 +20,7 @@ static lv_action_t jolt_gui_test_qrcode_create(lv_obj_t *btn);
 static lv_action_t jolt_gui_test_loading_create(lv_obj_t *btn);
 static lv_action_t jolt_gui_test_number_create(lv_obj_t *btn);
 static lv_action_t jolt_gui_test_battery_create(lv_obj_t *btn);
+static lv_res_t jolt_gui_test_alphabet_create(lv_obj_t * list_btn);
 
 /**********************
  *  STATIC VARIABLES
@@ -86,17 +87,16 @@ void jolt_gui_menu_home_create() {
         }
         jolt_h_free_char_array(fns, n_fns);
 
-#if JOLT_GUI_TEST_MENU
         jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Settings", menu_settings_create);
+#if JOLT_GUI_TEST_MENU
         jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "QR", jolt_gui_test_qrcode_create);
         jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Loading", jolt_gui_test_loading_create);
         jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Number", jolt_gui_test_number_create);
         jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Battery", jolt_gui_test_battery_create);
+        jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Alphabet", jolt_gui_test_alphabet_create);
         jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Dummy 4", NULL);
         jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Dummy 5", NULL);
         jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Dummy 6", NULL);
-#else
-        jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Settings", menu_settings_create);
 #endif
 
     }
@@ -171,3 +171,16 @@ static lv_action_t jolt_gui_test_battery_create(lv_obj_t *btn) {
     test_battery_task_h = lv_task_create(jolt_gui_test_battery_task, 300, LV_TASK_PRIO_LOW, NULL);
     return 0;
 }
+
+static lv_res_t jolt_gui_test_alphabet_create(lv_obj_t * list_btn) {
+    /* Dummy Text Page for Testing */
+    jolt_gui_scr_text_create("Alphabet", 
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ "
+            "abcdefghijklmnopqrstuvwxyz "
+            "1234567890 "
+            "!@#$%^&*()-+_="
+            "{}[];':\",.<>?/\\"
+            );
+    return LV_RES_OK;
+}
+
