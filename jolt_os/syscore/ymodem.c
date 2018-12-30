@@ -393,7 +393,7 @@ int IRAM_ATTR Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getna
   #endif
 exit:
   ESP_LOGI("ymodem", "\n%d errors corrected during transfer.", errors);
-  if( NULL != progress) {
+  if( NULL != progress && size < 0) {
       *progress = -1;
   }
   return size;
