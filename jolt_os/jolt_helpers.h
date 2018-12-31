@@ -9,9 +9,6 @@
 
 #include "jolttypes.h"
 
-uint32_t fs_free();
-size_t get_file_size(char *fname);
-int check_file_exists(char *fname);
 void nvs_log_err(esp_err_t err);
 void factory_reset();
 void shuffle_arr(uint8_t *arr, int arr_len);

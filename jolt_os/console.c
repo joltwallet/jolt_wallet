@@ -21,14 +21,18 @@
 
 #include "jolt_gui/jolt_gui.h"
 
-#include "syscore/console.h"
+#include "syscore/ota.h"
 #include "syscore/launcher.h"
+#include "syscore/cmd/jolt_cmds.h"
 
 static const char* TAG = "console";
 static const char* TITLE = "Console";
 
 TaskHandle_t console_h = NULL;
 QueueHandle_t jolt_cmd_queue = NULL;
+
+/* Static Function Declaration */
+static void console_syscore_register();
 
 
 /* Executes the command string */
@@ -326,4 +330,128 @@ void subconsole_cmd_free(subconsole_t *subconsole) {
         free(current);
         current = next;
     }
+}
+
+static void console_syscore_register() {
+    esp_console_cmd_t cmd;
+
+    cmd = (esp_console_cmd_t) {
+        .command = "free",
+        .help = "Get the total size of heap memory available",
+        .hint = NULL,
+        .func = &jolt_cmd_free,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "task_status",
+        .help = "Memory usage of all running tasks.",
+        .hint = NULL,
+        .func = &jolt_cmd_task_status,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "top",
+        .help = "CPU-Usage of Tasks.",
+        .hint = NULL,
+        .func = &jolt_cmd_top,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "wifi_update",
+        .help = "Update WiFi SSID and Pass.",
+        .hint = NULL,
+        .func = &jolt_cmd_wifi_update,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "mnemonic_restore",
+        .help = "Restore mnemonic seed.",
+        .hint = NULL,
+        .func = &jolt_cmd_mnemonic_restore,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "jolt_cast_update",
+        .help = "Update jolt_cast (domain, path, port).",
+        .hint = NULL,
+        .func = &jolt_cmd_jolt_cast_update,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "reboot",
+        .help = "Reboot device.",
+        .hint = NULL,
+        .func = &jolt_cmd_reboot,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "app_key",
+        .help = "Sets app public key. WILL ERASE ALL DATA.",
+        .hint = NULL,
+        .func = &jolt_cmd_app_key,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "upload_firmware",
+        .help = "Update JoltOS",
+        .hint = NULL,
+        .func = &jolt_cmd_upload_firmware,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "upload",
+        .help = "Enters file UART ymodem upload mode",
+        .hint = NULL,
+        .func = &jolt_cmd_upload,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "download",
+        .help = "Transmit specified file over UART ymodem",
+        .hint = NULL,
+        .func = &jolt_cmd_download,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "ls",
+        .help = "List filesystem",
+        .hint = NULL,
+        .func = &jolt_cmd_ls,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "mv",
+        .help = "rename file (src, dst)",
+        .hint = NULL,
+        .func = &jolt_cmd_mv,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "rm",
+        .help = "remove file from filesystem",
+        .hint = NULL,
+        .func = &jolt_cmd_rm,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "run",
+        .help = "launch elf file",
+        .hint = NULL,
+        .func = &jolt_cmd_run,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }

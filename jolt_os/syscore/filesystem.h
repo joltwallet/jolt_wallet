@@ -13,7 +13,10 @@ uint16_t jolt_fs_get_all_elf_fns(char ***fns);
 uint32_t jolt_fs_get_all_fns(char **fns, uint32_t fns_len,
         const char *ext, bool remove_ext);
 
-void console_syscore_fs_register();
-void filesystem_init() ;
+void jolt_fs_init() ;
+
+uint32_t jolt_fs_free();
+size_t jolt_fs_size(char *fname);
+int jolt_fs_exists(char *fname);
 
 #endif

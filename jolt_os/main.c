@@ -199,7 +199,7 @@ void app_main() {
     jolt_gui_store.first_boot = ( false == vault_setup() );
 
     // ==== Initialize the file system ====
-    filesystem_init();
+    jolt_fs_init();
 
     /* Create GUI */
     ESP_LOGI(TAG, "Creating GUI");

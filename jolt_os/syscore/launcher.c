@@ -49,7 +49,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
 	strncat(exec_fn, fn_basename, sizeof(exec_fn)-strlen(exec_fn)-1-4);
     strcat(exec_fn, ".jelf");
 
-    if( check_file_exists(exec_fn) != 1 ){
+    if( jolt_fs_exists(exec_fn) != 1 ){
         ESP_LOGE(TAG, "Executable doesn't exist\n");
         return -2;
     }
@@ -62,9 +62,9 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
     program = fopen(exec_fn, "rb");
 
     #if CONFIG_JELFLOADER_PROFILER_EN
-         jelfLoaderProfilerReset();
-    #endif
+    jelfLoaderProfilerReset();
     uint64_t jelfLoader_time = esp_timer_get_time();
+    #endif
 
     ESP_LOGI(TAG, "jelfLoader; Initializing");
     /* fn_basename is passed in for signature checking */
@@ -84,10 +84,9 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
         goto err;
     }
 
+    #if CONFIG_JELFLOADER_PROFILER_EN
     jelfLoader_time = esp_timer_get_time() - jelfLoader_time;
     ESP_LOGI(TAG, "Application Loaded in %lld uS.", jelfLoader_time);
-
-    #if CONFIG_JELFLOADER_PROFILER_EN
     jelfLoaderProfilerPrint();
     #endif
 
@@ -150,38 +149,4 @@ static lv_action_t launch_app_exit(lv_obj_t *btn) {
         jolt_gui_store.app.ctx = NULL;
     }
     return LV_RES_OK;
-}
-
-static int launcher_run(int argc, char** argv) {
-    /* Takes in 1 argument (elf_fn, )
-     * the elf suffix will be added to elf_fn.
-     * if entry_point is not provided, defaults to app_main
-     */
-    int return_code;
-
-    int app_argc = argc - 2;
-    char **app_argv = NULL;
-    if( app_argc <= 0 ) {
-        app_argc = 0;
-    }
-    else{
-        app_argv = argv + 2;
-    }
-
-    return_code = launch_file(argv[1], app_argc, app_argv);
-
-    return return_code;
-}
-
-void console_syscore_launcher_register() {
-    esp_console_cmd_t cmd;
-
-    cmd = (esp_console_cmd_t) {
-        .command = "run",
-        .help = "launch elf file",
-        .hint = NULL,
-        .func = &launcher_run,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
 }

@@ -11,4 +11,12 @@ int jolt_cmd_wifi_update(int argc, char** argv);
 int jolt_cmd_mnemonic_restore(int argc, char** argv);
 int jolt_cmd_jolt_cast_update(int argc, char** argv);
 
+int jolt_cmd_run(int argc, char** argv);
+
+int jolt_cmd_upload(int argc, char** argv);
+int jolt_cmd_download(int argc, char** argv);
+int jolt_cmd_ls(int argc, char** argv);
+int jolt_cmd_mv(int argc, char** argv);
+int jolt_cmd_rm(int argc, char** argv);
+
 #endif

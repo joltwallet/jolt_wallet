@@ -24,38 +24,6 @@
 
 static const char* TAG = "helpers";
 
-uint32_t fs_free() {
-    uint32_t tot, used;
-    esp_spiffs_info(NULL, &tot, &used);
-    return (tot-used-16384); // todo; is this correct?
-}
-
-size_t get_file_size(char *fname) {
-    if (!esp_spiffs_mounted( NULL )) {
-        return -1;
-    }
-
-    struct stat sb;
-    if (stat(fname, &sb) == 0) {
-        return sb.st_size;
-    }
-    else{
-        return -1;
-    }
-}
-
-int check_file_exists(char *fname) {
-    if (!esp_spiffs_mounted( NULL )) {
-        return -1;
-    }
-
-    struct stat sb;
-    if (stat(fname, &sb) == 0) {
-        return 1;
-    }
-    return 0;
-}
-
 void set_jolt_cast() {
     /* Sets Jolt Cast Server Params */
     size_t required_size;
