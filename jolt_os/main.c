@@ -22,13 +22,12 @@
 
 #include "lv_conf.h"
 #include "lvgl/lvgl.h"
-#include "hal/lv_drivers/display/ssd1306.h"
 #include "jolt_gui/jolt_gui.h"
 
 #include "console.h"
 #include "hal/radio/bluetooth.h"
 #include "hal/radio/wifi.h"
-#include "jolt_helpers.h"
+#include "hal/display.h"
 #include "jolt_globals.h"
 #include "hal/i2c.h"
 #include "hal/storage/storage.h"
@@ -48,53 +47,7 @@ const jolt_version_t JOLT_VERSION = {
 };
 
 static QueueHandle_t input_queue;
-ssd1306_t disp_hal;
-
 static const char TAG[] = "main";
-
-static void display_init() {
-    /* Set reset pin as output */
-    gpio_config_t io_config;
-    io_config.pin_bit_mask = (1 << CONFIG_JOLT_DISPLAY_PIN_RST);
-    io_config.mode         = GPIO_MODE_OUTPUT;
-    io_config.pull_up_en   = GPIO_PULLUP_DISABLE;
-    io_config.pull_down_en = GPIO_PULLDOWN_ENABLE;
-    io_config.intr_type    = GPIO_INTR_DISABLE;
-    ESP_ERROR_CHECK(gpio_config(&io_config));
-
-    /* These lines are for configuring the ADC for sensing battery voltage;
-     * refactor these to be somewhere else later */
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten(JOLT_ADC1_VBATT, ADC_ATTEN_DB_11);
-
-    disp_hal.protocol  = SSD1306_PROTO_I2C;
-    disp_hal.screen    = SSD1306_SCREEN;
-    disp_hal.i2c_dev   = CONFIG_JOLT_DISPLAY_ADDRESS;
-    disp_hal.rst_pin   = CONFIG_JOLT_DISPLAY_PIN_RST;
-    disp_hal.width     = LV_HOR_RES;
-    disp_hal.height    = LV_VER_RES;
-    ESP_ERROR_CHECK(ssd1306_init(&disp_hal));
-
-    /*inverse screen (180°) */
-#if CONFIG_JOLT_DISPLAY_FLIP
-    ESP_LOGI(TAG, "Flipping Display");
-    ssd1306_set_scan_direction_fwd(&disp_hal, true);
-    ssd1306_set_segment_remapping_enabled(&disp_hal, false);
-#else
-    ssd1306_set_scan_direction_fwd(&disp_hal, false);
-    ssd1306_set_segment_remapping_enabled(&disp_hal, true);
-#endif
-
-    static lv_disp_drv_t lv_disp_drv;
-    lv_disp_drv_init(&lv_disp_drv);
-    lv_disp_drv.disp_flush = ssd1306_flush;
-    lv_disp_drv.vdb_wr = ssd1306_vdb_wr;
-    lv_disp_drv_register(&lv_disp_drv);
-
-    ssd1306_set_whole_display_lighting(&disp_hal, false);
-    ssd1306_set_inversion(&disp_hal, true);
-    ssd1306_set_contrast(&disp_hal, get_display_brightness());
-}
 
 static bool easy_input_read(lv_indev_data_t *data) {
     data->state = LV_INDEV_STATE_REL;
@@ -170,6 +123,7 @@ void app_main() {
         ESP_LOGI(TAG, "Partition is %sencrypted.",
                 partition->encrypted ? "" : "not ");
     }
+
     /* Setup and Install I2C Driver and supporting objects */
     esp_err_t err;
     err = i2c_driver_setup();
@@ -182,6 +136,11 @@ void app_main() {
     display_init();
     jolt_gui_store.mutex = xSemaphoreCreateMutex();
     indev_init();
+
+    /* These lines are for configuring the ADC for sensing battery voltage;
+     * refactor these to be somewhere else later */
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(JOLT_ADC1_VBATT, ADC_ATTEN_DB_11);
 
     /* Run Key/Value Storage Initialization */
     storage_startup();

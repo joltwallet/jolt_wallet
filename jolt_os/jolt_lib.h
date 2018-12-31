@@ -26,6 +26,7 @@
 #include "console.h"
 #include "jolt_globals.h"
 #include "hal/storage/storage.h"
+#include "hal/display.h"
 #include "jolt_helpers.h"
 #include "jolt_gui/jolt_gui.h"
 #include "syscore/filesystem.h"

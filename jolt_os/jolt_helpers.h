@@ -8,12 +8,11 @@
 #define __JOLT_HELPERS_H__
 
 #include "jolttypes.h"
+#include "esp_err.h"
 
 void nvs_log_err(esp_err_t err);
 void factory_reset();
 void shuffle_arr(uint8_t *arr, int arr_len);
-uint8_t get_display_brightness();
-void save_display_brightness(uint8_t brightness);
 void set_jolt_cast();
 
 char **jolt_h_malloc_char_array(int n);

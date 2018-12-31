@@ -59,18 +59,6 @@ reset:
     return;
 }
 
-uint8_t get_display_brightness() {
-    /* Returns saved brightness or default */
-    uint8_t brightness;
-    storage_get_u8(&brightness, "user", "disp_bright", CONFIG_JOLT_DISPLAY_BRIGHTNESS);
-    ESP_LOGI(TAG,"brightness %d", brightness);
-    return brightness;
-}
-
-void save_display_brightness(uint8_t brightness) {
-    storage_set_u8(brightness, "user", "disp_bright");
-}
-
 void shuffle_arr(uint8_t *arr, int arr_len) {
     /* Fisher Yates random shuffling */
     uint8_t tmp;

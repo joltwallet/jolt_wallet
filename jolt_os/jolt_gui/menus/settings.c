@@ -10,7 +10,7 @@
 #include "jolt_gui/jolt_gui.h"
 #include "hal/lv_drivers/display/ssd1306.h"
 #include "jolt_helpers.h"
-#include "jolt_globals.h"
+#include "hal/display.h"
 
 static const char TAG[] = "menu_settings";
 

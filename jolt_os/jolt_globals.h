@@ -21,7 +21,6 @@
 
 vault_t *vault;
 
-extern ssd1306_t disp_hal;
 extern TaskHandle_t console_h;
 
 #endif
