@@ -24,6 +24,7 @@
 #include "vault.h"
 #include "filesystem.h"
 #include "decompress.h"
+#include "syscore/console_helpers.h"
 
 static const char* TAG = "console_syscore_fs";
 

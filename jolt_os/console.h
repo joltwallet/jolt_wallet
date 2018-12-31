@@ -19,8 +19,6 @@ typedef struct jolt_cmd_t {
 } jolt_cmd_t;
 
 void console_init();
-bool console_check_range_argc(uint8_t argc, uint8_t min, uint8_t max);
-bool console_check_equal_argc(uint8_t argc, uint8_t expected);
 volatile TaskHandle_t *console_start();
 
 int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err, bool block);

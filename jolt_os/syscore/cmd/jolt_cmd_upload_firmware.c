@@ -1,6 +1,7 @@
 #include "jolt_gui/jolt_gui.h"
+#include "hal/storage/storage.h"
 #include "syscore/ota.h"
-#include "syscore/cmd/upload_firmware.h"
+#include "syscore/console_helpers.h"
 
 static int8_t progress;
 static lv_task_t *task;
@@ -35,7 +36,7 @@ static void cmd_upload_firmware_progress_update_lv_task(void *param) {
     }
 }
 
-int cmd_upload_firmware(int argc, char** argv) {
+int jolt_cmd_upload_firmware(int argc, char** argv) {
     esp_err_t err;
 
     progress = 0;

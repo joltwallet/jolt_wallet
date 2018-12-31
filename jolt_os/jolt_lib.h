@@ -30,6 +30,7 @@
 #include "jolt_gui/jolt_gui.h"
 #include "syscore/filesystem.h"
 #include "vault.h"
+#include "syscore/console_helpers.h"
 
 
 #include "esp_http_client.h" // todo: replace with less open functions

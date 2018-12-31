@@ -24,8 +24,7 @@
 
 #include "lvgl.h"
 #include "jolt_gui/jolt_gui.h"
-
-#include "../console.h"
+#include "syscore/console_helpers.h"
 
 /* Communication between jolt/cmd_line inputs and cmd task */
 #define MNEMONIC_RESTORE_BACK 0
