@@ -62,10 +62,12 @@ lv_action_t jolt_gui_scr_del() {
             return 0;
         }
     }
+#if 0
     void *free_ptr = lv_obj_get_free_ptr( parent );
     if( NULL != free_ptr ){
         free(free_ptr);
     }
+#endif
     lv_obj_del(parent);
     return LV_RES_INV;
 }
