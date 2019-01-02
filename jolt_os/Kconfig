@@ -319,6 +319,13 @@ menu "JoltOS"
             help
                 help text here.
 
+        config JOLT_TASK_STACK_SIZE_APP_LAUNCHER
+            int
+            prompt "Application Launcher Priority"
+            default 6200
+            help
+                help text here.
+
     endmenu
 
     menu "Task Priority"
@@ -381,6 +388,14 @@ menu "JoltOS"
         config JOLT_TASK_PRIORITY_FACTORY_RESET
             int
             prompt "Factory Reset Task Priority"
+            default 2
+            range 1 20
+            help
+                help text here.
+
+        config JOLT_TASK_PRIORITY_APP_LAUNCHER
+            int
+            prompt "Application Launcher Priority"
             default 2
             range 1 20
             help

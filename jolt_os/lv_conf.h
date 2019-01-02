@@ -29,6 +29,7 @@
 #if CONFIG_HEAP_TRACING
 #include "esp_heap_trace.h"
 #include "esp_heap_caps.h"
+#define CHECK_HEAP ESP_ERROR_CHECK(!heap_caps_check_integrity_all(true));
 #endif
 
 /*===================

@@ -38,12 +38,12 @@ static void launch_app_task(void *fn){
 static lv_action_t launch_file_proxy(lv_obj_t *btn) {
     char *fn = lv_list_get_btn_text( btn );
     ESP_LOGI(TAG, "Launching %s", fn);
-    // todo: make these values in Kconfig
-    xTaskCreate(launch_app_task,
-            "app_launcher", 12000,
-            (void *)fn, 2, NULL);
 
-    return 0;
+    xTaskCreate(launch_app_task,
+            "app_launcher", CONFIG_JOLT_TASK_STACK_SIZE_APP_LAUNCHER,
+            (void *)fn, CONFIG_JOLT_TASK_PRIORITY_APP_LAUNCHER, NULL);
+
+    return LV_RES_OK;
 }
 
 void jolt_gui_menu_home_create() {
@@ -60,18 +60,6 @@ void jolt_gui_menu_home_create() {
     statusbar_create();
 
     /*Create the list*/
-#if PC_SIMULATOR
-    jolt_gui_store.main_menu = jolt_gui_menu_create("Main", NULL, "PIN Entry",
-            jolt_gui_test_pin_create);
-    lv_obj_t *mmlist = jolt_gui_store.main_menu;
-    lv_list_add(mmlist, NULL, "Loading Test", jolt_gui_test_loading_create);
-    lv_list_add(mmlist, NULL, "Alphabet", jolt_gui_test_alphabet_create);
-    lv_list_add(mmlist, NULL, "Numeric Begin", jolt_gui_test_numeric_begin_dp_create);
-    lv_list_add(mmlist, NULL, "Numeric End", jolt_gui_test_numeric_end_dp_create);
-    lv_list_add(mmlist, NULL, "Numeric Mid", jolt_gui_test_numeric_mid_dp_create);
-    lv_list_add(mmlist, NULL, "Text Test", jolt_gui_test_text_create);
-    lv_list_add(mmlist, NULL, "Submenu", jolt_gui_test_submenu_create);
-#elif ESP_PLATFORM
     if( true && jolt_gui_store.first_boot ) {
         jolt_gui_first_boot_create();
     }
@@ -100,7 +88,6 @@ void jolt_gui_menu_home_create() {
 #endif
 
     }
-#endif
 }
 
 static lv_action_t jolt_gui_test_number_create(lv_obj_t *btn) {

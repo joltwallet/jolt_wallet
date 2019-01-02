@@ -89,5 +89,5 @@ lv_action_t menu_settings_create(lv_obj_t *btn) {
     jolt_gui_scr_menu_add(scr, NULL, "Bluetooth", NULL);
     jolt_gui_scr_menu_add(scr, NULL, "Long Option Name Scrolls", NULL);
     jolt_gui_scr_menu_add(scr, NULL, "Factory Reset", menu_factory_reset_create);
-    return 0;
+    return LV_RES_OK;
 }

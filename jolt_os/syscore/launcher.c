@@ -148,5 +148,5 @@ static lv_action_t launch_app_exit(lv_obj_t *btn) {
         jelfLoaderFree(jolt_gui_store.app.ctx);
         jolt_gui_store.app.ctx = NULL;
     }
-    return LV_RES_OK;
+    return LV_RES_INV;
 }
