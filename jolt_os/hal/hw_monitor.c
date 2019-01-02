@@ -84,7 +84,12 @@ static void jolt_hw_monitor_get_battery_level(hardware_monitor_t *monitor) {
 
 static void jolt_hw_monitor_get_bluetooth_level(hardware_monitor_t *monitor) {
     /* Returns with the bluetooth strength level. 0 if no connected. */
-    static uint8_t level = 1;
+    static uint8_t level;
+#if CONFIG_BT_ENABLED
+    level = 1; // Todo; real code to check number of connected clients
+#else
+    level = 0;
+#endif
     MONITOR_UPDATE(level);
 }
 
