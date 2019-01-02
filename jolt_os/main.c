@@ -39,6 +39,12 @@
 
 #include "jolt_lib.h"
 
+#if CONFIG_HEAP_TRACING
+#include "esp_heap_trace.h"
+#define HEAP_TRACING_NUM_RECORDS 100
+static heap_trace_record_t trace_records[HEAP_TRACING_NUM_RECORDS];
+#endif
+
 const jolt_version_t JOLT_VERSION = {
     .major = 0,
     .minor = 1,
@@ -115,6 +121,13 @@ void littlevgl_task() {
 #ifndef UNIT_TESTING
 // So our app_main() doesn't override the unit test app_main()
 void app_main() {
+    /* Setup Heap Logging */
+    #if CONFIG_HEAP_TRACING
+    {
+        ESP_ERROR_CHECK( heap_trace_init_standalone(trace_records,
+                    HEAP_TRACING_NUM_RECORDS) );
+    }
+    #endif
     /* Check currently running partition */
     {
         esp_partition_t *partition = esp_ota_get_running_partition();
