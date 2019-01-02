@@ -4,6 +4,7 @@
  */
 
 #if 1 /*Set it to "1" to enable content*/
+#include "sdkconfig.h"
 
 #ifndef LV_CONF_H
 #define LV_CONF_H
@@ -14,7 +15,7 @@
 
 /* Memory size which will be used by the library
  * to store the graphical objects and other data */
-#define LV_MEM_CUSTOM       0               /*1: use custom malloc/free, 0: use the built-in lv_mem_alloc/lv_mem_free*/
+#define LV_MEM_CUSTOM       1               /*1: use custom malloc/free, 0: use the built-in lv_mem_alloc/lv_mem_free*/
 #if LV_MEM_CUSTOM == 0
 #define LV_MEM_SIZE    (20U * 1024U)        /*Size memory used by `lv_mem_alloc` in bytes (>= 2kB)*/
 #define LV_MEM_ATTR                         /*Complier prefix for big array declaration*/
@@ -24,6 +25,11 @@
 #define LV_MEM_CUSTOM_ALLOC   malloc       /*Wrapper to malloc*/
 #define LV_MEM_CUSTOM_FREE    free         /*Wrapper to free*/
 #endif     /*LV_MEM_CUSTOM*/
+
+#if CONFIG_HEAP_TRACING
+#include "esp_heap_trace.h"
+#include "esp_heap_caps.h"
+#endif
 
 /*===================
    Graphical settings
@@ -99,7 +105,7 @@
 #endif     /*LV_TICK_CUSTOM*/
 
 /*Log settings*/
-#define USE_LV_LOG      1   /*Enable/disable the log module*/
+#define USE_LV_LOG      0   /*Enable/disable the log module*/
 #if USE_LV_LOG
 /* How important log should be added:
  * LV_LOG_LEVEL_TRACE       A lot of logs to give detailed information
@@ -294,7 +300,7 @@
 /*Button (dependencies: lv_cont*/
 #define USE_LV_BTN      1
 #if USE_LV_BTN != 0
-#define LV_BTN_INK_EFFECT   1       /*Enable button-state animations - draw a circle on click (dependencies: USE_LV_ANIMATION)*/
+#define LV_BTN_INK_EFFECT   0       /*Enable button-state animations - draw a circle on click (dependencies: USE_LV_ANIMATION)*/
 #endif
 
 /*Image Button (dependencies: lv_btn*/
