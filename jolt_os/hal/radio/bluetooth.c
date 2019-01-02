@@ -5,7 +5,14 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
+#include "sdkconfig.h"
+#include "esp_spiffs.h"
 
+FILE *ble_stdin;
+FILE *ble_stdout;
+FILE *ble_stderr;
+
+#if CONFIG_BT_ENABLED
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -46,9 +53,6 @@
 
 #define GATTS_SEND_REQUIRE_CONFIRM false
 
-FILE *ble_stdin;
-FILE *ble_stdout;
-FILE *ble_stderr;
 
 static uint8_t find_char_and_desr_index(uint16_t);
 static void gap_event_handler(esp_gap_ble_cb_event_t, esp_ble_gap_cb_param_t *);
@@ -660,7 +664,7 @@ static void ble_end_select() {
 }
 #endif
 
-void esp_vfs_dev_ble_spp_register() {
+static void esp_vfs_dev_ble_spp_register() {
     esp_vfs_t vfs = {
         .flags = ESP_VFS_FLAG_DEFAULT,
         .write = &ble_write,
@@ -1007,3 +1011,11 @@ void jolt_bluetooth_setup() {
     ESP_LOGI(TAG, "Done setting up bluetooth.");
 
 }
+#else
+
+/* Stubs */
+void jolt_bluetooth_setup(){
+    return;
+}
+
+#endif

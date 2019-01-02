@@ -1,3 +1,4 @@
+#if CONFIG_BT_ENABLED
 #include "spp_recv_buf.h"
 
 #include "esp_log.h"
@@ -92,3 +93,5 @@ char *consolidate_write_buffer(void) {
     buf = (char *) malloc(SppRecvDataBuff.buf_size);
     return buf;
 }
+
+#endif
