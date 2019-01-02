@@ -26,6 +26,8 @@
 static const char *TAG = "wifi_task";
 
 
+#if CONFIG_CONFIG_NO_BLOBS
+
 esp_err_t event_handler(void *ctx, system_event_t *event)
 {
     uint8_t primary;
@@ -135,6 +137,20 @@ void get_ap_info(char * ssid_info, size_t size){
     
 }
 
+
+#else
+/* Stubs */
+void wifi_connect(){
+}
+
+void get_ap_info(char * ssid_info, size_t size){
+    if(size > 0){
+        *ssid_info = '\0';
+    }
+}
+
+#endif
+
 bool set_wifi_credentials(char *ssid, char *pass) {
     //todo: require being unlocked
     storage_set_str(ssid, "user", "wifi_ssid");
@@ -142,3 +158,4 @@ bool set_wifi_credentials(char *ssid, char *pass) {
 
     return true;
 }
+
