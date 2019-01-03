@@ -21,30 +21,79 @@
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_helpers.h"
 #include "vault.h"
-#include "filesystem.h"
+#include "syscore/filesystem.h"
 #include "jolt_lib.h"
+#include "syscore/launcher.h"
 
 static const char* TAG = "syscore_launcher";
 
+static struct {
+    jelfLoaderContext_t *ctx; /* Jelf Loader Context */
+    lv_obj_t *scr;            /* LVGL Screen Object. Null if the user has exited */
+    int argc;
+    char **argv;
+    char name[65];            /* App Name */
+    bool loading;             /* True until app actually begins executing */
+} app_cache = { 0 };
 
 static lv_res_t launch_app_exit(lv_obj_t *btn);
 static lv_res_t launch_app_from_store(lv_obj_t *btn);
 
-int launch_file(const char *fn_basename, int app_argc, char** app_argv){
-    /* Launches app specified without ".elf" suffix. i.e. "app"
-     * Launches the app's function with same name as func
-     */
-    int return_code = -1;
-    if( NULL != jolt_gui_store.app.ctx ) {
-        ESP_LOGE(TAG, "An app is already running");
-        return -1;
+static void launch_app_cache_clear(){
+    if( NULL != app_cache.scr) {
+        ESP_LOGE(TAG, "Cannot clear app_cache with a valid screen");
     }
+    else {
+        if(app_cache.ctx != NULL){
+            jelfLoaderFree(app_cache.ctx);
+        }
+        app_cache.ctx = NULL;
+        app_cache.name[0] = '\0';
+        app_cache.argc = 0;
+        app_cache.argv = NULL;
+    }
+}
 
+/* Launches app specified without ".elf" suffix. i.e. "app"
+ * Launches the app's function with same name as func.
+ *
+ * If the app was the last app launched (or currently launched app), it will
+ * use the last cached instance (unless vault has been invalidated and 
+ * matches derivation path)
+ */
+int launch_file(const char *fn_basename, int app_argc, char** app_argv){
+    int return_code = -1;
+    lv_obj_t *preloading_scr = NULL;
     LOADER_FD_T program = NULL;
+	char exec_fn[128] = SPIFFS_BASE_PATH;
+
+    if( true == app_cache.loading ){
+        ESP_LOGW(TAG, "Cannot process additional app requests until "
+                "previous app request resolves.");
+        return_code = -2;
+        goto exit;
+    }
+    app_cache.loading = true;
+
+    if( NULL != app_cache.ctx ) {
+        ESP_LOGI(TAG, "An app is already cached. Checking...");
+        if( 0 == strcmp(app_cache.name, fn_basename) ) {
+            /* Skip all the loading, goto execution */
+            goto exec;
+        }
+        else if( launch_in_app() ){
+            ESP_LOGW(TAG, "Cannot launch a different app while in app");
+            return_code = -3;
+            goto exit;
+        }
+        else {
+            /* Different app, clear cache and proceed */
+            launch_app_cache_clear();
+        }
+    }
 
     /* Parse Exec Filename.
      * Takes something like "app" into  "/spiffs/app.jelf" */
-	char exec_fn[128] = SPIFFS_BASE_PATH;
 	strcat(exec_fn, "/");
 	strncat(exec_fn, fn_basename, sizeof(exec_fn)-strlen(exec_fn)-1-4);
     strcat(exec_fn, ".jelf");
@@ -55,8 +104,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
     }
 
     jolt_gui_sem_take();
-    lv_obj_t *preloading_scr = jolt_gui_scr_preloading_create(
-            fn_basename, "Launching...");
+    preloading_scr = jolt_gui_scr_preloading_create(fn_basename, "Launching...");
     jolt_gui_sem_give();
 
     program = fopen(exec_fn, "rb");
@@ -68,20 +116,20 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
 
     ESP_LOGI(TAG, "jelfLoader; Initializing");
     /* fn_basename is passed in for signature checking */
-    if( NULL == (jolt_gui_store.app.ctx = jelfLoaderInit(program, fn_basename, &env)) ) {
+    if( NULL == (app_cache.ctx = jelfLoaderInit(program, fn_basename, &env)) ) {
         return_code = -4;
-        goto err;
+        goto exit;
     }
 
     ESP_LOGI(TAG, "elfLoader; Loading Sections");
-    if( NULL == jelfLoaderLoad(jolt_gui_store.app.ctx) ) {
+    if( NULL == jelfLoaderLoad(app_cache.ctx) ) {
         return_code = -5;
-        goto err;
+        goto exit;
     }
     ESP_LOGI(TAG, "elfLoader; Relocating");
-    if( NULL == jelfLoaderRelocate(jolt_gui_store.app.ctx) ) {
+    if( NULL == jelfLoaderRelocate(app_cache.ctx) ) {
         return_code = -6;
-        goto err;
+        goto exit;
     }
 
     #if CONFIG_JELFLOADER_PROFILER_EN
@@ -95,58 +143,73 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
     jolt_gui_sem_take();
     lv_obj_del(preloading_scr);
     jolt_gui_sem_give();
+    strcpy(app_cache.name, fn_basename);
 
+exec:
     /* Prepare vault for app launching. vault_set() creates the PIN entry screen */
-    jolt_gui_store.app.argc = app_argc;
-    jolt_gui_store.app.argv = app_argv;
+    // maybe move these out of cache
+    app_cache.argc = app_argc;
+    app_cache.argv = app_argv;
 
     ESP_LOGI( TAG, "Derivation Purpose: 0x%x. Coin Type: 0x%x",
-            jolt_gui_store.app.ctx->coin_purpose,
-            jolt_gui_store.app.ctx->coin_path );
+            app_cache.ctx->coin_purpose,
+            app_cache.ctx->coin_path );
     ESP_LOGI(TAG, "The following BIP32 Key is %d char long:%s.",
-            strlen(jolt_gui_store.app.ctx->bip32_key),
-            jolt_gui_store.app.ctx->bip32_key);
-    vault_set(jolt_gui_store.app.ctx->coin_purpose, 
-            jolt_gui_store.app.ctx->coin_path,
-            jolt_gui_store.app.ctx->bip32_key, 
+            strlen(app_cache.ctx->bip32_key),
+            app_cache.ctx->bip32_key);
+    vault_set(app_cache.ctx->coin_purpose, 
+            app_cache.ctx->coin_path,
+            app_cache.ctx->bip32_key, 
             launch_app_exit, launch_app_from_store);
 
     return 0;
 
-err:
-    if(jolt_gui_store.app.ctx != NULL){
-        jelfLoaderFree(jolt_gui_store.app.ctx);
-    }
-    jolt_gui_store.app.ctx = NULL;
+exit:
+    launch_app_cache_clear();
     if( NULL != program) {
        fclose(program);
     }
-    jolt_gui_sem_take();
-    lv_obj_del(preloading_scr);
-    jolt_gui_sem_give();
+    if( NULL != preloading_scr ) {
+        jolt_gui_sem_take();
+        lv_obj_del(preloading_scr);
+        jolt_gui_sem_give();
+    }
 
+    app_cache.loading = false;
     return return_code;
 }
 
 static lv_res_t launch_app_from_store(lv_obj_t *btn) {
     ESP_LOGI(TAG, "Launching App");
-    jolt_gui_store.app.scr = (lv_obj_t *)jelfLoaderRun(jolt_gui_store.app.ctx,
-            jolt_gui_store.app.argc, jolt_gui_store.app.argv);
-    jolt_gui_scr_set_back_action(jolt_gui_store.app.scr, launch_app_exit);
+    app_cache.scr = (lv_obj_t *)jelfLoaderRun(app_cache.ctx,
+            app_cache.argc, app_cache.argv);
+    app_cache.loading = false;
+    jolt_gui_scr_set_back_action(app_cache.scr, launch_app_exit);
     return LV_RES_OK;
 }
 
 static lv_res_t launch_app_exit(lv_obj_t *btn) {
     /* Delete the app menu and free up the app memory */
-    if( NULL != jolt_gui_store.app.scr ) {
+    if( NULL != app_cache.scr ) {
         ESP_LOGI(TAG, "Deleting App Screen.");
-        lv_obj_del(jolt_gui_store.app.scr);
-        jolt_gui_store.app.scr = NULL;
+        lv_obj_del(app_cache.scr);
+        app_cache.scr = NULL;
     }
+#if 0
     if( NULL != jolt_gui_store.app.ctx ) {
         ESP_LOGI(TAG, "Exitting App");
         jelfLoaderFree(jolt_gui_store.app.ctx);
         jolt_gui_store.app.ctx = NULL;
     }
+#endif
     return LV_RES_INV;
+}
+
+bool launch_in_app(){
+    if( NULL != app_cache.scr ) {
+        return true;
+    }
+    else {
+        return false;
+    }
 }

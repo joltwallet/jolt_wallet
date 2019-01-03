@@ -2,6 +2,7 @@
 #include "esp_log.h"
 #include "jolt_gui/jolt_gui.h"
 #include "syscore/console_helpers.h"
+#include "syscore/launcher.h"
 #include "hal/storage/storage.h"
 
 static const char TAG[] = "cmd_app_key";
@@ -70,7 +71,7 @@ int jolt_cmd_app_key(int argc, char** argv){
                 NULL, NULL, NULL));
 
     /* Make sure we are not in an app */
-    if( NULL != jolt_gui_store.app.ctx ) {
+    if( launch_in_app() ) {
         printf("Cannot set app key while an app is running.\n");
         return_code = 3;
         goto exit;

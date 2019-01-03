@@ -244,16 +244,40 @@ void vault_refresh(lv_action_t failure_cb, lv_action_t success_cb) {
      * false if user cancels (if node needs restored)
      */
     cb_vault_set_success = success_cb;
+    if( vault_kick() ) {
+        success_cb(NULL);
+    }
+    else {
+        jolt_gui_scr_pin_create(failure_cb, pin_success_cb);
+    }
+}
+
+/* Kicks the dog if vault is valid.
+ *   Returns true if vault is valid.
+ *   Returns false if vault is invalid. */
+bool vault_kick() {
     vault_sem_take();
     if( vault->valid ) {
         // Kick the dog
         ESP_LOGI(TAG, "Vault is valid; kicking the dog.");
         xSemaphoreGive(vault_watchdog_sem);
         vault_sem_give();
-        success_cb(NULL);
+        return true;
     }
-    else {
+    else{
         vault_sem_give();
-        jolt_gui_scr_pin_create(failure_cb, pin_success_cb);
+        return false;
     }
+}
+
+uint32_t vault_get_coin_type(){
+    return vault->coin_type;
+}
+
+uint32_t vault_get_purpose(){
+    return vault->purpose;
+}
+
+char *vault_get_bip32_key(){
+    return vault->bip32_key;
 }

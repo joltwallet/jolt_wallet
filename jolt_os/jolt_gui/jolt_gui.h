@@ -52,12 +52,6 @@ struct {
         hardware_monitor_t indicators[JOLT_GUI_STATUSBAR_INDEX_NUM];
     } statusbar;
     struct {
-        jelfLoaderContext_t *ctx;
-        lv_obj_t *scr;
-        int argc;
-        char **argv;
-    } app;
-    struct {
         CONFIDENTIAL char passphrase[BM_PASSPHRASE_BUF_LEN]; //currently not active
         CONFIDENTIAL uint256_t pin;
         CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
