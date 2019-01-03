@@ -19,11 +19,10 @@ lv_obj_t *jolt_gui_scr_menu_create(const char *title) {
     lv_obj_t *menu = lv_list_create(cont_body, NULL);
     JOLT_GUI_OBJ_CHECK(menu);
     lv_obj_set_free_num(menu, JOLT_GUI_OBJ_ID_LIST);
-    lv_obj_set_size(menu, LV_HOR_RES, LV_VER_RES - CONFIG_JOLT_GUI_STATUSBAR_H);
+    lv_obj_set_size(menu,
+            lv_obj_get_width(cont_body), lv_obj_get_height(cont_body));
     lv_list_set_sb_mode(menu, LV_SB_MODE_AUTO);
     lv_obj_align(menu, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
-
-    // Nothing to focus on yet
 
     jolt_gui_scr_set_enter_action(parent, jolt_gui_send_enter_main);
     jolt_gui_scr_set_back_action(parent, jolt_gui_scr_del);
