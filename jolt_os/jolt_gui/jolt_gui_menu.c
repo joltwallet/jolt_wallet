@@ -24,6 +24,8 @@ lv_obj_t *jolt_gui_scr_menu_create(const char *title) {
     lv_list_set_sb_mode(menu, LV_SB_MODE_AUTO);
     lv_obj_align(menu, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
 
+    jolt_gui_group_add( menu );
+
     jolt_gui_scr_set_enter_action(parent, jolt_gui_send_enter_main);
     jolt_gui_scr_set_back_action(parent, jolt_gui_scr_del);
 
@@ -47,21 +49,16 @@ exit:
 /* Adds an item to a Jolt Menu Screen */
 lv_obj_t *jolt_gui_scr_menu_add(lv_obj_t *par, const void *img_src,
         const char *txt, lv_action_t rel_action) {
+    lv_obj_t *btn = NULL;
     lv_obj_t *list = jolt_gui_scr_menu_get_list( par );
     if( NULL == list ) {
         return NULL;
     }
-    lv_obj_t *res = lv_list_add(list, img_src, txt, rel_action);
-    if( NULL == res ){
+    btn = lv_list_add(list, img_src, txt, rel_action);
+    if( NULL == btn ){
         goto exit;
     }
 
-    /* Add the list to the group after the first element has been added
-     * so that the first item is properly highlighted. */
-    if( NULL == lv_obj_get_group( list ) ) {
-        jolt_gui_group_add( list );
-    }
-
 exit:
-    return res;
+    return btn;
 }
