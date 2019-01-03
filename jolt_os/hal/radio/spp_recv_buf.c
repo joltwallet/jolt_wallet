@@ -1,3 +1,5 @@
+#include "sdkconfig.h"
+
 #if CONFIG_BT_ENABLED
 #include "spp_recv_buf.h"
 

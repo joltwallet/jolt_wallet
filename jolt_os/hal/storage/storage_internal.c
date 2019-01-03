@@ -23,7 +23,6 @@
 #include "esp_spiffs.h"
 
 static const char* TAG = "storage_internal";
-static const char* TITLE = "Storage Access";
 
 static jolt_err_t init_nvs_namespace(nvs_handle *nvs_h, const char *namespace) {
     // Initialize NVS
@@ -81,7 +80,7 @@ bool storage_internal_exists_mnemonic() {
     return res;
 }
 
-void storage_internal_set_mnemonic(uint256_t bin, uint256_t pin_hash) {
+void storage_internal_set_mnemonic(const uint256_t bin, const uint256_t pin_hash) {
     /* Only uses a crypto_secretbox for easy pin checking */
     CONFIDENTIAL unsigned char enc_bin[
             crypto_secretbox_MACBYTES + sizeof(uint256_t)];
@@ -104,7 +103,7 @@ void storage_internal_set_mnemonic(uint256_t bin, uint256_t pin_hash) {
     return;
 }
 
-bool storage_internal_get_mnemonic(uint256_t mnemonic, uint256_t pin_hash) {
+bool storage_internal_get_mnemonic(uint256_t mnemonic, const uint256_t pin_hash) {
     /* returns 256-bit mnemonic from storage 
      * Returns true if mnemonic is decrypted successfully;
      * false if user provided pin_hash was incorrect.

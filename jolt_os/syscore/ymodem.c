@@ -197,7 +197,8 @@ int IRAM_ATTR Ymodem_Receive_Write (void *ffd, unsigned int maxsize, char* getna
   uint8_t packet_data[PACKET_1K_SIZE + PACKET_OVERHEAD];
   uint8_t *file_ptr;
   char file_size[128];
-  unsigned int i, file_len, write_len, session_done, file_done, packets_received, errors, size = 0;
+  unsigned int i, file_len, write_len, session_done, file_done, packets_received, errors;
+  int size = 0;
   int packet_length = 0;
   file_len = 0;
   int eof_cnt = 0;
@@ -402,7 +403,7 @@ exit:
 // Receive a file using the ymodem protocol.
 //-----------------------------------------------------------------
 int IRAM_ATTR Ymodem_Receive (FILE *ffd, unsigned int maxsize, char* getname, int8_t *progress) {
-    return Ymodem_Receive_Write(ffd, maxsize, getname, &fwrite, progress);
+    return Ymodem_Receive_Write(ffd, maxsize, getname, (write_fun_t)&fwrite, progress);
 }
 
 
@@ -509,7 +510,7 @@ int IRAM_ATTR Ymodem_Transmit (char* sendFileName, unsigned int sizeFile, FILE *
   uint8_t packet_data[PACKET_1K_SIZE + PACKET_OVERHEAD];
   uint16_t blkNumber;
   unsigned char receivedC;
-  int i, err;
+  int err;
   uint32_t size = 0;
 
   // Wait for response from receiver

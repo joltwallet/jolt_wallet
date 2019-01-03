@@ -27,8 +27,6 @@
 #include "storage_ataes132a.h"
 #endif
 
-static const char* TAG = "storage_hal";
-static const char* TITLE = "Storage Access";
 
 bool storage_startup() {
     /* Configures storage upon first bootup */
@@ -62,7 +60,7 @@ bool storage_exists_mnemonic() {
    return res;
 }
 
-void storage_set_mnemonic(uint256_t bin, const uint256_t pin_hash) {
+void storage_set_mnemonic(const uint256_t bin, const uint256_t pin_hash) {
     /* store binary mnemonic */
 #if CONFIG_JOLT_STORE_INTERNAL
     storage_internal_set_mnemonic(bin, pin_hash);
@@ -72,7 +70,7 @@ void storage_set_mnemonic(uint256_t bin, const uint256_t pin_hash) {
     return;
 }
 
-bool storage_get_mnemonic(const uint256_t bin, const uint256_t pin_hash) {
+bool storage_get_mnemonic(uint256_t bin, const uint256_t pin_hash) {
     /* Gets mnemonic for supplied pin hash */
     bool res;
 #if CONFIG_JOLT_STORE_INTERNAL
@@ -288,7 +286,7 @@ void storage_factory_reset( bool reset, lv_action_t callback ) {
     if( reset ) {
         callback = NULL;
     }
-    xTaskCreate(factory_reset_task, "factory_rst",
+    xTaskCreate((TaskFunction_t)factory_reset_task, "factory_rst",
                 CONFIG_JOLT_TASK_STACK_SIZE_FACTORY_RESET,
                 callback, CONFIG_JOLT_TASK_PRIORITY_FACTORY_RESET, NULL);
 }

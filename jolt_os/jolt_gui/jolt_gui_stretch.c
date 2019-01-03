@@ -3,14 +3,10 @@
 #include "hal/storage/storage.h"
 
 
-void jolt_gui_progress_task_create(jolt_derivation_t *d) {
-    d->lv_task = lv_task_create(jolt_progress_update_lv_task,
-                100, LV_TASK_PRIO_HIGH, d);
-}
-
 /* Task that periodically looks at the progress part of jolt_derivation_t 
  * and updates the progress screen */
-void jolt_progress_update_lv_task(jolt_derivation_t *d) {
+static void jolt_progress_update_lv_task(void *param) {
+    jolt_derivation_t *d = param;
     if(d->progress <= 100) {
         // The +10 makes it look better
         jolt_gui_scr_loading_update(d->scr, NULL, NULL,
@@ -28,6 +24,12 @@ void jolt_progress_update_lv_task(jolt_derivation_t *d) {
     }
 }
 
+void jolt_gui_progress_task_create(void *param) {
+    jolt_derivation_t *d = param;
+    d->lv_task = lv_task_create(jolt_progress_update_lv_task,
+                100, LV_TASK_PRIO_HIGH, d);
+}
+
 void jolt_gui_stretch(const char *title, const char *label, uint8_t *key,
         lv_action_t complete_cb) {
     static jolt_derivation_t status;
@@ -42,7 +44,7 @@ void jolt_gui_stretch(const char *title, const char *label, uint8_t *key,
 
     // The stretch task is defined with storage because we (optionally) use
     // the ataes132a for hardware-bound encryption.
-    xTaskCreate(storage_stretch_task,
+    xTaskCreate((TaskFunction_t)storage_stretch_task,
             "PinStretch", CONFIG_JOLT_TASK_STACK_SIZE_DERIVATION,
             (void *)&status,
             CONFIG_JOLT_TASK_PRIORITY_DERIVATION, &(status.derivation_task));

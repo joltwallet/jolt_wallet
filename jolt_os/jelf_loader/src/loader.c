@@ -285,7 +285,7 @@ static int loader_shdr(jelfLoaderContext_t *ctx, size_t n, Jelf_Shdr *h) {
         MSG("loader_shdr cache: %p", ctx->shdr_cache); 
         MSG("loader_shdr buf: %p", buf);
     #else
-        off_t offset = (uint8_t*)ctx->e_shoff + n * JELF_SHDR_SIZE;
+        off_t offset = (off_t)((uint8_t*)ctx->e_shoff + n * JELF_SHDR_SIZE);
         uint8_t buf[JELF_SHDR_SIZE] = {0};
         LOADER_GETDATA(ctx, offset, (char *)&buf, sizeof(buf));
     #endif
@@ -398,7 +398,7 @@ static jelfLoaderSection_t *findSection(jelfLoaderContext_t* ctx, int index) {
 /* Checks the application's digital signature.
  * Returns true on valid, false if signature/public_key is invalid. */
 static bool app_signature_check(jelfLoaderContext_t *ctx, 
-        Jelf_Ehdr *header, char *name) {
+        Jelf_Ehdr *header, const char *name) {
     {
         /* Debugging Information */
         char pub_key[65] = { 0 };
@@ -833,7 +833,7 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     /*********************************************************************
      * Load the JELF header (Ehdr), located at the beginning of the file *
      *********************************************************************/
-    LOADER_GETDATA(ctx, 0, &header, JELF_EHDR_SIZE);
+    LOADER_GETDATA(ctx, 0, (char*)&header, JELF_EHDR_SIZE);
 
     /* Make sure that we have a correct and compatible ELF header. */
     char JelfMagic[] = { 0x7f, 'J', 'E', 'L', 'F', '\0' };
@@ -1025,14 +1025,14 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
     Jelf_Sym sym;
     LOADER_GETDATA( ctx,
             ctx->symtab_offset + ctx->entry_index * JELF_SYM_SIZE,
-            &sym, CEIL4(JELF_SYM_SIZE) );
+            (char*)&sym, CEIL4(JELF_SYM_SIZE) );
 
     jelfLoaderSection_t *symbol_section = findSection(ctx, sym.st_shndx);
     if( NULL == symbol_section ) {
         ERR("Error setting entrypoint.");
         goto err;
     }
-    ctx->exec = ((Jelf_Addr) symbol_section->data) + sym.st_value;
+    ctx->exec = (void*)(((Jelf_Addr) symbol_section->data) + sym.st_value);
     MSG("successfully set entrypoint");
 
     return ctx;

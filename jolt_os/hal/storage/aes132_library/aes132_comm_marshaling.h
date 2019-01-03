@@ -151,7 +151,7 @@
 /** @} */
 
 uint8_t aes132m_read_memory(uint8_t count, uint16_t word_address, uint8_t *data);
-uint8_t aes132m_write_memory(uint8_t count, uint16_t word_address, uint8_t *data);
+uint8_t aes132m_write_memory(uint8_t count, uint16_t word_address, const uint8_t *data);
 uint8_t aes132m_execute(uint8_t op_code, uint8_t mode,
         uint16_t param1, uint16_t param2,
         uint8_t datalen1, const uint8_t *data1,

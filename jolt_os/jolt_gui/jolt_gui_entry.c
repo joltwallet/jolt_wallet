@@ -14,7 +14,6 @@
 /**********************
  *  STATIC PROTOTYPES
  **********************/
-static lv_action_t back_cb(lv_obj_t *btn);
 
 /**********************
  *  STATIC VARIABLES
@@ -355,7 +354,7 @@ uint8_t jolt_gui_num_get_hash(lv_obj_t *num, uint8_t *hash) {
     uint8_t *pin_array = NULL;
     pin_array = calloc(ext->len, sizeof(uint8_t));
     if( NULL == pin_array ) {
-        return;
+        return 1;
     }
 
     jolt_gui_num_get_arr( num, pin_array, ext->len );
@@ -370,5 +369,6 @@ uint8_t jolt_gui_num_get_hash(lv_obj_t *num, uint8_t *hash) {
     /* Clean up local pin_array variable */
     sodium_memzero(pin_array, ext->len);
     free(pin_array);
+    return 0;
 }
 

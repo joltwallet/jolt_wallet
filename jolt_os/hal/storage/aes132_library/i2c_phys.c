@@ -156,7 +156,7 @@ failure:
  * \param[out] data pointer to received byte
  * \return status of the operation
  */
-uint8_t i2c_receive_byte(uint8_t *data, uint8_t *address){
+uint8_t i2c_receive_byte(uint8_t *data, const uint8_t *address){
     return i2c_receive_bytes(1, data, address);
 }
 
@@ -167,7 +167,7 @@ uint8_t i2c_receive_byte(uint8_t *data, uint8_t *address){
  * \param[out] data pointer to rx buffer
  * \return status of the operation
  */
-uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address){
+uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, const uint8_t *address){
 	// Random read:
 	// Start, I2C address w/ write bit, word addr, Start, I2C addr with read bit
 
@@ -188,7 +188,7 @@ uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address){
         ESP_LOGE(TAG, "i2c_master_write_byte slave address parameter error");
         goto failure;
     }
-    if( ESP_OK != i2c_master_write(cmd, address, 2, ACK_CHECK_EN) ) {
+    if( ESP_OK != i2c_master_write(cmd, (uint8_t*)address, 2, ACK_CHECK_EN) ) {
         ESP_LOGE(TAG, "i2c_master_write payload data parameter error");
         goto failure;
     }

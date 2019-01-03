@@ -25,12 +25,13 @@
 static const char* TAG = "helpers";
 
 void set_jolt_cast() {
-    /* Sets Jolt Cast Server Params */
+    /* Sets Jolt Cast Server Params from NVS*/
     size_t required_size;
     char *buf = NULL;
     uint16_t port;
 
     if( !storage_get_str(NULL, &required_size, "user", "jc_domain", CONFIG_JOLT_CAST_DOMAIN) ) {
+        ESP_LOGE(TAG, "Failed to get jc_domain");
         goto reset;
     }
     buf = malloc(required_size);
@@ -39,6 +40,7 @@ void set_jolt_cast() {
     free(buf);
 
     if( !storage_get_str(NULL, &required_size, "user", "jc_path", CONFIG_JOLT_CAST_PATH) ) {
+        ESP_LOGE(TAG, "Failed to get jc_path");
         goto reset;
     }
     buf = malloc(required_size);
@@ -47,6 +49,7 @@ void set_jolt_cast() {
     free(buf);
 
     if( !storage_get_u16(&port, "user", "jc_port", CONFIG_JOLT_CAST_PORT) ) {
+        ESP_LOGE(TAG, "Failed to get jc_port");
         goto reset;
     }
     nano_rest_set_remote_path(buf);

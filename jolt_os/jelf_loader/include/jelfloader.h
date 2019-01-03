@@ -8,7 +8,7 @@
 #define LOADER_FD_T FILE *
 
 typedef struct {
-    void **exported;            /*!< Pointer to exported symbols array */
+    const void **exported;            /*!< Pointer to exported symbols array */
     unsigned int exported_size; /*!< Elements on exported symbol array */
 } jelfLoaderEnv_t;
 

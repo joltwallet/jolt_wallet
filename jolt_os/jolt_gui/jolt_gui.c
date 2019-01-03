@@ -37,15 +37,15 @@
  * Screen Management *
  *********************/
 
-lv_action_t jolt_gui_scr_del() {
+lv_res_t jolt_gui_scr_del() {
     lv_obj_t *scrn = lv_group_get_focused(jolt_gui_store.group.main);
     if( NULL == scrn ) {
         MSG("Nothing in focus\n");
-        return 0;
+        return LV_RES_OK;
     }
     if( scrn == jolt_gui_store.main_menu ) {
         MSG("Can't exit main menu\n");
-        return 0;
+        return LV_RES_OK;
     }
 
     // Disable any focus callback
@@ -59,7 +59,7 @@ lv_action_t jolt_gui_scr_del() {
         if( tmp == jolt_gui_store.main_menu ) {
             // todo: refresh main menu
             // don't delete the main menu
-            return 0;
+            return LV_RES_OK;
         }
     }
 #if 0
@@ -203,14 +203,14 @@ lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb) {
     return jolt_gui_scr_set_action(parent, cb, jolt_gui_store.group.enter);
 }
 
-lv_action_t jolt_gui_send_enter_main(lv_obj_t *btn) {
+lv_res_t jolt_gui_send_enter_main(lv_obj_t *btn) {
     lv_group_send_data(jolt_gui_store.group.main, LV_GROUP_KEY_ENTER);
-    return 0;
+    return LV_RES_OK;
 }
 
-lv_action_t jolt_gui_send_left_main(lv_obj_t *btn) {
+lv_res_t jolt_gui_send_left_main(lv_obj_t *btn) {
     lv_group_send_data(jolt_gui_store.group.main, LV_GROUP_KEY_LEFT);
-    return 0;
+    return LV_RES_OK;
 }
 
 /********

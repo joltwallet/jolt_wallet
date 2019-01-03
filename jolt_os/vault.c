@@ -25,11 +25,6 @@
 #include "jolt_gui/jolt_gui.h"
 
 static const char* TAG = "vault";
-static const char* TITLE = "Vault Access";
-
-static lv_action_t back_cb;
-static lv_action_t enter_cb;
-
 
 vault_t *vault = NULL;
 /* The following semaphores are not part of the vault object so we can use
@@ -128,7 +123,9 @@ static void derivation_master_seed_task(jolt_derivation_t *status) {
     vTaskDelete(NULL);
 }
 
-static lv_action_t post_mnemonic_to_master_seed(void *dummy) {
+static lv_res_t post_mnemonic_to_master_seed(void *dummy) {
+    lv_res_t res = LV_RES_OK;
+
     vault_sem_take();
     sodium_mprotect_readwrite(vault);
     bm_master_seed_to_node(&(vault->node), 
@@ -155,14 +152,14 @@ static lv_action_t post_mnemonic_to_master_seed(void *dummy) {
         ESP_LOGE(TAG, "No Post-PIN callback set");
     }
 
-    return LV_RES_OK;
+    return res;
 }
 
 /* Gets executed after a successful pin entry.
  * Populates the vault node.
  *     * Calls user success callback
  */
-static lv_action_t pin_success_cb() {
+static lv_res_t pin_success_cb() {
     /* Pin screen just populated jolt_gui_store.derivation.mnemonic_bin */
 
     // todo: get passphrase here; empty might be fine for standalone derivation
@@ -179,12 +176,12 @@ static lv_action_t pin_success_cb() {
     static jolt_derivation_t status;
     status.progress = 0;
     status.data = NULL;
-    status.cb = post_mnemonic_to_master_seed; // Gets called after master_seed progress is complete
+    status.cb = (void *)&post_mnemonic_to_master_seed; // Gets called after master_seed progress is complete
     status.scr = jolt_gui_scr_loading_create("");
     jolt_gui_scr_loading_update(status.scr, NULL, "Unlocking", 0);
 
     jolt_gui_progress_task_create(&status);
-    xTaskCreate(derivation_master_seed_task,
+    xTaskCreate( (TaskFunction_t)derivation_master_seed_task,
             "MasterDeriv", CONFIG_JOLT_TASK_STACK_SIZE_DERIVATION,
             (void *)&status,
             CONFIG_JOLT_TASK_PRIORITY_DERIVATION, &(status.derivation_task));

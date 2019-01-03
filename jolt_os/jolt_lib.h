@@ -53,6 +53,8 @@ typedef struct jolt_version_t {
     release_type_t release;
 } jolt_version_t;
 
+extern const jolt_version_t JOLT_VERSION;
+
 //extern const jolt_version_t JOLT_VERSION;
 
 #if JOLT_OS

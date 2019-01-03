@@ -38,9 +38,9 @@ static const char TAG[] = "aes132m";
  * \param[in] data pointer to tx data
  * \return status of the operation
  */
-uint8_t aes132m_write_memory(uint8_t count, uint16_t word_address, uint8_t *data)
+uint8_t aes132m_write_memory(uint8_t count, uint16_t word_address, const uint8_t *data)
 {
-    return aes132c_access_memory(count, word_address, data,  AES132_WRITE);
+    return aes132c_access_memory(count, word_address, (uint8_t*)data, AES132_WRITE);
 }
 
 /** \brief This function reads data from the device.

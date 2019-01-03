@@ -41,7 +41,7 @@ extern "C" {
  * e.g: typedef const uint8_t lv_gpio_handle_t if you need just a bus id
  * You can use device descriptor from your sdk too.
  */
-typedef uint8_t lv_gpio_handle_t;
+typedef uint32_t lv_gpio_handle_t;
 typedef uint8_t lv_i2c_handle_t; // device address (preshift)
 typedef const void* lv_spi_handle_t;
 typedef const void* lv_par_handle_t;
@@ -140,12 +140,12 @@ static inline uint8_t lv_gpio_read(lv_gpio_handle_t gpio)
 #include "driver/i2c.h"
 #include "driver/gpio.h"
 
-#define WRITE_BIT                   I2C_MASTER_WRITE    /*!< I2C master write */
-#define READ_BIT                    I2C_MASTER_READ     /*!< I2C master read */
-#define ACK_CHECK_EN                1                   /*!< I2C master will check ack from slave*/
-#define ACK_CHECK_DIS               0                   /*!< I2C master will not check ack from slave */
-#define ACK_VAL                     0x0                 /*!< I2C ack value */
-#define NACK_VAL                    0x1                 /*!< I2C nack value */
+#define LV_DRV_WRITE_BIT                   I2C_MASTER_WRITE    /*!< I2C master write */
+#define LV_DRV_READ_BIT                    I2C_MASTER_READ     /*!< I2C master read */
+#define LV_DRV_ACK_CHECK_EN                1                   /*!< I2C master will check ack from slave*/
+#define LV_DRV_ACK_CHECK_DIS               0                   /*!< I2C master will not check ack from slave */
+#define LV_DRV_ACK_VAL                     0x0                 /*!< I2C ack value */
+#define LV_DRV_NACK_VAL                    0x1                 /*!< I2C nack value */
 
 /**
  * Do a I2C write transmission on 8 bits register device.
@@ -176,21 +176,21 @@ static inline int lv_i2c_write(lv_i2c_handle_t i2c_dev, const uint8_t* reg, cons
         goto err;
     }
 
-    i2c_master_write_byte(cmd, (i2c_dev << 1) | WRITE_BIT, ACK_CHECK_EN);
+    i2c_master_write_byte(cmd, (i2c_dev << 1) | LV_DRV_WRITE_BIT, LV_DRV_ACK_CHECK_EN);
     if( ESP_OK != err ) {
         ESP_LOGE(TAG, "Failed i2c_master_write_byte (Address + r/w)");
         goto err;
     }
 
     if ( reg ) {
-        err = i2c_master_write_byte(cmd, *reg, ACK_CHECK_EN);
+        err = i2c_master_write_byte(cmd, *reg, LV_DRV_ACK_CHECK_EN);
         if( ESP_OK != err ) {
             ESP_LOGE(TAG, "Failed i2c_master_write_byte (Register Address)");
             goto err;
         }
     } 
     if( data_out ) {
-        err = i2c_master_write(cmd, (uint8_t *)data_out, datalen, ACK_CHECK_EN);
+        err = i2c_master_write(cmd, (uint8_t *)data_out, datalen, LV_DRV_ACK_CHECK_EN);
         if( ESP_OK != err ) {
             ESP_LOGE(TAG, "Failed i2c_master_write (Data)");
             goto err;

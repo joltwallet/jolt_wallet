@@ -91,7 +91,7 @@ typedef enum {
  * Screen Management *
  *********************/
 /* Deletes the container of the currently focused object */
-lv_action_t jolt_gui_scr_del();
+lv_res_t jolt_gui_scr_del();
 
 /**************************************
  * STANDARD SCREEN CREATION FUNCTIONS *
@@ -127,8 +127,8 @@ void jolt_gui_group_add( lv_obj_t *obj );
 lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_action_t cb);
 lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb);
 
-lv_action_t jolt_gui_send_enter_main(lv_obj_t *btn);
-lv_action_t jolt_gui_send_left_main(lv_obj_t *btn);
+lv_res_t jolt_gui_send_enter_main(lv_obj_t *btn);
+lv_res_t jolt_gui_send_left_main(lv_obj_t *btn);
 
 /********
  * MISC *

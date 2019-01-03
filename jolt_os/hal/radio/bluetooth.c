@@ -8,10 +8,6 @@
 #include "sdkconfig.h"
 #include "esp_spiffs.h"
 
-FILE *ble_stdin;
-FILE *ble_stdout;
-FILE *ble_stderr;
-
 #if CONFIG_BT_ENABLED
 
 #include "freertos/FreeRTOS.h"
@@ -40,7 +36,7 @@ FILE *ble_stderr;
 #include "esp_console.h"
 #include "console.h"
 
-#include "spp_recv_buf.h"
+#include "hal/radio/spp_recv_buf.h"
 #include "linenoise/linenoise.h"
 #include "bluetooth.h"
 
@@ -53,6 +49,9 @@ FILE *ble_stderr;
 
 #define GATTS_SEND_REQUIRE_CONFIRM false
 
+FILE *ble_stdin;
+FILE *ble_stdout;
+FILE *ble_stderr;
 
 static uint8_t find_char_and_desr_index(uint16_t);
 static void gap_event_handler(esp_gap_ble_cb_event_t, esp_ble_gap_cb_param_t *);
@@ -349,6 +348,7 @@ static ssize_t ble_read(  int fd, void* data, size_t size );
 // Token signifying that no character is available
 #define NONE -1
 
+#if 0
 static esp_line_endings_t s_tx_mode =
 #if CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF
         ESP_LINE_ENDINGS_CRLF;
@@ -356,6 +356,7 @@ static esp_line_endings_t s_tx_mode =
         ESP_LINE_ENDINGS_CR;
 #else
         ESP_LINE_ENDINGS_LF;
+#endif
 #endif
 
 // Newline conversion mode when receiving
@@ -373,30 +374,10 @@ typedef void (*tx_func_t)(int, int);
 // read bytes function type
 typedef int (*rx_func_t)(int);
 
-// Basic functions for sending and receiving bytes over BLE
-static void ble_tx_char(int fd, int c);
-static int ble_rx_char(int fd);
-
-// Functions for sending and receiving bytes which use BLE driver
-static void ble_tx_char_via_driver(int fd, int c);
-static int ble_rx_char_via_driver(int fd);
-
 static _lock_t s_ble_read_lock;
 static _lock_t s_ble_write_lock;
-// One-character buffer used for newline conversion code
-static int s_peek_char = NONE;
 
 /* Lock ensuring that uart_select is used from only one task at the time */
-static _lock_t s_one_select_lock;
-
-/* Stuff for select() */
-static SemaphoreHandle_t *_signal_sem = NULL;
-static fd_set *_readfds = NULL;
-static fd_set *_writefds = NULL;
-static fd_set *_errorfds = NULL;
-static fd_set *_readfds_orig = NULL;
-static fd_set *_writefds_orig = NULL;
-static fd_set *_errorfds_orig = NULL;
 
 static int ble_open(const char * path, int flags, int mode) {
     int fd = -1;
@@ -415,19 +396,21 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
     _lock_acquire_recursive(&s_ble_write_lock);
 
     int idx = 0;
-    esp_err_t res;
     do{
         uint16_t print_len = size;
         if( print_len > 512 ) {
             print_len = 512;
         }
-
+        esp_err_t res;
         res = esp_ble_gatts_send_indicate(
                 spp_gatts_if,
                 spp_conn_id,
                 spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL],
                 print_len, (uint8_t*) &data_c[idx], GATTS_SEND_REQUIRE_CONFIRM);
-        // todo: res error handling
+        if( ESP_OK != res ){
+            // todo: res error handling
+            esp_restart();
+        }
         idx += print_len;
         size -= print_len;
     } while(size>0);
@@ -466,7 +449,7 @@ static void ble_return_char(int fd, int c){
 }
 
 static ssize_t ble_read(int fd, void* data, size_t size) {
-	char *data_c = (const char *)data;
+	char *data_c = (char *)data;
 
     _lock_acquire_recursive(&s_ble_read_lock);
 
@@ -540,6 +523,17 @@ static int ble_close(int fd){
 
 #define CONFIG_JOLT_BLE_SPP_SELECT_EN 0
 #if CONFIG_JOLT_BLE_SPP_SELECT_EN
+/* Stuff for select() */
+static SemaphoreHandle_t *_signal_sem = NULL;
+static fd_set *_readfds = NULL;
+static fd_set *_writefds = NULL;
+static fd_set *_errorfds = NULL;
+static fd_set *_readfds_orig = NULL;
+static fd_set *_writefds_orig = NULL;
+static fd_set *_errorfds_orig = NULL;
+
+static _lock_t s_one_select_lock;
+
 static portMUX_TYPE ble_selectlock = portMUX_INITIALIZER_UNLOCKED;
 static void ble_end_select();
 
@@ -691,9 +685,6 @@ static uint8_t find_char_and_desr_index(uint16_t handle) {
 }
 
 static void spp_cmd_task(void * arg) {
-    uint8_t * cmd_id;
-    char *line;
-
     esp_vfs_dev_ble_spp_register();
     ble_stdin  = fopen("/dev/ble/0", "r");
     ble_stdout = fopen("/dev/ble/0", "w");

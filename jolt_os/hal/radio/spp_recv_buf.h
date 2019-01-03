@@ -1,6 +1,8 @@
 #ifndef JOLT_HAL_RADIO_BLE_SPP_RECV_BUF_H__
 #define JOLT_HAL_RADIO_BLE_SPP_RECV_BUF_H__
 
+#include "sdkconfig.h"
+
 #if CONFIG_BT_ENABLED
 #include "esp_gatts_api.h"
 

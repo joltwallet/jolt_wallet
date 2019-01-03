@@ -57,7 +57,7 @@ uint8_t aes132_auth(const uint8_t *key, uint16_t key_id,
     mac_compute_encrypt_param.mode    = mode;
     mac_compute_encrypt_param.param1  = param1;
     mac_compute_encrypt_param.param2  = param2;
-    mac_compute_encrypt_param.key     = key;
+    mac_compute_encrypt_param.key     = (uint8_t*)key;
     mac_compute_encrypt_param.nonce   = nonce;
     mac_compute_encrypt_param.out_mac = in_mac;
     res = aes132h_mac_compute_encrypt(&mac_compute_encrypt_param);
@@ -73,7 +73,7 @@ uint8_t aes132_auth(const uint8_t *key, uint16_t key_id,
     mac_check_decrypt_param.mode    = mode;
     mac_check_decrypt_param.param1  = param1;
     mac_check_decrypt_param.param2  = param2;
-    mac_check_decrypt_param.key     = key;
+    mac_check_decrypt_param.key     = (uint8_t*)key;
     mac_check_decrypt_param.nonce   = nonce;
     mac_check_decrypt_param.in_mac = out_mac;
 
@@ -172,7 +172,7 @@ uint8_t aes132_counter(const uint8_t *mac_key, uint32_t *count,
     mac_check_decrypt_param.mode    = mode;
     mac_check_decrypt_param.param1  = param1;
     mac_check_decrypt_param.param2  = param2;
-    mac_check_decrypt_param.key     = mac_key;
+    mac_check_decrypt_param.key     = (uint8_t*)mac_key;
     mac_check_decrypt_param.nonce   = nonce;
     mac_check_decrypt_param.in_mac = out_mac;
     mac_check_decrypt_param.count_value = count_value;
@@ -311,7 +311,7 @@ uint8_t aes132_key_load(const uint128_t parent_key, uint128_t child_key,
     mac_compute_encrypt_param.mode     = mode;
     mac_compute_encrypt_param.param1   = param1;
     mac_compute_encrypt_param.param2   = param2;
-    mac_compute_encrypt_param.key      = parent_key;
+    mac_compute_encrypt_param.key      = (uint8_t*)parent_key;
     mac_compute_encrypt_param.nonce    = nonce;
     mac_compute_encrypt_param.out_mac  = in_mac;
     mac_compute_encrypt_param.in_data  = child_key;

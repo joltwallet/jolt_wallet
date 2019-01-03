@@ -130,7 +130,7 @@ void app_main() {
     #endif
     /* Check currently running partition */
     {
-        esp_partition_t *partition = esp_ota_get_running_partition();
+        const esp_partition_t *partition = esp_ota_get_running_partition();
         ESP_LOGI(TAG, "Currently Running %s at 0x%08X.",
                 partition->label, partition->address);
         ESP_LOGI(TAG, "Partition is %sencrypted.",

@@ -29,7 +29,7 @@ void    i2c_enable_phys(void);
 void    i2c_disable_phys(void);
 uint8_t i2c_select_device_phys(uint8_t device_id);
 uint8_t i2c_send_bytes(uint8_t count, uint8_t *data);
-uint8_t i2c_receive_byte(uint8_t *data, uint8_t *address);
-uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, uint8_t *address);
+uint8_t i2c_receive_byte(uint8_t *data, const uint8_t *address);
+uint8_t i2c_receive_bytes(uint8_t count, uint8_t *data, const uint8_t *address);
 uint8_t i2c_send_slave_address(uint8_t read);
 #endif /* I2C_PHYS_H_ */

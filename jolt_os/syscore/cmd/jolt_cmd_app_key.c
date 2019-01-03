@@ -7,7 +7,7 @@
 static const char TAG[] = "cmd_app_key";
 static uint256_t app_key;
 
-static lv_action_t set_app_key_post_factory_reset(lv_obj_t *dummy) {
+static lv_res_t set_app_key_post_factory_reset(lv_obj_t *dummy) {
     if(!storage_set_blob(app_key, sizeof(app_key), "user", "app_key")){
         printf("Error setting app_key.\n");
     }
@@ -17,12 +17,12 @@ static lv_action_t set_app_key_post_factory_reset(lv_obj_t *dummy) {
     return LV_RES_INV;
 }
 
-static lv_action_t set_app_key_back_cb(lv_obj_t *btn) {
+static lv_res_t set_app_key_back_cb(lv_obj_t *btn) {
     jolt_gui_scr_del();
     return LV_RES_INV;
 }
 
-static lv_action_t set_app_key_enter_cb(lv_obj_t *btn) {
+static lv_res_t set_app_key_enter_cb(lv_obj_t *btn) {
     /* Todo: loading-like screen */
     storage_factory_reset( false, set_app_key_post_factory_reset );
     return LV_RES_OK;

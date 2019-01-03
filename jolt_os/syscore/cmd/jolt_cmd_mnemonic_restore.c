@@ -73,13 +73,13 @@ exit:
     return parent;
 }
 
-static lv_action_t jolt_cmd_mnemonic_restore_back( lv_obj_t *btn ) {
+static lv_res_t jolt_cmd_mnemonic_restore_back( lv_obj_t *btn ) {
     const uint8_t val = MNEMONIC_RESTORE_BACK;
     xQueueSend(cmd_q, (void *) &val, portMAX_DELAY);
     return LV_RES_OK;
 }
 
-static lv_action_t jolt_cmd_mnemonic_restore_enter( lv_obj_t *btn ) {
+static lv_res_t jolt_cmd_mnemonic_restore_enter( lv_obj_t *btn ) {
     const uint8_t val = MNEMONIC_RESTORE_ENTER;
     xQueueSend(cmd_q, (void *) &val, portMAX_DELAY);
     return LV_RES_OK;
@@ -87,7 +87,6 @@ static lv_action_t jolt_cmd_mnemonic_restore_enter( lv_obj_t *btn ) {
 
 /* Goal: populate the 24 words in ordered */
 static void linenoise_task( void *h ) {
-    char *line;
     uint8_t val_to_send = MNEMONIC_RESTORE_BACK;
     for(uint8_t i=0; i < sizeof(idx); i++){
         uint8_t j = idx[i];

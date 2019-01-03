@@ -16,10 +16,10 @@ lv_theme_t *jolt_gui_theme = NULL;
 /**********************
  *  STATIC PROTOTYPES
  **********************/
-static lv_action_t jolt_gui_test_qrcode_create(lv_obj_t *btn);
-static lv_action_t jolt_gui_test_loading_create(lv_obj_t *btn);
-static lv_action_t jolt_gui_test_number_create(lv_obj_t *btn);
-static lv_action_t jolt_gui_test_battery_create(lv_obj_t *btn);
+static lv_res_t jolt_gui_test_qrcode_create(lv_obj_t *btn);
+static lv_res_t jolt_gui_test_loading_create(lv_obj_t *btn);
+static lv_res_t jolt_gui_test_number_create(lv_obj_t *btn);
+static lv_res_t jolt_gui_test_battery_create(lv_obj_t *btn);
 static lv_res_t jolt_gui_test_alphabet_create(lv_obj_t * list_btn);
 
 /**********************
@@ -29,14 +29,14 @@ static const char TAG[] = "menu_home";
 
 static void launch_app_task(void *fn){
     char *fn_c = fn;
-    launch_file(fn, 0, NULL); // puts the app back into the gui task
+    launch_file(fn_c, 0, NULL); // puts the app back into the gui task
     vTaskDelete(NULL);
 }
 
 /* App launching is spawned in a different task because it's a bit intense.
  * Also launch_file is a blocking function*/
-static lv_action_t launch_file_proxy(lv_obj_t *btn) {
-    char *fn = lv_list_get_btn_text( btn );
+static lv_res_t launch_file_proxy(lv_obj_t *btn) {
+    const char *fn = lv_list_get_btn_text( btn );
     ESP_LOGI(TAG, "Launching %s", fn);
 
     xTaskCreate(launch_app_task,
@@ -90,15 +90,15 @@ void jolt_gui_menu_home_create() {
     }
 }
 
-static lv_action_t jolt_gui_test_number_create(lv_obj_t *btn) {
+static lv_res_t jolt_gui_test_number_create(lv_obj_t *btn) {
     jolt_gui_scr_num_create( "Number Test", 4, 2, jolt_gui_scr_del); 
-    return 0;
+    return LV_RES_OK;
 }
 
-static lv_action_t jolt_gui_test_qrcode_create(lv_obj_t *btn) {
+static lv_res_t jolt_gui_test_qrcode_create(lv_obj_t *btn) {
     const char data[] = "Meow";
     jolt_gui_scr_qr_create("QR Test", "Meow", sizeof(data));
-	return 0;
+	return LV_RES_OK;
 }
 
 static void test_loading_task(void *param) {
@@ -120,7 +120,7 @@ static void test_loading_task(void *param) {
     vTaskDelete(NULL);
 }
 
-static lv_action_t jolt_gui_test_loading_create(lv_obj_t *btn) {
+static lv_res_t jolt_gui_test_loading_create(lv_obj_t *btn) {
     lv_obj_t *scr = jolt_gui_scr_loading_create("Loading Test");
     if(NULL == scr){
         ESP_LOGE(TAG, "NULL Loading Screen");
@@ -129,7 +129,7 @@ static lv_action_t jolt_gui_test_loading_create(lv_obj_t *btn) {
     xTaskCreate(test_loading_task,
                 "TestLoading", 4096,
                 (void *) scr, 10, NULL);
-    return 0;
+    return LV_RES_OK;
 }
 
 
@@ -137,10 +137,10 @@ static lv_action_t jolt_gui_test_loading_create(lv_obj_t *btn) {
 static lv_task_t *test_battery_task_h = NULL;
 static lv_obj_t *test_battery_scr = NULL;
 
-static lv_action_t jolt_gui_test_battery_del(lv_obj_t *btn) {
+static lv_res_t jolt_gui_test_battery_del(lv_obj_t *btn) {
     lv_task_del(test_battery_task_h);
     lv_obj_del(test_battery_scr);
-    return 0;
+    return LV_RES_INV;
 }
 void jolt_gui_test_battery_task(void *param) {
     if(NULL != test_battery_scr) {
@@ -154,9 +154,9 @@ void jolt_gui_test_battery_task(void *param) {
     jolt_gui_scr_set_back_action(test_battery_scr, jolt_gui_test_battery_del);
 }
 
-static lv_action_t jolt_gui_test_battery_create(lv_obj_t *btn) {
+static lv_res_t jolt_gui_test_battery_create(lv_obj_t *btn) {
     test_battery_task_h = lv_task_create(jolt_gui_test_battery_task, 300, LV_TASK_PRIO_LOW, NULL);
-    return 0;
+    return LV_RES_OK;
 }
 
 static lv_res_t jolt_gui_test_alphabet_create(lv_obj_t * list_btn) {

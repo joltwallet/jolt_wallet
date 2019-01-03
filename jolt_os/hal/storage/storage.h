@@ -17,8 +17,8 @@ void storage_stretch_task(jolt_derivation_t *stretch);
 
 bool storage_exists_mnemonic();
 
-void storage_set_mnemonic(uint256_t bin, const uint256_t pin_hash);
-bool storage_get_mnemonic(const uint256_t bin, const uint256_t pin_hash);
+void storage_set_mnemonic(const uint256_t bin, const uint256_t pin_hash);
+bool storage_get_mnemonic(uint256_t bin, const uint256_t pin_hash);
 
 uint32_t storage_get_pin_count();
 void storage_set_pin_count(uint32_t count);

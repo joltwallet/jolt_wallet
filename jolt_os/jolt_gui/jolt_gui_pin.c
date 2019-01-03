@@ -12,7 +12,7 @@ static lv_action_t user_back_cb;
 static lv_action_t user_enter_cb;
 
 /* Gets triggered when user presses back on the "incorrect pin" screen */
-static lv_action_t pin_fail_cb( lv_obj_t *btn ) {
+static lv_res_t pin_fail_cb( lv_obj_t *btn ) {
     /* Recreate the pin entry screen */
     jolt_gui_scr_pin_create(user_back_cb, user_enter_cb);
     /* Delete the "incorrect pin" screen */
@@ -22,7 +22,7 @@ static lv_action_t pin_fail_cb( lv_obj_t *btn ) {
     return 0;
 }
 
-static lv_action_t stretch_cb(lv_obj_t *btn) {
+static lv_res_t stretch_cb(lv_obj_t *btn) {
     /* storage_get_mnemonic inherently increments and stores the 
      * attempt counter*/
     bool unlock_res = storage_get_mnemonic(
@@ -58,7 +58,7 @@ static lv_action_t stretch_cb(lv_obj_t *btn) {
 
 /* gets triggered when the user presses enter on the last pin roller on a pin
  * screen */
-static lv_action_t pin_enter_cb(lv_obj_t *num) {
+static lv_res_t pin_enter_cb(lv_obj_t *num) {
     // todo: display derivation path
     // todo: actually make this a loading screen
     
@@ -76,7 +76,7 @@ static lv_action_t pin_enter_cb(lv_obj_t *num) {
     return 0;
 }
 
-static lv_action_t pin_back_cb( lv_obj_t *num ) {
+static lv_res_t pin_back_cb( lv_obj_t *num ) {
     lv_obj_del(lv_obj_get_parent(num));
     if( NULL != user_back_cb ) {
         user_back_cb( NULL );
@@ -84,7 +84,7 @@ static lv_action_t pin_back_cb( lv_obj_t *num ) {
     else {
         ESP_LOGE(TAG, "No Back Callback");
     }
-    return 0;
+    return LV_RES_INV;
 }
 
 lv_obj_t *jolt_gui_scr_pin_create(lv_action_t failure_cb, lv_action_t success_cb) {

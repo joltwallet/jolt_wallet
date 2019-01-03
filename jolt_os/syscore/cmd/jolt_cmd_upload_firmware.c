@@ -13,7 +13,7 @@ static const char progress_label_1[] = "Transfering...";
 static const char progress_label_2[] = "Installing...";
 
 static void cmd_upload_firmware_progress_update_lv_task(void *param) {
-    char *label;
+    const char *label;
     if( NULL == loading_scr ){
         loading_scr = jolt_gui_scr_loading_create("JoltOS Update");
     }

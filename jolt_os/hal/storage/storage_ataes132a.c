@@ -20,13 +20,12 @@
 #include "aes132_comm_marshaling.h"
 #include "aes132_jolt.h"
 #include "aes132_cmd.h"
+#include "esp_log.h"
 
 static const char* TAG = "storage_ataes132a";
-static const char* TITLE = "Storage Access";
 
 bool storage_ataes132a_startup() {
     /* Check if device is locked */
-    uint8_t res;
     if( !(storage_internal_startup() && aes132_jolt_setup()) ) {
         // something bad happened; but we should never get here because
         // aes132_jolt_setup() should restart esp32 at the slightest hint
@@ -100,14 +99,17 @@ void storage_ataes132a_set_mnemonic(uint256_t bin, uint256_t pin_hash) {
     uint32_t counter;
     res = aes132_pin_counter(&counter);
     if( res ) {
+        ESP_LOGE(TAG, "could not retrieve \"pin_counter\"");
         esp_restart();
     }
     // Store pin attempt counter
     if( !storage_set_u32(counter, "secret", "last_success") ) {
+        ESP_LOGE(TAG, "could not set \"last_success\"");
         esp_restart();
     }
     // Store esp32-side secret
     if( !storage_set_blob(esp_secret, sizeof(esp_secret), "secret", "mnemonic") ) {
+        ESP_LOGE(TAG, "could not set \"mnemonic\"");
         esp_restart();
     }
 
@@ -134,6 +136,7 @@ bool storage_ataes132a_get_mnemonic(uint256_t mnemonic, uint256_t pin_hash) {
     // Get ESP32 Secret
     size_t required_size = 32;
     if( !storage_get_blob(esp_secret, &required_size, "secret", "mnemonic") ) {
+        ESP_LOGE(TAG, "could not retrieve \"mnemonic\"");
         esp_restart();
     }
 
@@ -162,6 +165,7 @@ uint32_t storage_ataes132a_get_pin_last() {
      */
     uint32_t counter;
     if( !storage_get_u32(&counter, "secret", "last_success", 0) ) {
+        ESP_LOGE(TAG, "could not retrieve \"last_success\"");
         esp_restart();
     }
     return counter;

@@ -53,7 +53,7 @@ static lv_img_dsc_t *jolt_gui_qr_to_img_dsc(QRCode *qrcode) {
 }
 
 /* Callback for back button */
-static lv_action_t delete_screen(lv_obj_t *btn) {
+static lv_res_t delete_screen(lv_obj_t *btn) {
     lv_obj_t *img = NULL;
     {
         /* Find Image Object */
@@ -66,15 +66,15 @@ static lv_action_t delete_screen(lv_obj_t *btn) {
 
     /* free memory use by img */
     lv_img_ext_t *ext = lv_obj_get_ext_attr(img);
-    uint8_t *data = ((lv_img_dsc_t *)(ext->src))->data;
+    const uint8_t *data = ((lv_img_dsc_t *)(ext->src))->data;
 
     lv_img_set_src( img, NULL );
-    free(data);
+    free((void*)data);
 
     jolt_gui_scr_del();
 
 exit:
-    return 0;
+    return LV_RES_INV;
 }
 
 static lv_obj_t *jolt_gui_qr_fullscreen_create( const char *title, 
@@ -113,7 +113,7 @@ lv_obj_t *jolt_gui_scr_qr_create(const char *title, const char *data,
 
     /* Compute the QR Code */
     if( qrcode_initBytes(&qrcode, qr_buf, JOLT_GUI_QR_VERSION, ECC_LOW, 
-                data, data_len) ) {
+                (uint8_t *)data, data_len) ) {
         // too much data
         return NULL;
     }

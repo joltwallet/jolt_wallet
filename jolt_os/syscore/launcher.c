@@ -27,8 +27,8 @@
 static const char* TAG = "syscore_launcher";
 
 
-static lv_action_t launch_app_exit(lv_obj_t *btn);
-static lv_action_t launch_app_from_store(lv_obj_t *btn);
+static lv_res_t launch_app_exit(lv_obj_t *btn);
+static lv_res_t launch_app_from_store(lv_obj_t *btn);
 
 int launch_file(const char *fn_basename, int app_argc, char** app_argv){
     /* Launches app specified without ".elf" suffix. i.e. "app"
@@ -128,7 +128,7 @@ err:
     return return_code;
 }
 
-static lv_action_t launch_app_from_store(lv_obj_t *btn) {
+static lv_res_t launch_app_from_store(lv_obj_t *btn) {
     ESP_LOGI(TAG, "Launching App");
     jolt_gui_store.app.scr = (lv_obj_t *)jelfLoaderRun(jolt_gui_store.app.ctx,
             jolt_gui_store.app.argc, jolt_gui_store.app.argv);
@@ -136,7 +136,7 @@ static lv_action_t launch_app_from_store(lv_obj_t *btn) {
     return LV_RES_OK;
 }
 
-static lv_action_t launch_app_exit(lv_obj_t *btn) {
+static lv_res_t launch_app_exit(lv_obj_t *btn) {
     /* Delete the app menu and free up the app memory */
     if( NULL != jolt_gui_store.app.scr ) {
         ESP_LOGI(TAG, "Deleting App Screen.");
