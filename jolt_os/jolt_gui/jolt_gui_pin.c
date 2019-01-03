@@ -99,7 +99,7 @@ lv_obj_t *jolt_gui_scr_pin_create(lv_action_t failure_cb, lv_action_t success_cb
      * Executes the success_cb if pin was correctly entered */
     char title[70];
     uint32_t pin_attempts = storage_get_pin_count() - storage_get_pin_last();
-    if( pin_attempts >= CONFIG_JOLT_DEFAULT_MAX_ATTEMPT ) {
+    if( pin_attempts >= CONFIG_JOLT_PIN_DEFAULT_MAX_ATTEMPT ) {
         storage_factory_reset( true, NULL );
     }
     /* Store the callbacks */
@@ -110,13 +110,13 @@ lv_obj_t *jolt_gui_scr_pin_create(lv_action_t failure_cb, lv_action_t success_cb
     #if CONFIG_JOLT_PIN_TITLE_PIN
     {
         sprintf(title, "PIN (%d/%d)", pin_attempts+1,
-                CONFIG_JOLT_DEFAULT_MAX_ATTEMPT);
+                CONFIG_JOLT_PIN_DEFAULT_MAX_ATTEMPT);
     }
     #elif CONFIG_JOLT_PIN_TITLE_NAME
     {
         char *app_name = launch_get_name();
         sprintf(title, "%s (%d/%d)", app_name,
-                pin_attempts+1, CONFIG_JOLT_DEFAULT_MAX_ATTEMPT);
+                pin_attempts+1, CONFIG_JOLT_PIN_DEFAULT_MAX_ATTEMPT);
     }
     #elif CONFIG_JOLT_PIN_TITLE_PATH
     {
@@ -134,10 +134,9 @@ lv_obj_t *jolt_gui_scr_pin_create(lv_action_t failure_cb, lv_action_t success_cb
             c++;
         }
         sprintf(c, " (%d/%d)", pin_attempts+1,
-                CONFIG_JOLT_DEFAULT_MAX_ATTEMPT);
+                CONFIG_JOLT_PIN_DEFAULT_MAX_ATTEMPT);
     }
     #endif
-
 
     lv_obj_t *parent = jolt_gui_scr_num_create( title,
             CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_NO_DECIMAL, pin_enter_cb);

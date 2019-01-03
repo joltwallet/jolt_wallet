@@ -35,7 +35,7 @@ static SemaphoreHandle_t vault_watchdog_sem; // Used to kick the dog
 
 void vault_sem_take() {
     /* Takes Vault semaphore; restarts device if timesout during take. */
-    if( !xSemaphoreTake(vault_sem, pdMS_TO_TICKS(CONFIG_JOLT_TIMEOUT_TIMEOUT_MS) ) ) {
+    if( !xSemaphoreTake(vault_sem, pdMS_TO_TICKS(CONFIG_JOLT_VAULT_TIMEOUT_TIMEOUT_MS) ) ) {
         // Timed out trying to take the semaphore; reset the device
         // And let the bootloader wipe the RAM
         ESP_LOGI(TAG, "Failed taking vault semaphore. Rebooting...");
@@ -52,7 +52,7 @@ static void vault_watchdog_task() {
      * Should be given very high priority to prevent deadlocks. */
 	for(;;) {
         if( xSemaphoreTake( vault_watchdog_sem, 
-				pdMS_TO_TICKS(CONFIG_JOLT_DEFAULT_TIMEOUT_S * 1000)) ) {
+				pdMS_TO_TICKS(CONFIG_JOLT_VAULT_DEFAULT_TIMEOUT_S * 1000)) ) {
             // Command to reset the private node watchdog;
             // Note, vault_sem is probably taken if in here
             // Do Nothing

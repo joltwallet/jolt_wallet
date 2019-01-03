@@ -78,8 +78,19 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
     if( NULL != app_cache.ctx ) {
         ESP_LOGI(TAG, "An app is already cached. Checking...");
         if( 0 == strcmp(app_cache.name, fn_basename) ) {
-            /* Skip all the loading, goto execution */
-            goto exec;
+            if( app_argc > 0 ) {
+                /* CLI command; Skip all the loading, goto execution */
+                goto exec;
+            }
+            else if( launch_in_app() ){
+                ESP_LOGW(TAG, "App is already launched");
+                return_code = -4;
+                goto exit;
+            }
+            else {
+                ESP_LOGI(TAG, "Launching GUI for cached app");
+                goto exec;
+            }
         }
         else if( launch_in_app() ){
             ESP_LOGW(TAG, "Cannot launch a different app while in app");
@@ -162,6 +173,7 @@ exec:
             app_cache.ctx->bip32_key, 
             launch_app_exit, launch_app_from_store);
 
+    app_cache.loading = false;
     return 0;
 
 exit:
@@ -189,19 +201,12 @@ static lv_res_t launch_app_from_store(lv_obj_t *btn) {
 }
 
 static lv_res_t launch_app_exit(lv_obj_t *btn) {
-    /* Delete the app menu and free up the app memory */
+    /* Mapped to back button of app's main menu */
     if( NULL != app_cache.scr ) {
         ESP_LOGI(TAG, "Deleting App Screen.");
         lv_obj_del(app_cache.scr);
         app_cache.scr = NULL;
     }
-#if 0
-    if( NULL != jolt_gui_store.app.ctx ) {
-        ESP_LOGI(TAG, "Exitting App");
-        jelfLoaderFree(jolt_gui_store.app.ctx);
-        jolt_gui_store.app.ctx = NULL;
-    }
-#endif
     return LV_RES_INV;
 }
 

@@ -91,6 +91,7 @@ menu "JoltOS"
             default 100
             help
                 help text here.
+
         config JOLT_I2C_ERROR_RESET
             bool
             prompt "Reset if unable to contact display"
@@ -101,49 +102,37 @@ menu "JoltOS"
     endmenu
 
     menu "GUI"
+
         config JOLT_GUI_LOADING_BAR_ANIM_MS
             int
             prompt "Loading bar animation catchup time in ms"
             default 100
             help
                 help text here
+
         config JOLT_GUI_STATUSBAR_UPDATE_PERIOD_MS
             int
             prompt "Number of milliseconds between statusbar updates"
             default 273
             help
                 help text here
+
     endmenu
 
     menu "App Compression"
+
         config JOLT_COMPRESSION_ENABLE
             bool
-            prompt "Use heatshrink to decompress data"
+            prompt "Use miniz (zlib) to decompress data"
             default y
             help
                 help text here
 
-        config JOLT_HEATSHRINK_BUFFER
+        config JOLT_COMPRESSION_OUTPUT_BUFFER
             int
             depends on JOLT_COMPRESSION_ENABLE
-            prompt "Heatshrink Decompress Buffer Size"
-            default 256
-            help
-                help text here
-
-        config JOLT_HEATSHRINK_WINDOW
-            int
-            depends on JOLT_COMPRESSION_ENABLE
-            prompt "Heatshrink Window Size"
-            default 8
-            help
-                help text here
-
-        config JOLT_HEATSHRINK_LOOKAHEAD
-            int
-            depends on JOLT_COMPRESSION_ENABLE
-            prompt "Heatshrink Lookahead"
-            default 4
+            prompt "Output Decompression Buffer Size. Must be at least as big as dictionary"
+            default 4096
             help
                 help text here
 
@@ -157,19 +146,21 @@ menu "JoltOS"
 
     endmenu
 
-    config JOLT_DEFAULT_TIMEOUT_S
-        int
-        prompt "Default idle time in seconds before wiping vault from memory."
-        default 300
-        help
-            help text here
+    menu "Vault"
+        config JOLT_VAULT_DEFAULT_TIMEOUT_S
+            int
+            prompt "Default idle time in seconds before wiping vault from memory."
+            default 300
+            help
+                help text here
 
-    config JOLT_TIMEOUT_TIMEOUT_MS
-        int
-        prompt "Maximum number of time in milliseconds for Private Node Watchdog to wait to obtain private node mutex."
-        default 1000
-        help
-            help text here
+        config JOLT_VAULT_TIMEOUT_TIMEOUT_MS
+            int
+            prompt "Maximum number of time in milliseconds for Private Node Watchdog to wait to obtain private node mutex."
+            default 1000
+            help
+                help text here
+    endmenu
 
     choice
         prompt "Select Mnemonic Storage Method"
@@ -206,12 +197,14 @@ menu "JoltOS"
     endmenu
 
     menu "Console"
+
         config JOLT_CONSOLE_STARTUP_CLEAR
             bool
             prompt "Clear serial monitor upon startup/console launch."
             default y
             help
                 help text here
+
         config JOLT_CONSOLE_UART_RX_BUF_LEN
             int
             prompt "Buffer length for receiving console commands"
@@ -260,14 +253,7 @@ menu "JoltOS"
         prompt "Enable boot splash screen"
         default y
         help
-            help text here
-
-    config JOLT_DEFAULT_MAX_ATTEMPT
-        int
-        prompt "Number of pin attempts before wiping NVS"
-        default 10
-        help
-            help text here
+            Not yet reimplemented
 
     menu "Task Stack Size"
         config JOLT_TASK_STACK_SIZE_LVGL
@@ -518,6 +504,14 @@ menu "JoltOS"
                    help text here
 
         endchoice
+
+        config JOLT_PIN_DEFAULT_MAX_ATTEMPT
+            int
+            prompt "Number of pin attempts before wiping NVS"
+            default 10
+            help
+                help text here
+
     endmenu
 
     config JOLT_APP_KEY_DEFAULT

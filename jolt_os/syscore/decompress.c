@@ -8,8 +8,6 @@
 
 static const char TAG[] = "decompress";
 
-#define MINIZ_INFLATE_BUF_SIZE 4096
-
 typedef struct decomp_t{
     tinfl_decompressor inflator;
     write_fun_t writer;
@@ -25,7 +23,7 @@ decomp_t *decompress_obj_init( write_fun_t writer, void *cookie){
     d = calloc(1, sizeof(decomp_t));
     if( NULL == d ) goto exit;
 
-    d->buf = malloc(MINIZ_INFLATE_BUF_SIZE);
+    d->buf = malloc(CONFIG_JOLT_COMPRESSION_OUTPUT_BUFFER);
     if( NULL == d->buf ) goto exit;
 
     tinfl_init(&(d->inflator));
@@ -56,7 +54,7 @@ int decompress_obj_chunk(decomp_t *d, uint8_t *data, size_t len) {
 
     while(len > 0 ) {
         size_t in_bytes = len; /* input remaining */
-        size_t out_bytes = d->buf + MINIZ_INFLATE_BUF_SIZE - d->next_out;
+        size_t out_bytes = d->buf + CONFIG_JOLT_COMPRESSION_OUTPUT_BUFFER - d->next_out;
         int flags = TINFL_FLAG_PARSE_ZLIB_HEADER | TINFL_FLAG_HAS_MORE_INPUT;
         int status;
 
@@ -72,7 +70,7 @@ int decompress_obj_chunk(decomp_t *d, uint8_t *data, size_t len) {
 
         d->next_out += out_bytes;
         size_t bytes_in_out_buf = d->next_out - d->buf;
-        if (status <= TINFL_STATUS_DONE || bytes_in_out_buf == MINIZ_INFLATE_BUF_SIZE) {
+        if (status <= TINFL_STATUS_DONE || bytes_in_out_buf == CONFIG_JOLT_COMPRESSION_OUTPUT_BUFFER) {
             // Output buffer full, or done. Flush to writer function.
             d->writer(d->buf, 1, bytes_in_out_buf, d->cookie);
             d->next_out = d->buf;

@@ -62,12 +62,6 @@ lv_res_t jolt_gui_scr_del() {
             return LV_RES_OK;
         }
     }
-#if 0
-    void *free_ptr = lv_obj_get_free_ptr( parent );
-    if( NULL != free_ptr ){
-        free(free_ptr);
-    }
-#endif
     lv_obj_del(parent);
     return LV_RES_INV;
 }
@@ -178,7 +172,7 @@ static lv_obj_t *jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb,
         lv_obj_type_t obj_type;
         while( NULL != (child = lv_obj_get_child(parent, child)) ) {
             lv_obj_get_type(child, &obj_type);
-            if(strcmp("lv_btn", obj_type.type[0]) && g==lv_obj_get_group(child) ) {
+            if( 0==strcmp("lv_btn", obj_type.type[0]) && g==lv_obj_get_group(child) ) {
                 lv_obj_del(child);
                 child = NULL;
             }

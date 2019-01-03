@@ -67,6 +67,8 @@ typedef enum {
     JOLT_GUI_OBJ_ID_UNINITIALIZED = 0,    // If you don't set a free_num, then it's 0
     JOLT_GUI_OBJ_ID_CONT_TITLE,       // container or page holding title
     JOLT_GUI_OBJ_ID_CONT_BODY,        // container or page holding body
+    JOLT_GUI_OBJ_ID_BACK,             // The inivisible back button
+    JOLT_GUI_OBJ_ID_ENTER,            // The invisible enter button
     JOLT_GUI_OBJ_ID_PAGE,             //
     JOLT_GUI_OBJ_ID_LABEL_TITLE,      // Title Label
     JOLT_GUI_OBJ_ID_LABEL_0,          // Primary text
