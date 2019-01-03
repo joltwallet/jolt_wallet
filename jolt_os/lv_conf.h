@@ -5,6 +5,7 @@
 
 #if 1 /*Set it to "1" to enable content*/
 #include "sdkconfig.h"
+#include "esp_log.h"
 
 #ifndef LV_CONF_H
 #define LV_CONF_H

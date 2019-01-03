@@ -171,7 +171,7 @@ exec:
     vault_set(app_cache.ctx->coin_purpose, 
             app_cache.ctx->coin_path,
             app_cache.ctx->bip32_key, 
-            launch_app_exit, launch_app_from_store);
+            NULL, launch_app_from_store);
 
     app_cache.loading = false;
     return 0;
@@ -206,8 +206,11 @@ static lv_res_t launch_app_exit(lv_obj_t *btn) {
         ESP_LOGI(TAG, "Deleting App Screen.");
         lv_obj_del(app_cache.scr);
         app_cache.scr = NULL;
+        return LV_RES_INV;
     }
-    return LV_RES_INV;
+    else{
+        return LV_RES_OK;
+    }
 }
 
 bool launch_in_app(){

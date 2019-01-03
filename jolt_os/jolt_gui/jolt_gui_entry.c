@@ -258,7 +258,7 @@ static lv_res_t jolt_gui_num_signal(lv_obj_t *num, lv_signal_t sign, void *param
                 }
                 else {
                     // Call back callback
-                    (ext->back_cb)(num);
+                    res = (ext->back_cb)(num);
                 }
                 break;
             }

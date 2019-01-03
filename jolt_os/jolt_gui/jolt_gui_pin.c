@@ -21,7 +21,7 @@ static lv_res_t pin_fail_cb( lv_obj_t *btn ) {
     lv_obj_t *scr = lv_obj_get_parent(btn);
     ESP_LOGI(TAG, "Deleting %p", scr);
     lv_obj_del(scr);
-    return 0;
+    return LV_RES_INV;
 }
 
 static lv_res_t stretch_cb(lv_obj_t *btn) {
@@ -54,8 +54,7 @@ static lv_res_t stretch_cb(lv_obj_t *btn) {
         jolt_gui_scr_set_back_action(scr, pin_fail_cb);
         jolt_gui_scr_set_enter_action(scr, pin_fail_cb);
     }
-    return 0;
-
+    return LV_RES_OK;
 }
 
 /* gets triggered when the user presses enter on the last pin roller on a pin
@@ -75,7 +74,7 @@ static lv_res_t pin_enter_cb(lv_obj_t *num) {
     // todo: use app name for title
     jolt_gui_stretch("", "Checking PIN", jolt_gui_store.derivation.pin, stretch_cb);
 
-    return 0;
+    return LV_RES_INV;
 }
 
 static lv_res_t pin_back_cb( lv_obj_t *num ) {

@@ -198,13 +198,11 @@ lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb) {
 }
 
 lv_res_t jolt_gui_send_enter_main(lv_obj_t *btn) {
-    lv_group_send_data(jolt_gui_store.group.main, LV_GROUP_KEY_ENTER);
-    return LV_RES_OK;
+    return lv_group_send_data(jolt_gui_store.group.main, LV_GROUP_KEY_ENTER);
 }
 
 lv_res_t jolt_gui_send_left_main(lv_obj_t *btn) {
-    lv_group_send_data(jolt_gui_store.group.main, LV_GROUP_KEY_LEFT);
-    return LV_RES_OK;
+    return lv_group_send_data(jolt_gui_store.group.main, LV_GROUP_KEY_LEFT);
 }
 
 /********
