@@ -213,3 +213,7 @@ bool launch_in_app(){
         return false;
     }
 }
+
+char *launch_get_name() {
+    return app_cache.name;
+}

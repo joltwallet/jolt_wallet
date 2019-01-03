@@ -501,6 +501,25 @@ menu "JoltOS"
                 number of chunks to cache.
     endmenu
 
+    menu "PIN Entry"
+        choice
+            prompt "Title for PIN Entry"
+            config JOLT_PIN_TITLE_PIN
+                bool "Simply titled PIN"
+                help
+                   help text here
+            config JOLT_PIN_TITLE_NAME
+                bool "App name in title"
+                help
+                   help text here
+            config JOLT_PIN_TITLE_PATH
+                bool "Derivation Path in Title"
+                help
+                   help text here
+
+        endchoice
+    endmenu
+
     config JOLT_APP_KEY_DEFAULT
         string
         prompt "Default Application Public Key"

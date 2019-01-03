@@ -20,4 +20,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv);
 /* Returns True if User is in an app (screen is non NULL) */
 bool launch_in_app();
 
+/* Get the name of the currently cached app */
+char *launch_get_name();
+
 #endif
