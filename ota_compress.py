@@ -3,7 +3,7 @@
 import zlib
 import os
 
-elf_fn = os.path.join('build', 'jolt_os.elf')
+elf_fn = os.path.join('build', 'jolt_os.bin')
 elf_compressed_fn = elf_fn + '.gz'
 
 def compress_data(data):
