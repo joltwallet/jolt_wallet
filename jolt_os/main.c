@@ -55,7 +55,7 @@ const jolt_version_t JOLT_VERSION = {
 static QueueHandle_t input_queue;
 static const char TAG[] = "main";
 
-static bool easy_input_read(lv_indev_data_t *data) {
+static IRAM_ATTR bool easy_input_read(lv_indev_data_t *data) {
     data->state = LV_INDEV_STATE_REL;
 
     uint64_t input_buf;
@@ -108,9 +108,9 @@ static void indev_init() {
 
 void littlevgl_task() {
     ESP_LOGI(TAG, "Starting draw loop");
-    for( ;; vTaskDelay( 1 ) ) {
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    for( ;; vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS(10) ) ) {
         jolt_gui_sem_take();
-        lv_tick_inc(portTICK_RATE_MS);
         lv_task_handler();
         jolt_gui_sem_give();
     }
@@ -166,7 +166,6 @@ void app_main() {
     set_jolt_cast();
     wifi_connect();
 
-
     // Allocate space for the vault and see if a copy exists in NVS
     jolt_gui_store.first_boot = ( false == vault_setup() );
 
@@ -186,7 +185,6 @@ void app_main() {
     jolt_bluetooth_setup();
     console_init();
     console_start();
-
 
     BaseType_t ret;
     ESP_LOGI(TAG, "Creating Screen Draw Task");

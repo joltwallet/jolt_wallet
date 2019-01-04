@@ -6,6 +6,7 @@
 #if 1 /*Set it to "1" to enable content*/
 #include "sdkconfig.h"
 #include "esp_log.h"
+#include "esp_attr.h"
 
 #ifndef LV_CONF_H
 #define LV_CONF_H
@@ -47,7 +48,7 @@
  * VDB makes the double buffering, you don't need to deal with it!
  * Typical size: ~1/10 screen */
 #define LV_VDB_SIZE         (8 * LV_HOR_RES)  /*Size of VDB in pixel count (1/10 screen size is good for first)*/
-#define LV_VDB_PX_BPP       LV_COLOR_DEPTH      /*Bit-per-pixel of VDB. Useful for monochrome or non-standard color format displays. (Special formats are handled with `disp_drv->vdb_wr`)*/
+#define LV_VDB_PX_BPP       1      /*Bit-per-pixel of VDB. Useful for monochrome or non-standard color format displays. (Special formats are handled with `disp_drv->vdb_wr`)*/
 #define LV_VDB_ADR          0                  /*Place VDB to a specific address (e.g. in external RAM) (0: allocate automatically into RAM; LV_VDB_ADR_INV: to replace it later with `lv_vdb_set_adr()`)*/
 
 /* Use two Virtual Display buffers (VDB) parallelize rendering and flushing (optional)
@@ -56,7 +57,7 @@
 #define LV_VDB2_ADR         0       /*Place VDB2 to a specific address (e.g. in external RAM) (0: allocate automatically into RAM; LV_VDB_ADR_INV: to replace it later with `lv_vdb_set_adr()`)*/
 
 /* Enable anti-aliasing (lines, and radiuses will be smoothed) */
-#define LV_ANTIALIAS        1       /*1: Enable anti-aliasing*/
+#define LV_ANTIALIAS        0       /*1: Enable anti-aliasing*/
 
 /*Screen refresh settings*/
 #define LV_REFR_PERIOD      20    /*Screen refresh period in milliseconds*/
@@ -93,17 +94,17 @@
 #define USE_LV_FILESYSTEM       1               /*1: Enable file system (required by images*/
 
 /*Compiler settings*/
-#define LV_ATTRIBUTE_TICK_INC                   /* Define a custom attribute to `lv_tick_inc` function */
-#define LV_ATTRIBUTE_TASK_HANDLER               /* Define a custom attribute to `lv_task_handler` function */
-#define LV_ATTRIBUTE_FLUSH_READY                /* Define a custom attribute to `lv_flush_ready` function */
+#define LV_ATTRIBUTE_TICK_INC IRAM_ATTR                  /* Define a custom attribute to `lv_tick_inc` function */
+#define LV_ATTRIBUTE_TASK_HANDLER IRAM_ATTR               /* Define a custom attribute to `lv_task_handler` function */
+#define LV_ATTRIBUTE_FLUSH_READY IRAM_ATTR                /* Define a custom attribute to `lv_flush_ready` function */
 #define LV_COMPILER_VLA_SUPPORTED            1  /* 1: Variable length array is supported*/
 #define LV_COMPILER_NON_CONST_INIT_SUPPORTED 1  /* 1: Initialization with non constant values are supported */
 
 /*HAL settings*/
-#define LV_TICK_CUSTOM     0                        /*1: use a custom tick source (removing the need to manually update the tick with `lv_tick_inc`) */
+#define LV_TICK_CUSTOM     1                        /*1: use a custom tick source (removing the need to manually update the tick with `lv_tick_inc`) */
 #if LV_TICK_CUSTOM == 1
-#define LV_TICK_CUSTOM_INCLUDE  "Arduino.h"         /*Header for the sys time function*/
-#define LV_TICK_CUSTOM_SYS_TIME_EXPR (millis())     /*Expression evaluating to current systime in ms*/
+#define LV_TICK_CUSTOM_INCLUDE  "esp_timer.h"         /*Header for the sys time function*/
+#define LV_TICK_CUSTOM_SYS_TIME_EXPR (esp_timer_get_time()/1000)     /*Expression evaluating to current systime in ms*/
 #endif     /*LV_TICK_CUSTOM*/
 
 /*Log settings*/
@@ -323,7 +324,7 @@
 /*List (dependencies: lv_page, lv_btn, lv_label, (lv_img optionally for icons ))*/
 #define USE_LV_LIST     1
 #if USE_LV_LIST != 0
-#define LV_LIST_FOCUS_TIME  70 /*Default animation time of focusing to a list element [ms] (0: no animation)  */
+#define LV_LIST_FOCUS_TIME  60 /*Default animation time of focusing to a list element [ms] (0: no animation)  */
 #endif
 
 /*Drop down list (dependencies: lv_page, lv_label, lv_symbol_def.h)*/

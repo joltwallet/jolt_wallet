@@ -23,7 +23,7 @@ static void jolt_hw_monitor_init();
 /**********************
  *  STATIC VARIABLES
  **********************/
-const char TAG[] = "hal/monitor";
+static const char TAG[] = "hal/monitor";
 
 /**********************
  *  DEFINE MACROS
