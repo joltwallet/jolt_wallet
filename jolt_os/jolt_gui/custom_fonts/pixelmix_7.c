@@ -148,9 +148,9 @@ static const uint8_t pixelmix_7_glyph_bitmap[] =
   0x00,  //.. 
   0x00,  //.. 
   0x00,  //.. 
+  0x00,  //.. 
   0x40,  //.% 
   0x80,  //%. 
-  0x00,  //.. 
 
 
   /*Unicode: U+002d (-) , Width: 4 */
@@ -416,7 +416,7 @@ static const uint8_t pixelmix_7_glyph_bitmap[] =
   0x00,  //.. 
 
 
-  /*Unicode: U+0045 (E) , Width: 5 */
+  /*Unicode: U+0045 (E) , Width: 4 */
   0xf0,  //%%%%. 
   0x80,  //%.... 
   0x80,  //%.... 
@@ -427,7 +427,7 @@ static const uint8_t pixelmix_7_glyph_bitmap[] =
   0x00,  //.. 
 
 
-  /*Unicode: U+0046 (F) , Width: 5 */
+  /*Unicode: U+0046 (F) , Width: 4 */
   0xf0,  //%%%%. 
   0x80,  //%.... 
   0x80,  //%.... 
@@ -493,7 +493,7 @@ static const uint8_t pixelmix_7_glyph_bitmap[] =
   0x00,  //.. 
 
 
-  /*Unicode: U+004c (L) , Width: 5 */
+  /*Unicode: U+004c (L) , Width: 4 */
   0x80,  //%.... 
   0x80,  //%.... 
   0x80,  //%.... 
@@ -746,7 +746,7 @@ static const uint8_t pixelmix_7_glyph_bitmap[] =
   0x00,  //.. 
 
 
-  /*Unicode: U+0063 (c) , Width: 5 */
+  /*Unicode: U+0063 (c) , Width: 4 */
   0x00,  //..... 
   0x00,  //..... 
   0x70,  //.%%%. 
@@ -924,7 +924,7 @@ static const uint8_t pixelmix_7_glyph_bitmap[] =
   /*Unicode: U+0073 (s) , Width: 5 */
   0x00,  //..... 
   0x00,  //..... 
-  0x70,  //.%%%. 
+  0x78,  //.%%%% 
   0x80,  //%.... 
   0x70,  //.%%%. 
   0x08,  //....% 
@@ -1107,14 +1107,14 @@ static const lv_font_glyph_dsc_t pixelmix_7_glyph_dsc[] =
   {.w_px = 5,	.glyph_index = 272},	/*Unicode: U+0042 (B)*/
   {.w_px = 5,	.glyph_index = 280},	/*Unicode: U+0043 (C)*/
   {.w_px = 5,	.glyph_index = 288},	/*Unicode: U+0044 (D)*/
-  {.w_px = 5,	.glyph_index = 296},	/*Unicode: U+0045 (E)*/
-  {.w_px = 5,	.glyph_index = 304},	/*Unicode: U+0046 (F)*/
+  {.w_px = 4,	.glyph_index = 296},	/*Unicode: U+0045 (E)*/
+  {.w_px = 4,	.glyph_index = 304},	/*Unicode: U+0046 (F)*/
   {.w_px = 5,	.glyph_index = 312},	/*Unicode: U+0047 (G)*/
   {.w_px = 5,	.glyph_index = 320},	/*Unicode: U+0048 (H)*/
   {.w_px = 3,	.glyph_index = 328},	/*Unicode: U+0049 (I)*/
   {.w_px = 5,	.glyph_index = 336},	/*Unicode: U+004a (J)*/
   {.w_px = 5,	.glyph_index = 344},	/*Unicode: U+004b (K)*/
-  {.w_px = 5,	.glyph_index = 352},	/*Unicode: U+004c (L)*/
+  {.w_px = 4,	.glyph_index = 352},	/*Unicode: U+004c (L)*/
   {.w_px = 5,	.glyph_index = 360},	/*Unicode: U+004d (M)*/
   {.w_px = 5,	.glyph_index = 368},	/*Unicode: U+004e (N)*/
   {.w_px = 5,	.glyph_index = 376},	/*Unicode: U+004f (O)*/
@@ -1137,7 +1137,7 @@ static const lv_font_glyph_dsc_t pixelmix_7_glyph_dsc[] =
   {.w_px = 2,	.glyph_index = 512},	/*Unicode: U+0060 (`)*/
   {.w_px = 5,	.glyph_index = 520},	/*Unicode: U+0061 (a)*/
   {.w_px = 5,	.glyph_index = 528},	/*Unicode: U+0062 (b)*/
-  {.w_px = 5,	.glyph_index = 536},	/*Unicode: U+0063 (c)*/
+  {.w_px = 4,	.glyph_index = 536},	/*Unicode: U+0063 (c)*/
   {.w_px = 5,	.glyph_index = 544},	/*Unicode: U+0064 (d)*/
   {.w_px = 5,	.glyph_index = 552},	/*Unicode: U+0065 (e)*/
   {.w_px = 3,	.glyph_index = 560},	/*Unicode: U+0066 (f)*/
