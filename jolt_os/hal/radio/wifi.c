@@ -24,7 +24,7 @@
 #include "hal/storage/storage.h"
 
 
-#if CONFIG_CONFIG_NO_BLOBS
+#if !CONFIG_NO_BLOBS
 static const char TAG[] = "wifi_task";
 
 esp_err_t event_handler(void *ctx, system_event_t *event)

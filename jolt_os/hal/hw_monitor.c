@@ -96,7 +96,7 @@ static void jolt_hw_monitor_get_bluetooth_level(hardware_monitor_t *monitor) {
 static void jolt_hw_monitor_get_wifi_level(hardware_monitor_t *monitor) {
     /* Returns with the wifi strength level */
     uint8_t wifi_strength;
-#if CONFIG_CONFIG_NO_BLOBS
+#if !CONFIG_NO_BLOBS
     wifi_ap_record_t ap_info;
     if(esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK){
         wifi_strength = 0;
