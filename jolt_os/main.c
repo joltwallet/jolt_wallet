@@ -176,7 +176,22 @@ void app_main() {
     ESP_LOGI(TAG, "Creating GUI");
     jolt_gui_theme = lv_theme_jolt_init(100, NULL);
     lv_theme_set_current(jolt_gui_theme);  
-    jolt_gui_menu_home_create();
+
+    lv_obj_t *btn_back = lv_btn_create(lv_scr_act(), NULL);
+    lv_btn_set_action(btn_back, LV_BTN_ACTION_CLICK, jolt_gui_scr_del);
+    lv_group_add_obj(jolt_gui_store.group.back, btn_back);
+
+    /* Create StatusBar */
+    statusbar_create();
+
+    if( jolt_gui_store.first_boot ) {
+        /* Create First Boot Screen */
+        jolt_gui_first_boot_create();
+    }
+    else{
+        /* Create Home Menu */
+        jolt_gui_menu_home_create();
+    }
 
     ESP_LOGI(TAG, "Starting Hardware Monitors");
     xTaskCreate(jolt_hw_monitor_task,
