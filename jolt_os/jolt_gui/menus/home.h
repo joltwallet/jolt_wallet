@@ -4,4 +4,7 @@
 /* Creates the Jolt GUI */
 void jolt_gui_menu_home_create();
 
+/* Deletes and recreates the home menu */
+void jolt_gui_menu_home_refresh();
+
 #endif

@@ -4,6 +4,7 @@
 #include "esp_log.h"
 #include "syscore/filesystem.h"
 #include "syscore/ymodem.h"
+#include "jolt_helpers.h"
 
 static const char TAG[] = "cmd_upload";
 
@@ -37,6 +38,8 @@ int jolt_cmd_upload(int argc, char** argv) {
                 remove(orig_fn);
             }
             rename(tmp_fn, orig_fn);
+
+            jolt_h_fn_home_refresh( orig_fn );
         }
         else {
             ESP_LOGE(TAG, "Transfer complete, Error=%d", rec_res);

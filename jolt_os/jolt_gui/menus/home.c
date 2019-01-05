@@ -1,5 +1,4 @@
 #include "jolt_gui/jolt_gui.h"
-#include "jolt_gui/lv_theme_jolt.h"
 #include "jolt_gui/test_screens.h"
 #include "settings.h"
 #include "syscore/filesystem.h"
@@ -11,7 +10,6 @@
 /* Stuff that should be moved somewhere else */
 #include "jolt_gui/jolt_gui_qr.h"
 
-lv_theme_t *jolt_gui_theme = NULL;
 
 /**********************
  *  STATIC PROTOTYPES
@@ -42,11 +40,6 @@ static lv_res_t launch_file_proxy(lv_obj_t *btn) {
 }
 
 void jolt_gui_menu_home_create() {
-    /* Set Jolt ssd1306 theme */
-    jolt_gui_theme = lv_theme_jolt_init(100, NULL);
-    lv_theme_set_current(jolt_gui_theme);  
-
-    // Don't need to set group since indev driver sends direct keypresses
     lv_obj_t *btn_back = lv_btn_create(lv_scr_act(), NULL);
     lv_btn_set_action(btn_back, LV_BTN_ACTION_CLICK, jolt_gui_scr_del);
     lv_group_add_obj(jolt_gui_store.group.back, btn_back);
@@ -77,10 +70,16 @@ void jolt_gui_menu_home_create() {
         jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Number", jolt_gui_test_number_create);
         jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Battery", jolt_gui_test_battery_create);
         jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Alphabet", jolt_gui_test_alphabet_create);
-        jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Dummy 4", NULL);
-        jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Dummy 5", NULL);
-        jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Dummy 6", NULL);
 #endif
 
     }
+}
+
+/* Refreshes the home menu.
+ * Use cases: call after downloading an app. */
+void jolt_gui_menu_home_refresh() {
+    if( NULL != jolt_gui_store.main_menu){
+        lv_obj_del(jolt_gui_store.main_menu);
+    }
+    jolt_gui_menu_home_create();
 }

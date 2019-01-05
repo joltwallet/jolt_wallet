@@ -3,6 +3,7 @@
 #include "esp_vfs_dev.h"
 #include "syscore/console_helpers.h"
 #include "syscore/filesystem.h"
+#include "jolt_helpers.h"
 
 
 int jolt_cmd_mv(int argc, char** argv) {
@@ -20,6 +21,10 @@ int jolt_cmd_mv(int argc, char** argv) {
     strncat(dst_fn, argv[2], sizeof(dst_fn)-strlen(dst_fn)-1);
 
     return_code = rename(src_fn, dst_fn);
+
+    if( 0 == return_code ) {
+        jolt_h_fn_home_refresh( argv[2] );
+    }
 
 exit:
     return return_code;

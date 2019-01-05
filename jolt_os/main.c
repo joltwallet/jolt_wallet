@@ -23,6 +23,7 @@
 #include "lv_conf.h"
 #include "lvgl/lvgl.h"
 #include "jolt_gui/jolt_gui.h"
+#include "jolt_gui/lv_theme_jolt.h"
 
 #include "console.h"
 #include "hal/radio/bluetooth.h"
@@ -53,6 +54,7 @@ const jolt_version_t JOLT_VERSION = {
 
 static QueueHandle_t input_queue;
 static const char TAG[] = "main";
+lv_theme_t *jolt_gui_theme = NULL;
 
 static IRAM_ATTR bool easy_input_read(lv_indev_data_t *data) {
     data->state = LV_INDEV_STATE_REL;
@@ -173,6 +175,8 @@ void app_main() {
 
     /* Create GUI */
     ESP_LOGI(TAG, "Creating GUI");
+    jolt_gui_theme = lv_theme_jolt_init(100, NULL);
+    lv_theme_set_current(jolt_gui_theme);  
     jolt_gui_menu_home_create();
 
     ESP_LOGI(TAG, "Starting Hardware Monitors");

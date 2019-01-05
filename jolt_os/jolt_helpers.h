@@ -23,4 +23,7 @@ void set_jolt_cast();
 char **jolt_h_malloc_char_array(int n);
 void jolt_h_free_char_array(char **arr, int n);
 
+bool jolt_h_strcmp_suffix( char *str, char *suffix);
+void jolt_h_fn_home_refresh(char *str);
+
 #endif

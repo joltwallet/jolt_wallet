@@ -19,6 +19,7 @@
 
 #include "jolt_helpers.h"
 #include "hal/storage/storage.h"
+#include "jolt_gui/jolt_gui.h"
 
 
 static const char* TAG = "helpers";
@@ -86,4 +87,24 @@ void jolt_h_free_char_array(char **arr, int n) {
     free(arr);
 }
 
+/* Check if the provided null-terminated string suffix matches */
+bool jolt_h_strcmp_suffix( char *str, char *suffix){
+    uint32_t str_len = strlen(str);
+    uint32_t suffix_len = strlen(suffix);
 
+    if(suffix_len > str_len){
+        return false;
+    }
+
+    if( 0 == strcmp( str+str_len-suffix_len, suffix ) ) {
+        return true;
+    }
+
+    return false;
+}
+
+void jolt_h_fn_home_refresh(char *str) {
+    if( jolt_h_strcmp_suffix(str, ".jelf") ) {
+        jolt_gui_menu_home_refresh();
+    }
+}
