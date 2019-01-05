@@ -43,32 +43,29 @@ static lv_obj_t *jolt_gui_scr_mnemonic_restore_num_create(int n) {
     assert( n <= 24 );
     assert( n >= 1 );
 
-    JOLT_GUI_SCR_PREAMBLE( title );
+    JOLT_GUI_SCR_CTX(title){
+        /* Create text for above the big number */
+        lv_obj_t *header_label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
+        lv_label_set_text(header_label, "Enter Word");
+        lv_obj_align(header_label, NULL, LV_ALIGN_IN_TOP_MID, 0, 6);
 
-    /* Create text for above the big number */
-    lv_obj_t *header_label = lv_label_create(cont_body, NULL);
-    JOLT_GUI_OBJ_CHECK( header_label );
-    lv_label_set_text(header_label, "Enter Word");
-    lv_obj_align(header_label, NULL, LV_ALIGN_IN_TOP_MID, 0, 6);
+        /* Create text for big number */
+        char number_str[3] = { 0 }; 
+        itoa( n, number_str, 10 );
+        lv_obj_t *number_label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
+        lv_label_set_text(number_label, number_str);
 
-    /* Create text for big number */
-    char number_str[3] = { 0 }; 
-    itoa( n, number_str, 10 );
-    lv_obj_t *number_label = lv_label_create(cont_body, NULL);
-    JOLT_GUI_OBJ_CHECK( number_label );
-    lv_label_set_text(number_label, number_str);
+        /* Set a Big Font Style for number*/
+        static lv_style_t number_style;
+        lv_style_t *old_style = lv_label_get_style(number_label);
+        lv_style_copy(&number_style, old_style);
+        number_style.text.font = &lv_font_dejavu_40_numeric;
+        lv_label_set_style(number_label, &number_style);
 
-    /* Set a Big Font Style for number*/
-    static lv_style_t number_style;
-    lv_style_t *old_style = lv_label_get_style(number_label);
-    lv_style_copy(&number_style, old_style);
-    number_style.text.font = &lv_font_dejavu_40_numeric;
-    lv_label_set_style(number_label, &number_style);
+        /* Align Big Number to Center bottom of screen */
+        lv_obj_align(number_label, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
+    }
 
-    /* Align Big Number to Center bottom of screen */
-    lv_obj_align(number_label, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
-
-exit:
     return parent;
 }
 
@@ -89,15 +86,15 @@ static void linenoise_task( void *h ) {
     uint8_t val_to_send = MNEMONIC_RESTORE_BACK;
     for(uint8_t i=0; i < sizeof(idx); i++){
         uint8_t j = idx[i];
-        lv_obj_t * scr;
+        lv_obj_t *scr = NULL;
 
         /* Create Jolt Screen */ 
-        jolt_gui_sem_take();
-        jolt_gui_scr_del();
-        scr = jolt_gui_scr_mnemonic_restore_num_create(j+1); /*Human-friendly 1-idxing */
-        jolt_gui_scr_set_back_action(scr,  jolt_cmd_mnemonic_restore_back);
-        jolt_gui_scr_set_enter_action(scr,  NULL);
-        jolt_gui_sem_give();
+        JOLT_GUI_CTX{
+            jolt_gui_scr_del();
+            scr = BREAK_IF_NULL(jolt_gui_scr_mnemonic_restore_num_create(j+1)); /*Human-friendly 1-idxing */
+            BREAK_IF_NULL(jolt_gui_scr_set_back_action(scr,  jolt_cmd_mnemonic_restore_back));
+            BREAK_IF_NULL(jolt_gui_scr_set_enter_action(scr,  NULL));
+        }
 
         int8_t in_wordlist = 0;
         do {
@@ -141,25 +138,28 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
 
     /* Create prompt screen */
     printf("To begin mnemonic restore, approve prompt on device.\n");
-    jolt_gui_sem_take();
-    lv_obj_t *scr;
-    scr = jolt_gui_scr_text_create(title, "Begin mnemonic restore?");
-    if ( NULL == scr ) {
+    lv_obj_t *scr = NULL, *btn = NULL;
+    JOLT_GUI_CTX{
+        scr = BREAK_IF_NULL(jolt_gui_scr_text_create(title, "Begin mnemonic restore?"));
+        btn = BREAK_IF_NULL(jolt_gui_scr_set_back_action(scr,  jolt_cmd_mnemonic_restore_back));
+        btn = BREAK_IF_NULL(jolt_gui_scr_set_enter_action(scr, jolt_cmd_mnemonic_restore_enter));
+    }
+    if( NULL == scr && NULL == btn ){
+        JOLT_GUI_CTX{
+            lv_obj_del(scr);
+        }
         return_code = -1;
         goto exit;
     }
-    jolt_gui_scr_set_back_action(scr,  jolt_cmd_mnemonic_restore_back);
-    jolt_gui_scr_set_enter_action(scr, jolt_cmd_mnemonic_restore_enter);
-    jolt_gui_sem_give();
 
     /* Wait until user made a choice */
     uint8_t response;
     xQueueReceive(cmd_q, &response, portMAX_DELAY);
     if( MNEMONIC_RESTORE_BACK == response ){
         /* Delete prompt screen and exit */
-        jolt_gui_sem_take();
-        jolt_gui_scr_del();
-        jolt_gui_sem_give();
+        JOLT_GUI_CTX{
+            jolt_gui_scr_del();
+        }
         return_code = -1;
         goto exit;
     }
@@ -202,9 +202,9 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
     sodium_memzero(mnemonic, sizeof(mnemonic));
 
     /* Leverages a lot of the same intial-boot code */
-    jolt_gui_sem_take();
-    jolt_gui_restore_sequence( bin );
-    jolt_gui_sem_give();
+    JOLT_GUI_CTX{
+        jolt_gui_restore_sequence( bin );
+    }
 
 exit:
     printf("Exiting Mnemonic Restore.\n");

@@ -111,9 +111,9 @@ void littlevgl_task() {
     ESP_LOGI(TAG, "Starting draw loop");
     TickType_t xLastWakeTime = xTaskGetTickCount();
     for( ;; vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS(10) ) ) {
-        jolt_gui_sem_take();
-        lv_task_handler();
-        jolt_gui_sem_give();
+        JOLT_GUI_CTX{
+            lv_task_handler();
+        }
     }
     ESP_LOGE(TAG, "Draw Loop Exitted"); // Should never reach here
     abort();
@@ -176,7 +176,7 @@ void app_main() {
     ESP_LOGI(TAG, "Creating GUI");
     jolt_gui_theme = lv_theme_jolt_init(100, NULL);
     lv_theme_set_current(jolt_gui_theme);  
-    jolt_gui_menu_home_create();
+    //jolt_gui_menu_home_create();
 
     ESP_LOGI(TAG, "Starting Hardware Monitors");
     xTaskCreate(jolt_hw_monitor_task,

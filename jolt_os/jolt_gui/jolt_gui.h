@@ -27,6 +27,7 @@
 #include "bipmnemonic.h"
 
 #include "jelfloader.h"
+#include "mp.h"
 
 
 #ifndef CONFIG_JOLT_GUI_LOADING_BUF_SIZE
@@ -39,7 +40,6 @@
 /* This whole struct should be moved into globals */
 struct {
     bool first_boot;
-    SemaphoreHandle_t mutex; // mutex for the entire gui system
     lv_obj_t *main_menu;
     struct {
         lv_group_t *main; // Parent group for user input
@@ -138,6 +138,18 @@ lv_obj_t *jolt_gui_find(lv_obj_t *parent, LV_OBJ_FREE_NUM_TYPE id);
 /* Convert the enumerated value to a constant string */
 const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val);
 
+/********************
+ * Meta Programming *
+ ********************/
+/* Wraps user code-block with recursive mutex take/give.
+ * NEVER call return or goto within the context. break is fine.*/
+#define JOLT_GUI_CTX \
+    MPP_BEFORE(1, jolt_gui_sem_take() ) \
+    MPP_DO_WHILE(2, false) \
+    MPP_FINALLY(3, jolt_gui_sem_give() )
+
+#define if_not(x) if(!(x))
+
 /**********
  * Macros *
  **********/
@@ -145,24 +157,49 @@ const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val);
 #define JOLT_GUI_OBJ_CHECK( obj ) \
     if( NULL == obj ){ lv_obj_del(parent); parent = NULL; goto exit;}
 
-/* Declares all the must have objects in a Jolt Screen */
-#define JOLT_GUI_SCR_PREAMBLE( title ) \
-    lv_obj_t *parent    = jolt_gui_parent_create(); \
-    JOLT_GUI_OBJ_CHECK( parent ); \
-    lv_obj_t *label_title     = jolt_gui_obj_title_create(parent, title); \
-    JOLT_GUI_OBJ_CHECK( label_title ); \
-    lv_obj_t *cont_body = jolt_gui_obj_cont_body_create( parent ); \
-    JOLT_GUI_OBJ_CHECK( cont_body ); \
-    jolt_gui_group_add( parent );
+/* To be used in a JOLT_GUI_CTX; breaks if passed in value is NULL */
+#define BREAK_IF_NULL( obj ) ({if( NULL == obj ) break; obj;})
 
-/* Finds the first child of the provided type. If it cannot be found, goto exit */
+/* Declares all the must have objects in a Jolt Screen.
+ * If failure, all objects will be NULL.
+ * Can be called inside or outside of a JOLT_GUI_CTX. Usually called outside
+ * so that all the objects are exposed to be returned. */
+#define JOLT_GUI_SCR_PREAMBLE( title ) \
+    lv_obj_t *parent = NULL, *label_title = NULL, *cont_body = NULL; \
+    if( (parent = jolt_gui_parent_create()) ) { \
+        if( (label_title = jolt_gui_obj_title_create(parent, title)) \
+                && (cont_body = jolt_gui_obj_cont_body_create( parent )) ) { \
+            jolt_gui_group_add( parent ); \
+        }\
+        else{ \
+            jolt_gui_sem_take(); \
+            lv_obj_del( parent ); \
+            jolt_gui_sem_give(); \
+        } \
+    }
+
+/* Finds the first child of the provided type. If it cannot be found, break.
+ * To be called in a JOLT_GUI_CTX*/
 #define JOLT_GUI_FIND_AND_CHECK( obj, type ) ({ \
     lv_obj_t *child = jolt_gui_find(obj, type); \
     if( NULL == child ) { \
-        ESP_LOGE(TAG, "%s L%d: Could not find a child of type %s", __FILE__, __LINE__, jolt_gui_obj_id_str(type)); \
-        goto exit; \
+        break; \
     } \
     child; \
     })
-    
+//ESP_LOGE(TAG, "%s L%d: Could not find a child of type %s", __FILE__, __LINE__, jolt_gui_obj_id_str(type)); 
+
+#define LV_OBJ_DEL_SAFE(obj) if(NULL!=obj) lv_obj_del(obj);
+
+/* Similar to a JOLT_GUI_CTX, but will call JOLT_GUI_SCR_PREAMBLE before the
+ * JOLT_GUI_CTX. Also, if use breaks from JOLT_GUI_SCR_CTX, this will delete 
+ * the parent object and set it to NULL. */
+#define JOLT_GUI_SCR_CTX(title) \
+    JOLT_GUI_SCR_PREAMBLE( title ) \
+    MPP_BEFORE(1, jolt_gui_sem_take() ) \
+    MPP_DO_WHILE(2, false) \
+    MPP_BREAK_HANDLER(3, if(parent) {lv_obj_del(parent); parent=NULL;})\
+    MPP_FINALLY(4, jolt_gui_sem_give() )
+
+
 #endif
