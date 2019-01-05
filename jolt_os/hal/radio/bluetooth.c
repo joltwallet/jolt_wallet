@@ -32,7 +32,6 @@
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
 
-#include "jolt_globals.h"
 #include "esp_console.h"
 #include "console.h"
 
