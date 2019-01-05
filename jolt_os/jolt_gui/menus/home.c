@@ -167,7 +167,10 @@ static lv_res_t jolt_gui_test_alphabet_create(lv_obj_t * list_btn) {
             "1234567890 "
             "!@#$%^&*()-+_="
             "{}[];':\",.<>?/\\"
-            "The Quick Brown Fox, Jumped Over The Lazy Dog."
+            "The Quick Brown Fox, Jumped Over The Lazy Dog.\n"
+            "Testing proper wrap around of very long words and address. "
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ."
+
             );
     return LV_RES_OK;
 }

@@ -15,4 +15,7 @@ lv_obj_t *jolt_gui_scr_menu_add(lv_obj_t *par, const void *img_src,
 /* Gets the list object of a menu screen */
 lv_obj_t *jolt_gui_scr_menu_get_list(lv_obj_t *par);
 
+/* Sets the current selection to btn */
+void jolt_gui_scr_menu_set_btn_selected(lv_obj_t *par, lv_obj_t *btn);
+
 #endif

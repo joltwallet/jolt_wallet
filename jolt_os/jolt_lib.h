@@ -140,6 +140,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_scr_menu_add ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_create ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_get_list ),
+    EXPORT_SYMBOL( jolt_gui_scr_menu_set_btn_selected ),
     EXPORT_SYMBOL( jolt_gui_scr_num_create ),
     EXPORT_SYMBOL( jolt_gui_scr_num_get ),
     EXPORT_SYMBOL( jolt_gui_scr_qr_create ),

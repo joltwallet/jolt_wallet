@@ -31,7 +31,6 @@ static lv_res_t new_list_signal(lv_obj_t *list, lv_signal_t sign, void * param)
     lv_res_t res;
     char c;
     
-
     if(sign == LV_SIGNAL_FOCUS) {
         // call ancestor
         res = old_list_signal(list, sign, param);
@@ -58,7 +57,6 @@ static lv_res_t new_list_signal(lv_obj_t *list, lv_signal_t sign, void * param)
 /* Creates a standard Jolt Menu Screen */
 lv_obj_t *jolt_gui_scr_menu_create(const char *title) {
     JOLT_GUI_SCR_PREAMBLE( title );
-
 
     /* Create List */
     // todo, get these values from parent
@@ -113,9 +111,21 @@ lv_obj_t *jolt_gui_scr_menu_add(lv_obj_t *par, const void *img_src,
     if( NULL == btn ){
         goto exit;
     }
-    lv_label_set_long_mode(label, LABEL_LONG_MODE_DEFAULT);
-    
+
+    if( 1 == lv_list_get_size(list) ){
+        lv_label_set_long_mode(label, LABEL_LONG_MODE_SELECTED);
+    }
+    else{
+        lv_label_set_long_mode(label, LABEL_LONG_MODE_DEFAULT);
+    }
 
 exit:
     return btn;
+}
+
+void jolt_gui_scr_menu_set_btn_selected(lv_obj_t *par, lv_obj_t *btn){
+    lv_obj_t *list = jolt_gui_scr_menu_get_list(lv_obj_t *parent);
+    set_selected_label_long_mode(list, LABEL_LONG_MODE_DEFAULT);
+    lv_list_set_btn_selected(list, btn);
+    set_selected_label_long_mode(list, LABEL_LONG_MODE_SELECTED);
 }
