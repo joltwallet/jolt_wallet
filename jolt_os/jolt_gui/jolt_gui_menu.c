@@ -124,7 +124,7 @@ exit:
 }
 
 void jolt_gui_scr_menu_set_btn_selected(lv_obj_t *par, lv_obj_t *btn){
-    lv_obj_t *list = jolt_gui_scr_menu_get_list(lv_obj_t *parent);
+    lv_obj_t *list = jolt_gui_scr_menu_get_list(par);
     set_selected_label_long_mode(list, LABEL_LONG_MODE_DEFAULT);
     lv_list_set_btn_selected(list, btn);
     set_selected_label_long_mode(list, LABEL_LONG_MODE_SELECTED);
