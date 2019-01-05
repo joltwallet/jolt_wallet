@@ -208,11 +208,19 @@ lv_res_t jolt_gui_send_left_main(lv_obj_t *btn) {
 /********
  * MISC *
  ********/
+static SemaphoreHandle_t jolt_gui_mutex = NULL;
 void jolt_gui_sem_take() {
-    xSemaphoreTake( jolt_gui_store.mutex, portMAX_DELAY );
+    if( NULL == jolt_gui_mutex ){
+        jolt_gui_mutex = xSemaphoreCreateRecursiveMutex();
+        if( NULL == jolt_gui_mutex ){
+            esp_restart();
+        }
+    }
+    xSemaphoreTakeRecursive( jolt_gui_mutex, portMAX_DELAY );
 }
+
 void jolt_gui_sem_give() {
-    xSemaphoreGive( jolt_gui_store.mutex );
+    xSemaphoreGiveRecursive( jolt_gui_mutex );
 }
 
 /* Finds the first child object with the free_num identifier.

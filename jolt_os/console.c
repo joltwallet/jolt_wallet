@@ -127,8 +127,6 @@ static void console_task() {
         linenoiseSetDumbMode(1);
     }
     
-    //vTaskDelay(portMAX_DELAY);
-
     /* Main loop */
     for(;;) {
         /* Get a line using linenoise.

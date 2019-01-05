@@ -17,6 +17,7 @@
 #include "jolttypes.h"
 #include "bipmnemonic.h"
 
+#include "vault.h"
 #include "jolt_helpers.h"
 #include "hal/storage/storage.h"
 #include "jolt_gui/jolt_gui.h"
@@ -107,4 +108,13 @@ void jolt_h_fn_home_refresh(char *str) {
     if( jolt_h_strcmp_suffix(str, ".jelf") ) {
         jolt_gui_menu_home_refresh();
     }
+}
+
+
+/* Set vault for JoltOS settings stuff like bluetooth and wifi */
+void jolt_h_settings_vault_set(lv_action_t fail_cb, lv_action_t success_cb) {
+    vault_set( JOLT_OS_DERIVATION_PURPOSE,
+            JOLT_OS_DERIVATION_PATH,
+            JOLT_OS_DERIVATION_BIP32_KEY,
+            fail_cb, success_cb);
 }

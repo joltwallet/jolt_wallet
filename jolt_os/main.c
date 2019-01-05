@@ -148,7 +148,6 @@ void app_main() {
     /* Initialize LVGL graphics system */
     lv_init();
     display_init();
-    jolt_gui_store.mutex = xSemaphoreCreateMutex();
     indev_init();
 
     /* These lines are for configuring the ADC for sensing battery voltage;
