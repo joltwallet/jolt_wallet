@@ -7,9 +7,9 @@
 
 #include "i2c_phys.h"
 #include "driver/i2c.h" /* esp-idf i2c library */
+#include "hal/i2c.h" /* jolt i2c stuff */
 #include "esp_log.h"
 #include "esp_err.h"
-#include "jolt_globals.h"
 
 /** \brief I2C address used at AES132 library startup. */
 #define AES132_I2C_DEFAULT_ADDRESS   ((uint8_t) 0xA0)

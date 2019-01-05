@@ -15,7 +15,6 @@
 #include "jolttypes.h"
 #include "bipmnemonic.h"
 #include "jolt_helpers.h"
-#include "jolt_globals.h"
 #include "vault.h"
 #include "jolt_gui/jolt_gui.h"
 

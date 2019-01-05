@@ -28,7 +28,6 @@
 #include "hal/radio/bluetooth.h"
 #include "hal/radio/wifi.h"
 #include "hal/display.h"
-#include "jolt_globals.h"
 #include "hal/i2c.h"
 #include "hal/storage/storage.h"
 #include "hal/hw_monitor.h"

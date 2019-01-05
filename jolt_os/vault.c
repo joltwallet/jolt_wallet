@@ -19,14 +19,13 @@
 #include "jolttypes.h"
 #include "bipmnemonic.h"
 #include "jolt_helpers.h"
-#include "jolt_globals.h"
 #include "vault.h"
 #include "hal/storage/storage.h"
 #include "jolt_gui/jolt_gui.h"
 
 static const char* TAG = "vault";
 
-vault_t *vault = NULL;
+static vault_t *vault = NULL;
 /* The following semaphores are not part of the vault object so we can use
  * sodium_malloc() */
 static SemaphoreHandle_t vault_sem; // Used for general vault access

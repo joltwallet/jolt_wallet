@@ -6,8 +6,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
-
-#include "jolt_globals.h"
+#include "jolttypes.h"
 
 static const char TAG[] = "hal/i2c";
 

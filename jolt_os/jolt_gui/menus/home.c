@@ -10,7 +10,6 @@
 
 /* Stuff that should be moved somewhere else */
 #include "jolt_gui/jolt_gui_qr.h"
-#include "jolt_globals.h"
 
 lv_theme_t *jolt_gui_theme = NULL;
 

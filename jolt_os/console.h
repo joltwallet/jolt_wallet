@@ -8,6 +8,9 @@
 
 #include "esp_console.h"
 #include "lvgl/lvgl.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+
 
 typedef struct jolt_cmd_t {
     SemaphoreHandle_t complete;

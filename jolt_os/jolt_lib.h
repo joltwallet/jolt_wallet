@@ -24,7 +24,6 @@
 #include "sodium/private/curve25519_ref10.h"
 
 #include "console.h"
-#include "jolt_globals.h"
 #include "hal/storage/storage.h"
 #include "hal/display.h"
 #include "jolt_helpers.h"
@@ -336,7 +335,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( subconsole_cmd_register ),
     EXPORT_SYMBOL( subconsole_cmd_run ),
     EXPORT_SYMBOL( vTaskDelete ),
-    EXPORT_SYMBOL( vault ),
+    //EXPORT_SYMBOL( vault ),
     EXPORT_SYMBOL( vault_refresh ),
     EXPORT_SYMBOL( vault_sem_give ),
     EXPORT_SYMBOL( vault_sem_take ),

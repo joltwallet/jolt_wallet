@@ -13,7 +13,6 @@
 #include "sodium.h"
 
 #include "../console.h"
-#include "jolt_globals.h"
 #include "jolt_gui/confirmation.h"
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_helpers.h"

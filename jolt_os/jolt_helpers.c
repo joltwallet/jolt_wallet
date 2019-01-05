@@ -19,7 +19,6 @@
 
 #include "jolt_helpers.h"
 #include "hal/storage/storage.h"
-#include "jolt_globals.h"
 
 
 static const char* TAG = "helpers";

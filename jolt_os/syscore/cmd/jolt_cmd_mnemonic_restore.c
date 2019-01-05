@@ -14,7 +14,6 @@
 
 #include "bipmnemonic.h"
 
-#include "jolt_globals.h"
 #include "console.h"
 #include "vault.h"
 #include "jolt_helpers.h"

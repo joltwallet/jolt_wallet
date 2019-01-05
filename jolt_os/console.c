@@ -14,7 +14,6 @@
 #include "esp_log.h"
 #include "linenoise/linenoise.h"
 
-#include "jolt_globals.h"
 #include "console.h"
 #include "vault.h"
 #include "jolt_helpers.h"
