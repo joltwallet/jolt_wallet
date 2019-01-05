@@ -281,6 +281,10 @@ char *vault_get_bip32_key(){
     return vault->bip32_key;
 }
 
+hd_node_t *vault_get_node(){
+    return &(vault->node);
+}
+
 bool vault_get_valid(){
     return vault_is_valid();
 }

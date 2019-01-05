@@ -38,6 +38,7 @@ bool vault_kick();
 uint32_t vault_get_coin_type();
 uint32_t vault_get_purpose();
 char *vault_get_bip32_key();
+hd_node_t *vault_get_node();
 
 bool vault_is_valid();
 bool vault_get_valid();

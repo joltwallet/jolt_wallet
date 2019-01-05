@@ -335,6 +335,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( subconsole_cmd_register ),
     EXPORT_SYMBOL( subconsole_cmd_run ),
     EXPORT_SYMBOL( vTaskDelete ),
+    EXPORT_SYMBOL( vault_get_node ),
     EXPORT_SYMBOL( vault_get_valid ),
     EXPORT_SYMBOL( vault_is_valid ),
     EXPORT_SYMBOL( vault_refresh ),
