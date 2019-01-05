@@ -281,3 +281,10 @@ uint32_t vault_get_purpose(){
 char *vault_get_bip32_key(){
     return vault->bip32_key;
 }
+
+bool vault_get_valid(){
+    return vault_is_valid();
+}
+bool vault_is_valid(){
+    return vault->valid;
+}

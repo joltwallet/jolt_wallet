@@ -1,16 +1,13 @@
-#include "hw_monitor.h"
-#include "jolt_gui/jolt_gui.h"
 #include "esp_log.h"
-
+#include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
-
+#include "hw_monitor.h"
+#include "jolt_gui/jolt_gui.h"
+#include "jolt_helpers.h"
+#include "vault.h"
 #include <driver/adc.h>
-
-#include "esp_wifi.h"
-
-#include "jolt_globals.h"
 
 /**********************
  *  STATIC PROTOTYPES
@@ -112,7 +109,7 @@ static void jolt_hw_monitor_get_wifi_level(hardware_monitor_t *monitor) {
 }
 
 void jolt_hw_monitor_get_lock_status(hardware_monitor_t *monitor) {
-    MONITOR_UPDATE(!(vault->valid));
+    MONITOR_UPDATE(!vault_is_valid());
 }
 
 /* Creates all the hardware_monitor mutex's and sets their updater functions */

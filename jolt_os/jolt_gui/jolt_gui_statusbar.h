@@ -2,7 +2,6 @@
 #define __JOLT_GUI_STATUSBAR_H__
 
 #include "../lv_conf.h"
-#include "test_stubs.h"
 
 enum {
     JOLT_GUI_STATUSBAR_INDEX_BATTERY = 0,
@@ -18,7 +17,6 @@ enum {
 #ifndef CONFIG_JOLT_GUI_TITLE_W
     #define CONFIG_JOLT_GUI_TITLE_W 70
 #endif
-
 
 void statusbar_create();
 

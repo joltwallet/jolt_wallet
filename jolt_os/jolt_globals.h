@@ -14,11 +14,6 @@
 #include "vault.h"
 #include "hal/lv_drivers/display/SSD1306.h"
 
-/* Macros so that the battery adc pin can be specified in Kconfig */
-#define XJOLT_ADC1(x) ADC1_GPIO ## x ## _CHANNEL
-#define JOLT_ADC1(x) XJOLT_ADC1(x)
-#define JOLT_ADC1_VBATT JOLT_ADC1(CONFIG_JOLT_VBATT_SENSE_PIN)
-
 vault_t *vault;
 
 extern TaskHandle_t console_h;
