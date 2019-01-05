@@ -701,7 +701,7 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
         PROFILER_MAX_R_OFFSET(rel.r_offset);
         PROFILER_MAX_R_ADDEND(rel.r_addend);
 
-        Jelf_Sym sym;
+        Jelf_Sym sym = { 0 };
         int symEntry = JELF_R_SYM( rel.r_info); // SymbolTable Index
         int relType  = JELF_R_TYPE(rel.r_info); // RelocationType
 
@@ -717,7 +717,7 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
         Jelf_Addr symAddr = findSymAddr(ctx, &sym) + rel.r_addend;
         PROFILER_START_RELOCATESECTION;
 
-        uint32_t from, to;
+        uint32_t from = 0, to = 0;
         if (relType == R_XTENSA_NONE || relType == R_XTENSA_ASM_EXPAND) {
             #if 0
             MSG("  %08X %04X %04X %-20s %08X          %08X"
