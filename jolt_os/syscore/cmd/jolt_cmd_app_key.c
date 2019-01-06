@@ -83,12 +83,9 @@ int jolt_cmd_app_key(int argc, char** argv){
     snprintf(body, sizeof(body), "WARNING: This will perform a factory reset.\nSet app public key to: \n%s ?", argv[1]);
 
     /* Prompt user */
-    jolt_gui_sem_take();
     scr = jolt_gui_scr_text_create("Set App Key", body);
     jolt_gui_scr_set_back_action(scr, set_app_key_back_cb);
     jolt_gui_scr_set_enter_action(scr, set_app_key_enter_cb);
-    jolt_gui_sem_give();
-    // todo: delay until the user presses back instead of returning immediately
 
 exit:
     return return_code;

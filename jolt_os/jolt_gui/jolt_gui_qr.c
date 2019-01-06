@@ -55,49 +55,39 @@ static lv_img_dsc_t *jolt_gui_qr_to_img_dsc(QRCode *qrcode) {
 /* Callback for back button */
 static lv_res_t delete_screen(lv_obj_t *btn) {
     lv_obj_t *img = NULL;
-    {
+    JOLT_GUI_CTX{
         /* Find Image Object */
         lv_obj_t *parent = NULL;
         lv_obj_t *cont_body = NULL;
         parent     = lv_obj_get_parent( btn );
         cont_body  = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_CONT_BODY);
         img        = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_IMG_QR);
+
+        /* free memory use by img */
+        lv_img_ext_t *ext = lv_obj_get_ext_attr(img);
+        const uint8_t *data = ((lv_img_dsc_t *)(ext->src))->data;
+
+        lv_img_set_src( img, NULL );
+        free((void*)data);
+
+        jolt_gui_scr_del();
     }
-
-    /* free memory use by img */
-    lv_img_ext_t *ext = lv_obj_get_ext_attr(img);
-    const uint8_t *data = ((lv_img_dsc_t *)(ext->src))->data;
-
-    lv_img_set_src( img, NULL );
-    free((void*)data);
-
-    jolt_gui_scr_del();
-
-exit:
     return LV_RES_INV;
 }
 
 static lv_obj_t *jolt_gui_qr_fullscreen_create( const char *title, 
         lv_img_dsc_t *qrcode_img) {
-    JOLT_GUI_SCR_PREAMBLE( title );
+    JOLT_GUI_SCR_CTX( title ){
+        lv_obj_t *img = BREAK_IF_NULL(lv_img_create(cont_body, NULL));
+        lv_obj_set_free_num(img, JOLT_GUI_OBJ_ID_IMG_QR);
+        lv_img_set_src( img, qrcode_img );
+        lv_img_set_auto_size(img, true);
+        lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);
 
-    lv_obj_t *img = lv_img_create(cont_body, NULL);
-    JOLT_GUI_OBJ_CHECK(img);
-    lv_obj_set_free_num(img, JOLT_GUI_OBJ_ID_IMG_QR);
-    lv_img_set_src( img, qrcode_img );
-    lv_img_set_auto_size(img, true);
-    lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);
-
-    if( NULL == jolt_gui_scr_set_back_action(parent, delete_screen) ) goto exit;
-    if( NULL == jolt_gui_scr_set_enter_action(parent, NULL) ) goto exit;
-
-    return parent;
-
-exit:
-    if( parent ) {
-        lv_obj_del(parent);
+        BREAK_IF_NULL( jolt_gui_scr_set_back_action(parent, delete_screen) );
+        BREAK_IF_NULL( jolt_gui_scr_set_enter_action(parent, NULL) );
     }
-    return NULL;
+    return parent;
 }
 
 /* Creates a screen display the qr code for the data.
@@ -121,8 +111,9 @@ lv_obj_t *jolt_gui_scr_qr_create(const char *title, const char *data,
     if( NULL == img ) {
         return NULL;
     }
-	lv_obj_t *scr = jolt_gui_qr_fullscreen_create(title, img);
-    if( NULL == scr ) {
+    lv_obj_t *scr = NULL;
+    JOLT_GUI_CTX{
+	    scr = jolt_gui_qr_fullscreen_create(title, img);
     }
     return scr;
 }

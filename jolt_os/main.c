@@ -111,9 +111,9 @@ void littlevgl_task() {
     ESP_LOGI(TAG, "Starting draw loop");
     TickType_t xLastWakeTime = xTaskGetTickCount();
     for( ;; vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS(10) ) ) {
-        jolt_gui_sem_take();
-        lv_task_handler();
-        jolt_gui_sem_give();
+        JOLT_GUI_CTX{
+            lv_task_handler();
+        }
     }
     ESP_LOGE(TAG, "Draw Loop Exitted"); // Should never reach here
     abort();

@@ -22,9 +22,7 @@ int jolt_cmd_wifi_update(int argc, char** argv) {
 
     if( update_success ) {
         printf("Wifi Settings Updated. Restarting...\n");
-        jolt_gui_sem_take();
         jolt_gui_scr_text_create( "WiFi Update", "WiFi credentials updated. Rebooting system." );
-        jolt_gui_sem_give();
         vTaskDelay(pdMS_TO_TICKS(1000));
         esp_restart();
         return_code = 0;

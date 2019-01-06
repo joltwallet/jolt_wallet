@@ -118,7 +118,7 @@
  */
 #define LV_LOG_LEVEL    LV_LOG_LEVEL_INFO
 
-#define LV_LOG_PRINTF   0   /* 1: Print the log with 'printf'; 0: user need to register a callback*/
+#define LV_LOG_PRINTF   1   /* 1: Print the log with 'printf'; 0: user need to register a callback*/
 #endif  /*USE_LV_LOG*/
 
 /*================

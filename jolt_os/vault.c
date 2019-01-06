@@ -31,6 +31,10 @@ static vault_t *vault = NULL;
 static SemaphoreHandle_t vault_sem; // Used for general vault access
 static SemaphoreHandle_t vault_watchdog_sem; // Used to kick the dog
 
+// Store the callback to perform when node derivation is complete
+static lv_action_t cb_vault_set_success = NULL;
+
+
 
 void vault_sem_take() {
     /* Takes Vault semaphore; restarts device if timesout during take. */
@@ -108,9 +112,6 @@ void vault_clear() {
         vault_sem_give();
     }
 }
-
-// Store the callback to perform when node derivation is complete
-static lv_action_t cb_vault_set_success = NULL;
 
 static void derivation_master_seed_task(jolt_derivation_t *status) {
     bm_mnemonic_to_master_seed_progress(
@@ -228,9 +229,7 @@ void vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key,
     /* Set success callback */
     cb_vault_set_success = success_cb;
 
-    jolt_gui_sem_take();
     jolt_gui_scr_pin_create(failure_cb, pin_success_cb);
-    jolt_gui_sem_give();
 }
 
 void vault_refresh(lv_action_t failure_cb, lv_action_t success_cb) {

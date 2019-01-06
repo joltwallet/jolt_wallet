@@ -112,11 +112,9 @@ bool set_wifi_credentials(char *ssid, char *pass) {
     /* Create prompt screen */
     snprintf(buf, sizeof(buf), JOLT_TEXT_WIFI_CRED_UPDATE_PROMPT_1,
             target_ssid, target_pass);
-    jolt_gui_sem_take();
     lv_obj_t *scr = jolt_gui_scr_text_create( title, buf );
     jolt_gui_scr_set_back_action( scr, prompt_1_back_cb );
     jolt_gui_scr_set_enter_action( scr, prompt_1_enter_cb );
-    jolt_gui_sem_give();
 
     /* Wait for user actions to complete */
     bool res;

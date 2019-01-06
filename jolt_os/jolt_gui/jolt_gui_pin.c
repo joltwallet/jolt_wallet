@@ -16,11 +16,12 @@ static lv_action_t user_enter_cb;
 /* Gets triggered when user presses back on the "incorrect pin" screen */
 static lv_res_t pin_fail_cb( lv_obj_t *btn ) {
     /* Recreate the pin entry screen */
-    jolt_gui_scr_pin_create(user_back_cb, user_enter_cb);
     /* Delete the "incorrect pin" screen */
-    lv_obj_t *scr = lv_obj_get_parent(btn);
-    ESP_LOGI(TAG, "Deleting %p", scr);
-    lv_obj_del(scr);
+    JOLT_GUI_CTX{
+        jolt_gui_scr_pin_create(user_back_cb, user_enter_cb);
+        lv_obj_t *scr = lv_obj_get_parent(btn);
+        lv_obj_del(scr);
+    }
     return LV_RES_INV;
 }
 
@@ -59,16 +60,16 @@ static lv_res_t stretch_cb(lv_obj_t *btn) {
 
 /* gets triggered when the user presses enter on the last pin roller on a pin
  * screen */
-static lv_res_t pin_enter_cb(lv_obj_t *num) {
+static lv_res_t pin_enter_cb(lv_obj_t *pin_scr) {
     // todo: display derivation path
     // todo: actually make this a loading screen
     
     /* Get the pin_hash from the pin screen */
-    jolt_gui_num_get_hash(num, jolt_gui_store.derivation.pin);
+    jolt_gui_scr_digit_entry_get_hash(pin_scr, jolt_gui_store.derivation.pin);
 
     /* Delete the Pin Entry Screen */
     ESP_LOGI(TAG, "Deleting PIN Screen");
-    lv_obj_del(lv_obj_get_parent(num));
+    lv_obj_del(pin_scr);
 
     ESP_LOGI(TAG, "Calling Storage Stretch");
     // todo: use app name for title
@@ -77,8 +78,8 @@ static lv_res_t pin_enter_cb(lv_obj_t *num) {
     return LV_RES_INV;
 }
 
-static lv_res_t pin_back_cb( lv_obj_t *num ) {
-    lv_obj_del(lv_obj_get_parent(num));
+static lv_res_t pin_back_cb( lv_obj_t *pin_scr ) {
+    lv_obj_del(pin_scr);
     if( NULL != user_back_cb ) {
         user_back_cb( NULL );
     }
@@ -137,11 +138,13 @@ lv_obj_t *jolt_gui_scr_pin_create(lv_action_t failure_cb, lv_action_t success_cb
     }
     #endif
 
-    lv_obj_t *parent = jolt_gui_scr_num_create( title,
-            CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_NO_DECIMAL, pin_enter_cb);
-
-    lv_obj_t *numeric = jolt_gui_scr_num_get(parent);
-    jolt_gui_num_set_back_action(numeric, pin_back_cb);
+    lv_obj_t *parent = NULL;
+    JOLT_GUI_CTX{
+        lv_obj_t *parent = jolt_gui_scr_digit_entry_create( title,
+                CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL);
+        jolt_gui_scr_set_back_action(parent, pin_back_cb);
+        jolt_gui_scr_set_enter_action(parent, pin_enter_cb);
+    }
 
     return parent;
 }
