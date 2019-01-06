@@ -54,8 +54,6 @@ typedef struct jolt_version_t {
 
 extern const jolt_version_t JOLT_VERSION;
 
-//extern const jolt_version_t JOLT_VERSION;
-
 #if JOLT_OS
 
 extern void *__floatsidf;
@@ -126,13 +124,13 @@ static const void *exports[] = {
     EXPORT_SYMBOL( heap_caps_calloc ),
     EXPORT_SYMBOL( jolt_gui_debug_obj_print ),
     EXPORT_SYMBOL( jolt_gui_obj_title_create ),
-    EXPORT_SYMBOL( jolt_gui_parent_create ),
+    EXPORT_SYMBOL( jolt_gui_obj_parent_create ),
+    EXPORT_SYMBOL( jolt_gui_scr_del ),
     EXPORT_SYMBOL( jolt_gui_scr_digit_entry_create ),
     EXPORT_SYMBOL( jolt_gui_scr_digit_entry_get_arr ),
     EXPORT_SYMBOL( jolt_gui_scr_digit_entry_get_double ),
     EXPORT_SYMBOL( jolt_gui_scr_digit_entry_get_hash ),
     EXPORT_SYMBOL( jolt_gui_scr_digit_entry_get_int ),
-    EXPORT_SYMBOL( jolt_gui_scr_del ),
     EXPORT_SYMBOL( jolt_gui_scr_loading_create ),
     EXPORT_SYMBOL( jolt_gui_scr_loading_update ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_add ),
@@ -351,6 +349,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( xQueueReceiveFromISR ),
     EXPORT_SYMBOL( xQueueTakeMutexRecursive ),
     EXPORT_SYMBOL( xTaskCreatePinnedToCore ),
+
 };
 
 static const jelfLoaderEnv_t env = {
@@ -360,7 +359,7 @@ static const jelfLoaderEnv_t env = {
 
 #else
 
-// Dummy place holder
+/* Dummy place holder */
 static const jelfLoaderEnv_t env;
 
 #endif
