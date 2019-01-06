@@ -19,6 +19,7 @@
  *  STATIC VARIABLES
  **********************/
 static const char TAG[] = "menu_home";
+static lv_obj_t *main_menu = NULL;
 
 static void launch_app_task(void *fn){
     char *fn_c = fn;
@@ -44,36 +45,37 @@ void jolt_gui_menu_home_create() {
     char **fns = NULL;
     uint16_t n_fns = jolt_fs_get_all_elf_fns( &fns );
 
-    jolt_gui_store.main_menu = jolt_gui_scr_menu_create("Main");
-    if( NULL == jolt_gui_store.main_menu ){
+    main_menu = jolt_gui_scr_menu_create("Main");
+    if( NULL == main_menu ){
         esp_restart();
     }
-    lv_obj_t *btn = jolt_gui_scr_set_back_action(jolt_gui_store.main_menu, NULL);
+    lv_obj_t *btn = jolt_gui_scr_set_back_action(main_menu, NULL);
     if( NULL == btn ){
         esp_restart();
     }
 
     for(uint16_t i=0; i<n_fns; i++) {
         ESP_LOGD(TAG, "Registering App \"%s\" into the GUI", fns[i]);
-        jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, fns[i], launch_file_proxy);
+        jolt_gui_scr_menu_add(main_menu, NULL, fns[i], launch_file_proxy);
     }
     jolt_h_free_char_array(fns, n_fns);
 
-    jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Settings", menu_settings_create);
+    jolt_gui_scr_menu_add(main_menu, NULL, "Settings", menu_settings_create);
 #if JOLT_GUI_TEST_MENU
-    jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "QR", jolt_gui_test_qrcode_create);
-    jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Loading", jolt_gui_test_loading_create);
-    jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Number", jolt_gui_test_number_create);
-    jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Battery", jolt_gui_test_battery_create);
-    jolt_gui_scr_menu_add(jolt_gui_store.main_menu, NULL, "Alphabet", jolt_gui_test_alphabet_create);
+    jolt_gui_scr_menu_add(main_menu, NULL, "QR", jolt_gui_test_qrcode_create);
+    jolt_gui_scr_menu_add(main_menu, NULL, "Loading", jolt_gui_test_loading_create);
+    jolt_gui_scr_menu_add(main_menu, NULL, "Number", jolt_gui_test_number_create);
+    jolt_gui_scr_menu_add(main_menu, NULL, "Battery", jolt_gui_test_battery_create);
+    jolt_gui_scr_menu_add(main_menu, NULL, "Alphabet", jolt_gui_test_alphabet_create);
 #endif
 }
 
 /* Refreshes the home menu.
  * Use cases: call after downloading an app. */
 void jolt_gui_menu_home_refresh() {
-    if( NULL != jolt_gui_store.main_menu){
-        lv_obj_del(jolt_gui_store.main_menu);
+    if( NULL != main_menu){
+        jolt_gui_obj_del(main_menu);
+        main_menu = NULL;
     }
     jolt_gui_menu_home_create();
 }

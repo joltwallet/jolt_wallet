@@ -40,7 +40,6 @@
 /* This whole struct should be moved into globals */
 struct {
     bool first_boot;
-    lv_obj_t *main_menu;
     struct {
         lv_group_t *main; // Parent group for user input
         lv_group_t *back; // Group used to handle back button
