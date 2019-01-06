@@ -104,6 +104,9 @@ lv_obj_t *jolt_gui_obj_cont_body_create( lv_obj_t *scr );
  * Allocates and copies the title string. */
 lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title);
 
+/* Wraps lv_obj_del in a JOLT_GUI_CTX */
+void jolt_gui_obj_del(lv_obj_t *obj);
+
 /***************
  * Group Stuff *
  ***************/

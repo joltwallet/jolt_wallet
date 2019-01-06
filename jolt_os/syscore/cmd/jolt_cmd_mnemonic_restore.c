@@ -145,9 +145,7 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
         btn = BREAK_IF_NULL(jolt_gui_scr_set_enter_action(scr, jolt_cmd_mnemonic_restore_enter));
     }
     if( NULL == scr && NULL == btn ){
-        JOLT_GUI_CTX{
-            lv_obj_del(scr);
-        }
+        jolt_gui_obj_del(scr);
         return_code = -1;
         goto exit;
     }
@@ -202,9 +200,7 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
     sodium_memzero(mnemonic, sizeof(mnemonic));
 
     /* Leverages a lot of the same intial-boot code */
-    JOLT_GUI_CTX{
-        jolt_gui_restore_sequence( bin );
-    }
+    jolt_gui_restore_sequence( bin );
 
 exit:
     printf("Exiting Mnemonic Restore.\n");

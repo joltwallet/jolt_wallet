@@ -125,6 +125,12 @@ lv_obj_t *jolt_gui_obj_cont_body_create( lv_obj_t *parent ) {
     return cont;
 }
 
+void jolt_gui_obj_del(lv_obj_t *obj){
+    JOLT_GUI_CTX{
+        lv_obj_del(obj);
+    }
+}
+
 /***************
  * Group Stuff *
  ***************/
