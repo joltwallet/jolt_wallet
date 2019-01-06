@@ -104,7 +104,7 @@ lv_res_t jolt_gui_scr_del();
 /* These functions for the base to create new screen types */
 
 /* Creates a parent object for a new screen thats easy to delete */
-lv_obj_t *jolt_gui_parent_create();
+lv_obj_t *jolt_gui_obj_parent_create();
 
 /* Creates the body container */ 
 lv_obj_t *jolt_gui_obj_cont_body_create( lv_obj_t *scr );
@@ -179,7 +179,7 @@ const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val);
  * so that all the objects are exposed to be returned. */
 #define JOLT_GUI_SCR_PREAMBLE( title ) \
     lv_obj_t *parent = NULL, *label_title = NULL, *cont_body = NULL; \
-    if( (parent = jolt_gui_parent_create()) ) { \
+    if( (parent = jolt_gui_obj_parent_create()) ) { \
         if( (label_title = jolt_gui_obj_title_create(parent, title)) \
                 && (cont_body = jolt_gui_obj_cont_body_create( parent )) ) { \
             jolt_gui_group_add( parent ); \

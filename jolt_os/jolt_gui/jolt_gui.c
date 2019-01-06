@@ -57,7 +57,7 @@ lv_res_t jolt_gui_scr_del() {
  **************************************/
 
 /* Creates a dummy invisible object to anchor lvgl objects on the screen */
-lv_obj_t *jolt_gui_parent_create() {
+lv_obj_t *jolt_gui_obj_parent_create() {
     lv_obj_t *parent = NULL;
     JOLT_GUI_CTX{
         parent = BREAK_IF_NULL(lv_obj_create(lv_scr_act(), NULL));
