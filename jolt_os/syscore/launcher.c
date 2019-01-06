@@ -185,7 +185,7 @@ exit:
     return return_code;
 }
 
-static lv_res_t launch_app_from_store(lv_obj_t *btn) {
+static lv_res_t launch_app_from_store(lv_obj_t *dummy) {
     ESP_LOGI(TAG, "Launching App");
     app_cache.scr = (lv_obj_t *)jelfLoaderRun(app_cache.ctx,
             app_cache.argc, app_cache.argv);
