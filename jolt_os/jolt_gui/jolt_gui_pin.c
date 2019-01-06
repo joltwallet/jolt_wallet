@@ -16,11 +16,12 @@ static lv_action_t user_enter_cb;
 /* Gets triggered when user presses back on the "incorrect pin" screen */
 static lv_res_t pin_fail_cb( lv_obj_t *btn ) {
     /* Recreate the pin entry screen */
-    jolt_gui_scr_pin_create(user_back_cb, user_enter_cb);
     /* Delete the "incorrect pin" screen */
-    lv_obj_t *scr = lv_obj_get_parent(btn);
-    ESP_LOGI(TAG, "Deleting %p", scr);
-    lv_obj_del(scr);
+    JOLT_GUI_CTX{
+        jolt_gui_scr_pin_create(user_back_cb, user_enter_cb);
+        lv_obj_t *scr = lv_obj_get_parent(btn);
+        lv_obj_del(scr);
+    }
     return LV_RES_INV;
 }
 

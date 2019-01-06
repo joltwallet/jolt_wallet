@@ -26,10 +26,15 @@ typedef struct {
     lv_action_t enter_cb;
 } digit_entry_cont_ext_t;
 
+/* Static Variables */
 static const char TAG[] = "digit_entry";
 static lv_signal_func_t old_roller_signal = NULL;     /*Store the old signal function*/
 
+/* Static Functions Declarations */
 static lv_obj_t *digit_create(lv_obj_t *parent);
+static void loop_roller( lv_obj_t *rol);
+static unsigned concat_int(unsigned x, unsigned y);
+static lv_obj_t *create_dp(lv_obj_t *parent);
 
 static void loop_roller( lv_obj_t *rol) {
     /* Loops roller position */
@@ -129,6 +134,8 @@ static lv_obj_t *digit_create(lv_obj_t *parent) {
     lv_roller_set_align(roller, LV_LABEL_ALIGN_CENTER);
     return roller;
 }
+
+/* Create the decimal point label object */
 static lv_obj_t *create_dp(lv_obj_t *parent){
     lv_obj_t *label = lv_label_create(parent, NULL);
     lv_label_set_text(label, ".");
@@ -149,27 +156,43 @@ lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
             return NULL;
         }
     }
+    if( n > CONFIG_JOLT_GUI_SCR_DIGIT_ENTRY_MAX_LEN ){
+        return NULL;
+    }
 
     JOLT_GUI_SCR_CTX(title){
         BREAK_IF_NULL(lv_obj_allocate_ext_attr(cont_body, sizeof(digit_entry_cont_ext_t)));
         digit_entry_cont_ext_t *ext = lv_obj_get_ext_attr(cont_body);
-        lv_cont_set_layout(cont_body, LV_LAYOUT_PRETTY);
-        BREAK_IF_NULL(jolt_gui_scr_set_back_action(parent, &jolt_gui_send_left_main));
-        BREAK_IF_NULL(jolt_gui_scr_set_enter_action(parent, &jolt_gui_send_enter_main));
-        lv_obj_set_free_num(parent, JOLT_GUI_SCR_ID_DIGIT_ENTRY);
 
-        ext->sel = 0;
+        /* Setup style */
+        static lv_style_t cont_body_style_obj;
+        static lv_style_t *cont_body_style = NULL;
+        if( NULL == cont_body_style ){
+            cont_body_style = &cont_body_style_obj;
+            lv_style_copy(cont_body_style, lv_cont_get_style(cont_body));
+            cont_body_style->body.padding.inner = 1;
+            cont_body_style->body.padding.hor = 0;
+        }
+        lv_cont_set_style(cont_body, cont_body_style);
+        lv_cont_set_layout(cont_body, LV_LAYOUT_PRETTY);
 
         /* Forward left/right actions get forwarded to the main group */
         ext->back_cb = &jolt_gui_scr_del;
         ext->enter_cb = NULL;
+        BREAK_IF_NULL(jolt_gui_scr_set_back_action(parent, &jolt_gui_send_left_main));
+        BREAK_IF_NULL(jolt_gui_scr_set_enter_action(parent, &jolt_gui_send_enter_main));
 
-        if( n > sizeof(ext->rollers) || n < 0 ) break;
+        lv_obj_set_free_num(parent, JOLT_GUI_SCR_ID_DIGIT_ENTRY);
 
+
+        /* Initialize remaining ext params */
+        ext->sel = 0;
         ext->decimal_point = NULL;
         if( visible_decimal ){
             ext->decimal_point_pos = pos;
         }
+        ext->num_rollers = n;
+
         /* Create left to right */
         for(int8_t i=0; i < n; i++){
             if(pos + i == n ){
@@ -184,7 +207,6 @@ lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
             }
             lv_obj_set_signal_func(ext->rollers[i], new_roller_signal);
         }
-        ext->num_rollers = n;
         if( 0 == pos ) {
             ext->decimal_point = create_dp(cont_body);
         }
@@ -297,10 +319,7 @@ uint32_t jolt_gui_scr_digit_entry_get_int(lv_obj_t *parent) {
         if( n <= 0 ){
             break;
         }
-        res = array[0];
-
-        for(uint8_t i=1; i < n; i++){
-            ESP_LOGI(TAG, "val: %d", res);
+        for(uint8_t i=0; i < n; i++){
             res = concat_int(res, array[i]);
         }
 

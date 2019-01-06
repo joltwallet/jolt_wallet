@@ -111,12 +111,12 @@ static lv_res_t mismatch_cb(lv_obj_t *btn) {
     return LV_RES_INV;
 }
 
-static lv_res_t screen_finish_create(lv_obj_t *num) {
+static lv_res_t screen_finish_create(lv_obj_t *verify_scr) {
     CONFIDENTIAL static uint256_t pin_hash_verify;
-    jolt_gui_scr_digit_entry_get_hash(num, pin_hash_verify);
+    jolt_gui_scr_digit_entry_get_hash(verify_scr, pin_hash_verify);
 
     // Delete verify pin entry screen
-    jolt_gui_obj_del(lv_obj_get_parent(num));
+    jolt_gui_obj_del(verify_scr);
 
     int res = memcmp(jolt_gui_store.derivation.pin, pin_hash_verify, sizeof(pin_hash_verify));
     sodium_memzero(pin_hash_verify, sizeof(pin_hash_verify));
@@ -134,24 +134,27 @@ static lv_res_t screen_finish_create(lv_obj_t *num) {
     return LV_RES_INV;
 }
 
-static lv_res_t screen_pin_verify_create(lv_obj_t *num) {
-    jolt_gui_scr_digit_entry_get_hash(num, jolt_gui_store.derivation.pin); // compute hash for first pin entry screen
+static lv_res_t screen_pin_verify_create(lv_obj_t *pin_scr) {
+    jolt_gui_scr_digit_entry_get_hash(pin_scr, jolt_gui_store.derivation.pin); // compute hash for first pin entry screen
     // Delete original PIN entry screen
-    jolt_gui_obj_del(lv_obj_get_parent(num));
+    jolt_gui_obj_del(pin_scr);
     // Create Verify PIN screen
-    lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "PIN Verify", CONFIG_JOLT_GUI_PIN_LEN,
-            JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL); 
-    jolt_gui_scr_set_enter_action(scr, &screen_finish_create);
+    lv_obj_t *verify_scr = jolt_gui_scr_digit_entry_create( "PIN Verify",
+            CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL); 
+    if( NULL == verify_scr ){
+        esp_restart();
+    }
+    jolt_gui_scr_set_enter_action(verify_scr, &screen_finish_create);
     return LV_RES_INV;
 }
 
 static lv_res_t screen_pin_entry_create(lv_obj_t *btn) {
     lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "PIN",
             CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL);
-    jolt_gui_scr_set_enter_action(scr, &screen_pin_verify_create);
     if( NULL == scr ){
         esp_restart();
     }
+    jolt_gui_scr_set_enter_action(scr, &screen_pin_verify_create);
     return LV_RES_OK;
 }
 
