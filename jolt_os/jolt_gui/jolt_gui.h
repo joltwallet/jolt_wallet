@@ -158,7 +158,8 @@ const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val);
 #define JOLT_GUI_CTX \
     MPP_BEFORE(1, jolt_gui_sem_take() ) \
     MPP_DO_WHILE(2, false) \
-    MPP_FINALLY(3, jolt_gui_sem_give() )
+    MPP_BREAK_HANDLER(3, ESP_LOGE(TAG, "JOLT_GUI_CTX break L%d", __LINE__)) \
+    MPP_FINALLY(4, jolt_gui_sem_give() )
 
 #define if_not(x) if(!(x))
 

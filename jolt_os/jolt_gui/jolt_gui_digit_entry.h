@@ -20,9 +20,23 @@
 lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
         int8_t n, int8_t pos);
 
+/* Value getters */
 int8_t jolt_gui_scr_digit_entry_get_arr(lv_obj_t *parent, uint8_t *arr, uint8_t arr_len);
 uint8_t jolt_gui_scr_digit_entry_get_hash(lv_obj_t *parent, uint8_t *hash);
 
+
+/* Note: the float/double functions are primarily used for display purposes. 
+ * Floats/Doubles are not precisely the value specified.
+ * Exercise heavy caution if using the returned value in signed transactions.*/
+
+/* Returns the entered value as a double, taking into account the decimal point.*/
+double jolt_gui_scr_digit_entry_get_double(lv_obj_t *parent);
+
+/* Return the enter value as all the rollers concatenated.
+ * Does not take into account decimal place. */
+uint32_t jolt_gui_scr_digit_entry_get_int(lv_obj_t *parent);
+
+/* Action Setters */
 void jolt_gui_scr_digit_entry_set_back_action(lv_obj_t *parent, lv_action_t cb);
 void jolt_gui_scr_digit_entry_set_enter_action(lv_obj_t *parent, lv_action_t cb);
 

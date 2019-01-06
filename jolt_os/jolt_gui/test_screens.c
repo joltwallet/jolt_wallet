@@ -6,9 +6,17 @@
 
 static const char TAG[] = "test_screens";
 
+static lv_res_t jolt_gui_test_number_enter_cb(lv_obj_t *parent){
+    double d_val = jolt_gui_scr_digit_entry_get_double(parent);
+    uint32_t i_val = jolt_gui_scr_digit_entry_get_int(parent);
+    ESP_LOGI(TAG, "Entry as Double: %f", d_val);
+    ESP_LOGI(TAG, "Entry as Integer: %d", i_val);
+    return jolt_gui_scr_del( parent );
+}
+
 lv_res_t jolt_gui_test_number_create(lv_obj_t *btn) {
     lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "Number Test", 7, 2); 
-    jolt_gui_scr_set_enter_action(scr, jolt_gui_scr_del);
+    jolt_gui_scr_set_enter_action(scr, jolt_gui_test_number_enter_cb);
     return LV_RES_OK;
 }
 

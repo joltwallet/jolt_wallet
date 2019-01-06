@@ -202,6 +202,7 @@ int8_t jolt_gui_scr_digit_entry_get_arr(lv_obj_t *parent, uint8_t *arr, uint8_t 
         lv_obj_t *cont_body = NULL;
         cont_body = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_CONT_BODY);
         ext = lv_obj_get_ext_attr(cont_body);
+        n_entries = ext->num_rollers;
         if( arr_len < ext->num_rollers ) {
             /* insufficient output buffer */
             break;
@@ -209,7 +210,6 @@ int8_t jolt_gui_scr_digit_entry_get_arr(lv_obj_t *parent, uint8_t *arr, uint8_t 
         for(uint8_t i=0; i < ext->num_rollers; i++) {
             arr[i] = 9 - (lv_roller_get_selected(ext->rollers[i]) % 10);
         }
-
     }
 #if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
     if(n_entries > 0){
@@ -228,21 +228,16 @@ int8_t jolt_gui_scr_digit_entry_get_arr(lv_obj_t *parent, uint8_t *arr, uint8_t 
 uint8_t jolt_gui_scr_digit_entry_get_hash(lv_obj_t *parent, uint8_t *hash) {
     uint8_t res = 1;
     JOLT_GUI_CTX{
-        lv_obj_t *cont_body = NULL;
-        cont_body = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_CONT_BODY);
-        digit_entry_cont_ext_t *ext = lv_obj_get_ext_attr(cont_body);
-        uint8_t pin_array[sizeof(ext->rollers)] = { 0 };
-        jolt_gui_scr_digit_entry_get_arr(parent, pin_array, sizeof(pin_array));
+        uint32_t val = jolt_gui_scr_digit_entry_get_int(parent);
 
         /* Convert pin into a 256-bit key */
         crypto_generichash_blake2b_state hs;
         crypto_generichash_init(&hs, NULL, 32, 32);
-        crypto_generichash_update(&hs, (unsigned char *) pin_array,
-                CONFIG_JOLT_GUI_PIN_LEN);
+        crypto_generichash_update(&hs, (unsigned char *) &val, sizeof(val));
         crypto_generichash_final(&hs, hash, 32);
 
         /* Clean up local pin_array variable */
-        sodium_memzero(pin_array, sizeof(pin_array));
+        sodium_memzero(&val, sizeof(val));
         res = 0;
     }
     return res;
@@ -265,3 +260,53 @@ void jolt_gui_scr_digit_entry_set_enter_action(lv_obj_t *parent, lv_action_t cb)
         ext->enter_cb = cb;
     }
 }
+
+static unsigned concat_int(unsigned x, unsigned y) {
+    unsigned pow = 10;
+    while(y >= pow)
+        pow *= 10;
+    return x * pow + y;        
+}
+
+double jolt_gui_scr_digit_entry_get_double(lv_obj_t *parent){
+    double res = 0;
+    JOLT_GUI_CTX{
+        lv_obj_t *cont_body = NULL;
+        cont_body = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_CONT_BODY);
+        digit_entry_cont_ext_t *ext = lv_obj_get_ext_attr(cont_body);
+
+        res = (double)jolt_gui_scr_digit_entry_get_int(parent);
+
+        for(int8_t i = ext->decimal_point_pos; i>0; i--) {
+            res /= 10; 
+        }
+    }
+    return res;
+}
+
+uint32_t jolt_gui_scr_digit_entry_get_int(lv_obj_t *parent) {
+    uint32_t res = 0;
+    JOLT_GUI_CTX{
+        lv_obj_t *cont_body = NULL;
+        cont_body = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_CONT_BODY);
+        digit_entry_cont_ext_t *ext = lv_obj_get_ext_attr(cont_body);
+
+        uint8_t array[sizeof(ext->rollers)] = { 0 };
+        int8_t n = jolt_gui_scr_digit_entry_get_arr(parent, array, sizeof(array));
+
+        if( n <= 0 ){
+            break;
+        }
+        res = array[0];
+
+        for(uint8_t i=1; i < n; i++){
+            ESP_LOGI(TAG, "val: %d", res);
+            res = concat_int(res, array[i]);
+        }
+
+        /* Securely wipe local array value */
+        sodium_memzero(array, sizeof(array));
+    }
+    return res;
+}
+
