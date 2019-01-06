@@ -157,7 +157,7 @@ void jolt_gui_group_add( lv_obj_t *obj ){
  * Action *
  **********/
 
-static lv_obj_t *jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb, 
+lv_obj_t *jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb, 
         lv_group_t *g) {
     lv_obj_t *btn = NULL;
     JOLT_GUI_CTX{

@@ -3,44 +3,49 @@
 
 #include <stddef.h>
 #include "../lvgl/lvgl.h"
-#include "jolt_gui.h"
 
-
-#define JOLT_GUI_BACK // Used to close window, or go to the left during entry
-void jolt_gui_back_callback();
-
-//lv_res_t jolt_gui_pin_create( void ); 
-
-/* Creates a numeric entry form with "n" digits and a decimal-point "decimal"
- * digits from the right. If decimal is negative, then no decimal will show.
- * Callback gets called after final roller entry.*/
 #define JOLT_GUI_NO_DECIMAL -1
-lv_obj_t *jolt_gui_numeric_create( int8_t n, int8_t decimal, const char *title,
-        lv_action_t cb ); 
-
-
-/* New API */
-#if USE_LV_GROUP == 0
-#error "jolt_gui_num: lv_group is required. Enable it in lv_conf.h (USE_LV_GROUP  1) "
-#endif
-
 #ifndef CONFIG_JOLT_GUI_ANIM_DIGIT_MS
     #define CONFIG_JOLT_GUI_ANIM_DIGIT_MS 90
 #endif
-#ifndef CONFIG_JOLT_GUI_NUMERIC_LEN
+#ifndef CONFIG_JOLT_GUI_DIGIT_ENTRY_MAX_LEN
     // Max number of rollers
-    #define CONFIG_JOLT_GUI_NUMERIC_LEN 8
+    #define CONFIG_JOLT_GUI_DIGIT_ENTRY_MAX_LEN 8
 #endif
 #ifndef CONFIG_JOLT_GUI_PIN_LEN
     // note: must be less than or equal to CONFIG_JOLT_GUI_NUMERIC_LEN
     #define CONFIG_JOLT_GUI_PIN_LEN 8
 #endif
 
+lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
+        int8_t n, int8_t pos);
+
+int8_t jolt_gui_scr_digit_entry_get_arr(lv_obj_t *parent, uint8_t *arr, uint8_t arr_len);
+uint8_t jolt_gui_scr_digit_entry_get_hash(lv_obj_t *parent, uint8_t *hash);
+
+#if 0
+void jolt_gui_scr_digit_entry_set_back_action(lv_obj_t *parent, lv_action_t *cb);
+void jolt_gui_scr_digit_entry_set_enter_action(lv_obj_t *parent, lv_action_t *cb);
+#endif
+
+#if 0
+/* Creates a numeric entry form with "n" digits and a decimal-point "decimal"
+ * digits from the right. If decimal is negative, then no decimal will show.
+ * Callback gets called after final roller entry.*/
+lv_obj_t *jolt_gui_numeric_create( int8_t n, int8_t decimal, const char *title,
+        lv_action_t cb ); 
+
+/* New API */
+#if USE_LV_GROUP == 0
+#error "jolt_gui_num: lv_group is required. Enable it in lv_conf.h (USE_LV_GROUP  1) "
+#endif
+
+
 typedef struct {
     lv_obj_t *rollers[CONFIG_JOLT_GUI_NUMERIC_LEN];
     uint8_t len; // Number of digits
-    int8_t pos;
-    int8_t decimal; // Position of decimal point from right.
+    int8_t pos; // selected roller 0-indexed from the left
+    int8_t decimal; // Position of decimal point from right. -1 for no decimal
     lv_obj_t *decimal_obj;
     uint8_t spacing; // Distance between rollers
     uint8_t offset; // Distance between first roller and left screen
@@ -64,6 +69,7 @@ uint8_t jolt_gui_num_get_arr(lv_obj_t *num, uint8_t *arr, uint8_t arr_len);
 
 /* Computes a 256-bit blake2b hash into *hash */
 uint8_t jolt_gui_num_get_hash(lv_obj_t *num, uint8_t *hash);
+#endif
 
 
 #endif

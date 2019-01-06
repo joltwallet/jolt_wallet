@@ -7,7 +7,8 @@
 static const char TAG[] = "test_screens";
 
 lv_res_t jolt_gui_test_number_create(lv_obj_t *btn) {
-    jolt_gui_scr_num_create( "Number Test", 4, 2, jolt_gui_scr_del); 
+    lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "Number Test", 4, 2); 
+    jolt_gui_scr_set_enter_action(scr, jolt_gui_scr_del);
     return LV_RES_OK;
 }
 

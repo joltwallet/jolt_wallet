@@ -80,6 +80,8 @@ typedef enum {
     JOLT_GUI_OBJ_ID_IMG_QR,           // QR code object
     JOLT_GUI_OBJ_ID_SLIDER,
     JOLT_GUI_OBJ_ID_LIST,
+    JOLT_GUI_OBJ_ID_ROLLER,
+    JOLT_GUI_OBJ_ID_DECIMAL_POINT,
 } jolt_gui_obj_id_t;
 
 /*********************

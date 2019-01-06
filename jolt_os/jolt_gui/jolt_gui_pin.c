@@ -64,7 +64,7 @@ static lv_res_t pin_enter_cb(lv_obj_t *num) {
     // todo: actually make this a loading screen
     
     /* Get the pin_hash from the pin screen */
-    jolt_gui_num_get_hash(num, jolt_gui_store.derivation.pin);
+    jolt_gui_scr_digit_entry_get_hash(num, jolt_gui_store.derivation.pin);
 
     /* Delete the Pin Entry Screen */
     ESP_LOGI(TAG, "Deleting PIN Screen");
@@ -139,10 +139,10 @@ lv_obj_t *jolt_gui_scr_pin_create(lv_action_t failure_cb, lv_action_t success_cb
 
     lv_obj_t *parent = NULL;
     JOLT_GUI_CTX{
-        lv_obj_t *parent = jolt_gui_scr_num_create( title,
-                CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_NO_DECIMAL, pin_enter_cb);
-        lv_obj_t *numeric = jolt_gui_scr_num_get(parent);
-        jolt_gui_num_set_back_action(numeric, pin_back_cb);
+        lv_obj_t *parent = jolt_gui_scr_digit_entry_create( title,
+                CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_NO_DECIMAL);
+        jolt_gui_scr_set_back_action(parent, pin_back_cb);
+        jolt_gui_scr_set_enter_action(parent, pin_enter_cb);
     }
 
     return parent;
