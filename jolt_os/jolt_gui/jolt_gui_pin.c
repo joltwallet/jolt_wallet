@@ -60,16 +60,16 @@ static lv_res_t stretch_cb(lv_obj_t *btn) {
 
 /* gets triggered when the user presses enter on the last pin roller on a pin
  * screen */
-static lv_res_t pin_enter_cb(lv_obj_t *num) {
+static lv_res_t pin_enter_cb(lv_obj_t *pin_scr) {
     // todo: display derivation path
     // todo: actually make this a loading screen
     
     /* Get the pin_hash from the pin screen */
-    jolt_gui_scr_digit_entry_get_hash(num, jolt_gui_store.derivation.pin);
+    jolt_gui_scr_digit_entry_get_hash(pin_scr, jolt_gui_store.derivation.pin);
 
     /* Delete the Pin Entry Screen */
     ESP_LOGI(TAG, "Deleting PIN Screen");
-    lv_obj_del(lv_obj_get_parent(num));
+    lv_obj_del(pin_scr);
 
     ESP_LOGI(TAG, "Calling Storage Stretch");
     // todo: use app name for title
@@ -78,8 +78,8 @@ static lv_res_t pin_enter_cb(lv_obj_t *num) {
     return LV_RES_INV;
 }
 
-static lv_res_t pin_back_cb( lv_obj_t *num ) {
-    lv_obj_del(lv_obj_get_parent(num));
+static lv_res_t pin_back_cb( lv_obj_t *pin_scr ) {
+    lv_obj_del(pin_scr);
     if( NULL != user_back_cb ) {
         user_back_cb( NULL );
     }
