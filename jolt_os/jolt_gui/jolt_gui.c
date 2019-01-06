@@ -40,17 +40,7 @@
 lv_res_t jolt_gui_scr_del() {
     lv_res_t res = LV_RES_OK;
     JOLT_GUI_CTX{
-        lv_obj_t *scrn = lv_group_get_focused(jolt_gui_store.group.main);
-        if( NULL == scrn ) {
-            MSG("Nothing in focus\n");
-            break;
-        }
-        if( scrn == jolt_gui_store.main_menu ) {
-            MSG("Can't exit main menu\n");
-            break;
-        }
-        // Disable any focus callback
-        lv_group_set_focus_cb(jolt_gui_store.group.main, NULL);
+        lv_obj_t *scrn = BREAK_IF_NULL(lv_group_get_focused(jolt_gui_store.group.main));
         lv_obj_t *parent = scrn;
         lv_obj_t *tmp = scrn;
         while( (tmp = lv_obj_get_parent(tmp)) ) {
