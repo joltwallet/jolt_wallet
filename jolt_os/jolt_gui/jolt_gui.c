@@ -1,8 +1,5 @@
-#include "jolt_gui.h"
 #include "stdio.h"
-#include "jolt_gui_entry.h"
-#include "jolt_gui_symbols.h"
-#include "jolt_gui_statusbar.h"
+#include "jolt_gui.h"
 
 /*********************
  *      DEFINES
@@ -182,19 +179,57 @@ lv_obj_t *jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb,
     return btn;
 }
 
+/* Perform callback whenever user presses "back" button */
 lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_action_t cb) {
-    return jolt_gui_scr_set_action(parent, cb, jolt_gui_store.group.back);
+    lv_obj_t *btn = NULL;
+    JOLT_GUI_CTX{
+        LV_OBJ_FREE_NUM_TYPE type = lv_obj_get_free_num( parent );
+        switch( type ) {
+            /* Some screens need to wrap callbacks. Wrapping them here 
+             * enables a unified interface for seting back actions. */
+            case JOLT_GUI_SCR_ID_DIGIT_ENTRY:{
+                jolt_gui_scr_digit_entry_set_back_action(parent, cb);
+                break;
+            }
+            default:{
+                /* Usually, just create a button in the back group as a child of the screen */
+                btn = jolt_gui_scr_set_action(parent, cb, jolt_gui_store.group.back);
+                break;
+            }
+        }
+    }
+    return btn;
 }
 
+/* Perform callback whenever user presses "enter" button */
 lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb) {
-    return jolt_gui_scr_set_action(parent, cb, jolt_gui_store.group.enter);
+    lv_obj_t *btn = NULL;
+    JOLT_GUI_CTX{
+        LV_OBJ_FREE_NUM_TYPE type = lv_obj_get_free_num( parent );
+        switch( type ) {
+            /* Some screens need to wrap callbacks. Wrapping them here 
+             * enables a unified interface for seting back actions. */
+            case JOLT_GUI_SCR_ID_DIGIT_ENTRY:{
+                jolt_gui_scr_digit_entry_set_enter_action(parent, cb);
+                break;
+            }
+            default:{
+                /* Usually, just create a button in the back group as a child of the screen */
+                btn = jolt_gui_scr_set_action(parent, cb, jolt_gui_store.group.enter);
+                break;
+            }
+        }
+    }
+    return btn;
 }
 
-lv_res_t jolt_gui_send_enter_main(lv_obj_t *btn) {
+/* Send LV_GROUP_KEY_ENTER to main group */
+lv_res_t jolt_gui_send_enter_main(lv_obj_t *dummy) {
     return lv_group_send_data(jolt_gui_store.group.main, LV_GROUP_KEY_ENTER);
 }
 
-lv_res_t jolt_gui_send_left_main(lv_obj_t *btn) {
+/* Send LV_GROUP_KEY_ELEFT to main group */
+lv_res_t jolt_gui_send_left_main(lv_obj_t *dummy) {
     return lv_group_send_data(jolt_gui_store.group.main, LV_GROUP_KEY_LEFT);
 }
 

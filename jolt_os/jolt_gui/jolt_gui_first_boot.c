@@ -140,14 +140,14 @@ static lv_res_t screen_pin_verify_create(lv_obj_t *num) {
     jolt_gui_obj_del(lv_obj_get_parent(num));
     // Create Verify PIN screen
     lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "PIN Verify", CONFIG_JOLT_GUI_PIN_LEN,
-            JOLT_GUI_NO_DECIMAL); 
+            JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL); 
     jolt_gui_scr_set_enter_action(scr, &screen_finish_create);
     return LV_RES_INV;
 }
 
 static lv_res_t screen_pin_entry_create(lv_obj_t *btn) {
     lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "PIN",
-            CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_NO_DECIMAL);
+            CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL);
     jolt_gui_scr_set_enter_action(scr, &screen_pin_verify_create);
     if( NULL == scr ){
         esp_restart();

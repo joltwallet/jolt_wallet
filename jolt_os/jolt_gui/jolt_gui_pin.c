@@ -140,7 +140,7 @@ lv_obj_t *jolt_gui_scr_pin_create(lv_action_t failure_cb, lv_action_t success_cb
     lv_obj_t *parent = NULL;
     JOLT_GUI_CTX{
         lv_obj_t *parent = jolt_gui_scr_digit_entry_create( title,
-                CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_NO_DECIMAL);
+                CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL);
         jolt_gui_scr_set_back_action(parent, pin_back_cb);
         jolt_gui_scr_set_enter_action(parent, pin_enter_cb);
     }

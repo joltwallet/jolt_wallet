@@ -3,7 +3,7 @@
 
 #include "lvgl/lvgl.h"
 #include "lv_conf.h"
-#include "jolt_gui_entry.h"
+#include "jolt_gui_digit_entry.h"
 #include "jolt_gui_first_boot.h"
 #include "jolt_gui_loading.h"
 #include "jolt_gui_menu.h"
@@ -84,6 +84,14 @@ typedef enum {
     JOLT_GUI_OBJ_ID_DECIMAL_POINT,
 } jolt_gui_obj_id_t;
 
+typedef enum {
+    JOLT_GUI_SCR_ID_UNINITIALIZED = 0,
+    JOLT_GUI_SCR_ID_MENU = 0x80000000, /* To avoid collisions with jolt_gui_obj_id_t */
+    JOLT_GUI_SCR_ID_TEXT,
+    JOLT_GUI_SCR_ID_DIGIT_ENTRY,
+    JOLT_GUI_SCR_ID_LOADING,
+} jolt_gui_scr_id_t;
+
 /*********************
  * Screen Management *
  *********************/
@@ -127,8 +135,8 @@ void jolt_gui_group_add( lv_obj_t *obj );
 lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_action_t cb);
 lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb);
 
-lv_res_t jolt_gui_send_enter_main(lv_obj_t *btn);
-lv_res_t jolt_gui_send_left_main(lv_obj_t *btn);
+lv_res_t jolt_gui_send_enter_main(lv_obj_t *dummy);
+lv_res_t jolt_gui_send_left_main(lv_obj_t *dummy);
 
 /********
  * MISC *
