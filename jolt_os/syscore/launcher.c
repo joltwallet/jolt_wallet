@@ -113,9 +113,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
         return -2;
     }
 
-    jolt_gui_sem_take();
     preloading_scr = jolt_gui_scr_preloading_create(fn_basename, "Launching...");
-    jolt_gui_sem_give();
 
     program = fopen(exec_fn, "rb");
 
@@ -150,9 +148,8 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
 
     fclose(program);
 
-    jolt_gui_sem_take();
     lv_obj_del(preloading_scr);
-    jolt_gui_sem_give();
+
     strcpy(app_cache.name, fn_basename);
 
 exec:
@@ -181,9 +178,7 @@ exit:
        fclose(program);
     }
     if( NULL != preloading_scr ) {
-        jolt_gui_sem_take();
         lv_obj_del(preloading_scr);
-        jolt_gui_sem_give();
     }
 
     app_cache.loading = false;

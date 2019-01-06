@@ -228,9 +228,7 @@ void vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key,
     /* Set success callback */
     cb_vault_set_success = success_cb;
 
-    jolt_gui_sem_take();
     jolt_gui_scr_pin_create(failure_cb, pin_success_cb);
-    jolt_gui_sem_give();
 }
 
 void vault_refresh(lv_action_t failure_cb, lv_action_t success_cb) {

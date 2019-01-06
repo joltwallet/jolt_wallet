@@ -20,7 +20,6 @@ lv_res_t jolt_gui_test_qrcode_create(lv_obj_t *btn) {
 void test_loading_task(void *param) {
     lv_obj_t *scr = (lv_obj_t *)param;
     for(uint8_t i=0;i < 101; vTaskDelay(pdMS_TO_TICKS(1000)), i+=10){
-        jolt_gui_sem_take();
         if(i==50){
             jolt_gui_scr_loading_update(scr, "Almost Done", "woof", i);
         }
@@ -30,7 +29,6 @@ void test_loading_task(void *param) {
         else{
             jolt_gui_scr_loading_update(scr, NULL, "meow", i);
         }
-        jolt_gui_sem_give();
     }
     lv_obj_del(scr);
     vTaskDelete(NULL);
