@@ -79,8 +79,7 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
         /* Create a non-transparent background to block out old titles */
         lv_obj_t *title_cont = BREAK_IF_NULL(lv_cont_create(parent, NULL));
         lv_obj_set_free_num(title_cont, JOLT_GUI_OBJ_ID_CONT_TITLE);
-        lv_obj_align(title_cont, NULL, LV_ALIGN_IN_TOP_LEFT,
-                2, 0);
+        lv_obj_align(title_cont, NULL, LV_ALIGN_IN_TOP_LEFT, 2, 0);
         lv_obj_set_size(title_cont,
                 CONFIG_JOLT_GUI_TITLE_W, CONFIG_JOLT_GUI_STATUSBAR_H-1);
 
@@ -130,14 +129,19 @@ static void group_mod_cb(lv_style_t *style) {
 
 void jolt_gui_group_create() {
     /* Create Groups for user input */
+    bool success = false;
     JOLT_GUI_CTX{
-        jolt_gui_store.group.main = lv_group_create();
+        jolt_gui_store.group.main = BREAK_IF_NULL(lv_group_create());
         lv_group_set_refocus_policy(jolt_gui_store.group.main, LV_GROUP_REFOCUS_POLICY_PREV);
-        jolt_gui_store.group.back = lv_group_create();
+        jolt_gui_store.group.back = BREAK_IF_NULL(lv_group_create());
         lv_group_set_refocus_policy(jolt_gui_store.group.back, LV_GROUP_REFOCUS_POLICY_PREV);
-        jolt_gui_store.group.enter = lv_group_create();
+        jolt_gui_store.group.enter = BREAK_IF_NULL(lv_group_create());
         lv_group_set_refocus_policy(jolt_gui_store.group.enter, LV_GROUP_REFOCUS_POLICY_PREV);
         lv_group_set_style_mod_cb(jolt_gui_store.group.main, group_mod_cb);
+        success = true;
+    }
+    if( !success ){
+        esp_restart();
     }
 }
 
@@ -200,6 +204,7 @@ lv_res_t jolt_gui_send_left_main(lv_obj_t *btn) {
 static SemaphoreHandle_t jolt_gui_mutex = NULL;
 void jolt_gui_sem_take() {
     if( NULL == jolt_gui_mutex ){
+        /* Create the jolt_gui_mutex; avoids need to explicitly initialize */
         jolt_gui_mutex = xSemaphoreCreateRecursiveMutex();
         if( NULL == jolt_gui_mutex ){
             esp_restart();

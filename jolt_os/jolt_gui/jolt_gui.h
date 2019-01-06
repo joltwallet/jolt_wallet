@@ -156,10 +156,6 @@ const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val);
 /**********
  * Macros *
  **********/
-/* Error handling for when lvgl returns a null object */
-#define JOLT_GUI_OBJ_CHECK( obj ) \
-    if( NULL == obj ){ lv_obj_del(parent); parent = NULL; goto exit;}
-
 /* To be used in a JOLT_GUI_CTX; breaks if passed in value is NULL */
 #define BREAK_IF_NULL( obj ) ({\
         void *x = obj; \
