@@ -53,7 +53,6 @@ static lv_res_t new_list_signal(lv_obj_t *list, lv_signal_t sign, void * param)
 /* Creates a standard Jolt Menu Screen */
 lv_obj_t *jolt_gui_scr_menu_create(const char *title) {
     JOLT_GUI_SCR_CTX( title ){
-        /* Create List */
         lv_obj_t *menu = BREAK_IF_NULL(lv_list_create(cont_body, NULL));
         if ( NULL == old_list_signal ) {
             old_list_signal = lv_obj_get_signal_func(menu);
@@ -64,13 +63,10 @@ lv_obj_t *jolt_gui_scr_menu_create(const char *title) {
                 lv_obj_get_width(cont_body), lv_obj_get_height(cont_body));
         lv_list_set_sb_mode(menu, LV_SB_MODE_AUTO);
         lv_obj_align(menu, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
-
         jolt_gui_group_add( menu );
-
         BREAK_IF_NULL(jolt_gui_scr_set_enter_action(parent, jolt_gui_send_enter_main));
         BREAK_IF_NULL(jolt_gui_scr_set_back_action(parent, jolt_gui_scr_del));
     }
-    ESP_LOGI(TAG, "Menu Parent: %p", parent);
     return parent;
 }
 

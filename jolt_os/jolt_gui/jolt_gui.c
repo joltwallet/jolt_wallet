@@ -100,7 +100,7 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
         lv_style_t *label_style = lv_obj_get_style(label);
         lv_label_set_long_mode(label, LV_LABEL_LONG_ROLL);
         lv_label_set_body_draw(label, false); // dont draw background
-        lv_obj_align(label, title_cont, LV_ALIGN_IN_LEFT_MID, 0, 0);
+        lv_obj_align(label, NULL, LV_ALIGN_IN_LEFT_MID, 0, 0);
         if( NULL == title ){
             lv_label_set_text(label, "");
         }

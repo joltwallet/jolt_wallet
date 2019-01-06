@@ -158,7 +158,11 @@ const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val);
     if( NULL == obj ){ lv_obj_del(parent); parent = NULL; goto exit;}
 
 /* To be used in a JOLT_GUI_CTX; breaks if passed in value is NULL */
-#define BREAK_IF_NULL( obj ) ({if( NULL == obj ) break; obj;})
+#define BREAK_IF_NULL( obj ) ({\
+        void *x = obj; \
+        if( NULL == x ) break; \
+        x; \
+        })
 
 /* Declares all the must have objects in a Jolt Screen.
  * If failure, all objects will be NULL.
@@ -189,7 +193,12 @@ const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val);
     })
 //ESP_LOGE(TAG, "%s L%d: Could not find a child of type %s", __FILE__, __LINE__, jolt_gui_obj_id_str(type)); 
 
-#define LV_OBJ_DEL_SAFE(obj) if(NULL!=obj) lv_obj_del(obj);
+/* have to assign obj to a variable, otherwise if obj is a function it will 
+ * call it multiple times */
+#define LV_OBJ_DEL_SAFE(obj) { \
+    void *x = obj; \
+    if(NULL!=x) lv_obj_del(x); \
+    }
 
 /* Similar to a JOLT_GUI_CTX, but will call JOLT_GUI_SCR_PREAMBLE before the
  * JOLT_GUI_CTX. Also, if use breaks from JOLT_GUI_SCR_CTX, this will delete 
