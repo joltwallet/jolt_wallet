@@ -162,7 +162,7 @@
 #define USE_LV_FONT_DEJAVU_40_CYRILLIC     0
 #define USE_LV_FONT_SYMBOL_40              0
 
-#define USE_LV_FONT_MONOSPACE_8            0
+#define USE_LV_FONT_MONOSPACE_8            1
 
 /* Optionally declare your custom fonts here.
  * You can use these fonts as default font too

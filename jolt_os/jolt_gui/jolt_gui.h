@@ -9,6 +9,7 @@
 #include "jolt_gui_menu.h"
 #include "jolt_gui_pin.h"
 #include "jolt_gui_qr.h"
+#include "jolt_gui_scroll.h"
 #include "jolt_gui_slider.h"
 #include "jolt_gui_statusbar.h"
 #include "jolt_gui_stretch.h"
@@ -87,7 +88,7 @@ typedef enum {
 typedef enum {
     JOLT_GUI_SCR_ID_UNINITIALIZED = 0,
     JOLT_GUI_SCR_ID_MENU = 0x80000000, /* To avoid collisions with jolt_gui_obj_id_t */
-    JOLT_GUI_SCR_ID_TEXT,
+    JOLT_GUI_SCR_ID_SCROLL,
     JOLT_GUI_SCR_ID_DIGIT_ENTRY,
     JOLT_GUI_SCR_ID_LOADING,
 } jolt_gui_scr_id_t;
