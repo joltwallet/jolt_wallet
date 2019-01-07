@@ -208,7 +208,7 @@ static const lv_font_glyph_dsc_t crox3hb_glyph_dsc[] =
 {
 {.w_px = 8, .glyph_index = 0}, /*Unicode: U+002b ( )*/
 {.w_px = 6, .glyph_index = 12}, /*Unicode: U+002d ( )*/
-{.w_px = 8, .glyph_index = 24}, /*Unicode: U+002e ( )*/
+{.w_px = 3, .glyph_index = 24}, /*Unicode: U+002e ( )*/
 {.w_px = 8, .glyph_index = 36}, /*Unicode: U+0030 ( )*/
 {.w_px = 8, .glyph_index = 48}, /*Unicode: U+0031 ( )*/
 {.w_px = 8, .glyph_index = 60}, /*Unicode: U+0032 ( )*/
