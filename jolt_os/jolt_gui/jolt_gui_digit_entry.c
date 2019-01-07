@@ -122,7 +122,7 @@ static lv_res_t new_roller_signal(lv_obj_t *roller, lv_signal_t sign, void * par
 static lv_obj_t *digit_create(lv_obj_t *parent) {
     lv_obj_t *roller;
     roller = lv_roller_create(parent, NULL);
-    lv_roller_set_visible_row_count(roller, 1);
+    lv_roller_set_visible_row_count(roller, 3);
     lv_roller_set_anim_time(roller, CONFIG_JOLT_GUI_SCR_DIGIT_ENTRY_ANIM_DIGIT_MS);
     lv_roller_set_options(roller, 
             "9\n8\n7\n6\n5\n4\n3\n2\n1\n0"
@@ -138,6 +138,18 @@ static lv_obj_t *digit_create(lv_obj_t *parent) {
 /* Create the decimal point label object */
 static lv_obj_t *create_dp(lv_obj_t *parent){
     lv_obj_t *label = lv_label_create(parent, NULL);
+
+    static lv_style_t dp_style_obj;
+    static lv_style_t *dp_style = NULL;
+    if( NULL == dp_style ){
+        dp_style = &dp_style_obj;
+        lv_style_copy(dp_style, lv_label_get_style(label));
+        dp_style->text.font = &lv_font_crox3hb_numeric;
+        dp_style->body.padding.hor = 0;
+    }
+    lv_label_set_style(label, dp_style);
+    lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
+
     lv_label_set_text(label, ".");
     lv_obj_set_free_num(label, JOLT_GUI_OBJ_ID_DECIMAL_POINT);
     return label;

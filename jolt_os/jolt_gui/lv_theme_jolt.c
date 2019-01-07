@@ -76,7 +76,6 @@ static void basic_init(void)
     def.image.opa = LV_OPA_COVER;
 
     lv_style_copy(&light_plain, &def); // White background, dark borders
-    //light_plain.body.padding.ver = 1; // Make the elements only 1 pixel vertical padding while not selected
 
     lv_style_copy(&light_frame, &light_plain);
     light_frame.body.border.color = LV_COLOR_BLACK;
@@ -347,9 +346,11 @@ static void roller_init(void)
 #if USE_LV_ROLLER != 0
     static lv_style_t bg;
     lv_style_copy(&bg, &light_frame);
-    bg.body.padding.hor = 3; // Width Padding of the entire roller
+    bg.body.padding.hor = 4; // Width Padding of the entire roller
+    bg.body.padding.ver = 10; // Width Padding of the entire roller
+    bg.body.padding.inner = 0;
     bg.text.font = &lv_font_crox3hb_numeric;
-    bg.text.line_space = 5; // Distance between options... sort of
+    bg.text.line_space = 4; // Distance between options
 
     theme.roller.bg = &bg;
     theme.roller.sel = &dark_frame;
