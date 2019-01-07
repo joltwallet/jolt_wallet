@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "sodium.h"
+#include "jolttypes.h"
 
 #define LOADER_FD_T FILE *
 
@@ -45,10 +47,18 @@ typedef struct jelfLoaderContext_t {
 
     jelfLoaderSection_t *section; // First element of singly linked list sections.
 
+    /* Coin Derivation Data */
     uint32_t coin_purpose;
     uint32_t coin_path;
-    char bip32_key[32];
+    char bip32_key[33];
 
+    /* Data Structs For Checking App Signature */
+    crypto_sign_state hs_store;
+    crypto_sign_state *hs; // crypto sign hash state
+    uint8_t app_public_key[BIN_256];
+    uint8_t app_signature[BIN_512];
+
+    /* Caching Data Structures */
 #if CONFIG_JELFLOADER_CACHE_SHT
     Jelf_Shdr *shdr_cache;
 #endif

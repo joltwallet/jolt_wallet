@@ -134,6 +134,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
         return_code = -5;
         goto exit;
     }
+
     ESP_LOGI(TAG, "elfLoader; Relocating");
     if( NULL == jelfLoaderRelocate(app_cache.ctx) ) {
         return_code = -6;

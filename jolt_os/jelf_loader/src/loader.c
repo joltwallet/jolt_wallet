@@ -17,14 +17,29 @@
 #include "esp_system.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
-#include "sodium.h"
-#include "jolttypes.h"
 #include "hal/storage/storage.h"
 
 static const char* TAG = "JelfLoader";
 
 #define MSG(...)  ESP_LOGD(TAG,  __VA_ARGS__);
 #define ERR(...)  ESP_LOGE(TAG,  __VA_ARGS__);
+
+/********************************
+ * STATIC FUNCTIONS DECLARATION *
+ ********************************/
+static void app_signature_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len);
+static const char *type2String(int symt);
+static int readSection(jelfLoaderContext_t *ctx, int n, Jelf_Shdr *h );
+static jelfLoaderSection_t *findSection(jelfLoaderContext_t* ctx, int index);
+static bool app_signature_init(jelfLoaderContext_t *ctx, 
+        Jelf_Ehdr *header, const char *name);
+static void inline app_signature_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len);
+static bool inline app_signature_check(jelfLoaderContext_t *ctx);
+static int readSymbol(jelfLoaderContext_t *ctx, int n, Jelf_Sym *sym);
+static Jelf_Addr findSymAddr(jelfLoaderContext_t* ctx, Jelf_Sym *sym);
+static int relocateSymbol(Jelf_Addr relAddr, int type, Jelf_Addr symAddr,
+        Jelf_Addr defAddr, uint32_t* from, uint32_t* to);
+static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s);
 
 #if CONFIG_JELFLOADER_PROFILER_EN
 
@@ -264,11 +279,13 @@ err:
     return -1;
 }
 #define LOADER_GETDATA(ctx, off, buffer, size) \
-    if( 0 != LOADER_GETDATA_CACHE(ctx, off, buffer, size)) { assert(0); goto err; }
+    if( 0 != LOADER_GETDATA_CACHE(ctx, off, buffer, size)) { assert(0); goto err; } \
+    app_signature_update(ctx, (uint8_t*)buffer, size);
 #else // Use POSIX readers without caching
 #define LOADER_GETDATA(ctx, off, buffer, size) \
     if(fseek(ctx->fd, off, SEEK_SET) != 0) { assert(0); goto err; }\
-    if(fread(buffer, 1, size, ctx->fd) != size) { assert(0); goto err; }
+    if(fread(buffer, 1, size, ctx->fd) != size) { assert(0); goto err; }\
+    app_signature_update(ctx, (uint8_t*)buffer, size);
 #endif // CONFIG_JELFLOADER_CACHE_LOCALITY
 
 /* Allocation Macros */
@@ -342,6 +359,7 @@ err:
 /********************
  * STATIC FUNCTIONS *
  ********************/
+
 static const char *type2String(int symt) {
 #define STRCASE(name) case name: return #name;
     switch (symt) {
@@ -364,7 +382,7 @@ static int readSection(jelfLoaderContext_t *ctx, int n, Jelf_Shdr *h ) {
     PROFILER_INC_READSECTION;
 
     /* Read Section Header */
-    int res = loader_shdr(ctx, n, h); // Often a cache miss
+    int res = loader_shdr(ctx, n, h);
     PROFILER_STOP_READSECTION;
     if ( 0 != res ){
         goto err;
@@ -395,29 +413,37 @@ static jelfLoaderSection_t *findSection(jelfLoaderContext_t* ctx, int index) {
     return NULL;
 }
 
-/* Checks the application's digital signature.
- * Returns true on valid, false if signature/public_key is invalid. */
-static bool app_signature_check(jelfLoaderContext_t *ctx, 
+/* Checks the application's digital signature data structures.
+ * Returns true on successful initialization;
+ * false if public_key doesn't match approved public_key. */
+static bool app_signature_init(jelfLoaderContext_t *ctx, 
         Jelf_Ehdr *header, const char *name) {
+#if ESP_LOG_LEVEL >= ESP_LOG_INFO
     {
-        /* Debugging Information */
-        char pub_key[65] = { 0 };
+        /* Print App's 256-bit Public Key and 512-bit Signature */
+        char pub_key[HEX_256] = { 0 };
         sodium_bin2hex(pub_key, sizeof(pub_key), header->e_public_key, 32);
         ESP_LOGI(TAG, "pub_key: %s", pub_key);
-        char sig[129] = { 0 };
+        char sig[HEX_512] = { 0 };
         sodium_bin2hex(sig, sizeof(sig), header->e_signature, 64);
         ESP_LOGI(TAG, "signature: %s", sig);
     }
+#endif
+    /* Copy over the app signature into the context */
+    memcpy(ctx->app_signature, header->e_signature, sizeof(uint512_t));
+
     {
-        /* First check to see if the public key is an accepted app key */
-        uint256_t approved_pub_key;
+        /* First check to see if the public key is an accepted app key.
+         * If it is valid, copy it into the ctx */
+        uint256_t approved_pub_key = { 0 };
         size_t required_size;
         if( !storage_get_blob(NULL, &required_size, "user", "app_key") ) {
+#if JOLT_APP_SIG_CHECK_EN
             ERR("Approved Public Key not found; using default");
             ESP_ERROR_CHECK(sodium_hex2bin(
                     approved_pub_key, sizeof(approved_pub_key),
                     CONFIG_JOLT_APP_KEY_DEFAULT, 64, NULL, NULL, NULL));
-
+#endif
         }
         else if( sizeof(approved_pub_key) != required_size ||
                 !storage_get_blob(approved_pub_key, &required_size,
@@ -429,49 +455,39 @@ static bool app_signature_check(jelfLoaderContext_t *ctx,
             ERR("Application Public Key doesn't match approved public key.");
             goto err;
         }
-    }
-    {
-        /* Verify File Signature */
-        crypto_sign_state state;
-        crypto_sign_init(&state);
 
+        memcpy(ctx->app_public_key, approved_pub_key, sizeof(uint256_t));
+    }
+
+    {
+        /* Initialize Signature Check Hashing */
+        ctx->hs = &(ctx->hs_store);
+        crypto_sign_init(ctx->hs);
+
+        /* Hash the app name */
+        app_signature_update(ctx, (uint8_t*)name, strlen(name));
+
+        /* Hash the JELF Header w/o signature */
         Jelf_Ehdr header_no_sig;
         memcpy(&header_no_sig, header, sizeof(header_no_sig));
         memset(&header_no_sig.e_signature, 0, sizeof(header_no_sig.e_signature));
-
-        /* Make sure we start reading from right after the JELF Header */
-        if( fseek(ctx->fd, JELF_EHDR_SIZE, SEEK_SET) != 0 ) {
-            goto err;
-        }
-
-        /* How much to read from the file at a time */
-        #define VERIFY_MSG_CHUNK_SIZE 4096
-        char *buf = malloc(VERIFY_MSG_CHUNK_SIZE);
-        if( NULL == buf ) {
-            goto err;
-        }
-
-        crypto_sign_update(&state, (uint8_t*)name, strlen(name));
-        crypto_sign_update(&state, (uint8_t*)&header_no_sig, sizeof(header_no_sig));
-
-        size_t chunk_size;
-        while( (chunk_size = fread(buf, 1, VERIFY_MSG_CHUNK_SIZE,
-                ctx->fd)) > 0 ) {
-            crypto_sign_update(&state, (uint8_t*)buf, chunk_size);
-        }
-        free(buf);
-        #undef VERIFY_MSG_CHUNK_SIZE
-
-        if ( 0 != crypto_sign_final_verify(&state,
-                    header->e_signature, header->e_public_key )) {
-            /* Bad Signature */
-            ERR("Bad Signature");
-            goto err;
-        }
+        app_signature_update(ctx, (uint8_t*)&header_no_sig, sizeof(header_no_sig));
     }
     return true;
 err:
     return false;
+}
+
+static void inline app_signature_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len){
+    if( NULL != ctx->hs) {
+        crypto_sign_update(ctx->hs, data, len);
+    }
+}
+
+/* Returns true on valid signature */
+static bool inline app_signature_check(jelfLoaderContext_t *ctx){
+    return 0 != crypto_sign_final_verify( ctx->hs,
+            ctx->app_signature, ctx->app_public_key);
 }
 
 static int readSymbol(jelfLoaderContext_t *ctx, int n, Jelf_Sym *sym) {
@@ -760,6 +776,8 @@ err:
  ********************/
 
 int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv) {
+    int res = -1;;
+
     if (!ctx->exec) {
         MSG("No Entrypoint set.");
         return 0;
@@ -781,12 +799,22 @@ int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv) {
     }
     #endif
 
-    typedef int (*func_t)(int, char**);
-    func_t func = (func_t)ctx->exec;
-    MSG("Running...");
-    int r = func(argc, argv);
-    MSG("Result: %08X", r);
-    return r;
+    /* Siganture Check */
+#if CONFIG_JOLT_APP_SIG_CHECK_EN
+    if( !app_signature_check(ctx) ) {
+        ERR("Invalid Signature");
+        // todo: print the hash here
+    }
+    else
+#endif
+    {
+        typedef int (*func_t)(int, char**);
+        func_t func = (func_t)ctx->exec;
+        MSG("Running...");
+        res = func(argc, argv);
+        MSG("Result: %08X", res);
+    }
+    return res;
 }
 
 int jelfLoaderRunAppMain(jelfLoaderContext_t *ctx) {
@@ -812,7 +840,7 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     Jelf_Ehdr header;
     jelfLoaderContext_t *ctx;
 
-    /* Size Check */
+    /* Debugging Size Sanity Check */
     ESP_LOGI(TAG, "Jelf_Ehdr: %d", sizeof(Jelf_Ehdr));
     ESP_LOGI(TAG, "Jelf_Sym:  %d", sizeof(Jelf_Sym));
     ESP_LOGI(TAG, "Jelf_Shdr: %d", sizeof(Jelf_Shdr));
@@ -842,19 +870,23 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
         ERR("File Magic Identifier: %s", header.e_ident);
         goto err;
     }
-    /* Debug Sanity Checks */
+
+    /* Version Compatability Check */
+    // todo: make this more advanced as versioning evolves
     assert( header.e_version_major == 0 );
     assert( header.e_version_minor == 1 );
+
+    /* Debug Sanity Checks */
     MSG( "SectionHeaderTableOffset: %08X", header.e_shoff );
     MSG( "SectionHeaderTableEntries: %d", header.e_shnum );
     MSG( "Derivation Purpose: %08X", header.e_coin_purpose );
     MSG( "Derivation Path: %08X", header.e_coin_path );
     MSG( "bip32key: %s", header.e_bip32key);
 
-    /*******************
-     * Check Signature *
-     *******************/
-    if( !app_signature_check(ctx, &header, name) ) {
+    /**********************************
+     * Initialize App Signature Check *
+     **********************************/
+    if( !app_signature_init(ctx, &header, name) ) {
         goto err;
     }
     
