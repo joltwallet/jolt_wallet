@@ -122,7 +122,6 @@ static lv_res_t new_roller_signal(lv_obj_t *roller, lv_signal_t sign, void * par
 static lv_obj_t *digit_create(lv_obj_t *parent) {
     lv_obj_t *roller;
     roller = lv_roller_create(parent, NULL);
-    lv_roller_set_visible_row_count(roller, 3);
     lv_roller_set_anim_time(roller, CONFIG_JOLT_GUI_SCR_DIGIT_ENTRY_ANIM_DIGIT_MS);
     lv_roller_set_options(roller, 
             "9\n8\n7\n6\n5\n4\n3\n2\n1\n0"
@@ -131,6 +130,7 @@ static lv_obj_t *digit_create(lv_obj_t *parent) {
             "\n9\n8\n7\n6\n5\n4\n3\n2\n1\n0"
             );
     lv_roller_set_selected(roller, 19, false); // Set it to the middle 0 entry
+    lv_roller_set_visible_row_count(roller, 1);
     lv_roller_set_align(roller, LV_LABEL_ALIGN_CENTER);
     return roller;
 }

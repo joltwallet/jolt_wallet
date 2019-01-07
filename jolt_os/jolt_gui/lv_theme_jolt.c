@@ -346,11 +346,10 @@ static void roller_init(void)
 #if USE_LV_ROLLER != 0
     static lv_style_t bg;
     lv_style_copy(&bg, &light_frame);
-    bg.body.padding.hor = 4; // Width Padding of the entire roller
-    bg.body.padding.ver = 10; // Width Padding of the entire roller
+    bg.body.padding.hor = 3; // Width Padding of the entire roller
     bg.body.padding.inner = 0;
     bg.text.font = &lv_font_crox3hb_numeric;
-    bg.text.line_space = 4; // Distance between options
+    bg.text.line_space = 6; // Distance between options
 
     theme.roller.bg = &bg;
     theme.roller.sel = &dark_frame;
