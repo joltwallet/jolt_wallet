@@ -26,6 +26,7 @@ lv_obj_t *jolt_gui_scr_text_create(const char *title, const char *body) {
         lv_obj_set_free_num(label, JOLT_GUI_OBJ_ID_LABEL_0);
         lv_label_set_long_mode(label, LV_LABEL_LONG_BREAK);
         lv_obj_set_width(label, lv_page_get_fit_width(page)); 
+        lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
         lv_label_set_text(label, body);
 
         lv_group_focus_obj(page);
