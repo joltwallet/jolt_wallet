@@ -25,12 +25,7 @@ lv_obj_t *jolt_gui_scr_text_create(const char *title, const char *body) {
         lv_obj_t *label = BREAK_IF_NULL(lv_label_create(page, NULL));
         lv_obj_set_free_num(label, JOLT_GUI_OBJ_ID_LABEL_0);
         lv_label_set_long_mode(label, LV_LABEL_LONG_BREAK);
-        {
-            // Compute Width of Label (don't draw into scrollbar)
-            lv_style_t *sb = lv_page_get_style(page, LV_PAGE_STYLE_SB);
-            lv_obj_set_width(label, lv_page_get_scrl_width(page) - 
-                    sb->body.padding.inner - sb->body.padding.hor);  
-        }
+        lv_obj_set_width(label, lv_page_get_fit_width(page)); 
         lv_label_set_text(label, body);
 
         lv_group_focus_obj(page);
