@@ -28,8 +28,8 @@ static const char* TAG = "JelfLoader";
 #else
 
 #define MSG(...)
-#define INFO(...)
-#define ERR(...)
+#define INFO(...) printf( __VA_ARGS__ )
+#define ERR(...) printf( __VA_ARGS__ )
 
 #endif //ESP_PLATFORM logging macros
 
@@ -58,13 +58,13 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s);
 #include "esp_heap_caps.h"
 #define LOADER_ALLOC_EXEC(size) heap_caps_malloc(size, MALLOC_CAP_EXEC | MALLOC_CAP_32BIT)
 #define LOADER_ALLOC_DATA(size) heap_caps_malloc(size, MALLOC_CAP_8BIT)
-#define LOADER_FREE( ptr ) heap_caps_free( ptr ); 
+#define LOADER_FREE( ptr ) heap_caps_free( ptr ) 
 
 #else
 
-#define LOADER_ALLOC_EXEC(size)
-#define LOADER_ALLOC_DATA(size)
-#define LOADER_FREE(size)
+#define LOADER_ALLOC_EXEC(size) malloc(size)
+#define LOADER_ALLOC_DATA(size) malloc(size)
+#define LOADER_FREE(size) free(size)
 
 #endif
 
