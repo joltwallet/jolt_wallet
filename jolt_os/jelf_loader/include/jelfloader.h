@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "sodium.h"
 #include "jolttypes.h"
 
 #define LOADER_FD_T FILE *
@@ -53,10 +52,11 @@ typedef struct jelfLoaderContext_t {
     char bip32_key[33];
 
     /* Data Structs For Checking App Signature */
-    crypto_sign_state hs_store;
-    crypto_sign_state *hs; // crypto sign hash state
+#if CONFIG_JOLT_APP_SIG_CHECK_EN
+    void *hs; // crypto sign hash state
     uint8_t app_public_key[BIN_256];
     uint8_t app_signature[BIN_512];
+#endif
 
     /* Caching Data Structures */
 #if CONFIG_JELFLOADER_CACHE_SHT
