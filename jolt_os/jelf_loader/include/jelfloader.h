@@ -8,6 +8,15 @@
 
 #define LOADER_FD_T FILE *
 
+#ifndef CONFIG_JOLT_APP_SIG_CHECK_EN
+#define CONFIG_JOLT_APP_SIG_CHECK_EN 1
+#endif
+
+#ifndef CONFIG_JOLT_APP_KEY_DEFAULT
+#define CONFIG_JOLT_APP_KEY_DEFAULT "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8"
+#endif
+
+
 typedef struct {
     const void **exported;            /*!< Pointer to exported symbols array */
     unsigned int exported_size; /*!< Elements on exported symbol array */
@@ -86,5 +95,11 @@ void jelfLoaderProfilerReset();
 /* Prints the profiler results to uart console */
 void jelfLoaderProfilerPrint();
 #endif // CONFIG_ELFLOADER_PROFILER_EN
+
+#if !ESP_PLATFORM
+
+void jelfLoaderHash(char *fn, char *fn_basename, int n_exports);
+
+#endif
 
 #endif

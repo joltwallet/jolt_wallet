@@ -1,0 +1,6 @@
+__pycache__
+jolt_lib.h
+build/
+*.so
+dist/
+jelf_loader.egg-info/

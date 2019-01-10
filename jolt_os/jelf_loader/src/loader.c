@@ -13,23 +13,25 @@
 #include "jelf.h"
 #include "jelfloader.h"
 
-static const char* TAG = "JelfLoader";
+#include "sodium.h"
 
 #if ESP_PLATFORM
 
 #include "esp_log.h"
-#include "sodium.h"
 #include "hal/storage/storage.h"
+
+static const char* TAG = "JelfLoader";
 
 #define MSG(...)  ESP_LOGD(TAG, __VA_ARGS__);
 #define INFO(...) ESP_LOGI(TAG, __VA_ARGS__);
 #define ERR(...)  ESP_LOGE(TAG, __VA_ARGS__);
 
 #else
-
-#define MSG(...)
-#define INFO(...) printf( __VA_ARGS__ )
-#define ERR(...) printf( __VA_ARGS__ )
+#include <stdio.h>
+//#define MSG(...) printf( __VA_ARGS__ ); printf("\n");
+#define MSG(...);
+#define INFO(...) printf( __VA_ARGS__ ); printf("\n");
+#define ERR(...) printf( __VA_ARGS__ ); printf("\n");
 
 #endif //ESP_PLATFORM logging macros
 
@@ -44,7 +46,7 @@ static bool app_signature_init(jelfLoaderContext_t *ctx,
         Jelf_Ehdr *header, const char *name);
 static void inline app_signature_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len);
 static bool inline app_signature_check(jelfLoaderContext_t *ctx);
-static int readSymbol(jelfLoaderContext_t *ctx, int n, Jelf_Sym *sym);
+static int readSymbol(jelfLoaderContext_t *ctx, uint32_t n, Jelf_Sym *sym);
 static Jelf_Addr findSymAddr(jelfLoaderContext_t* ctx, Jelf_Sym *sym);
 static int relocateSymbol(Jelf_Addr relAddr, int type, Jelf_Addr symAddr,
         Jelf_Addr defAddr, uint32_t* from, uint32_t* to);
@@ -296,7 +298,7 @@ static int LOADER_GETDATA_CACHE(jelfLoaderContext_t *ctx,
     }
 
     if( amount_read < size) {
-        ERR("Requested %d bytes, but could only read %d.", size, amount_read);
+        ERR("Requested %zd bytes, but could only read %zd.", size, amount_read);
         assert(0);
         goto err;
     }
@@ -461,6 +463,7 @@ static bool app_signature_init(jelfLoaderContext_t *ctx,
         /* First check to see if the public key is an accepted app key.
          * If it is valid, copy it into the ctx */
         uint256_t approved_pub_key = { 0 };
+#if ESP_PLATFORM
         size_t required_size;
         if( !storage_get_blob(NULL, &required_size, "user", "app_key") ) {
             ERR("Approved Public Key not found; using default");
@@ -477,6 +480,7 @@ static bool app_signature_init(jelfLoaderContext_t *ctx,
             ERR("Application Public Key doesn't match approved public key.");
             return false;
         }
+#endif
 
         memcpy(ctx->app_public_key, approved_pub_key, sizeof(uint256_t));
     }
@@ -517,7 +521,7 @@ static bool inline app_signature_check(jelfLoaderContext_t *ctx){
 #endif
 }
 
-static int readSymbol(jelfLoaderContext_t *ctx, int n, Jelf_Sym *sym) {
+static int readSymbol(jelfLoaderContext_t *ctx, uint32_t n, Jelf_Sym *sym) {
     PROFILER_START_READSYMBOL;
     PROFILER_INC_READSYMBOL;
     if( n >= ctx->symtab_count ){
@@ -771,26 +775,28 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
         }
         else if ( (symAddr == 0xffffffff) && (sym.st_value == 0x00000000) ) {
             ERR("Relocation - undefined symAddr");
-            MSG("  %08X %04X %04X %-20s %08X %08X %08X"
+            MSG("  %08X %04X %04X %-20s %08zX %08zX %08X"
                 "                     + %X",
                 rel.r_offset, symEntry, relType, type2String(relType),
                 relAddr, symAddr, sym.st_value, rel.r_addend);
             r |= -1;
         }
         else if(relocateSymbol(relAddr, relType, symAddr, sym.st_value, &from, &to) != 0) {
-            ERR("  %08X %04X %04X %-20s %08X %08X %08X %08X->%08X  + %X",
+            ERR("relocateSymbol fail");
+            ERR("  %08X %04X %04X %-20s %08zX %08zX %08X %08X->%08X  + %X",
                     rel.r_offset, symEntry, relType, type2String(relType),
                     relAddr, symAddr, sym.st_value, from, to, rel.r_addend);
             r |= -1;
         }
         else {
-            MSG("  %08X %04X %04X %-20s %08X %08X %08X %08X->%08X  + %X",
+            MSG("  %08X %04X %04X %-20s %08zX %08zX %08X %08X->%08X  + %X",
                     rel.r_offset, symEntry, relType, type2String(relType),
                     relAddr, symAddr, sym.st_value, from, to, rel.r_addend);
         }
     }
     PROFILER_STOP_RELOCATESECTION;
     return r;
+
 err:
     PROFILER_STOP_RELOCATESECTION;
     ERR("Error reading relocation data");
@@ -872,10 +878,10 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     jelfLoaderContext_t *ctx;
 
     /* Debugging Size Sanity Check */
-    MSG("Jelf_Ehdr: %d", sizeof(Jelf_Ehdr));
-    MSG("Jelf_Sym:  %d", sizeof(Jelf_Sym));
-    MSG("Jelf_Shdr: %d", sizeof(Jelf_Shdr));
-    MSG("Jelf_Rela: %d", sizeof(Jelf_Rela));
+    MSG("Jelf_Ehdr: %zd", sizeof(Jelf_Ehdr));
+    MSG("Jelf_Sym:  %zd", sizeof(Jelf_Sym));
+    MSG("Jelf_Shdr: %zd", sizeof(Jelf_Shdr));
+    MSG("Jelf_Rela: %zd", sizeof(Jelf_Rela));
 
     /***********************************************
      * Initialize the context object with pointers *
@@ -1089,7 +1095,7 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
                 ctx->symtab_offset = sectHdr.sh_offset;
                 ctx->symtab_count = sectHdr.sh_size / JELF_SYM_SIZE;
                 MSG("symtab is %u bytes.", sectHdr.sh_size);
-                MSG("symtab contains %u entires.", ctx->symtab_count);
+                MSG("symtab contains %zu entires.", ctx->symtab_count);
         }
     }
     if (ctx->symtab_offset == 0 ) {
@@ -1183,3 +1189,29 @@ void jelfLoaderFree(jelfLoaderContext_t *ctx) {
     free(ctx);
 }
 
+#if !ESP_PLATFORM
+/* Returns the transverse hash. To be called from elf2jelf.py */
+void jelfLoaderHash(char *fn, char *fn_basename, int n_exports){
+    INFO("fn: %s", fn);
+    INFO("fn_basename %s", fn_basename);
+    INFO("n_exports %d", n_exports);
+    INFO("Hello\n");
+    if (sodium_init() == -1) {
+        return;
+    }
+
+    jelfLoaderContext_t ctx_obj = { 0 };
+    jelfLoaderContext_t *ctx = &ctx_obj;
+    jelfLoaderEnv_t env = { 0 };
+
+    // dummy env
+    env.exported_size = n_exports;
+    env.exported = calloc(n_exports, sizeof(void*));
+
+    FILE *fd = fopen(fn, "rb");
+
+    ctx = jelfLoaderInit(fd, fn_basename, &env);
+    jelfLoaderLoad(ctx);
+    jelfLoaderRelocate(ctx);
+}
+#endif

@@ -17,3 +17,18 @@ COMPONENT_SRCDIRS := . \
 COMPONENT_ADD_INCLUDEDIRS := . \
     hal/storage/aes132_library \
     jelf_loader/include
+
+main.o: jolt_lib.h
+
+jolt_lib.h: $(COMPONENT_PATH)/../elf2jelf/export_list.txt $(COMPONENT_PATH)/../elf2jelf/jolt_lib_template.txt $(COMPONENT_PATH)/../elf2jelf/elf2jelf.py $(COMPONENT_PATH)/../elf2jelf/setup.py
+	cd $(COMPONENT_PATH)/../elf2jelf; python setup.py build_ext --inplace;python3 elf2jelf.py --header_only
+
+
+$(COMPONENT_PATH)/../elf2jelf/export_list.txt: ;
+
+$(COMPONENT_PATH)/../elf2jelf/jolt_lib_template.txt: ;
+
+$(COMPONENT_PATH)/../elf2jelf/elf2jelf.py: ;
+
+$(COMPONENT_PATH)/../elf2jelf/setup.py: ;
+

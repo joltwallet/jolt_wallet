@@ -1,7 +1,14 @@
 #ifndef __JOLT_LIB_H__
 #define __JOLT_LIB_H__
 
-/* All of the functions available to an app */
+/* All of the functions available to an app.
+ *
+ * DO NOT CHANGE THIS FILE (jolt_lib.h) directly, either change:
+ *     * elf2jelf/jolt_lib_template.h
+ *     * elf2jelf/export_list.txt 
+ *
+ * jolt_lib.h will automatically be updated upon make
+ * */
 
 #include "jelfloader.h"
 
