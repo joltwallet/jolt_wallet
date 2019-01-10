@@ -147,7 +147,7 @@ def write_export_header(export_list, major, minor):
     for f_name in export_list:
         export_string += '''    EXPORT_SYMBOL( %s ),\n''' % f_name
 
-    jolt_lib = template % export_string
+    jolt_lib = template % (export_string, len(export_list))
 
     # Write it to where the hardware firmware expects it
     with open(os.path.join(this_path, '..', 'jolt_os', 'jolt_lib.h'), 'w') as f:
@@ -585,7 +585,8 @@ def main():
     print(output_fn.encode())
     print(name_to_sign)
     print(len(export_list))
-    jelf_loader.jelfLoader(output_fn.encode(), name_to_sign, len(export_list))
+    res = jelf_loader.jelf_loader_hash(output_fn.encode(), name_to_sign )
+    pdb.set_trace()
 
     ########################################
     # Write Compressed JELF binary to file #

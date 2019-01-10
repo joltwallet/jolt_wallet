@@ -38,14 +38,13 @@ static const char* TAG = "JelfLoader";
 /********************************
  * STATIC FUNCTIONS DECLARATION *
  ********************************/
-static void app_signature_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len);
+static void app_hash_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len);
 static const char *type2String(int symt);
 static int readSection(jelfLoaderContext_t *ctx, int n, Jelf_Shdr *h );
 static jelfLoaderSection_t *findSection(jelfLoaderContext_t* ctx, int index);
-static bool app_signature_init(jelfLoaderContext_t *ctx, 
+static bool app_hash_init(jelfLoaderContext_t *ctx, 
         Jelf_Ehdr *header, const char *name);
-static void inline app_signature_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len);
-static bool inline app_signature_check(jelfLoaderContext_t *ctx);
+static void inline app_hash_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len);
 static int readSymbol(jelfLoaderContext_t *ctx, uint32_t n, Jelf_Sym *sym);
 static Jelf_Addr findSymAddr(jelfLoaderContext_t* ctx, Jelf_Sym *sym);
 static int relocateSymbol(Jelf_Addr relAddr, int type, Jelf_Addr symAddr,
@@ -309,12 +308,12 @@ err:
 }
 #define LOADER_GETDATA(ctx, off, buffer, size) \
     if( 0 != LOADER_GETDATA_CACHE(ctx, off, buffer, size)) { assert(0); goto err; } \
-    app_signature_update(ctx, (uint8_t*)buffer, size);
+    app_hash_update(ctx, (uint8_t*)buffer, size);
 #else // Use POSIX readers without caching
 #define LOADER_GETDATA(ctx, off, buffer, size) \
     if(fseek(ctx->fd, off, SEEK_SET) != 0) { assert(0); goto err; }\
     if(fread(buffer, 1, size, ctx->fd) != size) { assert(0); goto err; }\
-    app_signature_update(ctx, (uint8_t*)buffer, size);
+    app_hash_update(ctx, (uint8_t*)buffer, size);
 #endif // CONFIG_JELFLOADER_CACHE_LOCALITY
 
 
@@ -442,7 +441,7 @@ static jelfLoaderSection_t *findSection(jelfLoaderContext_t* ctx, int index) {
 /* Checks the application's digital signature data structures.
  * Returns true on successful initialization;
  * false if public_key doesn't match approved public_key. */
-static bool app_signature_init(jelfLoaderContext_t *ctx, 
+static bool app_hash_init(jelfLoaderContext_t *ctx, 
         Jelf_Ehdr *header, const char *name) {
      #if CONFIG_JOLT_APP_SIG_CHECK_EN
 #if ESP_LOG_LEVEL >= ESP_LOG_INFO
@@ -487,37 +486,27 @@ static bool app_signature_init(jelfLoaderContext_t *ctx,
 
     {
         /* Initialize Signature Check Hashing */
-        ctx->hs = malloc(sizeof(crypto_sign_state));
-        crypto_sign_init(ctx->hs);
+        ctx->hs = malloc(sizeof(crypto_hash_sha512_state));
+        crypto_hash_sha512_init(ctx->hs);
 
         /* Hash the app name */
-        app_signature_update(ctx, (uint8_t*)name, strlen(name));
+        app_hash_update(ctx, (uint8_t*)name, strlen(name));
 
         /* Hash the JELF Header w/o signature */
         Jelf_Ehdr header_no_sig;
         memcpy(&header_no_sig, header, sizeof(header_no_sig));
         memset(&header_no_sig.e_signature, 0, sizeof(header_no_sig.e_signature));
-        app_signature_update(ctx, (uint8_t*)&header_no_sig, sizeof(header_no_sig));
+        app_hash_update(ctx, (uint8_t*)&header_no_sig, sizeof(header_no_sig));
     }
     #endif
     return true;
 }
 
-static void inline app_signature_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len){
+static void inline app_hash_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len){
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
     if( NULL != ctx->hs) {
-        crypto_sign_update(ctx->hs, data, len);
+        crypto_hash_sha512_update(ctx->hs, data, len);
     }
-#endif
-}
-
-/* Returns true on valid signature */
-static bool inline app_signature_check(jelfLoaderContext_t *ctx){
-#if CONFIG_JOLT_APP_SIG_CHECK_EN
-    return 0 == crypto_sign_final_verify( ctx->hs,
-            ctx->app_signature, ctx->app_public_key);
-#else
-    return true;
 #endif
 }
 
@@ -808,6 +797,16 @@ err:
  * PUBLIC FUNCTIONS *
  ********************/
 
+bool jelfLoaderSigCheck(jelfLoaderContext_t *ctx) {
+    return 0 == crypto_sign_verify_detached(ctx->app_signature,
+            ctx->hash, sizeof(ctx->hash), ctx->app_public_key);
+}
+
+// returns 512 bit hash
+uint8_t *jelfLoaderGetHash(jelfLoaderContext_t *ctx) {
+    return  (uint8_t*) ctx->hash;
+}
+
 int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv) {
     int res = -1;;
 
@@ -823,6 +822,7 @@ int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv) {
         ctx->shdr_cache = NULL;
     }
     #endif
+
     #if CONFIG_ELFLOADER_CACHE_LOCALITY
     for(uint8_t i=0; i < CONFIG_ELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
         if( NULL != ctx->locality_cache[i].data) {
@@ -832,18 +832,6 @@ int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv) {
     }
     #endif
 
-    /* Siganture Check */
-#if CONFIG_CONFIG_JOLT_APP_SIG_CHECK_EN
-    if( !app_signature_check(ctx) ) {
-        ERR("Invalid Signature");
-        uint8_t out[BIN_512] = { 0 };
-        char out_hex[HEX_512] = { 0 };
-        crypto_hash_sha512_final(&(((crypto_sign_state*)(ctx->hs))->hs), out);
-        sodium_bin2hex(out_hex, sizeof(out_hex), out, sizeof(out));
-        INFO("App Hash: %s", out_hex);
-    }
-    else
-#endif
     {
         typedef int (*func_t)(int, char**);
         func_t func = (func_t)ctx->exec;
@@ -923,7 +911,7 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     /**********************************
      * Initialize App Signature Check *
      **********************************/
-    if( !app_signature_init(ctx, &header, name) ) {
+    if( !app_hash_init(ctx, &header, name) ) {
         goto err;
     }
     
@@ -1138,17 +1126,11 @@ jelfLoaderContext_t *jelfLoaderRelocate(jelfLoaderContext_t *ctx) {
     }
     MSG("Successfully relocated %d sections.", count);
 
-    /* Siganture Check */
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
-    if( !app_signature_check(ctx) ) {
-        ERR("Invalid Signature");
-        uint8_t out[BIN_512] = { 0 };
-        char out_hex[HEX_512] = { 0 };
-        crypto_hash_sha512_final(&(((crypto_sign_state*)(ctx->hs))->hs), out);
-        sodium_bin2hex(out_hex, sizeof(out_hex), out, sizeof(out));
-        INFO("App Hash: %s", out_hex);
-        goto err;
-    }
+    /* Populate the hash field */
+    crypto_hash_sha512_final(ctx->hs, ctx->hash);
+    free(ctx->hs);
+    ctx->hs = NULL;
 #endif
 
     return ctx;
@@ -1173,6 +1155,7 @@ void jelfLoaderFree(jelfLoaderContext_t *ctx) {
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
     if( NULL != ctx->hs ) {
         free(ctx->hs);
+        ctx->hs = NULL;
     }
 #endif
 
@@ -1189,29 +1172,3 @@ void jelfLoaderFree(jelfLoaderContext_t *ctx) {
     free(ctx);
 }
 
-#if !ESP_PLATFORM
-/* Returns the transverse hash. To be called from elf2jelf.py */
-void jelfLoaderHash(char *fn, char *fn_basename, int n_exports){
-    INFO("fn: %s", fn);
-    INFO("fn_basename %s", fn_basename);
-    INFO("n_exports %d", n_exports);
-    INFO("Hello\n");
-    if (sodium_init() == -1) {
-        return;
-    }
-
-    jelfLoaderContext_t ctx_obj = { 0 };
-    jelfLoaderContext_t *ctx = &ctx_obj;
-    jelfLoaderEnv_t env = { 0 };
-
-    // dummy env
-    env.exported_size = n_exports;
-    env.exported = calloc(n_exports, sizeof(void*));
-
-    FILE *fd = fopen(fn, "rb");
-
-    ctx = jelfLoaderInit(fd, fn_basename, &env);
-    jelfLoaderLoad(ctx);
-    jelfLoaderRelocate(ctx);
-}
-#endif

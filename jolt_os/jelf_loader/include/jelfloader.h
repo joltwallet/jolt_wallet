@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "jolttypes.h"
+#include "sodium.h"
 
 #define LOADER_FD_T FILE *
 
@@ -62,7 +63,8 @@ typedef struct jelfLoaderContext_t {
 
     /* Data Structs For Checking App Signature */
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
-    void *hs; // crypto sign hash state
+    crypto_hash_sha512_state *hs;
+    uint8_t hash[BIN_512];
     uint8_t app_public_key[BIN_256];
     uint8_t app_signature[BIN_512];
 #endif
@@ -88,6 +90,9 @@ jelfLoaderContext_t *jelfLoaderRelocate(jelfLoaderContext_t *ctx);
 
 void jelfLoaderFree( jelfLoaderContext_t *ctx );
 
+bool jelfLoaderSigCheck(jelfLoaderContext_t *ctx); // can only be called after relocating
+uint8_t *jelfLoaderGetHash(jelfLoaderContext_t *ctx); // return hash (in bytes, 64 long)
+
 #if CONFIG_JELFLOADER_PROFILER_EN
 /* Sets all profiler variables to 0 */
 void jelfLoaderProfilerReset();
@@ -95,11 +100,5 @@ void jelfLoaderProfilerReset();
 /* Prints the profiler results to uart console */
 void jelfLoaderProfilerPrint();
 #endif // CONFIG_ELFLOADER_PROFILER_EN
-
-#if !ESP_PLATFORM
-
-void jelfLoaderHash(char *fn, char *fn_basename, int n_exports);
-
-#endif
 
 #endif

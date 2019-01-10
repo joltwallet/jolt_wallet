@@ -150,10 +150,19 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
     fclose(program);
 
     lv_obj_del(preloading_scr);
+    preloading_scr = NULL;
 
     strcpy(app_cache.name, fn_basename);
 
 exec:
+    /* Verify Signature */
+    if(!jelfLoaderSigCheck(app_cache.ctx)) {
+        ESP_LOGE(TAG, "Bad Signature");
+        char hash[HEX_512] = { 0 };
+        sodium_bin2hex(hash, sizeof(hash), jelfLoaderGetHash(app_cache.ctx), 64);
+        ESP_LOGE(TAG, "App Hash: %s", hash);
+        goto exit;
+    }
     /* Prepare vault for app launching. vault_set() creates the PIN entry screen */
     // maybe move these out of cache
     app_cache.argc = app_argc;

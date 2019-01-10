@@ -1,9 +1,48 @@
 # distutils: libraries = sodium c
-# distutils: include_dirs = ../components/jolt-types/include ../jolt_os/jelf_loader/src ../jolt_os/jelf_loader/include
+# distutils: include_dirs = ../components/jolt-types/include ../jolt_os/jelf_loader/src ../jolt_os/jelf_loader/include ../jolt_os
 # distutils: sources = ../jolt_os/jelf_loader/src/loader.c ../jolt_os/jelf_loader/src/unaligned.c
 
-cdef extern from "jelfloader.h":
-    void jelfLoaderHash(char *fn, char *fn_basename, int n_exports);
+from libc.stdio cimport FILE, fopen
+from libc.stdint cimport uint8_t, uint16_t, uint32_t
 
-def jelfLoader(fn: bytes, fn_basename: bytes, n_exports: int):
-    jelfLoaderHash(fn, fn_basename, n_exports)
+cdef extern from "jelfloader.h":
+    struct jelfLoaderContext_t:
+        pass
+    struct jelfLoaderEnv_t:
+        pass
+
+    int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv)
+    int jelfLoaderRunAppMain(jelfLoaderContext_t *ctx)
+    int jelfLoaderRunConsole(jelfLoaderContext_t *ctx, int argc, char **argv)
+
+    jelfLoaderContext_t *jelfLoaderInit(FILE *fd, const char *name, const jelfLoaderEnv_t *env)
+    jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx)
+    jelfLoaderContext_t *jelfLoaderRelocate(jelfLoaderContext_t *ctx)
+
+    void jelfLoaderFree( jelfLoaderContext_t *ctx )
+
+    bint jelfLoaderSigCheck(jelfLoaderContext_t *ctx)
+    uint8_t *jelfLoaderGetHash(jelfLoaderContext_t *ctx)
+
+    void jelfLoaderProfilerReset()
+
+    void jelfLoaderProfilerPrint()
+
+cdef extern from "sodium.h":
+    int sodium_init()
+
+cdef extern from "jolt_lib.h":
+    jelfLoaderEnv_t env
+
+def jelf_loader_hash(fn: bytes, fn_basename: bytes):
+    if sodium_init() == -1:
+        return;
+
+    cdef jelfLoaderContext_t *ctx;
+
+    cdef FILE *fd = fopen(fn, "rb");
+
+    ctx = jelfLoaderInit(fd, fn_basename, &env);
+    jelfLoaderLoad(ctx);
+    jelfLoaderRelocate(ctx);
+    return jelfLoaderGetHash(ctx);

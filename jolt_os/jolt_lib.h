@@ -12,6 +12,8 @@
 
 #include "jelfloader.h"
 
+#if ESP_PLATFORM
+
 #include "bipmnemonic.h"
 #include "cJSON.h"
 #include "driver/uart.h"
@@ -41,6 +43,8 @@
 
 
 #include "esp_http_client.h" // todo: replace with less open functions
+
+#endif // ESP_PLATFORM
 
 typedef enum release_type_t {
     JOLT_VERSION_RELEASE = 0,
@@ -367,8 +371,14 @@ static const jelfLoaderEnv_t env = {
 #else
 
 /* Dummy place holder */
-static const jelfLoaderEnv_t env;
+static const void *exports[282] = { 0 };
 
 #endif
+
+static const jelfLoaderEnv_t env = {
+    .exported = exports,
+    .exported_size = sizeof(exports) / sizeof(*exports)
+};
+
 
 #endif

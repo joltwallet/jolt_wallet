@@ -22,12 +22,14 @@
             ]
         ],
         "depends": [
-            "../jolt_os/jelf_loader/include/jelfloader.h"
+            "../jolt_os/jelf_loader/include/jelfloader.h",
+            "../jolt_os/jolt_lib.h"
         ],
         "include_dirs": [
             "../components/jolt-types/include",
             "../jolt_os/jelf_loader/src",
-            "../jolt_os/jelf_loader/include"
+            "../jolt_os/jelf_loader/include",
+            "../jolt_os"
         ],
         "language": "c",
         "libraries": [
@@ -302,7 +304,12 @@ static CYTHON_INLINE float __PYX_NAN() {
 
 #define __PYX_HAVE__elf2jelf__jelf_loader
 #define __PYX_HAVE_API__elf2jelf__jelf_loader
+#include "string.h"
+#include "stdio.h"
+#include "stdint.h"
 #include "jelfloader.h"
+#include "sodium.h"
+#include "jolt_lib.h"
 #ifdef _OPENMP
 #include <omp.h>
 #endif /* _OPENMP */
@@ -618,14 +625,14 @@ static void __pyx_insert_code_object(int code_line, PyCodeObject* code_object);
 static void __Pyx_AddTraceback(const char *funcname, int c_line,
                                int py_line, const char *filename);
 
-/* CIntFromPy.proto */
-static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *);
-
 /* CIntToPy.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value);
 
 /* CIntFromPy.proto */
 static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *);
+
+/* CIntFromPy.proto */
+static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *);
 
 /* CheckBinaryVersion.proto */
 static int __Pyx_check_binary_version(void);
@@ -634,56 +641,63 @@ static int __Pyx_check_binary_version(void);
 static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
 
+/* Module declarations from 'libc.string' */
+
+/* Module declarations from 'libc.stdio' */
+
+/* Module declarations from 'libc.stdint' */
+
 /* Module declarations from 'elf2jelf.jelf_loader' */
 #define __Pyx_MODULE_NAME "elf2jelf.jelf_loader"
 int __pyx_module_is_main_elf2jelf__jelf_loader = 0;
 
 /* Implementation of 'elf2jelf.jelf_loader' */
+static const char __pyx_k_fd[] = "fd";
 static const char __pyx_k_fn[] = "fn";
+static const char __pyx_k_ctx[] = "ctx";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_test[] = "__test__";
-static const char __pyx_k_n_exports[] = "n_exports";
-static const char __pyx_k_jelfLoader[] = "jelfLoader";
 static const char __pyx_k_fn_basename[] = "fn_basename";
+static const char __pyx_k_jelf_loader_hash[] = "jelf_loader_hash";
 static const char __pyx_k_elf2jelf_jelf_loader[] = "elf2jelf.jelf_loader";
 static const char __pyx_k_Users_brianpugh_esp_nano_app_jo[] = "/Users/brianpugh/esp/nano_app/jolt_wallet/elf2jelf/jelf_loader.pyx";
 static PyObject *__pyx_kp_s_Users_brianpugh_esp_nano_app_jo;
+static PyObject *__pyx_n_s_ctx;
 static PyObject *__pyx_n_s_elf2jelf_jelf_loader;
+static PyObject *__pyx_n_s_fd;
 static PyObject *__pyx_n_s_fn;
 static PyObject *__pyx_n_s_fn_basename;
-static PyObject *__pyx_n_s_jelfLoader;
+static PyObject *__pyx_n_s_jelf_loader_hash;
 static PyObject *__pyx_n_s_main;
-static PyObject *__pyx_n_s_n_exports;
 static PyObject *__pyx_n_s_test;
-static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelfLoader(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_fn, PyObject *__pyx_v_fn_basename, PyObject *__pyx_v_n_exports); /* proto */
+static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_fn, PyObject *__pyx_v_fn_basename); /* proto */
 static PyObject *__pyx_tuple_;
 static PyObject *__pyx_codeobj__2;
 
-/* "elf2jelf/jelf_loader.pyx":8
- *     void jelfLoaderHash(char *fn, char *fn_basename, int n_exports);
+/* "elf2jelf/jelf_loader.pyx":37
+ *     jelfLoaderEnv_t env
  * 
- * def jelfLoader(fn: bytes, fn_basename: bytes, n_exports: int):             # <<<<<<<<<<<<<<
- *     jelfLoaderHash(fn, fn_basename, n_exports)
+ * def jelf_loader_hash(fn: bytes, fn_basename: bytes):             # <<<<<<<<<<<<<<
+ *     if sodium_init() == -1:
+ *         return;
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8elf2jelf_11jelf_loader_1jelfLoader(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_8elf2jelf_11jelf_loader_1jelfLoader = {"jelfLoader", (PyCFunction)__pyx_pw_8elf2jelf_11jelf_loader_1jelfLoader, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_8elf2jelf_11jelf_loader_1jelfLoader(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_8elf2jelf_11jelf_loader_1jelf_loader_hash(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_8elf2jelf_11jelf_loader_1jelf_loader_hash = {"jelf_loader_hash", (PyCFunction)__pyx_pw_8elf2jelf_11jelf_loader_1jelf_loader_hash, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_8elf2jelf_11jelf_loader_1jelf_loader_hash(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_fn = 0;
   PyObject *__pyx_v_fn_basename = 0;
-  PyObject *__pyx_v_n_exports = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("jelfLoader (wrapper)", 0);
+  __Pyx_RefNannySetupContext("jelf_loader_hash (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_fn,&__pyx_n_s_fn_basename,&__pyx_n_s_n_exports,0};
-    PyObject* values[3] = {0,0,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_fn,&__pyx_n_s_fn_basename,0};
+    PyObject* values[2] = {0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
-        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
         case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
         case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
         case  0: break;
@@ -697,73 +711,138 @@ static PyObject *__pyx_pw_8elf2jelf_11jelf_loader_1jelfLoader(PyObject *__pyx_se
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_fn_basename)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("jelfLoader", 1, 3, 3, 1); __PYX_ERR(0, 8, __pyx_L3_error)
-        }
-        case  2:
-        if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_n_exports)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("jelfLoader", 1, 3, 3, 2); __PYX_ERR(0, 8, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("jelf_loader_hash", 1, 2, 2, 1); __PYX_ERR(0, 37, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "jelfLoader") < 0)) __PYX_ERR(0, 8, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "jelf_loader_hash") < 0)) __PYX_ERR(0, 37, __pyx_L3_error)
       }
-    } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-      values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
     }
     __pyx_v_fn = values[0];
     __pyx_v_fn_basename = values[1];
-    __pyx_v_n_exports = values[2];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("jelfLoader", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 8, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("jelf_loader_hash", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 37, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("elf2jelf.jelf_loader.jelfLoader", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("elf2jelf.jelf_loader.jelf_loader_hash", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_8elf2jelf_11jelf_loader_jelfLoader(__pyx_self, __pyx_v_fn, __pyx_v_fn_basename, __pyx_v_n_exports);
+  __pyx_r = __pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(__pyx_self, __pyx_v_fn, __pyx_v_fn_basename);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelfLoader(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_fn, PyObject *__pyx_v_fn_basename, PyObject *__pyx_v_n_exports) {
+static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_fn, PyObject *__pyx_v_fn_basename) {
+  struct jelfLoaderContext_t *__pyx_v_ctx;
+  FILE *__pyx_v_fd;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  char *__pyx_t_1;
-  char *__pyx_t_2;
-  int __pyx_t_3;
-  __Pyx_RefNannySetupContext("jelfLoader", 0);
+  int __pyx_t_1;
+  char const *__pyx_t_2;
+  char const *__pyx_t_3;
+  PyObject *__pyx_t_4 = NULL;
+  __Pyx_RefNannySetupContext("jelf_loader_hash", 0);
 
-  /* "elf2jelf/jelf_loader.pyx":9
+  /* "elf2jelf/jelf_loader.pyx":38
  * 
- * def jelfLoader(fn: bytes, fn_basename: bytes, n_exports: int):
- *     jelfLoaderHash(fn, fn_basename, n_exports)             # <<<<<<<<<<<<<<
+ * def jelf_loader_hash(fn: bytes, fn_basename: bytes):
+ *     if sodium_init() == -1:             # <<<<<<<<<<<<<<
+ *         return;
+ * 
  */
-  __pyx_t_1 = __Pyx_PyObject_AsString(__pyx_v_fn); if (unlikely((!__pyx_t_1) && PyErr_Occurred())) __PYX_ERR(0, 9, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_PyObject_AsString(__pyx_v_fn_basename); if (unlikely((!__pyx_t_2) && PyErr_Occurred())) __PYX_ERR(0, 9, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_v_n_exports); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 9, __pyx_L1_error)
-  jelfLoaderHash(__pyx_t_1, __pyx_t_2, __pyx_t_3);
+  __pyx_t_1 = ((sodium_init() == -1L) != 0);
+  if (__pyx_t_1) {
 
-  /* "elf2jelf/jelf_loader.pyx":8
- *     void jelfLoaderHash(char *fn, char *fn_basename, int n_exports);
+    /* "elf2jelf/jelf_loader.pyx":39
+ * def jelf_loader_hash(fn: bytes, fn_basename: bytes):
+ *     if sodium_init() == -1:
+ *         return;             # <<<<<<<<<<<<<<
  * 
- * def jelfLoader(fn: bytes, fn_basename: bytes, n_exports: int):             # <<<<<<<<<<<<<<
- *     jelfLoaderHash(fn, fn_basename, n_exports)
+ *     cdef jelfLoaderContext_t *ctx;
+ */
+    __Pyx_XDECREF(__pyx_r);
+    __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+    goto __pyx_L0;
+
+    /* "elf2jelf/jelf_loader.pyx":38
+ * 
+ * def jelf_loader_hash(fn: bytes, fn_basename: bytes):
+ *     if sodium_init() == -1:             # <<<<<<<<<<<<<<
+ *         return;
+ * 
+ */
+  }
+
+  /* "elf2jelf/jelf_loader.pyx":43
+ *     cdef jelfLoaderContext_t *ctx;
+ * 
+ *     cdef FILE *fd = fopen(fn, "rb");             # <<<<<<<<<<<<<<
+ * 
+ *     ctx = jelfLoaderInit(fd, fn_basename, &env);
+ */
+  __pyx_t_2 = __Pyx_PyObject_AsString(__pyx_v_fn); if (unlikely((!__pyx_t_2) && PyErr_Occurred())) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_v_fd = fopen(__pyx_t_2, ((char const *)"rb"));
+
+  /* "elf2jelf/jelf_loader.pyx":45
+ *     cdef FILE *fd = fopen(fn, "rb");
+ * 
+ *     ctx = jelfLoaderInit(fd, fn_basename, &env);             # <<<<<<<<<<<<<<
+ *     jelfLoaderLoad(ctx);
+ *     jelfLoaderRelocate(ctx);
+ */
+  __pyx_t_3 = __Pyx_PyObject_AsString(__pyx_v_fn_basename); if (unlikely((!__pyx_t_3) && PyErr_Occurred())) __PYX_ERR(0, 45, __pyx_L1_error)
+  __pyx_v_ctx = jelfLoaderInit(__pyx_v_fd, __pyx_t_3, (&env));
+
+  /* "elf2jelf/jelf_loader.pyx":46
+ * 
+ *     ctx = jelfLoaderInit(fd, fn_basename, &env);
+ *     jelfLoaderLoad(ctx);             # <<<<<<<<<<<<<<
+ *     jelfLoaderRelocate(ctx);
+ *     return jelfLoaderGetHash(ctx);
+ */
+  jelfLoaderLoad(__pyx_v_ctx);
+
+  /* "elf2jelf/jelf_loader.pyx":47
+ *     ctx = jelfLoaderInit(fd, fn_basename, &env);
+ *     jelfLoaderLoad(ctx);
+ *     jelfLoaderRelocate(ctx);             # <<<<<<<<<<<<<<
+ *     return jelfLoaderGetHash(ctx);
+ */
+  jelfLoaderRelocate(__pyx_v_ctx);
+
+  /* "elf2jelf/jelf_loader.pyx":48
+ *     jelfLoaderLoad(ctx);
+ *     jelfLoaderRelocate(ctx);
+ *     return jelfLoaderGetHash(ctx);             # <<<<<<<<<<<<<<
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_4 = __Pyx_PyBytes_FromCString(jelfLoaderGetHash(__pyx_v_ctx)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 48, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_r = __pyx_t_4;
+  __pyx_t_4 = 0;
+  goto __pyx_L0;
+
+  /* "elf2jelf/jelf_loader.pyx":37
+ *     jelfLoaderEnv_t env
+ * 
+ * def jelf_loader_hash(fn: bytes, fn_basename: bytes):             # <<<<<<<<<<<<<<
+ *     if sodium_init() == -1:
+ *         return;
  */
 
   /* function exit code */
-  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
-  goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_AddTraceback("elf2jelf.jelf_loader.jelfLoader", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("elf2jelf.jelf_loader.jelf_loader_hash", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -795,12 +874,13 @@ static struct PyModuleDef __pyx_moduledef = {
 
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_s_Users_brianpugh_esp_nano_app_jo, __pyx_k_Users_brianpugh_esp_nano_app_jo, sizeof(__pyx_k_Users_brianpugh_esp_nano_app_jo), 0, 0, 1, 0},
+  {&__pyx_n_s_ctx, __pyx_k_ctx, sizeof(__pyx_k_ctx), 0, 0, 1, 1},
   {&__pyx_n_s_elf2jelf_jelf_loader, __pyx_k_elf2jelf_jelf_loader, sizeof(__pyx_k_elf2jelf_jelf_loader), 0, 0, 1, 1},
+  {&__pyx_n_s_fd, __pyx_k_fd, sizeof(__pyx_k_fd), 0, 0, 1, 1},
   {&__pyx_n_s_fn, __pyx_k_fn, sizeof(__pyx_k_fn), 0, 0, 1, 1},
   {&__pyx_n_s_fn_basename, __pyx_k_fn_basename, sizeof(__pyx_k_fn_basename), 0, 0, 1, 1},
-  {&__pyx_n_s_jelfLoader, __pyx_k_jelfLoader, sizeof(__pyx_k_jelfLoader), 0, 0, 1, 1},
+  {&__pyx_n_s_jelf_loader_hash, __pyx_k_jelf_loader_hash, sizeof(__pyx_k_jelf_loader_hash), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
-  {&__pyx_n_s_n_exports, __pyx_k_n_exports, sizeof(__pyx_k_n_exports), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
@@ -812,16 +892,17 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "elf2jelf/jelf_loader.pyx":8
- *     void jelfLoaderHash(char *fn, char *fn_basename, int n_exports);
+  /* "elf2jelf/jelf_loader.pyx":37
+ *     jelfLoaderEnv_t env
  * 
- * def jelfLoader(fn: bytes, fn_basename: bytes, n_exports: int):             # <<<<<<<<<<<<<<
- *     jelfLoaderHash(fn, fn_basename, n_exports)
+ * def jelf_loader_hash(fn: bytes, fn_basename: bytes):             # <<<<<<<<<<<<<<
+ *     if sodium_init() == -1:
+ *         return;
  */
-  __pyx_tuple_ = PyTuple_Pack(3, __pyx_n_s_fn, __pyx_n_s_fn_basename, __pyx_n_s_n_exports); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 8, __pyx_L1_error)
+  __pyx_tuple_ = PyTuple_Pack(4, __pyx_n_s_fn, __pyx_n_s_fn_basename, __pyx_n_s_ctx, __pyx_n_s_fd); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 37, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
-  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(3, 0, 3, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple_, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_brianpugh_esp_nano_app_jo, __pyx_n_s_jelfLoader, 8, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 8, __pyx_L1_error)
+  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple_, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_brianpugh_esp_nano_app_jo, __pyx_n_s_jelf_loader_hash, 37, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 37, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -928,20 +1009,21 @@ PyMODINIT_FUNC PyInit_jelf_loader(void)
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
 
-  /* "elf2jelf/jelf_loader.pyx":8
- *     void jelfLoaderHash(char *fn, char *fn_basename, int n_exports);
+  /* "elf2jelf/jelf_loader.pyx":37
+ *     jelfLoaderEnv_t env
  * 
- * def jelfLoader(fn: bytes, fn_basename: bytes, n_exports: int):             # <<<<<<<<<<<<<<
- *     jelfLoaderHash(fn, fn_basename, n_exports)
+ * def jelf_loader_hash(fn: bytes, fn_basename: bytes):             # <<<<<<<<<<<<<<
+ *     if sodium_init() == -1:
+ *         return;
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8elf2jelf_11jelf_loader_1jelfLoader, NULL, __pyx_n_s_elf2jelf_jelf_loader); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 8, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8elf2jelf_11jelf_loader_1jelf_loader_hash, NULL, __pyx_n_s_elf2jelf_jelf_loader); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 37, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_jelfLoader, __pyx_t_1) < 0) __PYX_ERR(0, 8, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_jelf_loader_hash, __pyx_t_1) < 0) __PYX_ERR(0, 37, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "elf2jelf/jelf_loader.pyx":1
  * # distutils: libraries = sodium c             # <<<<<<<<<<<<<<
- * # distutils: include_dirs = ../components/jolt-types/include ../jolt_os/jelf_loader/src ../jolt_os/jelf_loader/include
+ * # distutils: include_dirs = ../components/jolt-types/include ../jolt_os/jelf_loader/src ../jolt_os/jelf_loader/include ../jolt_os
  * # distutils: sources = ../jolt_os/jelf_loader/src/loader.c ../jolt_os/jelf_loader/src/unaligned.c
  */
   __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1, __pyx_L1_error)
@@ -1292,213 +1374,6 @@ bad:
     Py_XDECREF(py_frame);
 }
 
-/* CIntFromPyVerify */
-#define __PYX_VERIFY_RETURN_INT(target_type, func_type, func_value)\
-    __PYX__VERIFY_RETURN_INT(target_type, func_type, func_value, 0)
-#define __PYX_VERIFY_RETURN_INT_EXC(target_type, func_type, func_value)\
-    __PYX__VERIFY_RETURN_INT(target_type, func_type, func_value, 1)
-#define __PYX__VERIFY_RETURN_INT(target_type, func_type, func_value, exc)\
-    {\
-        func_type value = func_value;\
-        if (sizeof(target_type) < sizeof(func_type)) {\
-            if (unlikely(value != (func_type) (target_type) value)) {\
-                func_type zero = 0;\
-                if (exc && unlikely(value == (func_type)-1 && PyErr_Occurred()))\
-                    return (target_type) -1;\
-                if (is_unsigned && unlikely(value < zero))\
-                    goto raise_neg_overflow;\
-                else\
-                    goto raise_overflow;\
-            }\
-        }\
-        return (target_type) value;\
-    }
-
-/* CIntFromPy */
-static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *x) {
-    const int neg_one = (int) -1, const_zero = (int) 0;
-    const int is_unsigned = neg_one > const_zero;
-#if PY_MAJOR_VERSION < 3
-    if (likely(PyInt_Check(x))) {
-        if (sizeof(int) < sizeof(long)) {
-            __PYX_VERIFY_RETURN_INT(int, long, PyInt_AS_LONG(x))
-        } else {
-            long val = PyInt_AS_LONG(x);
-            if (is_unsigned && unlikely(val < 0)) {
-                goto raise_neg_overflow;
-            }
-            return (int) val;
-        }
-    } else
-#endif
-    if (likely(PyLong_Check(x))) {
-        if (is_unsigned) {
-#if CYTHON_USE_PYLONG_INTERNALS
-            const digit* digits = ((PyLongObject*)x)->ob_digit;
-            switch (Py_SIZE(x)) {
-                case  0: return (int) 0;
-                case  1: __PYX_VERIFY_RETURN_INT(int, digit, digits[0])
-                case 2:
-                    if (8 * sizeof(int) > 1 * PyLong_SHIFT) {
-                        if (8 * sizeof(unsigned long) > 2 * PyLong_SHIFT) {
-                            __PYX_VERIFY_RETURN_INT(int, unsigned long, (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
-                        } else if (8 * sizeof(int) >= 2 * PyLong_SHIFT) {
-                            return (int) (((((int)digits[1]) << PyLong_SHIFT) | (int)digits[0]));
-                        }
-                    }
-                    break;
-                case 3:
-                    if (8 * sizeof(int) > 2 * PyLong_SHIFT) {
-                        if (8 * sizeof(unsigned long) > 3 * PyLong_SHIFT) {
-                            __PYX_VERIFY_RETURN_INT(int, unsigned long, (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
-                        } else if (8 * sizeof(int) >= 3 * PyLong_SHIFT) {
-                            return (int) (((((((int)digits[2]) << PyLong_SHIFT) | (int)digits[1]) << PyLong_SHIFT) | (int)digits[0]));
-                        }
-                    }
-                    break;
-                case 4:
-                    if (8 * sizeof(int) > 3 * PyLong_SHIFT) {
-                        if (8 * sizeof(unsigned long) > 4 * PyLong_SHIFT) {
-                            __PYX_VERIFY_RETURN_INT(int, unsigned long, (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
-                        } else if (8 * sizeof(int) >= 4 * PyLong_SHIFT) {
-                            return (int) (((((((((int)digits[3]) << PyLong_SHIFT) | (int)digits[2]) << PyLong_SHIFT) | (int)digits[1]) << PyLong_SHIFT) | (int)digits[0]));
-                        }
-                    }
-                    break;
-            }
-#endif
-#if CYTHON_COMPILING_IN_CPYTHON
-            if (unlikely(Py_SIZE(x) < 0)) {
-                goto raise_neg_overflow;
-            }
-#else
-            {
-                int result = PyObject_RichCompareBool(x, Py_False, Py_LT);
-                if (unlikely(result < 0))
-                    return (int) -1;
-                if (unlikely(result == 1))
-                    goto raise_neg_overflow;
-            }
-#endif
-            if (sizeof(int) <= sizeof(unsigned long)) {
-                __PYX_VERIFY_RETURN_INT_EXC(int, unsigned long, PyLong_AsUnsignedLong(x))
-            } else if (sizeof(int) <= sizeof(unsigned PY_LONG_LONG)) {
-                __PYX_VERIFY_RETURN_INT_EXC(int, unsigned PY_LONG_LONG, PyLong_AsUnsignedLongLong(x))
-            }
-        } else {
-#if CYTHON_USE_PYLONG_INTERNALS
-            const digit* digits = ((PyLongObject*)x)->ob_digit;
-            switch (Py_SIZE(x)) {
-                case  0: return (int) 0;
-                case -1: __PYX_VERIFY_RETURN_INT(int, sdigit, (sdigit) (-(sdigit)digits[0]))
-                case  1: __PYX_VERIFY_RETURN_INT(int,  digit, +digits[0])
-                case -2:
-                    if (8 * sizeof(int) - 1 > 1 * PyLong_SHIFT) {
-                        if (8 * sizeof(unsigned long) > 2 * PyLong_SHIFT) {
-                            __PYX_VERIFY_RETURN_INT(int, long, -(long) (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
-                        } else if (8 * sizeof(int) - 1 > 2 * PyLong_SHIFT) {
-                            return (int) (((int)-1)*(((((int)digits[1]) << PyLong_SHIFT) | (int)digits[0])));
-                        }
-                    }
-                    break;
-                case 2:
-                    if (8 * sizeof(int) > 1 * PyLong_SHIFT) {
-                        if (8 * sizeof(unsigned long) > 2 * PyLong_SHIFT) {
-                            __PYX_VERIFY_RETURN_INT(int, unsigned long, (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
-                        } else if (8 * sizeof(int) - 1 > 2 * PyLong_SHIFT) {
-                            return (int) ((((((int)digits[1]) << PyLong_SHIFT) | (int)digits[0])));
-                        }
-                    }
-                    break;
-                case -3:
-                    if (8 * sizeof(int) - 1 > 2 * PyLong_SHIFT) {
-                        if (8 * sizeof(unsigned long) > 3 * PyLong_SHIFT) {
-                            __PYX_VERIFY_RETURN_INT(int, long, -(long) (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
-                        } else if (8 * sizeof(int) - 1 > 3 * PyLong_SHIFT) {
-                            return (int) (((int)-1)*(((((((int)digits[2]) << PyLong_SHIFT) | (int)digits[1]) << PyLong_SHIFT) | (int)digits[0])));
-                        }
-                    }
-                    break;
-                case 3:
-                    if (8 * sizeof(int) > 2 * PyLong_SHIFT) {
-                        if (8 * sizeof(unsigned long) > 3 * PyLong_SHIFT) {
-                            __PYX_VERIFY_RETURN_INT(int, unsigned long, (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
-                        } else if (8 * sizeof(int) - 1 > 3 * PyLong_SHIFT) {
-                            return (int) ((((((((int)digits[2]) << PyLong_SHIFT) | (int)digits[1]) << PyLong_SHIFT) | (int)digits[0])));
-                        }
-                    }
-                    break;
-                case -4:
-                    if (8 * sizeof(int) - 1 > 3 * PyLong_SHIFT) {
-                        if (8 * sizeof(unsigned long) > 4 * PyLong_SHIFT) {
-                            __PYX_VERIFY_RETURN_INT(int, long, -(long) (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
-                        } else if (8 * sizeof(int) - 1 > 4 * PyLong_SHIFT) {
-                            return (int) (((int)-1)*(((((((((int)digits[3]) << PyLong_SHIFT) | (int)digits[2]) << PyLong_SHIFT) | (int)digits[1]) << PyLong_SHIFT) | (int)digits[0])));
-                        }
-                    }
-                    break;
-                case 4:
-                    if (8 * sizeof(int) > 3 * PyLong_SHIFT) {
-                        if (8 * sizeof(unsigned long) > 4 * PyLong_SHIFT) {
-                            __PYX_VERIFY_RETURN_INT(int, unsigned long, (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
-                        } else if (8 * sizeof(int) - 1 > 4 * PyLong_SHIFT) {
-                            return (int) ((((((((((int)digits[3]) << PyLong_SHIFT) | (int)digits[2]) << PyLong_SHIFT) | (int)digits[1]) << PyLong_SHIFT) | (int)digits[0])));
-                        }
-                    }
-                    break;
-            }
-#endif
-            if (sizeof(int) <= sizeof(long)) {
-                __PYX_VERIFY_RETURN_INT_EXC(int, long, PyLong_AsLong(x))
-            } else if (sizeof(int) <= sizeof(PY_LONG_LONG)) {
-                __PYX_VERIFY_RETURN_INT_EXC(int, PY_LONG_LONG, PyLong_AsLongLong(x))
-            }
-        }
-        {
-#if CYTHON_COMPILING_IN_PYPY && !defined(_PyLong_AsByteArray)
-            PyErr_SetString(PyExc_RuntimeError,
-                            "_PyLong_AsByteArray() not available in PyPy, cannot convert large numbers");
-#else
-            int val;
-            PyObject *v = __Pyx_PyNumber_IntOrLong(x);
- #if PY_MAJOR_VERSION < 3
-            if (likely(v) && !PyLong_Check(v)) {
-                PyObject *tmp = v;
-                v = PyNumber_Long(tmp);
-                Py_DECREF(tmp);
-            }
- #endif
-            if (likely(v)) {
-                int one = 1; int is_little = (int)*(unsigned char *)&one;
-                unsigned char *bytes = (unsigned char *)&val;
-                int ret = _PyLong_AsByteArray((PyLongObject *)v,
-                                              bytes, sizeof(val),
-                                              is_little, !is_unsigned);
-                Py_DECREF(v);
-                if (likely(!ret))
-                    return val;
-            }
-#endif
-            return (int) -1;
-        }
-    } else {
-        int val;
-        PyObject *tmp = __Pyx_PyNumber_IntOrLong(x);
-        if (!tmp) return (int) -1;
-        val = __Pyx_PyInt_As_int(tmp);
-        Py_DECREF(tmp);
-        return val;
-    }
-raise_overflow:
-    PyErr_SetString(PyExc_OverflowError,
-        "value too large to convert to int");
-    return (int) -1;
-raise_neg_overflow:
-    PyErr_SetString(PyExc_OverflowError,
-        "can't convert negative value to int");
-    return (int) -1;
-}
-
 /* CIntToPy */
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
     const long neg_one = (long) -1, const_zero = (long) 0;
@@ -1525,6 +1400,28 @@ static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
                                      little, !is_unsigned);
     }
 }
+
+/* CIntFromPyVerify */
+#define __PYX_VERIFY_RETURN_INT(target_type, func_type, func_value)\
+    __PYX__VERIFY_RETURN_INT(target_type, func_type, func_value, 0)
+#define __PYX_VERIFY_RETURN_INT_EXC(target_type, func_type, func_value)\
+    __PYX__VERIFY_RETURN_INT(target_type, func_type, func_value, 1)
+#define __PYX__VERIFY_RETURN_INT(target_type, func_type, func_value, exc)\
+    {\
+        func_type value = func_value;\
+        if (sizeof(target_type) < sizeof(func_type)) {\
+            if (unlikely(value != (func_type) (target_type) value)) {\
+                func_type zero = 0;\
+                if (exc && unlikely(value == (func_type)-1 && PyErr_Occurred()))\
+                    return (target_type) -1;\
+                if (is_unsigned && unlikely(value < zero))\
+                    goto raise_neg_overflow;\
+                else\
+                    goto raise_overflow;\
+            }\
+        }\
+        return (target_type) value;\
+    }
 
 /* CIntFromPy */
 static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *x) {
@@ -1709,6 +1606,191 @@ raise_neg_overflow:
     PyErr_SetString(PyExc_OverflowError,
         "can't convert negative value to long");
     return (long) -1;
+}
+
+/* CIntFromPy */
+static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *x) {
+    const int neg_one = (int) -1, const_zero = (int) 0;
+    const int is_unsigned = neg_one > const_zero;
+#if PY_MAJOR_VERSION < 3
+    if (likely(PyInt_Check(x))) {
+        if (sizeof(int) < sizeof(long)) {
+            __PYX_VERIFY_RETURN_INT(int, long, PyInt_AS_LONG(x))
+        } else {
+            long val = PyInt_AS_LONG(x);
+            if (is_unsigned && unlikely(val < 0)) {
+                goto raise_neg_overflow;
+            }
+            return (int) val;
+        }
+    } else
+#endif
+    if (likely(PyLong_Check(x))) {
+        if (is_unsigned) {
+#if CYTHON_USE_PYLONG_INTERNALS
+            const digit* digits = ((PyLongObject*)x)->ob_digit;
+            switch (Py_SIZE(x)) {
+                case  0: return (int) 0;
+                case  1: __PYX_VERIFY_RETURN_INT(int, digit, digits[0])
+                case 2:
+                    if (8 * sizeof(int) > 1 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 2 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(int, unsigned long, (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(int) >= 2 * PyLong_SHIFT) {
+                            return (int) (((((int)digits[1]) << PyLong_SHIFT) | (int)digits[0]));
+                        }
+                    }
+                    break;
+                case 3:
+                    if (8 * sizeof(int) > 2 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 3 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(int, unsigned long, (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(int) >= 3 * PyLong_SHIFT) {
+                            return (int) (((((((int)digits[2]) << PyLong_SHIFT) | (int)digits[1]) << PyLong_SHIFT) | (int)digits[0]));
+                        }
+                    }
+                    break;
+                case 4:
+                    if (8 * sizeof(int) > 3 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 4 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(int, unsigned long, (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(int) >= 4 * PyLong_SHIFT) {
+                            return (int) (((((((((int)digits[3]) << PyLong_SHIFT) | (int)digits[2]) << PyLong_SHIFT) | (int)digits[1]) << PyLong_SHIFT) | (int)digits[0]));
+                        }
+                    }
+                    break;
+            }
+#endif
+#if CYTHON_COMPILING_IN_CPYTHON
+            if (unlikely(Py_SIZE(x) < 0)) {
+                goto raise_neg_overflow;
+            }
+#else
+            {
+                int result = PyObject_RichCompareBool(x, Py_False, Py_LT);
+                if (unlikely(result < 0))
+                    return (int) -1;
+                if (unlikely(result == 1))
+                    goto raise_neg_overflow;
+            }
+#endif
+            if (sizeof(int) <= sizeof(unsigned long)) {
+                __PYX_VERIFY_RETURN_INT_EXC(int, unsigned long, PyLong_AsUnsignedLong(x))
+            } else if (sizeof(int) <= sizeof(unsigned PY_LONG_LONG)) {
+                __PYX_VERIFY_RETURN_INT_EXC(int, unsigned PY_LONG_LONG, PyLong_AsUnsignedLongLong(x))
+            }
+        } else {
+#if CYTHON_USE_PYLONG_INTERNALS
+            const digit* digits = ((PyLongObject*)x)->ob_digit;
+            switch (Py_SIZE(x)) {
+                case  0: return (int) 0;
+                case -1: __PYX_VERIFY_RETURN_INT(int, sdigit, (sdigit) (-(sdigit)digits[0]))
+                case  1: __PYX_VERIFY_RETURN_INT(int,  digit, +digits[0])
+                case -2:
+                    if (8 * sizeof(int) - 1 > 1 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 2 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(int, long, -(long) (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(int) - 1 > 2 * PyLong_SHIFT) {
+                            return (int) (((int)-1)*(((((int)digits[1]) << PyLong_SHIFT) | (int)digits[0])));
+                        }
+                    }
+                    break;
+                case 2:
+                    if (8 * sizeof(int) > 1 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 2 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(int, unsigned long, (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(int) - 1 > 2 * PyLong_SHIFT) {
+                            return (int) ((((((int)digits[1]) << PyLong_SHIFT) | (int)digits[0])));
+                        }
+                    }
+                    break;
+                case -3:
+                    if (8 * sizeof(int) - 1 > 2 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 3 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(int, long, -(long) (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(int) - 1 > 3 * PyLong_SHIFT) {
+                            return (int) (((int)-1)*(((((((int)digits[2]) << PyLong_SHIFT) | (int)digits[1]) << PyLong_SHIFT) | (int)digits[0])));
+                        }
+                    }
+                    break;
+                case 3:
+                    if (8 * sizeof(int) > 2 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 3 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(int, unsigned long, (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(int) - 1 > 3 * PyLong_SHIFT) {
+                            return (int) ((((((((int)digits[2]) << PyLong_SHIFT) | (int)digits[1]) << PyLong_SHIFT) | (int)digits[0])));
+                        }
+                    }
+                    break;
+                case -4:
+                    if (8 * sizeof(int) - 1 > 3 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 4 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(int, long, -(long) (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(int) - 1 > 4 * PyLong_SHIFT) {
+                            return (int) (((int)-1)*(((((((((int)digits[3]) << PyLong_SHIFT) | (int)digits[2]) << PyLong_SHIFT) | (int)digits[1]) << PyLong_SHIFT) | (int)digits[0])));
+                        }
+                    }
+                    break;
+                case 4:
+                    if (8 * sizeof(int) > 3 * PyLong_SHIFT) {
+                        if (8 * sizeof(unsigned long) > 4 * PyLong_SHIFT) {
+                            __PYX_VERIFY_RETURN_INT(int, unsigned long, (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0])))
+                        } else if (8 * sizeof(int) - 1 > 4 * PyLong_SHIFT) {
+                            return (int) ((((((((((int)digits[3]) << PyLong_SHIFT) | (int)digits[2]) << PyLong_SHIFT) | (int)digits[1]) << PyLong_SHIFT) | (int)digits[0])));
+                        }
+                    }
+                    break;
+            }
+#endif
+            if (sizeof(int) <= sizeof(long)) {
+                __PYX_VERIFY_RETURN_INT_EXC(int, long, PyLong_AsLong(x))
+            } else if (sizeof(int) <= sizeof(PY_LONG_LONG)) {
+                __PYX_VERIFY_RETURN_INT_EXC(int, PY_LONG_LONG, PyLong_AsLongLong(x))
+            }
+        }
+        {
+#if CYTHON_COMPILING_IN_PYPY && !defined(_PyLong_AsByteArray)
+            PyErr_SetString(PyExc_RuntimeError,
+                            "_PyLong_AsByteArray() not available in PyPy, cannot convert large numbers");
+#else
+            int val;
+            PyObject *v = __Pyx_PyNumber_IntOrLong(x);
+ #if PY_MAJOR_VERSION < 3
+            if (likely(v) && !PyLong_Check(v)) {
+                PyObject *tmp = v;
+                v = PyNumber_Long(tmp);
+                Py_DECREF(tmp);
+            }
+ #endif
+            if (likely(v)) {
+                int one = 1; int is_little = (int)*(unsigned char *)&one;
+                unsigned char *bytes = (unsigned char *)&val;
+                int ret = _PyLong_AsByteArray((PyLongObject *)v,
+                                              bytes, sizeof(val),
+                                              is_little, !is_unsigned);
+                Py_DECREF(v);
+                if (likely(!ret))
+                    return val;
+            }
+#endif
+            return (int) -1;
+        }
+    } else {
+        int val;
+        PyObject *tmp = __Pyx_PyNumber_IntOrLong(x);
+        if (!tmp) return (int) -1;
+        val = __Pyx_PyInt_As_int(tmp);
+        Py_DECREF(tmp);
+        return val;
+    }
+raise_overflow:
+    PyErr_SetString(PyExc_OverflowError,
+        "value too large to convert to int");
+    return (int) -1;
+raise_neg_overflow:
+    PyErr_SetString(PyExc_OverflowError,
+        "can't convert negative value to int");
+    return (int) -1;
 }
 
 /* CheckBinaryVersion */
