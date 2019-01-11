@@ -22,3 +22,6 @@
 [submodule "jolt_wallet/hal/lv_drivers"]
 	path = jolt_os/hal/lv_drivers
 	url = https://github.com/joltwallet/lv_drivers.git
+[submodule "components/lvgl/lvgl"]
+	path = components/lvgl/lvgl
+	url = https://github.com/littlevgl/lvgl.git

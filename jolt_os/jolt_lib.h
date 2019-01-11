@@ -363,11 +363,6 @@ static const void *exports[] = {
 
 };
 
-static const jelfLoaderEnv_t env = {
-    .exported = exports,
-    .exported_size = sizeof(exports) / sizeof(*exports)
-};
-
 #else
 
 /* Dummy place holder */

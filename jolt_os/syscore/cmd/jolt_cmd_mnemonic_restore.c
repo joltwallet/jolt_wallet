@@ -21,7 +21,7 @@
 #include "hal/storage/storage.h"
 #include "sodium.h"
 
-#include "lvgl.h"
+#include "lvgl/lvgl.h"
 #include "jolt_gui/jolt_gui.h"
 #include "syscore/console_helpers.h"
 
