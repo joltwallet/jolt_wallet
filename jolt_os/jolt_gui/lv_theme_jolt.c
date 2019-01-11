@@ -54,9 +54,9 @@ static void basic_init(void)
     def.body.grad_color = LV_COLOR_WHITE;
     def.body.radius = 0;
     def.body.opa = LV_OPA_COVER;
-    def.body.padding.hor = 2;
-    def.body.padding.ver = 2;
-    def.body.padding.inner = 1;
+    def.body.padding.hor = 1;
+    def.body.padding.ver = 1;
+    def.body.padding.inner = 0;
     def.body.border.color = LV_COLOR_WHITE;
     def.body.border.width = 1;
     def.body.border.opa = LV_OPA_COVER;

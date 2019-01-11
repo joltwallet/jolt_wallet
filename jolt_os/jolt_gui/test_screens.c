@@ -22,7 +22,7 @@ lv_res_t jolt_gui_test_number_create(lv_obj_t *btn) {
 
 lv_res_t jolt_gui_test_qrcode_create(lv_obj_t *btn) {
     const char data[] = "Meow";
-    jolt_gui_scr_qr_create("QR Test", "Meow", sizeof(data));
+    lv_obj_t *scr = jolt_gui_scr_qr_create("QR Test", "Meow", sizeof(data));
 	return LV_RES_OK;
 }
 
@@ -84,7 +84,7 @@ lv_res_t jolt_gui_test_battery_create(lv_obj_t *btn) {
 
 lv_res_t jolt_gui_test_alphabet_create(lv_obj_t * list_btn) {
     /* Dummy Text Page for Testing */
-    jolt_gui_scr_text_create("Alphabet", 
+    lv_obj_t *scr = jolt_gui_scr_text_create("Alphabet", 
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ "
             "abcdefghijklmnopqrstuvwxyz "
             "1234567890 "
@@ -94,6 +94,8 @@ lv_res_t jolt_gui_test_alphabet_create(lv_obj_t * list_btn) {
             "Testing proper wrap around of very long words and address. "
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ."
             );
+    jolt_gui_scr_scroll_add_monospace_text(scr,
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ");
     return LV_RES_OK;
 }
 

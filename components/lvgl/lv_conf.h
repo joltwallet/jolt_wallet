@@ -3,7 +3,8 @@
  *
  */
 
-#if 1 /*Set it to "1" to enable content*/
+#if ESP_PLATFORM
+
 #include "sdkconfig.h"
 #include "esp_log.h"
 #include "esp_attr.h"
@@ -162,7 +163,7 @@
 #define USE_LV_FONT_DEJAVU_40_CYRILLIC     0
 #define USE_LV_FONT_SYMBOL_40              0
 
-#define USE_LV_FONT_MONOSPACE_8            0
+#define USE_LV_FONT_MONOSPACE_8            1
 
 /* Optionally declare your custom fonts here.
  * You can use these fonts as default font too
@@ -353,5 +354,9 @@
 #endif
 
 #endif /*LV_CONF_H*/
+
+#else
+
+#include "lv_conf_pc_sim.h"
 
 #endif /*End of "Content enable"*/

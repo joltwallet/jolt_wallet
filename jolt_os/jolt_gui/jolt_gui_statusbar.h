@@ -1,8 +1,6 @@
 #ifndef __JOLT_GUI_STATUSBAR_H__
 #define __JOLT_GUI_STATUSBAR_H__
 
-#include "../lv_conf.h"
-
 enum {
     JOLT_GUI_STATUSBAR_INDEX_BATTERY = 0,
     JOLT_GUI_STATUSBAR_INDEX_WIFI,
