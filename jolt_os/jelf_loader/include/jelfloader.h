@@ -4,8 +4,19 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "jolttypes.h"
+#include "sodium.h"
 
 #define LOADER_FD_T FILE *
+
+#ifndef CONFIG_JOLT_APP_SIG_CHECK_EN
+#define CONFIG_JOLT_APP_SIG_CHECK_EN 1
+#endif
+
+#ifndef CONFIG_JOLT_APP_KEY_DEFAULT
+#define CONFIG_JOLT_APP_KEY_DEFAULT "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8"
+#endif
+
 
 typedef struct {
     const void **exported;            /*!< Pointer to exported symbols array */
@@ -45,10 +56,20 @@ typedef struct jelfLoaderContext_t {
 
     jelfLoaderSection_t *section; // First element of singly linked list sections.
 
+    /* Coin Derivation Data */
     uint32_t coin_purpose;
     uint32_t coin_path;
-    char bip32_key[32];
+    char bip32_key[33];
 
+    /* Data Structs For Checking App Signature */
+#if CONFIG_JOLT_APP_SIG_CHECK_EN
+    crypto_hash_sha512_state *hs;
+    uint8_t hash[BIN_512];
+    uint8_t app_public_key[BIN_256];
+    uint8_t app_signature[BIN_512];
+#endif
+
+    /* Caching Data Structures */
 #if CONFIG_JELFLOADER_CACHE_SHT
     Jelf_Shdr *shdr_cache;
 #endif
@@ -68,6 +89,9 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx);
 jelfLoaderContext_t *jelfLoaderRelocate(jelfLoaderContext_t *ctx);
 
 void jelfLoaderFree( jelfLoaderContext_t *ctx );
+
+bool jelfLoaderSigCheck(jelfLoaderContext_t *ctx); // can only be called after relocating
+uint8_t *jelfLoaderGetHash(jelfLoaderContext_t *ctx); // return hash (in bytes, 64 long)
 
 #if CONFIG_JELFLOADER_PROFILER_EN
 /* Sets all profiler variables to 0 */

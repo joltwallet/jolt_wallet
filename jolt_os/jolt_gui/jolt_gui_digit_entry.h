@@ -2,7 +2,7 @@
 #define __JOLT_LVGL_GUI_DIGIT_ENTRY_H__
 
 #include <stddef.h>
-#include "../lvgl/lvgl.h"
+#include "lvgl/lvgl.h"
 
 #define JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL -1
 #ifndef CONFIG_JOLT_GUI_SCR_DIGIT_ENTRY_ANIM_DIGIT_MS

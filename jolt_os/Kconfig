@@ -119,7 +119,7 @@ menu "JoltOS"
 
     endmenu
 
-    menu "App Compression"
+    menu "Compression"
 
         config JOLT_COMPRESSION_ENABLE
             bool
@@ -514,11 +514,22 @@ menu "JoltOS"
 
     endmenu
 
-    config JOLT_APP_KEY_DEFAULT
-        string
-        prompt "Default Application Public Key"
-        default "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8"
-        help
-            Only launch apps with signatures that match this public key.
+    menu "Application Signature Verification"
+
+        config JOLT_APP_SIG_CHECK_EN
+           bool
+           prompt "Require applications to have a valid signature prior to launching"
+           default y
+           help
+               help text here
+
+        config JOLT_APP_KEY_DEFAULT
+            depends on JOLT_APP_SIG_CHECK_EN
+            string
+            prompt "Default Application Public Key"
+            default "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8"
+            help
+                Only launch apps with signatures that match this public key.
+    endmenu
 
 endmenu

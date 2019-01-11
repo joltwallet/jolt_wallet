@@ -3,7 +3,8 @@
  *
  */
 
-#if 1 /*Set it to "1" to enable content*/
+#if ESP_PLATFORM
+
 #include "sdkconfig.h"
 #include "esp_log.h"
 #include "esp_attr.h"
@@ -353,5 +354,9 @@
 #endif
 
 #endif /*LV_CONF_H*/
+
+#else
+
+#include "lv_conf_pc_sim.h"
 
 #endif /*End of "Content enable"*/

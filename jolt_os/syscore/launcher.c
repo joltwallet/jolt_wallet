@@ -119,7 +119,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
 
     #if CONFIG_JELFLOADER_PROFILER_EN
     jelfLoaderProfilerReset();
-    uint64_t jelfLoader_time = esp_timer_get_time();
+    uint32_t jelfLoader_time = esp_timer_get_time();
     #endif
 
     ESP_LOGI(TAG, "jelfLoader; Initializing");
@@ -134,6 +134,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
         return_code = -5;
         goto exit;
     }
+
     ESP_LOGI(TAG, "elfLoader; Relocating");
     if( NULL == jelfLoaderRelocate(app_cache.ctx) ) {
         return_code = -6;
@@ -142,17 +143,26 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
 
     #if CONFIG_JELFLOADER_PROFILER_EN
     jelfLoader_time = esp_timer_get_time() - jelfLoader_time;
-    ESP_LOGI(TAG, "Application Loaded in %lld uS.", jelfLoader_time);
+    ESP_LOGI(TAG, "Application Loaded in %d uS.", jelfLoader_time);
     jelfLoaderProfilerPrint();
     #endif
 
     fclose(program);
 
     lv_obj_del(preloading_scr);
+    preloading_scr = NULL;
 
     strcpy(app_cache.name, fn_basename);
 
 exec:
+    /* Verify Signature */
+    if(!jelfLoaderSigCheck(app_cache.ctx)) {
+        ESP_LOGE(TAG, "Bad Signature");
+        char hash[HEX_512] = { 0 };
+        sodium_bin2hex(hash, sizeof(hash), jelfLoaderGetHash(app_cache.ctx), 64);
+        ESP_LOGE(TAG, "App Hash: %s", hash);
+        goto exit;
+    }
     /* Prepare vault for app launching. vault_set() creates the PIN entry screen */
     // maybe move these out of cache
     app_cache.argc = app_argc;

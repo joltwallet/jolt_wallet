@@ -1,9 +1,18 @@
 #ifndef __JOLT_LIB_H__
 #define __JOLT_LIB_H__
 
-/* All of the functions available to an app */
+/* All of the functions available to an app.
+ *
+ * DO NOT CHANGE THIS FILE (jolt_lib.h) directly, either change:
+ *     * elf2jelf/jolt_lib_template.h
+ *     * elf2jelf/export_list.txt 
+ *
+ * jolt_lib.h will automatically be updated upon make
+ * */
 
 #include "jelfloader.h"
+
+#if ESP_PLATFORM
 
 #include "bipmnemonic.h"
 #include "cJSON.h"
@@ -34,6 +43,8 @@
 
 
 #include "esp_http_client.h" // todo: replace with less open functions
+
+#endif // ESP_PLATFORM
 
 typedef enum release_type_t {
     JOLT_VERSION_RELEASE = 0,
@@ -352,16 +363,17 @@ static const void *exports[] = {
 
 };
 
+#else
+
+/* Dummy place holder */
+static const void *exports[282] = { 0 };
+
+#endif
+
 static const jelfLoaderEnv_t env = {
     .exported = exports,
     .exported_size = sizeof(exports) / sizeof(*exports)
 };
 
-#else
-
-/* Dummy place holder */
-static const jelfLoaderEnv_t env;
-
-#endif
 
 #endif

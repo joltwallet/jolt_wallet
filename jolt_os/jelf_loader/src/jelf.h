@@ -6,7 +6,7 @@
     #define CONFIG_ELFLOADER_PROFILER_EN true
 #endif
 
-typedef uint32_t Jelf_Addr;
+typedef size_t Jelf_Addr;
 
 /* Unpadded structure sizes are macro'd for indexing into the JELF binary */
 
