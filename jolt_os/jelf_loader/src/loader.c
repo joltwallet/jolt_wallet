@@ -27,11 +27,11 @@ static const char* TAG = "JelfLoader";
 #define ERR(...)  ESP_LOGE(TAG, __VA_ARGS__);
 
 #else
+
 #include <stdio.h>
-//#define MSG(...) printf( __VA_ARGS__ ); printf("\n");
-#define MSG(...);
-#define INFO(...) printf( __VA_ARGS__ ); printf("\n");
-#define ERR(...) printf( __VA_ARGS__ ); printf("\n");
+#define MSG(...)
+#define INFO(...) /*printf( __VA_ARGS__ ); printf("\n");*/
+#define ERR(...) /*printf( __VA_ARGS__ ); printf("\n");*/
 
 #endif //ESP_PLATFORM logging macros
 

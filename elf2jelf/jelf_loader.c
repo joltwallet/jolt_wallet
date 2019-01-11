@@ -657,7 +657,7 @@ static const char __pyx_k_fn[] = "fn";
 static const char __pyx_k_ctx[] = "ctx";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_test[] = "__test__";
-static const char __pyx_k_fn_basename[] = "fn_basename";
+static const char __pyx_k_name_to_sign[] = "name_to_sign";
 static const char __pyx_k_jelf_loader_hash[] = "jelf_loader_hash";
 static const char __pyx_k_elf2jelf_jelf_loader[] = "elf2jelf.jelf_loader";
 static const char __pyx_k_Users_brianpugh_esp_nano_app_jo[] = "/Users/brianpugh/esp/nano_app/jolt_wallet/elf2jelf/jelf_loader.pyx";
@@ -666,18 +666,18 @@ static PyObject *__pyx_n_s_ctx;
 static PyObject *__pyx_n_s_elf2jelf_jelf_loader;
 static PyObject *__pyx_n_s_fd;
 static PyObject *__pyx_n_s_fn;
-static PyObject *__pyx_n_s_fn_basename;
 static PyObject *__pyx_n_s_jelf_loader_hash;
 static PyObject *__pyx_n_s_main;
+static PyObject *__pyx_n_s_name_to_sign;
 static PyObject *__pyx_n_s_test;
-static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_fn, PyObject *__pyx_v_fn_basename); /* proto */
+static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_fn, PyObject *__pyx_v_name_to_sign); /* proto */
 static PyObject *__pyx_tuple_;
 static PyObject *__pyx_codeobj__2;
 
 /* "elf2jelf/jelf_loader.pyx":37
  *     jelfLoaderEnv_t env
  * 
- * def jelf_loader_hash(fn: bytes, fn_basename: bytes):             # <<<<<<<<<<<<<<
+ * def jelf_loader_hash(fn: bytes, name_to_sign: bytes):             # <<<<<<<<<<<<<<
  *     if sodium_init() == -1:
  *         return;
  */
@@ -687,12 +687,12 @@ static PyObject *__pyx_pw_8elf2jelf_11jelf_loader_1jelf_loader_hash(PyObject *__
 static PyMethodDef __pyx_mdef_8elf2jelf_11jelf_loader_1jelf_loader_hash = {"jelf_loader_hash", (PyCFunction)__pyx_pw_8elf2jelf_11jelf_loader_1jelf_loader_hash, METH_VARARGS|METH_KEYWORDS, 0};
 static PyObject *__pyx_pw_8elf2jelf_11jelf_loader_1jelf_loader_hash(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_fn = 0;
-  PyObject *__pyx_v_fn_basename = 0;
+  PyObject *__pyx_v_name_to_sign = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("jelf_loader_hash (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_fn,&__pyx_n_s_fn_basename,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_fn,&__pyx_n_s_name_to_sign,0};
     PyObject* values[2] = {0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
@@ -709,7 +709,7 @@ static PyObject *__pyx_pw_8elf2jelf_11jelf_loader_1jelf_loader_hash(PyObject *__
         if (likely((values[0] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_fn)) != 0)) kw_args--;
         else goto __pyx_L5_argtuple_error;
         case  1:
-        if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_fn_basename)) != 0)) kw_args--;
+        if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_name_to_sign)) != 0)) kw_args--;
         else {
           __Pyx_RaiseArgtupleInvalid("jelf_loader_hash", 1, 2, 2, 1); __PYX_ERR(0, 37, __pyx_L3_error)
         }
@@ -724,7 +724,7 @@ static PyObject *__pyx_pw_8elf2jelf_11jelf_loader_1jelf_loader_hash(PyObject *__
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
     }
     __pyx_v_fn = values[0];
-    __pyx_v_fn_basename = values[1];
+    __pyx_v_name_to_sign = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
@@ -734,14 +734,14 @@ static PyObject *__pyx_pw_8elf2jelf_11jelf_loader_1jelf_loader_hash(PyObject *__
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(__pyx_self, __pyx_v_fn, __pyx_v_fn_basename);
+  __pyx_r = __pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(__pyx_self, __pyx_v_fn, __pyx_v_name_to_sign);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_fn, PyObject *__pyx_v_fn_basename) {
+static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_fn, PyObject *__pyx_v_name_to_sign) {
   struct jelfLoaderContext_t *__pyx_v_ctx;
   FILE *__pyx_v_fd;
   PyObject *__pyx_r = NULL;
@@ -754,7 +754,7 @@ static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED
 
   /* "elf2jelf/jelf_loader.pyx":38
  * 
- * def jelf_loader_hash(fn: bytes, fn_basename: bytes):
+ * def jelf_loader_hash(fn: bytes, name_to_sign: bytes):
  *     if sodium_init() == -1:             # <<<<<<<<<<<<<<
  *         return;
  * 
@@ -763,7 +763,7 @@ static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED
   if (__pyx_t_1) {
 
     /* "elf2jelf/jelf_loader.pyx":39
- * def jelf_loader_hash(fn: bytes, fn_basename: bytes):
+ * def jelf_loader_hash(fn: bytes, name_to_sign: bytes):
  *     if sodium_init() == -1:
  *         return;             # <<<<<<<<<<<<<<
  * 
@@ -775,7 +775,7 @@ static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED
 
     /* "elf2jelf/jelf_loader.pyx":38
  * 
- * def jelf_loader_hash(fn: bytes, fn_basename: bytes):
+ * def jelf_loader_hash(fn: bytes, name_to_sign: bytes):
  *     if sodium_init() == -1:             # <<<<<<<<<<<<<<
  *         return;
  * 
@@ -787,7 +787,7 @@ static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED
  * 
  *     cdef FILE *fd = fopen(fn, "rb");             # <<<<<<<<<<<<<<
  * 
- *     ctx = jelfLoaderInit(fd, fn_basename, &env);
+ *     ctx = jelfLoaderInit(fd, name_to_sign, &env);
  */
   __pyx_t_2 = __Pyx_PyObject_AsString(__pyx_v_fn); if (unlikely((!__pyx_t_2) && PyErr_Occurred())) __PYX_ERR(0, 43, __pyx_L1_error)
   __pyx_v_fd = fopen(__pyx_t_2, ((char const *)"rb"));
@@ -795,37 +795,37 @@ static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED
   /* "elf2jelf/jelf_loader.pyx":45
  *     cdef FILE *fd = fopen(fn, "rb");
  * 
- *     ctx = jelfLoaderInit(fd, fn_basename, &env);             # <<<<<<<<<<<<<<
+ *     ctx = jelfLoaderInit(fd, name_to_sign, &env);             # <<<<<<<<<<<<<<
  *     jelfLoaderLoad(ctx);
  *     jelfLoaderRelocate(ctx);
  */
-  __pyx_t_3 = __Pyx_PyObject_AsString(__pyx_v_fn_basename); if (unlikely((!__pyx_t_3) && PyErr_Occurred())) __PYX_ERR(0, 45, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_AsString(__pyx_v_name_to_sign); if (unlikely((!__pyx_t_3) && PyErr_Occurred())) __PYX_ERR(0, 45, __pyx_L1_error)
   __pyx_v_ctx = jelfLoaderInit(__pyx_v_fd, __pyx_t_3, (&env));
 
   /* "elf2jelf/jelf_loader.pyx":46
  * 
- *     ctx = jelfLoaderInit(fd, fn_basename, &env);
+ *     ctx = jelfLoaderInit(fd, name_to_sign, &env);
  *     jelfLoaderLoad(ctx);             # <<<<<<<<<<<<<<
  *     jelfLoaderRelocate(ctx);
- *     return jelfLoaderGetHash(ctx);
+ *     return jelfLoaderGetHash(ctx)[:64];
  */
   jelfLoaderLoad(__pyx_v_ctx);
 
   /* "elf2jelf/jelf_loader.pyx":47
- *     ctx = jelfLoaderInit(fd, fn_basename, &env);
+ *     ctx = jelfLoaderInit(fd, name_to_sign, &env);
  *     jelfLoaderLoad(ctx);
  *     jelfLoaderRelocate(ctx);             # <<<<<<<<<<<<<<
- *     return jelfLoaderGetHash(ctx);
+ *     return jelfLoaderGetHash(ctx)[:64];
  */
   jelfLoaderRelocate(__pyx_v_ctx);
 
   /* "elf2jelf/jelf_loader.pyx":48
  *     jelfLoaderLoad(ctx);
  *     jelfLoaderRelocate(ctx);
- *     return jelfLoaderGetHash(ctx);             # <<<<<<<<<<<<<<
+ *     return jelfLoaderGetHash(ctx)[:64];             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_4 = __Pyx_PyBytes_FromCString(jelfLoaderGetHash(__pyx_v_ctx)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 48, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyBytes_FromStringAndSize(((const char*)jelfLoaderGetHash(__pyx_v_ctx)) + 0, 64 - 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 48, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_r = __pyx_t_4;
   __pyx_t_4 = 0;
@@ -834,7 +834,7 @@ static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED
   /* "elf2jelf/jelf_loader.pyx":37
  *     jelfLoaderEnv_t env
  * 
- * def jelf_loader_hash(fn: bytes, fn_basename: bytes):             # <<<<<<<<<<<<<<
+ * def jelf_loader_hash(fn: bytes, name_to_sign: bytes):             # <<<<<<<<<<<<<<
  *     if sodium_init() == -1:
  *         return;
  */
@@ -878,9 +878,9 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_elf2jelf_jelf_loader, __pyx_k_elf2jelf_jelf_loader, sizeof(__pyx_k_elf2jelf_jelf_loader), 0, 0, 1, 1},
   {&__pyx_n_s_fd, __pyx_k_fd, sizeof(__pyx_k_fd), 0, 0, 1, 1},
   {&__pyx_n_s_fn, __pyx_k_fn, sizeof(__pyx_k_fn), 0, 0, 1, 1},
-  {&__pyx_n_s_fn_basename, __pyx_k_fn_basename, sizeof(__pyx_k_fn_basename), 0, 0, 1, 1},
   {&__pyx_n_s_jelf_loader_hash, __pyx_k_jelf_loader_hash, sizeof(__pyx_k_jelf_loader_hash), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
+  {&__pyx_n_s_name_to_sign, __pyx_k_name_to_sign, sizeof(__pyx_k_name_to_sign), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
@@ -895,11 +895,11 @@ static int __Pyx_InitCachedConstants(void) {
   /* "elf2jelf/jelf_loader.pyx":37
  *     jelfLoaderEnv_t env
  * 
- * def jelf_loader_hash(fn: bytes, fn_basename: bytes):             # <<<<<<<<<<<<<<
+ * def jelf_loader_hash(fn: bytes, name_to_sign: bytes):             # <<<<<<<<<<<<<<
  *     if sodium_init() == -1:
  *         return;
  */
-  __pyx_tuple_ = PyTuple_Pack(4, __pyx_n_s_fn, __pyx_n_s_fn_basename, __pyx_n_s_ctx, __pyx_n_s_fd); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __pyx_tuple_ = PyTuple_Pack(4, __pyx_n_s_fn, __pyx_n_s_name_to_sign, __pyx_n_s_ctx, __pyx_n_s_fd); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 37, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
   __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple_, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_brianpugh_esp_nano_app_jo, __pyx_n_s_jelf_loader_hash, 37, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 37, __pyx_L1_error)
@@ -1012,7 +1012,7 @@ PyMODINIT_FUNC PyInit_jelf_loader(void)
   /* "elf2jelf/jelf_loader.pyx":37
  *     jelfLoaderEnv_t env
  * 
- * def jelf_loader_hash(fn: bytes, fn_basename: bytes):             # <<<<<<<<<<<<<<
+ * def jelf_loader_hash(fn: bytes, name_to_sign: bytes):             # <<<<<<<<<<<<<<
  *     if sodium_init() == -1:
  *         return;
  */

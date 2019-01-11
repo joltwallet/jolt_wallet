@@ -34,7 +34,7 @@ cdef extern from "sodium.h":
 cdef extern from "jolt_lib.h":
     jelfLoaderEnv_t env
 
-def jelf_loader_hash(fn: bytes, fn_basename: bytes):
+def jelf_loader_hash(fn: bytes, name_to_sign: bytes):
     if sodium_init() == -1:
         return;
 
@@ -42,7 +42,7 @@ def jelf_loader_hash(fn: bytes, fn_basename: bytes):
 
     cdef FILE *fd = fopen(fn, "rb");
 
-    ctx = jelfLoaderInit(fd, fn_basename, &env);
+    ctx = jelfLoaderInit(fd, name_to_sign, &env);
     jelfLoaderLoad(ctx);
     jelfLoaderRelocate(ctx);
-    return jelfLoaderGetHash(ctx);
+    return jelfLoaderGetHash(ctx)[:64];

@@ -41,19 +41,12 @@ import binascii
 from binascii import hexlify, unhexlify
 import zlib
 import nacl.encoding
-import nacl.signing
-from nacl.bindings import \
-        crypto_sign_ed25519ph_state, \
-        crypto_sign_ed25519ph_update, \
-        crypto_sign_ed25519ph_final_create
-# Debugging Utilities
-import ipdb as pdb
+from nacl.signing import SigningKey
 
 this_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, this_path)
 
-import jelf_loader
-
+from jelf_loader import jelf_loader_hash
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -553,40 +546,32 @@ def main():
         output_fn = args.output
     assert(output_fn[-5:]=='.jelf')
 
-    ######################
-    # Generate Signature #
-    ######################
-    log.info("Secret Key: %s", hexlify(sk).decode('utf-8'))
-    log.info("Public Key: %s", hexlify(pk).decode('utf-8'))
+    #############################
+    # Write JELF binary to file #
+    #############################
+    # write the unsigned jelf file
+    with open(output_fn, 'wb') as f:
+        f.write(jelf_contents)
 
+    # Get the transversal hash
     name_to_sign = os.path.basename(output_fn[:-5]).encode('utf-8')
+    t_hash = jelf_loader_hash(output_fn.encode(), name_to_sign )
+
+    log.debug("Secret Key: %s", hexlify(sk).decode('utf-8'))
+    log.info("Public Key: %s", hexlify(pk).decode('utf-8'))
     log.info("Signed application name: %s" % name_to_sign)
-
-    state = crypto_sign_ed25519ph_state()
-    crypto_sign_ed25519ph_update(state, name_to_sign)
-    crypto_sign_ed25519ph_update(state, bytes(jelf_contents))
-    signature = crypto_sign_ed25519ph_final_create(state, sk+pk)
-
+    log.info("t_hash: %s" % t_hash.hex())
+    signature = signing_key.sign(t_hash).signature
     assert(len(signature) == 64)
     log.info("Signature: %s", hexlify(signature).decode('utf-8'))
-
     # Rewrite the header
     jelf_ehdr_d['e_signature'] = signature
     jelf_contents[:Jelf_Ehdr.size_bytes()] = Jelf_Ehdr.pack(
             *jelf_ehdr_d.values() )
 
-    #############################
-    # Write JELF binary to file #
-    #############################
+    # rewrite the jelf file with signature
     with open(output_fn, 'wb') as f:
         f.write(jelf_contents)
-
-    #pdb.set_trace()
-    print(output_fn.encode())
-    print(name_to_sign)
-    print(len(export_list))
-    res = jelf_loader.jelf_loader_hash(output_fn.encode(), name_to_sign )
-    pdb.set_trace()
 
     ########################################
     # Write Compressed JELF binary to file #
