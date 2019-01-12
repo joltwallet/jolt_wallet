@@ -11,6 +11,7 @@ COMPONENT_SRCDIRS := . \
     jolt_gui \
     jolt_gui/custom_fonts \
     jolt_gui/menus \
+    jolt_gui/menus/settings \
 	lang \
     syscore \
     syscore/cmd

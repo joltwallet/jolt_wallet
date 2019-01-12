@@ -1,6 +1,6 @@
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_gui/test_screens.h"
-#include "settings.h"
+#include "jolt_gui/menus/settings/settings.h"
 #include "syscore/filesystem.h"
 #include "syscore/launcher.h"
 #include "jolt_helpers.h"
