@@ -38,6 +38,7 @@ static const char* TAG = "JelfLoader";
 /********************************
  * STATIC FUNCTIONS DECLARATION *
  ********************************/
+static void reverse_sll(jelfLoaderSection_t **head);
 static void app_hash_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len);
 static const char *type2String(int symt);
 static int readSection(jelfLoaderContext_t *ctx, int n, Jelf_Shdr *h );
@@ -396,6 +397,20 @@ err:
 /********************
  * STATIC FUNCTIONS *
  ********************/
+
+/* The sections load faster if we reverse their order */
+static void reverse_sll(jelfLoaderSection_t** head){
+    jelfLoaderSection_t* prev   = NULL; 
+    jelfLoaderSection_t* current = *head; 
+    jelfLoaderSection_t* next = NULL; 
+    while (current != NULL) { 
+        next = current->next;   
+        current->next = prev;    
+        prev = current; 
+        current = next; 
+    } 
+    *head = prev; 
+}
 
 static const char *type2String(int symt) {
 #define STRCASE(name) case name: return #name;
@@ -1118,6 +1133,8 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
     }
     ctx->exec = (void*)(((Jelf_Addr) symbol_section->data) + sym.st_value);
     MSG("successfully set entrypoint");
+
+    reverse_sll(&(ctx->section)); // for better cache performance
 
     return ctx;
 err:
