@@ -60,7 +60,7 @@ void jolt_gui_menu_home_create() {
     }
     jolt_h_free_char_array(fns, n_fns);
 
-    jolt_gui_scr_menu_add(main_menu, NULL, "Settings", menu_settings_create);
+    jolt_gui_scr_menu_add(main_menu, NULL, gettext(JOLT_TEXT_SETTINGS), menu_settings_create);
 #if JOLT_GUI_TEST_MENU
     jolt_gui_scr_menu_add(main_menu, NULL, "QR", jolt_gui_test_qrcode_create);
     jolt_gui_scr_menu_add(main_menu, NULL, "Loading", jolt_gui_test_loading_create);

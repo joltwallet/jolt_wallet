@@ -18,7 +18,7 @@ static const char TAG[] = "menu_settings";
 static lv_res_t menu_wifi_details_create(lv_obj_t *btn) {
     char new_ap_info[45];
     get_ap_info(new_ap_info, sizeof(new_ap_info));
-    lv_obj_t *t = jolt_gui_scr_text_create("WiFi Details", new_ap_info);
+    lv_obj_t *t = jolt_gui_scr_text_create(gettext(JOLT_TEXT_WIFI), new_ap_info);
     if(NULL == t) {
         ESP_LOGE(TAG, "Unable to create wifi details text screen");
     }
@@ -36,9 +36,9 @@ static lv_res_t factory_reset_enter( lv_obj_t *btn ) {
 }
 
 static lv_res_t menu_factory_reset_create(lv_obj_t *btn) {
-    lv_obj_t *scr = jolt_gui_scr_menu_create("Factory Reset?");
-    jolt_gui_scr_menu_add(scr, NULL, "No", factory_reset_back);
-    jolt_gui_scr_menu_add(scr, NULL, "Yes", factory_reset_enter);
+    lv_obj_t *scr = jolt_gui_scr_menu_create(gettext(JOLT_TEXT_FACTORY_RESET));
+    jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_NO), factory_reset_back);
+    jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_YES), factory_reset_enter);
     return LV_RES_OK;
 }
 
@@ -67,7 +67,6 @@ static lv_res_t screen_brightness_back(lv_obj_t *btn) {
 }
 
 static lv_res_t menu_screen_brightness_create() {
-    const char title[] = "Brightness";
     uint8_t brightness = get_display_brightness();
     int16_t slider_pos;
     ESP_LOGI(TAG, "Stored brightness: %d", brightness);
@@ -77,7 +76,7 @@ static lv_res_t menu_screen_brightness_create() {
         }
     }
 
-    lv_obj_t *scr = jolt_gui_scr_slider_create(title, NULL, screen_brightness_update);
+    lv_obj_t *scr = jolt_gui_scr_slider_create(gettext(JOLT_TEXT_BRIGHTNESS), NULL, screen_brightness_update);
     jolt_gui_scr_slider_set_range(scr, 0, sizeof(brightness_levels)-1);
     jolt_gui_scr_slider_set_value(scr, slider_pos);
     jolt_gui_scr_set_back_action(scr, screen_brightness_back);
@@ -86,11 +85,10 @@ static lv_res_t menu_screen_brightness_create() {
 }
 
 lv_res_t menu_settings_create(lv_obj_t *btn) {
-    lv_obj_t *scr = jolt_gui_scr_menu_create("Settings");
-    jolt_gui_scr_menu_add(scr, NULL, "WiFi", menu_wifi_details_create);
-    jolt_gui_scr_menu_add(scr, NULL, "Screen Brightness", menu_screen_brightness_create);
-    jolt_gui_scr_menu_add(scr, NULL, "Bluetooth", NULL);
-    jolt_gui_scr_menu_add(scr, NULL, "Long Option Name Scrolls", NULL);
-    jolt_gui_scr_menu_add(scr, NULL, "Factory Reset", menu_factory_reset_create);
+    lv_obj_t *scr = jolt_gui_scr_menu_create(gettext(JOLT_TEXT_SETTINGS));
+    jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_WIFI), menu_wifi_details_create);
+    jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_SCREEN_BRIGHTNESS), menu_screen_brightness_create);
+    jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_BLUETOOTH), NULL);
+    jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_FACTORY_RESET), menu_factory_reset_create);
     return LV_RES_OK;
 }
