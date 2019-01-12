@@ -32,6 +32,7 @@ extensions = [
                 ('CONFIG_JELFLOADER_CACHE_LOCALITY', None),
                 ('CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N', "6"),
                 ('CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE', "2048"),
+                ('CONFIG_JELFLOADER_PROFILER_EN', None),
                 ],
         extra_compile_args=[],
         extra_linker_args=[],

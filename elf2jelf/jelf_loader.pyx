@@ -25,7 +25,6 @@ cdef extern from "jelfloader.h":
     uint8_t *jelfLoaderGetHash(jelfLoaderContext_t *ctx)
 
     void jelfLoaderProfilerReset()
-
     void jelfLoaderProfilerPrint()
 
 cdef extern from "sodium.h":
@@ -42,7 +41,9 @@ def jelf_loader_hash(fn: bytes, name_to_sign: bytes):
 
     cdef FILE *fd = fopen(fn, "rb");
 
+    jelfLoaderProfilerReset();
     ctx = jelfLoaderInit(fd, name_to_sign, &env);
     jelfLoaderLoad(ctx);
     jelfLoaderRelocate(ctx);
+    jelfLoaderProfilerPrint();
     return jelfLoaderGetHash(ctx)[:64];

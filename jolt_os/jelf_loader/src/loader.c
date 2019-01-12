@@ -30,8 +30,8 @@ static const char* TAG = "JelfLoader";
 
 #include <stdio.h>
 #define MSG(...)
-#define INFO(...) /*printf( __VA_ARGS__ ); printf("\n");*/
-#define ERR(...) /*printf( __VA_ARGS__ ); printf("\n");*/
+#define INFO(...) printf( __VA_ARGS__ ); printf("\n");
+#define ERR(...) printf( __VA_ARGS__ ); printf("\n");
 
 #endif //ESP_PLATFORM logging macros
 
@@ -69,13 +69,26 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s);
 
 #endif
 
-#if ESP_PLATFORM && CONFIG_JELFLOADER_PROFILER_EN
+#if CONFIG_JELFLOADER_PROFILER_EN
 
 /******************
  * Profiler Tools *
  ******************/
 /* Timers */
+#if ESP_PLATFORM
 #include <esp_timer.h>
+uint64_t get_time() {
+    return esp_timer_get_time();
+}
+#else
+#include <time.h>
+uint64_t get_time() {
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    return tv.tv_sec*(uint64_t)1000000+tv.tv_usec;
+}
+#endif
+
 typedef struct profiler_timer_t{
     int32_t t;       // time in uS spent
     uint32_t n;      // times start has been called
@@ -101,7 +114,7 @@ static uint32_t profiler_max_r_addend;
 #define PROFILER_START(x) \
     if(!x.running) { \
         x.running = true; \
-        x.t -= esp_timer_get_time(); \
+        x.t -= get_time(); \
     }
 
 #define PROFILER_INC(x) \
@@ -110,7 +123,7 @@ static uint32_t profiler_max_r_addend;
 #define PROFILER_STOP(x) \
     if(x.running) { \
         x.running = false; \
-        x.t += esp_timer_get_time(); \
+        x.t += get_time(); \
     }
 
 #define PROFILER_START_READSECTION     PROFILER_START(profiler_readSection)
@@ -698,6 +711,7 @@ err:
 }
 
 static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
+    /* Iterate through the relocation information for the section. */
     PROFILER_START_RELOCATESECTION;
     PROFILER_INC_RELOCATESECTION;
 
