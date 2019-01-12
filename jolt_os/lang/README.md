@@ -4,6 +4,9 @@ binary larger/smaller.
 
 At this time, only left to right languages are supported.
 
+Only GUI elements are translated at this time; logging strings are not. This is
+to save on storage as well as translation efforts.
+
 # Adding a language
 
 todo: Make this entire process more automatic.
