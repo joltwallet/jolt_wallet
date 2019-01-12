@@ -37,7 +37,7 @@ static lv_style_t dark_frame;
 
 /*Saved input parameters*/
 static uint16_t _hue;
-static lv_font_t * _font;
+static const lv_font_t * _font;
 
 /**********************
  *      MACROS
@@ -400,7 +400,7 @@ static void win_init(void)
  * @param font pointer to a font (NULL to use the default)
  * @return pointer to the initialized theme
  */
-lv_theme_t * lv_theme_jolt_init(uint16_t hue, lv_font_t * font)
+lv_theme_t * jolt_gui_theme_init(uint16_t hue, const lv_font_t * font)
 {
     if(font == NULL) font = LV_FONT_DEFAULT;
 
@@ -448,7 +448,7 @@ lv_theme_t * lv_theme_jolt_init(uint16_t hue, lv_font_t * font)
  * Get a pointer to the theme
  * @return pointer to the theme
  */
-lv_theme_t * lv_theme_get_jolt(void)
+lv_theme_t * jolt_gui_theme_get(void)
 {
     return &theme;
 }
