@@ -119,8 +119,8 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
 
     #if CONFIG_JELFLOADER_PROFILER_EN
     jelfLoaderProfilerReset();
-    uint32_t jelfLoader_time = esp_timer_get_time();
     #endif
+    uint32_t jelfLoader_time = esp_timer_get_time();
 
     ESP_LOGI(TAG, "jelfLoader; Initializing");
     /* fn_basename is passed in for signature checking */
@@ -141,9 +141,9 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
         goto exit;
     }
 
-    #if CONFIG_JELFLOADER_PROFILER_EN
     jelfLoader_time = esp_timer_get_time() - jelfLoader_time;
     ESP_LOGI(TAG, "Application Loaded in %d uS.", jelfLoader_time);
+    #if CONFIG_JELFLOADER_PROFILER_EN
     jelfLoaderProfilerPrint();
     #endif
 
