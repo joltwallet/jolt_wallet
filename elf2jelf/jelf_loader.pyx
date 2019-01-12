@@ -1,6 +1,6 @@
 # distutils: libraries = sodium c
 # distutils: include_dirs = ../components/jolt-types/include ../jolt_os/jelf_loader/src ../jolt_os/jelf_loader/include ../jolt_os
-# distutils: sources = ../jolt_os/jelf_loader/src/loader.c ../jolt_os/jelf_loader/src/unaligned.c
+# distutils: sources = ../jolt_os/jelf_loader/src/loader.c ../jolt_os/jelf_loader/src/unaligned.c ../jolt_os/jolt_lib.c
 
 from libc.stdio cimport FILE, fopen
 from libc.stdint cimport uint8_t, uint16_t, uint32_t
@@ -31,7 +31,7 @@ cdef extern from "sodium.h":
     int sodium_init()
 
 cdef extern from "jolt_lib.h":
-    jelfLoaderEnv_t env
+    jelfLoaderEnv_t jelf_loader_env
 
 def jelf_loader_hash(fn: bytes, name_to_sign: bytes):
     if sodium_init() == -1:
@@ -42,7 +42,7 @@ def jelf_loader_hash(fn: bytes, name_to_sign: bytes):
     cdef FILE *fd = fopen(fn, "rb");
 
     jelfLoaderProfilerReset();
-    ctx = jelfLoaderInit(fd, name_to_sign, &env);
+    ctx = jelfLoaderInit(fd, name_to_sign, &jelf_loader_env);
     jelfLoaderLoad(ctx);
     jelfLoaderRelocate(ctx);
     jelfLoaderProfilerPrint();

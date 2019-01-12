@@ -108,8 +108,8 @@ def parse_args():
     parser.add_argument('--signing_key', type=str,
             default='000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F',
             help="256-bit private key in hexidecimal (len=64).")
-    parser.add_argument('--header_only', action='store_true',
-            help='''Only compile the new jolt_lib.h header, then exit''')
+    parser.add_argument('--export_only', action='store_true',
+            help='''Only compile the new jolt_lib.c exports, then exit''')
 
     args = parser.parse_args()
     dargs = vars(args)
@@ -129,11 +129,11 @@ def read_export_list():
         export_list = [line.rstrip() for line in f]
     return export_list, major, minor
 
-def write_export_header(export_list, major, minor):
+def write_export_file(export_list, major, minor):
     """
-    Writes the export struct used in jolt_lib.h
+    Writes the export struct used in jolt_lib.c
     """
-    with open(os.path.join(this_path, 'jolt_lib_template.h')) as f:
+    with open(os.path.join(this_path, 'jolt_lib_template.c')) as f:
         template = f.read()
 
     export_string = ''
@@ -143,7 +143,7 @@ def write_export_header(export_list, major, minor):
     jolt_lib = template % (export_string, len(export_list))
 
     # Write it to where the hardware firmware expects it
-    with open(os.path.join(this_path, '..', 'jolt_os', 'jolt_lib.h'), 'w') as f:
+    with open(os.path.join(this_path, '..', 'jolt_os', 'jolt_lib.c'), 'w') as f:
         f.write(jolt_lib)
 
 def get_ehdr(elf_contents):
@@ -431,11 +431,11 @@ def main():
     export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR = read_export_list()
 
     ###################################
-    # Generate jolt_lib.h export list #
+    # Generate jolt_lib.c export list #
     ###################################
-    write_export_header(export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR)
+    write_export_file(export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR)
 
-    if args.header_only:
+    if args.export_only:
         return
 
     ####################

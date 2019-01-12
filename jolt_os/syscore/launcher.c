@@ -124,7 +124,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
 
     ESP_LOGI(TAG, "jelfLoader; Initializing");
     /* fn_basename is passed in for signature checking */
-    if( NULL == (app_cache.ctx = jelfLoaderInit(program, fn_basename, &env)) ) {
+    if( NULL == (app_cache.ctx = jelfLoaderInit(program, fn_basename, &jelf_loader_env)) ) {
         return_code = -4;
         goto exit;
     }
