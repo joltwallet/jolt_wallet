@@ -5,6 +5,9 @@
 const lv_font_t *jolt_lang_english_font = &lv_font_pixelmix_7;
 
 const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
+    /* Error Handling */
+    "<missing_string>",
+
     /* Main Menuing and General Options */
     "Home", /* main menu title (the homescreen) */
     "Settings", /* Menu option to change device settings */
@@ -21,7 +24,9 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Factory Reset",
 
     /* Language Names */
+    "Language",
     "English",
+    "Spanish",
 
     /* App Launcher */
     "Launching", /* Label for spinning preloader */

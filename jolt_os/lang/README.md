@@ -128,6 +128,16 @@ for example:
 #endif
 ```
 
+Finally, to make string ordering agnostic for iterating over languages, we have
+to add in a `case` for the new language in the function `getlangname`.
+```
+        case JOLT_LANG_<name>: id = JOLT_TEXT_<name>; break;
+```
+for example:
+```
+        case JOLT_LANG_SPANISH: id = JOLT_TEXT_SPANISH; break;
+```
+
 ## Create string list c file
 
 Your language should be place in this (`lang`) folder. The name of the file 

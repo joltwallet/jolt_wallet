@@ -171,9 +171,12 @@ void app_main() {
     jolt_fs_init();
 
     /* Create GUI */
-    ESP_LOGI(TAG, "Creating GUI");
-    lv_theme_t *jolt_gui_theme = jolt_gui_theme_init(0, NULL);
-    lv_theme_set_current(jolt_gui_theme);  
+    {
+        ESP_LOGI(TAG, "Creating GUI");
+        jolt_lang_t lang;
+        storage_get_u8(&lang, "user", "lang", CONFIG_JOLT_LANG_DEFAULT );
+        jolt_lang_set( lang ); // Internally initializes the theme
+    }
 
     lv_obj_t *btn_back = lv_btn_create(lv_scr_act(), NULL);
     lv_btn_set_action(btn_back, LV_BTN_ACTION_CLICK, jolt_gui_scr_del);

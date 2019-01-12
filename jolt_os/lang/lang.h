@@ -6,11 +6,21 @@
 #include "stdlib.h"
 #include "sdkconfig.h"
 
-typedef enum jolt_lang_t {
+/* Only append languages to this list (aside from JOLT_LANG_LAST_LANG) */
+enum {
     JOLT_LANG_ENGLISH = 0,
-} jolt_lang_t;
+    JOLT_LANG_SPANISH,
+    JOLT_LANG_LAST_LANG,
+};
+typedef uint8_t jolt_lang_t;
+
+/* When listing languages, order to display them */
+extern const jolt_lang_t jolt_lang_order[JOLT_LANG_LAST_LANG];
 
 typedef enum jolt_text_id_t {
+    /* Error Handling */
+    JOLT_TEXT_MISSING_STRING = 0,
+
     /* Main Menuing and General Options */
     JOLT_TEXT_MAIN_MENU_TITLE, /* main menu title (the homescreen) */
     JOLT_TEXT_SETTINGS, /* Menu option to change device settings */
@@ -41,6 +51,8 @@ typedef enum jolt_text_id_t {
 
 const char *gettext( jolt_text_id_t id );
 
+const char *getlangname( jolt_lang_t lang);
+
 bool jolt_lang_set( jolt_lang_t lang );
 
 bool jolt_lang_available( jolt_lang_t lang );
@@ -48,6 +60,10 @@ bool jolt_lang_available( jolt_lang_t lang );
 #if CONFIG_JOLT_LANG_ENGLISH_EN
 extern const lv_font_t *jolt_lang_english_font;
 extern const char *jolt_lang_english[JOLT_TEXT_LAST_STR];
+#endif
+#if CONFIG_JOLT_LANG_SPANISH_EN
+extern const lv_font_t *jolt_lang_spanish_font;
+extern const char *jolt_lang_spanish[JOLT_TEXT_LAST_STR];
 #endif
 
 #endif

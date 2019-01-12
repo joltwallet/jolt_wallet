@@ -11,6 +11,7 @@ lv_res_t menu_settings_create(lv_obj_t *btn) {
     jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_WIFI), menu_wifi_details_create);
     jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_SCREEN_BRIGHTNESS), menu_screen_brightness_create);
     jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_BLUETOOTH), NULL);
+    jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_LANGUAGE), menu_language_create);
     jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_FACTORY_RESET), menu_factory_reset_create);
     return LV_RES_OK;
 }
