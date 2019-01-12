@@ -1,4 +1,4 @@
-#include "lang.h"
+#include "jolt_gui/jolt_gui.h"
 
 typedef uint64_t jolt_lang_avail_t;
 
@@ -22,15 +22,20 @@ bool jolt_lang_set( jolt_lang_t lang ) {
     if(!jolt_lang_available(lang)){
         return false;
     }
+    const lv_font_t *font = NULL;
+
 #if CONFIG_JOLT_LANG_ENGLISH_EN
     if( JOLT_LANG_ENGLISH == lang ){
         lang_pack = jolt_lang_english;
-        /* todo: set lv_font here */
-        return true;
+        font = jolt_lang_english_font;
     }
 #endif
-    /* Should never reach here */
-    return false;
+
+    /* Set the font */
+    lv_theme_t *theme = jolt_gui_theme_init(100, font);
+    lv_theme_set_current(theme);  
+
+    return true;
 }
 
 /* Returns True if the queried language is available */
