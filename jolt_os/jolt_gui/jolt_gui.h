@@ -29,6 +29,7 @@
 
 #include "jelfloader.h"
 #include "mp.h"
+#include "lang/lang.h"
 
 
 #ifndef CONFIG_JOLT_GUI_LOADING_BUF_SIZE

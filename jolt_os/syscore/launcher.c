@@ -113,7 +113,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
         return -2;
     }
 
-    preloading_scr = jolt_gui_scr_preloading_create(fn_basename, "Launching...");
+    preloading_scr = jolt_gui_scr_preloading_create(fn_basename, gettext(JOLT_TEXT_PRELOAD_LAUNCHING));
 
     program = fopen(exec_fn, "rb");
 

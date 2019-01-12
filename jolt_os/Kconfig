@@ -532,4 +532,26 @@ menu "JoltOS"
                 Only launch apps with signatures that match this public key.
     endmenu
 
+    menu "Language"
+		choice
+            prompt "Select Default Language"
+
+            config JOLT_LANG_DEFAULT_ENGLISH
+                depends on JOLT_LANG_ENGLISH_EN
+                bool "English"
+        endchoice
+
+        config JOLT_LANG_DEFAULT
+            int
+            # Make sure these values match jolt_language_t in lang/lang.h 
+            default 0
+            default 0 if JOLT_LANG_DEFAULT_ENGLISH
+
+        config JOLT_LANG_ENGLISH_EN
+            bool
+            prompt "Enable English Support"
+            default y
+
+    endmenu
+
 endmenu

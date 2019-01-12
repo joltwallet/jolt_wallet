@@ -45,7 +45,7 @@ void jolt_gui_menu_home_create() {
     char **fns = NULL;
     uint16_t n_fns = jolt_fs_get_all_elf_fns( &fns );
 
-    main_menu = jolt_gui_scr_menu_create("Main");
+    main_menu = jolt_gui_scr_menu_create(gettext(JOLT_TEXT_MAIN_MENU_TITLE));
     if( NULL == main_menu ){
         esp_restart();
     }
