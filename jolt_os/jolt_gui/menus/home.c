@@ -1,6 +1,6 @@
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_gui/test_screens.h"
-#include "settings.h"
+#include "jolt_gui/menus/settings/settings.h"
 #include "syscore/filesystem.h"
 #include "syscore/launcher.h"
 #include "jolt_helpers.h"
@@ -45,7 +45,7 @@ void jolt_gui_menu_home_create() {
     char **fns = NULL;
     uint16_t n_fns = jolt_fs_get_all_elf_fns( &fns );
 
-    main_menu = jolt_gui_scr_menu_create("Main");
+    main_menu = jolt_gui_scr_menu_create(gettext(JOLT_TEXT_MAIN_MENU_TITLE));
     if( NULL == main_menu ){
         esp_restart();
     }
@@ -60,7 +60,7 @@ void jolt_gui_menu_home_create() {
     }
     jolt_h_free_char_array(fns, n_fns);
 
-    jolt_gui_scr_menu_add(main_menu, NULL, "Settings", menu_settings_create);
+    jolt_gui_scr_menu_add(main_menu, NULL, gettext(JOLT_TEXT_SETTINGS), menu_settings_create);
 #if JOLT_GUI_TEST_MENU
     jolt_gui_scr_menu_add(main_menu, NULL, "QR", jolt_gui_test_qrcode_create);
     jolt_gui_scr_menu_add(main_menu, NULL, "Loading", jolt_gui_test_loading_create);

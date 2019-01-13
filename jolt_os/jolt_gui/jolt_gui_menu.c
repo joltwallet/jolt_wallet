@@ -37,6 +37,7 @@ static lv_res_t new_list_signal(lv_obj_t *list, lv_signal_t sign, void * param)
                 && (c = *((char *)param), 
                         (c == LV_GROUP_KEY_RIGHT || c == LV_GROUP_KEY_DOWN
                         || c == LV_GROUP_KEY_LEFT || c == LV_GROUP_KEY_UP)) ){
+        /* When changing selected item, change the label scrolling mode */
         set_selected_label_long_mode(list, LABEL_LONG_MODE_DEFAULT);
         res = old_list_signal(list, sign, param);
         if(res != LV_RES_OK) return res;

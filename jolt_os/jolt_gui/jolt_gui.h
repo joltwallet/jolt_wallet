@@ -16,6 +16,8 @@
 #include "jolt_gui_symbols.h"
 #include "jolt_gui_text.h"
 #include "jolt_gui_debug.h"
+#include "jolt_gui_theme.h"
+
 #include "menus/home.h"
 
 #include "freertos/FreeRTOS.h"
@@ -29,6 +31,7 @@
 
 #include "jelfloader.h"
 #include "mp.h"
+#include "lang/lang.h"
 
 
 #ifndef CONFIG_JOLT_GUI_LOADING_BUF_SIZE
