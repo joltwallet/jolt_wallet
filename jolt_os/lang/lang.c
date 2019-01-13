@@ -1,5 +1,8 @@
+#include "esp_log.h"
 #include "jolt_gui/jolt_gui.h"
 #include "hal/storage/storage.h"
+
+static const char TAG[] = "lang.c";
 
 typedef uint64_t jolt_lang_avail_t;
 
@@ -39,7 +42,9 @@ bool jolt_lang_set( jolt_lang_t lang ) {
     if(!jolt_lang_available(lang)){
         return false;
     }
-    const lv_font_t *font = NULL;
+    lv_font_t *font = NULL; /* base font to add extension fonts to */
+    uint8_t n_ext = 0;
+    lv_font_t **ext_fonts = NULL;
 
     jolt_lang_t current_lang;
     storage_get_u8(&current_lang, "user", "lang", CONFIG_JOLT_LANG_DEFAULT );
@@ -54,6 +59,8 @@ bool jolt_lang_set( jolt_lang_t lang ) {
     if( JOLT_LANG_ENGLISH == lang ){
         lang_pack = jolt_lang_english;
         font = jolt_lang_english_font;
+        ext_fonts = jolt_lang_english_ext_fonts;
+        n_ext = jolt_lang_english_n_ext;
     }
 #endif
 
@@ -61,8 +68,16 @@ bool jolt_lang_set( jolt_lang_t lang ) {
     if( JOLT_LANG_SPANISH == lang ){
         lang_pack = jolt_lang_spanish;
         font = jolt_lang_spanish_font;
+        ext_fonts = jolt_lang_spanish_ext_fonts;
+        n_ext = jolt_lang_spanish_n_ext;
     }
 #endif
+
+    /* Add all font extensions to base font */
+    for(uint8_t i=0; i < n_ext; i++){
+        ESP_LOGI(TAG, "Adding ext font");
+        lv_font_add(ext_fonts[i], font);
+    }
 
     lv_theme_t *theme = jolt_gui_theme_init(0, font);
     lv_theme_set_current(theme);  

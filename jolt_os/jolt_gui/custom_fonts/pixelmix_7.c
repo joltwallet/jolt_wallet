@@ -133,13 +133,13 @@ static const uint8_t pixelmix_7_glyph_bitmap[] =
 
   /*Unicode: U+002b (+) , Width: 5 */
   0x00,  //.... 
+  0x00,  //.... 
   0x20,  //..%. 
   0x20,  //..%. 
   0xf8,  //%%%%% 
   0x20,  //..%. 
   0x20,  //..%. 
   0x00,  //.... 
-  0x00,  //.. 
 
 
   /*Unicode: U+002c (,) , Width: 2 */
@@ -813,10 +813,10 @@ static const uint8_t pixelmix_7_glyph_bitmap[] =
 
 
   /*Unicode: U+0069 (i) , Width: 3 */
+  0x00,  //... 
   0x40,  //.%. 
   0x00,  //... 
   0xc0,  //%%. 
-  0x40,  //.%. 
   0x40,  //.%. 
   0x40,  //.%. 
   0xe0,  //%%% 
