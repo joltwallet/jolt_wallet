@@ -352,11 +352,10 @@ static int loader_shdr(jelfLoaderContext_t *ctx, size_t n, Jelf_Shdr *h) {
     h->sh_size   = ( buf[2] & 0x01 ) |
             ((uint32_t)buf[3] << 1) |
             ((uint32_t)buf[4] << 9) |
-            ((uint32_t)(buf[5] & 0xC0) << 11); // I think this is correct
+            ((uint32_t)(buf[5] & 0xC0) << 11);
     h->sh_info   = (buf[5] & 0x03F) |
             ((uint32_t)buf[6] << 6);
     return 0;
-
 #if !CONFIG_JELFLOADER_CACHE_SHT
 err:
     return -1;
@@ -543,6 +542,9 @@ err:
     return -1;
 }
 
+/* Returns the Symbol's address in memory. This could either be coming from
+ * the env (exported list of JoltOS) or from another section in the App.
+ */
 static Jelf_Addr findSymAddr(jelfLoaderContext_t* ctx, Jelf_Sym *sym) {
     PROFILER_START_FINDSYMADDR;
     PROFILER_INC_FINDSYMADDR;
@@ -566,6 +568,14 @@ static Jelf_Addr findSymAddr(jelfLoaderContext_t* ctx, Jelf_Sym *sym) {
     return 0xffffffff;
 }
 
+/* relAddr - pointer into an allocated section that needs to be updated to point to symAddr.
+ * type - assembly instruction type 
+ * symAddr - The Symbol's memory location 
+ * defAddr - Used if symAddr is 0xffffffff (Symbol not found) 
+ * from - returned value 
+ * to - returned value
+ *
+ */
 static int relocateSymbol(Jelf_Addr relAddr, int type, Jelf_Addr symAddr,
         Jelf_Addr defAddr, uint32_t* from, uint32_t* to) {
 
@@ -717,25 +727,25 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
 
     Jelf_Shdr sectHdr;
 
-    PROFILER_STOP_RELOCATESECTION;
-    /* Read the current section header */
-    //MSG("meow %p", s);
-    if (readSection(ctx, s->relSecIdx, &sectHdr) != 0) {
-        ERR("Error reading section header");
-        goto err;
-    }
-    PROFILER_START_RELOCATESECTION;
-
+    /* Input Validation */
     if (!(s->relSecIdx)) {
         PROFILER_STOP_RELOCATESECTION;
         MSG("  Section %d: no relocation index", s->secIdx);
         return 0;
     }
-
-    if (!(s->data)) {
+    else if (!(s->data)) {
+        PROFILER_STOP_RELOCATESECTION;
         ERR("Section not loaded: %d", s->secIdx);
         goto err;
     }
+
+    /* Read the current rela section header */
+    PROFILER_STOP_RELOCATESECTION;
+    if (readSection(ctx, s->relSecIdx, &sectHdr) != 0) {
+        ERR("Error reading rela section header");
+        goto err;
+    }
+    PROFILER_START_RELOCATESECTION;
 
     int r = 0;
     Jelf_Rela rel;
@@ -744,9 +754,10 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
     MSG("RELOCATING SECTION")
     MSG("  Offset   Sym  Type                      relAddr  "
         "symAddr  defValue                    Name + addend");
+    /* Read every RELA entry in the current RELA section */
     for (size_t relCount = 0; relCount < relEntries; relCount++) {
         off_t offset = sectHdr.sh_offset + relCount * (sizeof(rel));
-        MSG("Reading in ELF32_Rela from offset 0x%x", (uint32_t)offset);
+        MSG("Reading in JELF_Rela from offset 0x%x", (uint32_t)offset);
         r |= loader_rela(ctx, offset, &rel);
         PROFILER_MAX_R_OFFSET(rel.r_offset);
         PROFILER_MAX_R_ADDEND(rel.r_addend);
@@ -1036,6 +1047,10 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
                 /* Allocate memory */
                 MSG("Section %d attempting to allocate %d bytes.", n, sectHdr.sh_size);
 
+                /* It's important that the returned pointer is always increasing 
+                 * or else the program may crash.
+                 * Currently this is not enforced by design, but the allocations
+                 * see to always be increasing. */
                 section->data = ( sectHdr.sh_flags & SHF_EXECINSTR ) ?
                         LOADER_ALLOC_EXEC(CEIL4(sectHdr.sh_size)) : // Executable Memory
                         LOADER_ALLOC_DATA(CEIL4(sectHdr.sh_size)) ; // Normal Memory
@@ -1068,6 +1083,8 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
         }
         /* Relocation Entries with Addends */
         else if ( SHT_RELA == sectHdr.sh_type ) {
+            /* todo: optimize away this */
+
             /* sh_info holds extra information that depends on sh_type.
              * For sh_type SHT_RELA:
              *     The section header index of the section to which the 

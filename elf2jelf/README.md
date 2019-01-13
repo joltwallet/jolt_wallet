@@ -262,3 +262,26 @@ todo: additionals/subtractions from program header
 # Misc Design Decisions
 
 `.symtab` is 4218 bytes and contains 258 entries.
+
+# Section Reordering
+We can reorder the sections so we can take advantage of:
+
+* Locality caching
+* Loading from a compressed file (todo)
+
+In the Jelf Loader code, first all sections that take up memory during 
+execution are allocated and loaded. By default, these are scattered all over the file, 
+so lets put them in the beginning. Whenever we load a section, we put it in a singly-linked-list, 
+where the newest sections replaces the head. Later, when we transverse this list,
+we are essentially reading it "backwards". This itself isn't a problem, but if we assume the 
+relocation sections are ordered in a "forwards" fashion, this means that every single 
+rela section read will result in a cache miss. For this reason, we order the ALLOC 
+sections "backwards" so that when loaded, the singly-linked-list will be in the "correct"
+order.
+
+Because we put all the allocated sections in the beginning, once we hit a non-alloc section,
+we can stop reading.
+
+## Gotchas
+
+* `literal` sections  *must* go before their corresponding `text` section. See https://stackoverflow.com/a/26610227

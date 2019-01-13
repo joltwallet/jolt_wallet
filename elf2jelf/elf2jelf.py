@@ -42,6 +42,7 @@ from binascii import hexlify, unhexlify
 import zlib
 import nacl.encoding
 from nacl.signing import SigningKey
+import ipdb as pdb
 
 this_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, this_path)
@@ -194,23 +195,26 @@ def read_section_headers(elf_contents, ehdr, shstrtab):
         elf32_shdr_names.append(shdr_name)
     return elf32_shdrs, elf32_shdr_names, elf32_symtab, elf32_strtab
 
-def convert_shdrs(elf32_shdrs):
+def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
     """
     Converts ALL ELF32 Section Headers to JELF Headers
 
-    All returns a list mapping
+    Also returns a list mapping
     mapping[0] returns the original index of the returned 0th section
     """
     jelf_shdrs_alloc = []
     jelf_shdrs_alloc_index = []
+    jelf_shdrs_alloc_names = []
 
     jelf_shdrs_rela = []
     jelf_shdrs_rela_index = []
+    jelf_shdrs_rela_names = []
 
+    # odds and ends shdrs
     jelf_shdrs = []
     jelf_shdrs_index = []
 
-    for i, elf32_shdr in enumerate(elf32_shdrs):
+    for i, (elf32_shdr, name) in enumerate(zip(elf32_shdrs, elf32_shdr_names)):
         jelf_shdr_d = OrderedDict()
 
         # Convert the "sh_type" field
@@ -245,31 +249,113 @@ def convert_shdrs(elf32_shdrs):
         log.debug(jelf_shdr_d)
         if jelf_shdr_d['sh_flags'] != 0:
             jelf_shdrs_alloc.append(jelf_shdr_d)
-            # add one because the SH_TBL is the first (0th) section
             jelf_shdrs_alloc_index.append(i)
+            jelf_shdrs_alloc_names.append(elf32_shdr_names[i].decode())
         elif jelf_shdr_d['sh_type'] == Jelf_SHT_RELA:
             jelf_shdrs_rela.append(jelf_shdr_d)
             jelf_shdrs_rela_index.append(i)
+            jelf_shdrs_rela_names.append(elf32_shdr_names[i].decode())
         else:
             jelf_shdrs.append(jelf_shdr_d)
-            # add one because the SH_TBL is the first (0th) section
             jelf_shdrs_index.append(i)
+        del(jelf_shdr_d)
 
     # reverse the loadable sections to that the SLL is in the correct order
     jelf_shdrs_alloc = list(reversed(jelf_shdrs_alloc))
     jelf_shdrs_alloc_index = list(reversed(jelf_shdrs_alloc_index))
+    jelf_shdrs_alloc_names = list(reversed(jelf_shdrs_alloc_names))
 
-    mapping = [jelf_shdrs_index[0]] + jelf_shdrs_alloc_index + \
-            jelf_shdrs_rela_index + jelf_shdrs_index[1:]
+    # We need to put all literal sections at the beginning
+    # order should be:
+    # .literal.NAME1
+    # .literal.NAME2
+    # ... (other .literal)
+    # .text.NAME1
+    # .text.NAME2
+    # ... (other .text)
+    # .<OTHER_ALLOC>
+    # ...
+    # .rela.literal.NAME1
+    # .rela.literal.NAME2
+    # ... (other .rela.literal)
+    # .rela.text.NAME1
+    # .rela.text.NAME2
+    # ... (other .rela.text)
+    # .rela.<OTHER_ALLOC>
 
-    # remap relocation sh_info indices
-    for i in range(len(jelf_shdrs_rela)):
-        jelf_shdr_d = jelf_shdrs_rela[i]
-        jelf_shdr_d['sh_info'] = mapping.index(
-                jelf_shdr_d['sh_info'])
+    literal_alloc = []
+    literal_alloc_index = []
+    literal_rela = []
+    literal_rela_index = []
 
-    jelf_shdrs = [jelf_shdrs[0]] + jelf_shdrs_alloc + \
-            jelf_shdrs_rela + jelf_shdrs[1:]
+    text_alloc = []
+    text_alloc_index = []
+    text_rela = []
+    text_rela_index = []
+
+    other_alloc = [] # stuff like .rodata and .bss
+    other_alloc_index = []
+    other_rela = []
+    other_rela_index = []
+
+    for entry, index, name in zip(jelf_shdrs_alloc, jelf_shdrs_alloc_index, jelf_shdrs_alloc_names):
+        # have to find the pairing rela section
+        if isinstance(name, bytes):
+            name = name.decode()
+
+        try:
+            rela_index = jelf_shdrs_rela_names.index( ".rela" + name)
+        except:
+            # doesn't have a paired rela section
+            other_alloc.append(entry)
+            other_alloc_index.append(index)
+            continue
+
+        if name.startswith(".literal"):
+            literal_alloc.append(entry)
+            literal_alloc_index.append(index)
+            literal_rela.append(jelf_shdrs_rela[rela_index])
+            literal_rela_index.append(jelf_shdrs_rela_index[rela_index])
+        elif name.startswith('.text'):
+            text_alloc.append(entry)
+            text_alloc_index.append(index)
+            text_rela.append(jelf_shdrs_rela[rela_index])
+            text_rela_index.append(jelf_shdrs_rela_index[rela_index])
+        else:
+            other_alloc.append(entry)
+            other_alloc_index.append(index)
+            other_rela.append(jelf_shdrs_rela[rela_index])
+            other_rela_index.append(jelf_shdrs_rela_index[rela_index])
+
+    mapping = [jelf_shdrs_index[0]] \
+            + literal_alloc_index \
+            + text_alloc_index \
+            + other_alloc_index \
+            + literal_rela_index \
+            + text_rela_index \
+            + other_rela_index \
+            + jelf_shdrs_index[1:]
+
+    jelf_shdrs = [jelf_shdrs[0]] \
+            + literal_alloc \
+            + text_alloc \
+            + other_alloc \
+            + literal_rela \
+            + text_rela \
+            + other_rela \
+            + jelf_shdrs[1:]
+
+    for i in range(len(jelf_shdrs)):
+        jelf_shdr_d = jelf_shdrs[i]
+        if jelf_shdr_d['sh_flags'] != 0:
+            print("exec: %d" % jelf_shdr_d['sh_info'])
+        elif jelf_shdr_d['sh_type'] == Jelf_SHT_RELA:
+            print("rela: %d" % jelf_shdr_d['sh_info'])
+        else:
+            print("other: %d" % jelf_shdr_d['sh_info'])
+
+        jelf_shdrs[i]['sh_info'] = mapping.index(
+                jelf_shdrs[i]['sh_info'])
 
     return jelf_shdrs, mapping
 
@@ -308,7 +394,9 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
 
         if elf32_symbol.st_shndx > 2**16:
             raise("Overflow Detected")
-        if elf32_symbol.st_shndx == 0 or elf32_symbol.st_shndx > 0xFFF0:
+        if elf32_symbol.st_shndx > 0xFF00 or elf32_symbol.st_shndx == 0:
+            # Special values
+            # e.g. 0xFFF1 means SHN_ABS
             new_st_shndx = elf32_symbol.st_shndx
         else:
             new_st_shndx = mapping.index(elf32_symbol.st_shndx)
@@ -385,6 +473,7 @@ def convert_relas(elf_contents, elf32_shdrs, jelf_shdrs, mapping):
             # Pack the data into the rela section's bytearray
             jelf_sec_relas[jelf_offset:jelf_offset+Jelf_Rela.size_bytes()] = \
                     Jelf_Rela.pack(rela.r_offset, jelf_r_info, rela.r_addend)
+            log.debug("Jelf RELA: r_offset: %d, r_info: %d, r_addend: %d" % (rela.r_offset, jelf_r_info, rela.r_addend));
         jelf_relas[i] = jelf_sec_relas
     return jelf_relas, jelf_shdrs
 
@@ -402,8 +491,6 @@ def write_jelf_sections(elf_contents,
     jelf_contents = bytearray(len(elf_contents))
     jelf_ptr = Jelf_Ehdr.size_bytes() # Skip the JELF Header
 
-    # Note: the st_shndx of Jelf_Sym indexes into sectionheadertable elements.
-    # does this get messed up when stripping strtab and shstrtab?
     for i in range(len(jelf_shdrs)):
         elf32_idx = mapping[i]
         name = elf32_shdr_names[elf32_idx]
@@ -423,6 +510,7 @@ def write_jelf_sections(elf_contents,
             new_jelf_ptr = jelf_ptr + jelf_shdrs[i]['sh_size']
             jelf_contents[jelf_ptr:new_jelf_ptr] = jelf_relas[i]
         else:
+            # Copy over the unaltered section
             new_jelf_ptr = jelf_ptr + jelf_shdrs[i]['sh_size']
             assert(jelf_shdrs[i]['sh_size']==elf32_shdrs[elf32_idx].sh_size)
             jelf_contents[jelf_ptr:new_jelf_ptr] = \
@@ -504,7 +592,8 @@ def main():
     ###########################
     elf32_shdrs, elf32_shdr_names, elf32_symtab, elf32_strtab = \
             read_section_headers( elf_contents, ehdr, shstrtab )
-    jelf_shdrs, mapping = convert_shdrs( elf32_shdrs )
+
+    jelf_shdrs, mapping = convert_shdrs( elf32_shdrs, elf32_shdr_names )
 
     ###########################################
     # Convert the ELF32 symtab to JELF Format #
@@ -572,7 +661,7 @@ def main():
     jelf_ehdr_d['e_version_major']  = _JELF_VERSION_MAJOR
     jelf_ehdr_d['e_version_minor']  = _JELF_VERSION_MINOR
     jelf_ehdr_d['e_entry_offset']   = jelf_entrypoint_sym_idx
-    jelf_ehdr_d['e_shnum']          = jelf_ehdr_shnum
+    jelf_ehdr_d['e_shnum']          = mapping.index(jelf_ehdr_shnum)
     jelf_ehdr_d['e_shoff']          = jelf_shdrtbl
     jelf_ehdr_d['e_coin_purpose']   = purpose
     jelf_ehdr_d['e_coin_path']      = coin
