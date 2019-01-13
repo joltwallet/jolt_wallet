@@ -157,7 +157,7 @@ todo: The program header now needs pointers/index to `.strtab` and `.symtab` sin
 
 `sh_size` - Section size, needs to be able to (almost) contain the maximum `sh_offset` value.
 
-`sh_info` - Various information depending on section type. We only use it for the `SHT_RELA` type where it contains the section header index for which the relocation applies. 14 bits allows for 16,384 sections.
+`sh_info` - Various information depending on section type. We only use it for the `SHT_RELA` type where it contains the section header index for which the relocation applies. 14 bits allows for 16,384 sections. For non RELA sections this is `0`.
 
 
 These optimizations reduce the 40 byte section header to just 7 bytes. There are 

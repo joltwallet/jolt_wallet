@@ -197,9 +197,20 @@ def read_section_headers(elf_contents, ehdr, shstrtab):
 def convert_shdrs(elf32_shdrs):
     """
     Converts ALL ELF32 Section Headers to JELF Headers
+
+    All returns a list mapping
+    mapping[0] returns the original index of the returned 0th section
     """
+    jelf_shdrs_alloc = []
+    jelf_shdrs_alloc_index = []
+
+    jelf_shdrs_rela = []
+    jelf_shdrs_rela_index = []
+
     jelf_shdrs = []
-    for elf32_shdr in elf32_shdrs:
+    jelf_shdrs_index = []
+
+    for i, elf32_shdr in enumerate(elf32_shdrs):
         jelf_shdr_d = OrderedDict()
 
         # Convert the "sh_type" field
@@ -228,13 +239,41 @@ def convert_shdrs(elf32_shdrs):
 
         if elf32_shdr.sh_info > 2**14:
             raise("Overflow Detected")
+        # index for the header in which the rela information applies to
         jelf_shdr_d['sh_info'] = elf32_shdr.sh_info
 
         log.debug(jelf_shdr_d)
-        jelf_shdrs.append(jelf_shdr_d)
-    return jelf_shdrs
+        if jelf_shdr_d['sh_flags'] != 0:
+            jelf_shdrs_alloc.append(jelf_shdr_d)
+            # add one because the SH_TBL is the first (0th) section
+            jelf_shdrs_alloc_index.append(i)
+        elif jelf_shdr_d['sh_type'] == Jelf_SHT_RELA:
+            jelf_shdrs_rela.append(jelf_shdr_d)
+            jelf_shdrs_rela_index.append(i)
+        else:
+            jelf_shdrs.append(jelf_shdr_d)
+            # add one because the SH_TBL is the first (0th) section
+            jelf_shdrs_index.append(i)
 
-def convert_symtab(elf32_symtab, elf32_strtab, export_list):
+    # reverse the loadable sections to that the SLL is in the correct order
+    jelf_shdrs_alloc = list(reversed(jelf_shdrs_alloc))
+    jelf_shdrs_alloc_index = list(reversed(jelf_shdrs_alloc_index))
+
+    mapping = [jelf_shdrs_index[0]] + jelf_shdrs_alloc_index + \
+            jelf_shdrs_rela_index + jelf_shdrs_index[1:]
+
+    # remap relocation sh_info indices
+    for i in range(len(jelf_shdrs_rela)):
+        jelf_shdr_d = jelf_shdrs_rela[i]
+        jelf_shdr_d['sh_info'] = mapping.index(
+                jelf_shdr_d['sh_info'])
+
+    jelf_shdrs = [jelf_shdrs[0]] + jelf_shdrs_alloc + \
+            jelf_shdrs_rela + jelf_shdrs[1:]
+
+    return jelf_shdrs, mapping
+
+def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
     elf32_sym_size = Elf32_Sym.size_bytes()
     jelf_sym_size  = Jelf_Sym.size_bytes()
 
@@ -267,24 +306,25 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list):
                 # st_shndx is the thing that matters in this case
                 pass
 
-        # WARNING: st_shndx relies on all the sections being
-        # in the same order
         if elf32_symbol.st_shndx > 2**16:
             raise("Overflow Detected")
+        if elf32_symbol.st_shndx == 0 or elf32_symbol.st_shndx > 0xFFF0:
+            new_st_shndx = elf32_symbol.st_shndx
+        else:
+            new_st_shndx = mapping.index(elf32_symbol.st_shndx)
         begin = i * jelf_sym_size
         end = begin + jelf_sym_size
         jelf_symtab[begin:end] = Jelf_Sym.pack(
                 jelf_name_index,
-                elf32_symbol.st_shndx,
+                new_st_shndx,
                 elf32_symbol.st_value,
                 )
         del(begin, end)
         if sym_name == "app_main":
-            # todo this may not be the most correct
             jelf_entrypoint_sym_idx = i
     return jelf_symtab, jelf_entrypoint_sym_idx
 
-def convert_relas(elf_contents, elf32_shdrs, jelf_shdrs):
+def convert_relas(elf_contents, elf32_shdrs, jelf_shdrs, mapping):
     """
     Returns dict jelf_relas where:
         keys: index into jelf_shdrs.
@@ -303,14 +343,15 @@ def convert_relas(elf_contents, elf32_shdrs, jelf_shdrs):
             continue
 
         # Get number of relocations in this section
-        n_relas = int(elf32_shdrs[i].sh_size / Elf32_Rela.size_bytes())
+        elf32_idx = mapping[i]
+        n_relas = int(elf32_shdrs[elf32_idx].sh_size / Elf32_Rela.size_bytes())
         # 'sh_size' is currently as if we were using ELF32_SYM
         jelf_shdrs[i]['sh_size'] = n_relas * Jelf_Rela.size_bytes()
         jelf_sec_relas = bytearray( jelf_shdrs[i]['sh_size'] )
 
         for j in range(n_relas):
             # pointer into the binaries
-            elf32_offset = elf32_shdrs[i].sh_offset \
+            elf32_offset = elf32_shdrs[elf32_idx].sh_offset \
                     + j * Elf32_Rela.size_bytes()
             # offset into the newly allocated jelf section
             jelf_offset  = j * Jelf_Rela.size_bytes()
@@ -338,7 +379,7 @@ def convert_relas(elf_contents, elf32_shdrs, jelf_shdrs):
             elif elf32_r_type == Elf32_R_XTENSA_SLOT0_OP:
                 jelf_r_info |= Jelf_R_XTENSA_SLOT0_OP
             else:
-                log.error("Failed on %d %s" % (i, elf32_shdr_names[i]))
+                log.error("Failed on %d %s" % (i, elf32_shdr_names[elf32_idx]))
                 raise("Unexpected RELA Type")
 
             # Pack the data into the rela section's bytearray
@@ -349,7 +390,7 @@ def convert_relas(elf_contents, elf32_shdrs, jelf_shdrs):
 
 def write_jelf_sections(elf_contents,
         elf32_shdrs, elf32_shdr_names,
-        jelf_shdrs, jelf_relas, jelf_symtab):
+        jelf_shdrs, jelf_relas, jelf_symtab, mapping):
     """
     Writes all sections to binary
     """
@@ -363,7 +404,9 @@ def write_jelf_sections(elf_contents,
 
     # Note: the st_shndx of Jelf_Sym indexes into sectionheadertable elements.
     # does this get messed up when stripping strtab and shstrtab?
-    for i, name in enumerate(elf32_shdr_names):
+    for i in range(len(jelf_shdrs)):
+        elf32_idx = mapping[i]
+        name = elf32_shdr_names[elf32_idx]
         jelf_shdrs[i]['sh_offset'] = jelf_ptr
         if name == b'.symtab':
             # Copy over our updated Jelf symtab
@@ -381,11 +424,11 @@ def write_jelf_sections(elf_contents,
             jelf_contents[jelf_ptr:new_jelf_ptr] = jelf_relas[i]
         else:
             new_jelf_ptr = jelf_ptr + jelf_shdrs[i]['sh_size']
-            assert(jelf_shdrs[i]['sh_size']==elf32_shdrs[i].sh_size)
+            assert(jelf_shdrs[i]['sh_size']==elf32_shdrs[elf32_idx].sh_size)
             jelf_contents[jelf_ptr:new_jelf_ptr] = \
                     elf_contents[
-                            elf32_shdrs[i].sh_offset :
-                            elf32_shdrs[i].sh_offset+jelf_shdrs[i]['sh_size']
+                            elf32_shdrs[elf32_idx].sh_offset :
+                            elf32_shdrs[elf32_idx].sh_offset+jelf_shdrs[i]['sh_size']
                             ]
         if jelf_shdrs[i]['sh_offset'] > 2**19:
             raise("Overflow Detected")
@@ -461,26 +504,26 @@ def main():
     ###########################
     elf32_shdrs, elf32_shdr_names, elf32_symtab, elf32_strtab = \
             read_section_headers( elf_contents, ehdr, shstrtab )
-    jelf_shdrs = convert_shdrs( elf32_shdrs )
+    jelf_shdrs, mapping = convert_shdrs( elf32_shdrs )
 
     ###########################################
     # Convert the ELF32 symtab to JELF Format #
     ###########################################
     jelf_symtab, jelf_entrypoint_sym_idx = convert_symtab(elf32_symtab,
-            elf32_strtab, export_list)
+            elf32_strtab, export_list, mapping)
 
     #########################################
     # Convert the ELF32 RELA to JELF Format #
     #########################################
     jelf_relas, jelf_shdrs = convert_relas(elf_contents,
-            elf32_shdrs, jelf_shdrs)
+            elf32_shdrs, jelf_shdrs, mapping)
 
     #######################
     # Write JELF Sections #
     #######################
     jelf_contents, jelf_ptr, jelf_shdrs = write_jelf_sections(elf_contents,
             elf32_shdrs, elf32_shdr_names,
-            jelf_shdrs, jelf_relas, jelf_symtab)
+            jelf_shdrs, jelf_relas, jelf_symtab, mapping)
 
     ##################################################
     # Write Section Header Table to end of JELF File #
