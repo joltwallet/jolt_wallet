@@ -33,7 +33,8 @@
             "../components/jolt-types/include",
             "../jolt_os/jelf_loader/src",
             "../jolt_os/jelf_loader/include",
-            "../jolt_os"
+            "../jolt_os",
+            "."
         ],
         "language": "c",
         "libraries": [
@@ -43,7 +44,8 @@
         "sources": [
             "../jolt_os/jelf_loader/src/loader.c",
             "../jolt_os/jelf_loader/src/unaligned.c",
-            "../jolt_os/jolt_lib.c"
+            "../jolt_os/jolt_lib.c",
+            "miniz.c"
         ]
     }
 }
@@ -811,7 +813,7 @@ static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED
  *     jelfLoaderProfilerReset();
  *     ctx = jelfLoaderInit(fd, name_to_sign, &jelf_loader_env);             # <<<<<<<<<<<<<<
  *     jelfLoaderLoad(ctx);
- *     jelfLoaderProfilerPrint();
+ *     jelfLoaderRelocate(ctx);
  */
   __pyx_t_3 = __Pyx_PyObject_AsString(__pyx_v_name_to_sign); if (unlikely((!__pyx_t_3) && PyErr_Occurred())) __PYX_ERR(0, 45, __pyx_L1_error)
   __pyx_v_ctx = jelfLoaderInit(__pyx_v_fd, __pyx_t_3, (&jelf_loader_env));
@@ -820,44 +822,35 @@ static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED
  *     jelfLoaderProfilerReset();
  *     ctx = jelfLoaderInit(fd, name_to_sign, &jelf_loader_env);
  *     jelfLoaderLoad(ctx);             # <<<<<<<<<<<<<<
- *     jelfLoaderProfilerPrint();
  *     jelfLoaderRelocate(ctx);
+ *     jelfLoaderProfilerPrint();
  */
   jelfLoaderLoad(__pyx_v_ctx);
 
   /* "elf2jelf/jelf_loader.pyx":47
  *     ctx = jelfLoaderInit(fd, name_to_sign, &jelf_loader_env);
  *     jelfLoaderLoad(ctx);
- *     jelfLoaderProfilerPrint();             # <<<<<<<<<<<<<<
- *     jelfLoaderRelocate(ctx);
- *     jelfLoaderProfilerPrint();
- */
-  jelfLoaderProfilerPrint();
-
-  /* "elf2jelf/jelf_loader.pyx":48
- *     jelfLoaderLoad(ctx);
- *     jelfLoaderProfilerPrint();
  *     jelfLoaderRelocate(ctx);             # <<<<<<<<<<<<<<
  *     jelfLoaderProfilerPrint();
  *     return jelfLoaderGetHash(ctx)[:64];
  */
   jelfLoaderRelocate(__pyx_v_ctx);
 
-  /* "elf2jelf/jelf_loader.pyx":49
- *     jelfLoaderProfilerPrint();
+  /* "elf2jelf/jelf_loader.pyx":48
+ *     jelfLoaderLoad(ctx);
  *     jelfLoaderRelocate(ctx);
  *     jelfLoaderProfilerPrint();             # <<<<<<<<<<<<<<
  *     return jelfLoaderGetHash(ctx)[:64];
  */
   jelfLoaderProfilerPrint();
 
-  /* "elf2jelf/jelf_loader.pyx":50
+  /* "elf2jelf/jelf_loader.pyx":49
  *     jelfLoaderRelocate(ctx);
  *     jelfLoaderProfilerPrint();
  *     return jelfLoaderGetHash(ctx)[:64];             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_4 = __Pyx_PyBytes_FromStringAndSize(((const char*)jelfLoaderGetHash(__pyx_v_ctx)) + 0, 64 - 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyBytes_FromStringAndSize(((const char*)jelfLoaderGetHash(__pyx_v_ctx)) + 0, 64 - 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 49, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_r = __pyx_t_4;
   __pyx_t_4 = 0;
@@ -1055,8 +1048,8 @@ PyMODINIT_FUNC PyInit_jelf_loader(void)
 
   /* "elf2jelf/jelf_loader.pyx":1
  * # distutils: libraries = sodium c             # <<<<<<<<<<<<<<
- * # distutils: include_dirs = ../components/jolt-types/include ../jolt_os/jelf_loader/src ../jolt_os/jelf_loader/include ../jolt_os
- * # distutils: sources = ../jolt_os/jelf_loader/src/loader.c ../jolt_os/jelf_loader/src/unaligned.c ../jolt_os/jolt_lib.c
+ * # distutils: include_dirs = ../components/jolt-types/include ../jolt_os/jelf_loader/src ../jolt_os/jelf_loader/include ../jolt_os .
+ * # distutils: sources = ../jolt_os/jelf_loader/src/loader.c ../jolt_os/jelf_loader/src/unaligned.c ../jolt_os/jolt_lib.c miniz.c
  */
   __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);

@@ -19,6 +19,7 @@
 
 #include "esp_log.h"
 #include "hal/storage/storage.h"
+#include "rom/miniz.h"
 
 static const char* TAG = "JelfLoader";
 
@@ -29,6 +30,8 @@ static const char* TAG = "JelfLoader";
 #else
 
 #include <stdio.h>
+#include "miniz.h"
+
 #define MSG(...)
 #define INFO(...) printf( __VA_ARGS__ ); printf("\n");
 #define ERR(...) printf( __VA_ARGS__ ); printf("\n");

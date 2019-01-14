@@ -95,10 +95,10 @@ uint8_t *jelfLoaderGetHash(jelfLoaderContext_t *ctx); // return hash (in bytes, 
 
 #if CONFIG_JELFLOADER_PROFILER_EN
 /* Sets all profiler variables to 0 */
-void jelfLoaderProfilerReset();
+void jelfLoaderProfilerReset(void);
 
 /* Prints the profiler results to uart console */
-void jelfLoaderProfilerPrint();
+void jelfLoaderProfilerPrint(void);
 #endif // CONFIG_ELFLOADER_PROFILER_EN
 
 #endif
