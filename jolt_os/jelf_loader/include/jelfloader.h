@@ -69,11 +69,6 @@ typedef struct jelfLoaderContext_t {
     uint8_t app_signature[BIN_512];
 #endif
 
-    /* Caching Data Structures */
-#if CONFIG_JELFLOADER_CACHE_SHT
-    Jelf_Shdr *shdr_cache;
-#endif
-
 #if CONFIG_JELFLOADER_CACHE_LOCALITY
     jelfLoader_locality_cache_t locality_cache[CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N];
 #endif

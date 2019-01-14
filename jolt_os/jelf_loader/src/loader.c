@@ -334,15 +334,9 @@ err:
  * More specific readers to handle proper bitshifting *
  ******************************************************/
 static int loader_shdr(jelfLoaderContext_t *ctx, size_t n, Jelf_Shdr *h) {
-    #if CONFIG_JELFLOADER_CACHE_SHT
-        uint8_t *buf = (uint8_t*)ctx->shdr_cache + n * JELF_SHDR_SIZE;
-        MSG("loader_shdr cache: %p", ctx->shdr_cache); 
-        MSG("loader_shdr buf: %p", buf);
-    #else
-        off_t offset = (off_t)((uint8_t*)ctx->e_shoff + n * JELF_SHDR_SIZE);
-        uint8_t buf[JELF_SHDR_SIZE] = {0};
-        LOADER_GETDATA(ctx, offset, (char *)&buf, sizeof(buf));
-    #endif
+    off_t offset = (off_t)((uint8_t*)ctx->e_shoff + n * JELF_SHDR_SIZE);
+    uint8_t buf[JELF_SHDR_SIZE] = {0};
+    LOADER_GETDATA(ctx, offset, (char *)&buf, sizeof(buf));
 
     h->sh_type   = (buf[0] >> 6) & 0x03;
     h->sh_flags  = (buf[0] >> 4) & 0x03;
@@ -356,10 +350,9 @@ static int loader_shdr(jelfLoaderContext_t *ctx, size_t n, Jelf_Shdr *h) {
     h->sh_info   = (buf[5] & 0x03F) |
             ((uint32_t)buf[6] << 6);
     return 0;
-#if !CONFIG_JELFLOADER_CACHE_SHT
+
 err:
     return -1;
-#endif
 }
 
 static int loader_sym(jelfLoaderContext_t *ctx, size_t offset, Jelf_Sym *h) {
@@ -840,14 +833,6 @@ int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv) {
         return 0;
     }
 
-    /* Free up loading cache */
-    #if CONFIG_JELFLOADER_CACHE_SHT
-    if( NULL != ctx->shdr_cache ) {
-        free( ctx->shdr_cache );
-        ctx->shdr_cache = NULL;
-    }
-    #endif
-
     #if CONFIG_ELFLOADER_CACHE_LOCALITY
     for(uint8_t i=0; i < CONFIG_ELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
         if( NULL != ctx->locality_cache[i].data) {
@@ -956,23 +941,6 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
                 }
             ctx->locality_cache[i].valid = false;
         }
-    }
-    #endif
-
-    #if CONFIG_JELFLOADER_CACHE_SHT
-    {
-        /**************************************
-         * Cache sectionheadertable to memory *
-         **************************************/
-        size_t sht_size = header.e_shnum * JELF_SHDR_SIZE;
-        MSG("Allocating %d bytes for section header cache.", sht_size);
-        ctx->shdr_cache = malloc(sht_size);
-        if( NULL == ctx->shdr_cache  ) {
-            ERR("Insufficient memory for section header table cache");
-            goto err;
-        }
-        /* Populate the cache */
-        LOADER_GETDATA(ctx, header.e_shoff, (char *)(ctx->shdr_cache), sht_size);
     }
     #endif
 
