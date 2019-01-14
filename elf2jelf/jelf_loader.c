@@ -811,7 +811,7 @@ static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED
  *     jelfLoaderProfilerReset();
  *     ctx = jelfLoaderInit(fd, name_to_sign, &jelf_loader_env);             # <<<<<<<<<<<<<<
  *     jelfLoaderLoad(ctx);
- *     jelfLoaderRelocate(ctx);
+ *     jelfLoaderProfilerPrint();
  */
   __pyx_t_3 = __Pyx_PyObject_AsString(__pyx_v_name_to_sign); if (unlikely((!__pyx_t_3) && PyErr_Occurred())) __PYX_ERR(0, 45, __pyx_L1_error)
   __pyx_v_ctx = jelfLoaderInit(__pyx_v_fd, __pyx_t_3, (&jelf_loader_env));
@@ -820,35 +820,44 @@ static PyObject *__pyx_pf_8elf2jelf_11jelf_loader_jelf_loader_hash(CYTHON_UNUSED
  *     jelfLoaderProfilerReset();
  *     ctx = jelfLoaderInit(fd, name_to_sign, &jelf_loader_env);
  *     jelfLoaderLoad(ctx);             # <<<<<<<<<<<<<<
- *     jelfLoaderRelocate(ctx);
  *     jelfLoaderProfilerPrint();
+ *     jelfLoaderRelocate(ctx);
  */
   jelfLoaderLoad(__pyx_v_ctx);
 
   /* "elf2jelf/jelf_loader.pyx":47
  *     ctx = jelfLoaderInit(fd, name_to_sign, &jelf_loader_env);
  *     jelfLoaderLoad(ctx);
+ *     jelfLoaderProfilerPrint();             # <<<<<<<<<<<<<<
+ *     jelfLoaderRelocate(ctx);
+ *     jelfLoaderProfilerPrint();
+ */
+  jelfLoaderProfilerPrint();
+
+  /* "elf2jelf/jelf_loader.pyx":48
+ *     jelfLoaderLoad(ctx);
+ *     jelfLoaderProfilerPrint();
  *     jelfLoaderRelocate(ctx);             # <<<<<<<<<<<<<<
  *     jelfLoaderProfilerPrint();
  *     return jelfLoaderGetHash(ctx)[:64];
  */
   jelfLoaderRelocate(__pyx_v_ctx);
 
-  /* "elf2jelf/jelf_loader.pyx":48
- *     jelfLoaderLoad(ctx);
+  /* "elf2jelf/jelf_loader.pyx":49
+ *     jelfLoaderProfilerPrint();
  *     jelfLoaderRelocate(ctx);
  *     jelfLoaderProfilerPrint();             # <<<<<<<<<<<<<<
  *     return jelfLoaderGetHash(ctx)[:64];
  */
   jelfLoaderProfilerPrint();
 
-  /* "elf2jelf/jelf_loader.pyx":49
+  /* "elf2jelf/jelf_loader.pyx":50
  *     jelfLoaderRelocate(ctx);
  *     jelfLoaderProfilerPrint();
  *     return jelfLoaderGetHash(ctx)[:64];             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_4 = __Pyx_PyBytes_FromStringAndSize(((const char*)jelfLoaderGetHash(__pyx_v_ctx)) + 0, 64 - 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 49, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyBytes_FromStringAndSize(((const char*)jelfLoaderGetHash(__pyx_v_ctx)) + 0, 64 - 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 50, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_r = __pyx_t_4;
   __pyx_t_4 = 0;

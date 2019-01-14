@@ -260,11 +260,6 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
             jelf_shdrs_index.append(i)
         del(jelf_shdr_d)
 
-    # reverse the loadable sections to that the SLL is in the correct order
-    jelf_shdrs_alloc = list(reversed(jelf_shdrs_alloc))
-    jelf_shdrs_alloc_index = list(reversed(jelf_shdrs_alloc_index))
-    jelf_shdrs_alloc_names = list(reversed(jelf_shdrs_alloc_names))
-
     # We need to put all literal sections at the beginning
     # order should be:
     # .literal.NAME1
@@ -285,11 +280,13 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
 
     literal_alloc = []
     literal_alloc_index = []
+    literal_alloc_names = [] # for debugging
     literal_rela = []
     literal_rela_index = []
 
     text_alloc = []
     text_alloc_index = []
+    text_alloc_names = []
     text_rela = []
     text_rela_index = []
 
@@ -316,11 +313,13 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
             literal_alloc_index.append(index)
             literal_rela.append(jelf_shdrs_rela[rela_index])
             literal_rela_index.append(jelf_shdrs_rela_index[rela_index])
+            literal_alloc_names.append(name)
         elif name.startswith('.text'):
             text_alloc.append(entry)
             text_alloc_index.append(index)
             text_rela.append(jelf_shdrs_rela[rela_index])
             text_rela_index.append(jelf_shdrs_rela_index[rela_index])
+            text_alloc_names.append(name)
         else:
             other_alloc.append(entry)
             other_alloc_index.append(index)
@@ -328,18 +327,14 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
             other_rela_index.append(jelf_shdrs_rela_index[rela_index])
 
     mapping = [jelf_shdrs_index[0]] \
-            + literal_alloc_index \
-            + text_alloc_index \
-            + other_alloc_index \
+            + list(reversed(other_alloc_index + text_alloc_index+ literal_alloc_index)) \
             + literal_rela_index \
             + text_rela_index \
             + other_rela_index \
             + jelf_shdrs_index[1:]
 
     jelf_shdrs = [jelf_shdrs[0]] \
-            + literal_alloc \
-            + text_alloc \
-            + other_alloc \
+            + list(reversed(other_alloc + text_alloc + literal_alloc)) \
             + literal_rela \
             + text_rela \
             + other_rela \
@@ -347,13 +342,6 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
 
     for i in range(len(jelf_shdrs)):
         jelf_shdr_d = jelf_shdrs[i]
-        if jelf_shdr_d['sh_flags'] != 0:
-            print("exec: %d" % jelf_shdr_d['sh_info'])
-        elif jelf_shdr_d['sh_type'] == Jelf_SHT_RELA:
-            print("rela: %d" % jelf_shdr_d['sh_info'])
-        else:
-            print("other: %d" % jelf_shdr_d['sh_info'])
-
         jelf_shdrs[i]['sh_info'] = mapping.index(
                 jelf_shdrs[i]['sh_info'])
 

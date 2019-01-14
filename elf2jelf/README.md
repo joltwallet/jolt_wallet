@@ -280,7 +280,16 @@ sections "backwards" so that when loaded, the singly-linked-list will be in the 
 order.
 
 Because we put all the allocated sections in the beginning, once we hit a non-alloc section,
-we can stop reading.
+we can stop reading. This has two nice properties:
+* We don't need to read unnecessary data
+* Compression like zlib works on a moving window. As it transverses a file from the beginning, it keeps 
+  a buffer (typically 32KB, but in Jolt we set it to 4KB to reduce memory consumption at
+  the cost of a few percentage worse compression) of the latest uncompressed data as a dictionary to
+  decompressed subsequent bytes. This means that naively you cannot efficiently access random 
+  decompressed data. Every random access would require decompressing from the beginning of the file to that point.
+  One could transverse and decompress the compressed file once, making buffer checkpoints throughout the file
+  so that any random access could just be picked up from the previous checkpoint; but this takes too much memory for Jolt. Instead, we just
+  smartly organize the jelf sections so that all information can be loaded and processed in a single sequential pass. Compressed data reduces the disk size of the app (typically by ~50%) and the number of SPI Flash reads (which are slow).
 
 ## Gotchas
 

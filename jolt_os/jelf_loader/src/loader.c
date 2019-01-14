@@ -995,7 +995,7 @@ err:
 
 jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
     MSG("Scanning ELF sections         relAddr      size");
-    // Iterate through all section_headers
+    // Iterate through all section_headers in the section header table
     for (int n = 1; n < ctx->e_shnum; n++) {
         MSG("Loading section %d", n);
         Jelf_Shdr sectHdr = { 0 };
@@ -1083,8 +1083,6 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
         }
         /* Relocation Entries with Addends */
         else if ( SHT_RELA == sectHdr.sh_type ) {
-            /* todo: optimize away this */
-
             /* sh_info holds extra information that depends on sh_type.
              * For sh_type SHT_RELA:
              *     The section header index of the section to which the 
