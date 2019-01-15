@@ -240,7 +240,7 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
 
         if elf32_shdr.sh_size > 2**19:
             raise("Overflow Detected")
-        # for symtab and relas, this will be updated later
+        # for symtab and relas, this will be updated later;
         # All other sections maintain the same size
         jelf_shdr_d['sh_size'] = elf32_shdr.sh_size
 
@@ -340,29 +340,29 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
             other_rela_names.append('.rela'+name)
 
     #+ list(reversed(other_alloc_index + text_alloc_index+ literal_alloc_index)) \
-    mapping = [jelf_shdrs_index[0]] \
+    mapping = jelf_shdrs_index[0:2] \
             + list(reversed(other_alloc_index + text_alloc_index+ literal_alloc_index)) \
             + other_rela_index \
             + text_rela_index \
             + literal_rela_index \
-            + jelf_shdrs_index[1:]
+            + jelf_shdrs_index[2:]
 
     #+ list(reversed(other_alloc + text_alloc + literal_alloc)) \
-    jelf_shdrs = [jelf_shdrs[0]] \
+    jelf_shdrs = jelf_shdrs[0:2] \
             + list(reversed(other_alloc + text_alloc + literal_alloc)) \
             + other_rela \
             + text_rela \
             + literal_rela \
-            + jelf_shdrs[1:]
+            + jelf_shdrs[2:]
 
     #+ list(reversed(other_alloc_names + text_alloc_names + literal_alloc_names)) \
-    names = [jelf_shdrs_names[0]] \
+    names = jelf_shdrs_names[0:2] \
             + list(reversed(other_alloc_names + text_alloc_names + literal_alloc_names)) \
             + other_rela_names \
             + text_rela_names \
             + literal_rela_names \
-            + jelf_shdrs_names[1:]
-
+            + jelf_shdrs_names[2:]
+    pdb.set_trace()
     for i in range(len(jelf_shdrs)):
         jelf_shdr_d = jelf_shdrs[i]
         jelf_shdrs[i]['sh_info'] = mapping.index(

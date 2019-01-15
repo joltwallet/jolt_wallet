@@ -1113,7 +1113,7 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
          * Cache sectionheadertable to memory *
          **************************************/
         size_t sht_size = header.e_shnum * JELF_SHDR_SIZE;
-        MSG("Allocating %d bytes for section header cache.", sht_size);
+        INFO("Allocating %d (%04X) bytes for section header cache.", sht_size, sht_size);
         ctx->shdr_cache = malloc(sht_size);
         if( NULL == ctx->shdr_cache  ) {
             ERR("Insufficient memory for section header table cache");
@@ -1121,6 +1121,7 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
         }
         /* Populate the cache */
         ERR("%08x", (uint32_t)header.e_shoff);
+        INFO("Loading sectionheadertable from 0x%08X", header.e_shoff);
         LOADER_GETDATA(ctx, header.e_shoff, (char *)(ctx->shdr_cache), sht_size);
     }
     #endif
@@ -1215,6 +1216,7 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
                         /* To get around LoadStoreErrors with reading single 
                          * bytes from instruction memory */
                         char *tmp = LOADER_ALLOC_DATA(CEIL4(sectHdr.sh_size));
+                        ERR("ALLC %08X", sectHdr.sh_offset);
                         LOADER_GETDATA( ctx, sectHdr.sh_offset, tmp,
                                 CEIL4(sectHdr.sh_size) );
                         memcpy(section->data, tmp, CEIL4(sectHdr.sh_size));
@@ -1262,20 +1264,19 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
             MSG("  section %2d", n);
             ctx->symtab_offset = sectHdr.sh_offset;
             ctx->symtab_count = sectHdr.sh_size / JELF_SYM_SIZE;
-            ERR("symtab is %u bytes.", sectHdr.sh_size);
+            ERR("symtab is %u (0x%04X) bytes.", sectHdr.sh_size, sectHdr.sh_size);
             ERR("symtab contains %zu entires.", ctx->symtab_count);
-            {
-                /**************************
-                 * Cache symtab to memory *
-                 **************************/
-                ERR("Reading symtab from offset 0x%08x", sectHdr.sh_offset);
-                ctx->symtab_cache = malloc(sectHdr.sh_size);
-                if( NULL == ctx->symtab_cache){
-                    goto err;
-                }
-                LOADER_GETDATA(ctx, sectHdr.sh_offset,
-                        (char *)(ctx->symtab_cache), sectHdr.sh_size);
+
+            /**************************
+             * Cache symtab to memory *
+             **************************/
+            ERR("Reading symtab from offset 0x%08x", sectHdr.sh_offset);
+            ctx->symtab_cache = malloc(sectHdr.sh_size);
+            if( NULL == ctx->symtab_cache){
+                goto err;
             }
+            LOADER_GETDATA(ctx, sectHdr.sh_offset,
+                    (char *)(ctx->symtab_cache), sectHdr.sh_size);
         }
     }
     if (ctx->symtab_offset == 0 ) {
