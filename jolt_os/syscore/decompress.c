@@ -66,9 +66,10 @@ int decompress_obj_chunk(decomp_t *d, uint8_t *data, size_t len) {
         }
         len -= in_bytes;
         data += in_bytes;
-        amount_written += out_bytes;
 
+        amount_written += out_bytes;
         d->next_out += out_bytes;
+
         size_t bytes_in_out_buf = d->next_out - d->buf;
         if (status <= TINFL_STATUS_DONE || bytes_in_out_buf == CONFIG_JOLT_COMPRESSION_OUTPUT_BUFFER) {
             // Output buffer full, or done. Flush to writer function.

@@ -42,6 +42,8 @@ from binascii import hexlify, unhexlify
 import zlib
 import nacl.encoding
 from nacl.signing import SigningKey
+
+from pprint import pprint
 import ipdb as pdb
 
 this_path = os.path.dirname(os.path.realpath(__file__))
@@ -213,6 +215,7 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
     # odds and ends shdrs
     jelf_shdrs = []
     jelf_shdrs_index = []
+    jelf_shdrs_names = []
 
     for i, (elf32_shdr, name) in enumerate(zip(elf32_shdrs, elf32_shdr_names)):
         jelf_shdr_d = OrderedDict()
@@ -258,6 +261,7 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
         else:
             jelf_shdrs.append(jelf_shdr_d)
             jelf_shdrs_index.append(i)
+            jelf_shdrs_names.append(elf32_shdr_names[i].decode())
         del(jelf_shdr_d)
 
     # We need to put all literal sections at the beginning
@@ -283,17 +287,21 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
     literal_alloc_names = [] # for debugging
     literal_rela = []
     literal_rela_index = []
+    literal_rela_names = [] # for debugging
 
     text_alloc = []
     text_alloc_index = []
-    text_alloc_names = []
+    text_alloc_names = [] # for debugging
     text_rela = []
     text_rela_index = []
+    text_rela_names = [] # for debugging
 
     other_alloc = [] # stuff like .rodata and .bss
     other_alloc_index = []
+    other_alloc_names = [] # for debugging
     other_rela = []
     other_rela_index = []
+    other_rela_names = [] # for debugging
 
     for entry, index, name in zip(jelf_shdrs_alloc, jelf_shdrs_alloc_index, jelf_shdrs_alloc_names):
         # have to find the pairing rela section
@@ -306,39 +314,54 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
             # doesn't have a paired rela section
             other_alloc.append(entry)
             other_alloc_index.append(index)
+            other_alloc_names.append(name)
             continue
 
         if name.startswith(".literal"):
             literal_alloc.append(entry)
             literal_alloc_index.append(index)
+            literal_alloc_names.append(name)
             literal_rela.append(jelf_shdrs_rela[rela_index])
             literal_rela_index.append(jelf_shdrs_rela_index[rela_index])
-            literal_alloc_names.append(name)
+            literal_rela_names.append('.rela'+name)
         elif name.startswith('.text'):
             text_alloc.append(entry)
             text_alloc_index.append(index)
+            text_alloc_names.append(name)
             text_rela.append(jelf_shdrs_rela[rela_index])
             text_rela_index.append(jelf_shdrs_rela_index[rela_index])
-            text_alloc_names.append(name)
+            text_rela_names.append('.rela'+name)
         else:
             other_alloc.append(entry)
             other_alloc_index.append(index)
+            other_alloc_names.append(name)
             other_rela.append(jelf_shdrs_rela[rela_index])
             other_rela_index.append(jelf_shdrs_rela_index[rela_index])
+            other_rela_names.append('.rela'+name)
 
+    #+ list(reversed(other_alloc_index + text_alloc_index+ literal_alloc_index)) \
     mapping = [jelf_shdrs_index[0]] \
             + list(reversed(other_alloc_index + text_alloc_index+ literal_alloc_index)) \
-            + literal_rela_index \
-            + text_rela_index \
             + other_rela_index \
+            + text_rela_index \
+            + literal_rela_index \
             + jelf_shdrs_index[1:]
 
+    #+ list(reversed(other_alloc + text_alloc + literal_alloc)) \
     jelf_shdrs = [jelf_shdrs[0]] \
             + list(reversed(other_alloc + text_alloc + literal_alloc)) \
-            + literal_rela \
-            + text_rela \
             + other_rela \
+            + text_rela \
+            + literal_rela \
             + jelf_shdrs[1:]
+
+    #+ list(reversed(other_alloc_names + text_alloc_names + literal_alloc_names)) \
+    names = [jelf_shdrs_names[0]] \
+            + list(reversed(other_alloc_names + text_alloc_names + literal_alloc_names)) \
+            + other_rela_names \
+            + text_rela_names \
+            + literal_rela_names \
+            + jelf_shdrs_names[1:]
 
     for i in range(len(jelf_shdrs)):
         jelf_shdr_d = jelf_shdrs[i]
@@ -467,17 +490,15 @@ def convert_relas(elf_contents, elf32_shdrs, jelf_shdrs, mapping):
 
 def write_jelf_sections(elf_contents,
         elf32_shdrs, elf32_shdr_names,
+        jelf_contents, jelf_ptr,
         jelf_shdrs, jelf_relas, jelf_symtab, mapping):
     """
-    Writes all sections to binary
+    Writes all sections to binary.
+    Updates the SectionHeaders with the correct size, type, and offset
     """
     # Sanity Check
     assert( len(jelf_shdrs) == len(elf32_shdrs) )
     assert( len(elf32_shdrs) == len(elf32_shdr_names) )
-
-    # over allocate for now
-    jelf_contents = bytearray(len(elf_contents))
-    jelf_ptr = Jelf_Ehdr.size_bytes() # Skip the JELF Header
 
     for i in range(len(jelf_shdrs)):
         elf32_idx = mapping[i]
@@ -528,8 +549,6 @@ def write_jelf_sectionheadertable(jelf_contents,
         log.debug(jelf_shdr)
         jelf_contents[jelf_ptr:new_jelf_ptr] = shdr_bytes
         jelf_ptr = new_jelf_ptr
-    # trim jelf_contents to final length
-    jelf_contents = jelf_contents[:jelf_ptr]
     return jelf_contents, section_count
 
 def main():
@@ -595,19 +614,29 @@ def main():
     jelf_relas, jelf_shdrs = convert_relas(elf_contents,
             elf32_shdrs, jelf_shdrs, mapping)
 
+    ######################################
+    # Allocate space for the JELF Binary #
+    ######################################
+    # over allocate for now
+    jelf_contents = bytearray(len(elf_contents))
+    # Skip the JELF Header and SectionHeaderTable
+    jelf_ptr = Jelf_Ehdr.size_bytes() + len(jelf_shdrs)*Jelf_Shdr.size_bytes()
+
     #######################
     # Write JELF Sections #
     #######################
     jelf_contents, jelf_ptr, jelf_shdrs = write_jelf_sections(elf_contents,
             elf32_shdrs, elf32_shdr_names,
+            jelf_contents, jelf_ptr,
             jelf_shdrs, jelf_relas, jelf_symtab, mapping)
+    # trim jelf_contents to final length
+    jelf_contents = jelf_contents[:jelf_ptr]
 
     ##################################################
     # Write Section Header Table to end of JELF File #
     ##################################################
-    jelf_shdrtbl = jelf_ptr
     jelf_contents, jelf_ehdr_shnum = write_jelf_sectionheadertable(jelf_contents,
-            jelf_shdrs, jelf_ptr)
+            jelf_shdrs, Jelf_Ehdr.size_bytes())
     log.info("Jelf Final Size: %d" % len(jelf_contents))
 
     ###########################
@@ -650,7 +679,7 @@ def main():
     jelf_ehdr_d['e_version_minor']  = _JELF_VERSION_MINOR
     jelf_ehdr_d['e_entry_offset']   = jelf_entrypoint_sym_idx
     jelf_ehdr_d['e_shnum']          = mapping.index(jelf_ehdr_shnum)
-    jelf_ehdr_d['e_shoff']          = jelf_shdrtbl
+    jelf_ehdr_d['e_shoff']          = Jelf_Ehdr.size_bytes()
     jelf_ehdr_d['e_coin_purpose']   = purpose
     jelf_ehdr_d['e_coin_path']      = coin
     jelf_ehdr_d['e_bip32key']       = args.bip32key
@@ -697,7 +726,8 @@ def main():
     # Write Compressed JELF binary to file #
     ########################################
     compressed_jelf = compress_data(jelf_contents);
-    with open(output_fn+'.gz', 'wb') as f:
+    #with open(output_fn, 'wb') as f:
+    with open(output_fn + '.gz', 'wb') as f:
         f.write(compressed_jelf)
 
     log.info("Complete!")

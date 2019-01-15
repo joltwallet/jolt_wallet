@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "sdkconfig.h"
 
 #include "unaligned.h"
 #include "jelf.h"
@@ -15,11 +16,13 @@
 
 #include "sodium.h"
 
+#undef CONFIG_JELFLOADER_CACHE_SHT
+#define CONFIG_JELFLOADER_CACHE_SHT 1
+
 #if ESP_PLATFORM
 
 #include "esp_log.h"
 #include "hal/storage/storage.h"
-#include "rom/miniz.h"
 
 static const char* TAG = "JelfLoader";
 
@@ -30,7 +33,6 @@ static const char* TAG = "JelfLoader";
 #else
 
 #include <stdio.h>
-#include "miniz.h"
 
 #define MSG(...)
 #define INFO(...) printf( __VA_ARGS__ ); printf("\n");
@@ -41,6 +43,7 @@ static const char* TAG = "JelfLoader";
 /********************************
  * STATIC FUNCTIONS DECLARATION *
  ********************************/
+static int decompress_get(jelfLoaderContext_t *ctx, size_t offset, uint8_t *data, size_t len);
 static void app_hash_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len);
 static const char *type2String(int symt);
 static int readSection(jelfLoaderContext_t *ctx, int n, Jelf_Shdr *h );
@@ -326,10 +329,26 @@ err:
     if( 0 != LOADER_GETDATA_CACHE(ctx, off, buffer, size)) { assert(0); goto err; } \
     app_hash_update(ctx, (uint8_t*)buffer, size);
 #else // Use POSIX readers without caching
+
+//    if(fseek(ctx->fd, off, SEEK_SET) != 0) { assert(0); goto err; }
+#define LOADER_GETDATA_RAW(ctx, off, buffer, size) ({ \
+    size_t n = fread(buffer, 1, size, ctx->fd); \
+    app_hash_update(ctx, (uint8_t*)buffer, n); \
+    n; \
+});
+   
+/* todo: have this call the inflator */
+#if 0
+#define LOADER_GETDATA(ctx, off, buffer, size) \
+    if(decompress_get(ctx, off, (uint8_t*)buffer, size) != size ) {assert(0); goto err;};\
+    app_hash_update(ctx, (uint8_t*)buffer, size);
+#else
 #define LOADER_GETDATA(ctx, off, buffer, size) \
     if(fseek(ctx->fd, off, SEEK_SET) != 0) { assert(0); goto err; }\
     if(fread(buffer, 1, size, ctx->fd) != size) { assert(0); goto err; }\
     app_hash_update(ctx, (uint8_t*)buffer, size);
+#endif
+
 #endif // CONFIG_JELFLOADER_CACHE_LOCALITY
 
 
@@ -365,9 +384,8 @@ err:
 #endif
 }
 
-static int loader_sym(jelfLoaderContext_t *ctx, size_t offset, Jelf_Sym *h) {
-    uint8_t buf[JELF_SYM_SIZE] = {0};
-    LOADER_GETDATA(ctx, offset, (char *)&buf, sizeof(buf));
+static int loader_sym(jelfLoaderContext_t *ctx, uint32_t n, Jelf_Sym *h) {
+    uint8_t *buf = (uint8_t*)ctx->symtab_cache + n * JELF_SYM_SIZE;
     h->st_name  = buf[0] | 
             ((uint32_t)buf[1] << 8);
     h->st_shndx = buf[2] |
@@ -377,11 +395,10 @@ static int loader_sym(jelfLoaderContext_t *ctx, size_t offset, Jelf_Sym *h) {
             ((uint32_t)buf[6] << 16) |
             ((uint32_t)buf[7] << 24);
     return 0;
-err:
-    return -1;
 }
 
 static int loader_rela(jelfLoaderContext_t *ctx, size_t offset, Jelf_Rela *h) {
+    ERR("RELA %08x", (uint32_t)offset);
     uint8_t buf[JELF_RELA_SIZE] = {0};
     LOADER_GETDATA(ctx, offset, (char *)&buf, sizeof(buf));
     h->r_offset = buf[0] |
@@ -398,6 +415,110 @@ err:
 /********************
  * STATIC FUNCTIONS *
  ********************/
+
+/* Reads len bytes of uncompressed data. *No seeking*.
+ * Returns the number of bytes read. Returns -1 on error. 
+ *
+ * offset - for initial debugging purposes only*/
+static int decompress_get(jelfLoaderContext_t *ctx, size_t offset, uint8_t *inf_data, size_t inf_len) {
+    inf_stream_t *s = &(ctx->inf_stream);
+
+    size_t out_total_before = s->out_total;
+    uint8_t *inf_cpy_start = s->out_next;
+
+    /* check if requeted data is where we currently are in the file */
+    if( offset != s->out_total ) {
+        assert(0);
+        return -1;
+    }
+
+    int out_len_remain = inf_len;
+    ERR("out_len_remain_init: %d", out_len_remain);
+    while( out_len_remain > 0 ) {
+        if( 0 == s->in_avail ) {
+            /* Fetch more compressed data from disk */
+            size_t n = LOADER_GETDATA_RAW(ctx, offset, s->in_buf, s->in_buf_len);
+            s->in_avail = n;
+            s->in_total += n; // not actually used anywhere
+            s->in_next = s->in_buf;
+        }
+        
+        size_t in_bytes = s->in_avail;
+        size_t out_bytes = s->out_buf + s->out_buf_len - s->out_next;
+        int flags = TINFL_FLAG_PARSE_ZLIB_HEADER | TINFL_FLAG_HAS_MORE_INPUT;
+
+        /* Example values of params before and after call
+         * tinfl_status tinfl_decompress(
+         *     tinfl_decompressor *r,
+         *     const mz_uint8 *pIn_buf_next,    0x3ffccf00 -> 0x3ffccf00 (ptr to compressed data)
+         *     size_t *pIn_buf_size,            2048 -> 1708
+         *     mz_uint8 *pOut_buf_start,        0x3ffcd710 -> 0x3ffcd710 (ptr to uncompressed buffer)
+         *     mz_uint8 *pOut_buf_next,         0x3ffcd710 -> 0x3ffcd710
+         *     size_t *pOut_buf_size,           4096 -> 4096
+         *     const mz_uint32 decomp_flags);
+         */
+
+        ERR("s->in_next: %p", s->in_next);
+        ERR("s->in_avail: %d", s->in_avail);
+        ERR("s->out_buf: %p", s->out_buf);
+        ERR("s->out_next: %p", s->out_next);
+        ERR("out_bytes: %d", out_bytes);
+        int status = tinfl_decompress(&(s->inf),
+                s->in_next, &in_bytes,
+                s->out_buf, s->out_next, &out_bytes,
+                flags);
+        ERR("After");
+        ERR("s->in_next: %p", s->in_next);
+        ERR("s->in_avail: %d", s->in_avail);
+        ERR("s->out_buf: %p", s->out_buf);
+        ERR("s->out_next: %p", s->out_next);
+        ERR("out_bytes: %d", out_bytes);
+        ERR("");
+
+        if(TINFL_STATUS_FAILED == status || in_bytes == 0){
+            assert( 0 );
+        }
+        s->in_next  += in_bytes;
+        s->in_avail -= in_bytes;
+        s->in_total += in_bytes;
+
+        s->out_next += out_bytes;
+
+
+
+
+
+        s->in_total += in_bytes;
+        s->in_next += in_bytes;
+
+        out_len_remain -= out_bytes;
+        s->out_total += out_bytes;
+        s->out_next += out_bytes;
+
+        ERR("out_len_remain %d", out_len_remain);
+        ERR("out_bytes %d", out_bytes);
+        ERR(" ");
+        
+        size_t bytes_in_out_buf = s->out_next - s->out_buf; // should be the same as out_bytes?
+        if (status <= TINFL_STATUS_DONE || 
+                s->out_next == s->out_buf + s->out_buf_len) {
+            size_t n_bytes_to_cpy = s->out_next - inf_cpy_start;
+            if (status <= TINFL_STATUS_DONE){
+                ERR("Decompression Done");
+            }
+            else{
+                MSG("Writing a bunch of bytes to inf_data");
+            }
+            memcpy(inf_data, inf_cpy_start, n_bytes_to_cpy);
+            inf_data += bytes_in_out_buf;
+            s->out_next = s->out_buf;
+            inf_cpy_start = s->out_next;
+        }
+    }
+    /* copy any remaining uncompressed data in the out_buf to the returned buf */
+    memcpy(inf_data, inf_cpy_start, s->out_next - inf_cpy_start);
+    return s->out_total - out_total_before; // return number of uncompressed bytes read
+}
 
 static const char *type2String(int symt) {
 #define STRCASE(name) case name: return #name;
@@ -534,7 +655,7 @@ static int readSymbol(jelfLoaderContext_t *ctx, uint32_t n, Jelf_Sym *sym) {
     }
 
     off_t pos = ctx->symtab_offset + n * JELF_SYM_SIZE;
-    if(!loader_sym(ctx, pos, sym)){
+    if(!loader_sym(ctx, n, sym)){
         PROFILER_STOP_READSYMBOL;
         return -1;
     }
@@ -911,6 +1032,30 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     ctx->fd = fd;
     ctx->env = env;
 
+    /* Initialize Inflator */
+    tinfl_init(&(ctx->inf_stream.inf));
+    ctx->inf_stream.in_buf = malloc(2048); // todo macro
+    if(NULL == ctx->inf_stream.in_buf) {
+        ERR( "Insufficient memory for miniz input buffer" );
+        goto err;
+    }
+    ctx->inf_stream.in_buf_len = 2048;
+    ctx->inf_stream.in_next = ctx->inf_stream.in_buf;
+    ctx->inf_stream.in_avail = 0;
+    ctx->inf_stream.in_total = 0;
+
+    ctx->inf_stream.out_buf = malloc(CONFIG_JOLT_COMPRESSION_OUTPUT_BUFFER);
+    if(NULL == ctx->inf_stream.out_buf) {
+        ERR( "Insufficient memory for miniz output buffer" );
+        goto err;
+    }
+    ctx->inf_stream.out_buf_len = CONFIG_JOLT_COMPRESSION_OUTPUT_BUFFER;
+    ctx->inf_stream.out_next = ctx->inf_stream.out_buf;
+    ctx->inf_stream.out_total = 0;
+
+    ctx->inf_stream.out_read = ctx->inf_stream.out_buf;
+    ctx->inf_stream.out_avail = 0;
+
     /*********************************************************************
      * Load the JELF header (Ehdr), located at the beginning of the file *
      *********************************************************************/
@@ -975,6 +1120,7 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
             goto err;
         }
         /* Populate the cache */
+        ERR("%08x", (uint32_t)header.e_shoff);
         LOADER_GETDATA(ctx, header.e_shoff, (char *)(ctx->shdr_cache), sht_size);
     }
     #endif
@@ -1111,11 +1257,25 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
             }
         }
         else if ( SHT_SYMTAB == sectHdr.sh_type ) {
+            /* todo: we already know the location of the symtab;
+             * this is unnecessary */
             MSG("  section %2d", n);
-                ctx->symtab_offset = sectHdr.sh_offset;
-                ctx->symtab_count = sectHdr.sh_size / JELF_SYM_SIZE;
-                MSG("symtab is %u bytes.", sectHdr.sh_size);
-                MSG("symtab contains %zu entires.", ctx->symtab_count);
+            ctx->symtab_offset = sectHdr.sh_offset;
+            ctx->symtab_count = sectHdr.sh_size / JELF_SYM_SIZE;
+            ERR("symtab is %u bytes.", sectHdr.sh_size);
+            ERR("symtab contains %zu entires.", ctx->symtab_count);
+            {
+                /**************************
+                 * Cache symtab to memory *
+                 **************************/
+                ERR("Reading symtab from offset 0x%08x", sectHdr.sh_offset);
+                ctx->symtab_cache = malloc(sectHdr.sh_size);
+                if( NULL == ctx->symtab_cache){
+                    goto err;
+                }
+                LOADER_GETDATA(ctx, sectHdr.sh_offset,
+                        (char *)(ctx->symtab_cache), sectHdr.sh_size);
+            }
         }
     }
     if (ctx->symtab_offset == 0 ) {
@@ -1190,6 +1350,16 @@ void jelfLoaderFree(jelfLoaderContext_t *ctx) {
         ctx->hs = NULL;
     }
 #endif
+
+    if( NULL != ctx->inf_stream.in_buf ) {
+        free(ctx->inf_stream.in_buf);
+        ctx->inf_stream.in_buf = NULL;
+    }
+
+    if( NULL != ctx->inf_stream.out_buf ) {
+        free(ctx->inf_stream.out_buf);
+        ctx->inf_stream.out_buf = NULL;
+    }
 
     jelfLoaderSection_t* section = ctx->section;
     jelfLoaderSection_t* next;

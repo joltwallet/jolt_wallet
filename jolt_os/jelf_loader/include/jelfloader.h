@@ -7,6 +7,12 @@
 #include "jolttypes.h"
 #include "sodium.h"
 
+#if ESP_PLATFORM
+#include "rom/miniz.h"
+#else
+#include "miniz.h"
+#endif
+
 #define LOADER_FD_T FILE *
 
 #ifndef CONFIG_JOLT_APP_SIG_CHECK_EN
@@ -42,6 +48,25 @@ typedef struct jelfLoaderSection_t {
     struct jelfLoaderSection_t* next; // Next Header in Singly Linked List
 } jelfLoaderSection_t;
 
+typedef struct inf_stream_t {
+    tinfl_decompressor inf;
+
+    uint8_t *in_buf;                  /* inflator input buffer to hold compressed bytes*/
+    size_t in_buf_len;                /* Size of input buffer */
+
+    const unsigned char *in_next;     // pointer to next compressed byte to read
+    size_t in_avail;                  // number of compressed bytes available at next_in
+    size_t in_total;                  // total number of compressed bytes consumed so far
+
+    uint8_t *out_buf;                 /* miniz output buffer to hold uncompressed bytes*/
+    size_t out_buf_len;                /* Size of output buffer. MUST BE A POWER OF 2 */
+    uint8_t *out_next;                /* For internal tinfl state */
+    size_t out_total;                 /* total number of uncompressed bytes produced so far */
+
+    uint8_t *out_read;                /* Pointer to available uncompressed data to read from*/ 
+    size_t out_avail;
+} inf_stream_t;
+
 typedef struct jelfLoaderContext_t {
     LOADER_FD_T fd;
     void* exec;
@@ -52,7 +77,8 @@ typedef struct jelfLoaderContext_t {
     off_t e_shoff;
 
     size_t symtab_count;
-    off_t symtab_offset;
+    off_t symtab_offset; // can probably get rid of this
+    uint8_t *symtab_cache;
 
     jelfLoaderSection_t *section; // First element of singly linked list sections.
 
@@ -60,6 +86,9 @@ typedef struct jelfLoaderContext_t {
     uint32_t coin_purpose;
     uint32_t coin_path;
     char bip32_key[33];
+
+    /* Inflator */
+    inf_stream_t inf_stream;
 
     /* Data Structs For Checking App Signature */
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
@@ -71,7 +100,7 @@ typedef struct jelfLoaderContext_t {
 
     /* Caching Data Structures */
 #if CONFIG_JELFLOADER_CACHE_SHT
-    Jelf_Shdr *shdr_cache;
+    uint8_t *shdr_cache;
 #endif
 
 #if CONFIG_JELFLOADER_CACHE_LOCALITY
