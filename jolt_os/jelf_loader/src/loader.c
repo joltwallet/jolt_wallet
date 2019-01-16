@@ -324,6 +324,7 @@ static int decompress_get(jelfLoaderContext_t *ctx, uint8_t *inf_data, size_t in
             size_t n = LOADER_GETDATA_RAW(ctx, s->in_buf, s->in_buf_len);
             app_hash_update(ctx, s->in_buf, n);
 
+#if LOG_LOCAL_LEVEL <= ESP_LOG_DEBUG
             { // debug
                 crypto_hash_sha512_state hs;
                 memcpy(&hs, ctx->hs, sizeof(hs));
@@ -334,6 +335,7 @@ static int decompress_get(jelfLoaderContext_t *ctx, uint8_t *inf_data, size_t in
                         hash_bin, sizeof(hash_bin));
                 ERR("App Hash: %s", hash_hex);
 			}
+#endif
             s->in_avail = n;
             s->in_next = s->in_buf;
         }
@@ -873,10 +875,10 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     jelfLoaderContext_t *ctx;
 
     /* Debugging Size Sanity Check */
-    MSG("Jelf_Ehdr: %zd", sizeof(Jelf_Ehdr));
-    MSG("Jelf_Sym:  %zd", sizeof(Jelf_Sym));
-    MSG("Jelf_Shdr: %zd", sizeof(Jelf_Shdr));
-    MSG("Jelf_Rela: %zd", sizeof(Jelf_Rela));
+    MSG("Jelf_Ehdr: %d", sizeof(Jelf_Ehdr));
+    MSG("Jelf_Sym:  %d", sizeof(Jelf_Sym));
+    MSG("Jelf_Shdr: %d", sizeof(Jelf_Shdr));
+    MSG("Jelf_Rela: %d", sizeof(Jelf_Rela));
 
     /***********************************************
      * Initialize the context object with pointers *
