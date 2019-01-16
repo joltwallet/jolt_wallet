@@ -16,6 +16,10 @@
 
 #include "sodium.h"
 
+#ifndef CONFIG_JOLT_APP_SIG_CHECK_EN
+#define CONFIG_JOLT_APP_SIG_CHECK_EN 1
+#endif
+
 #if ESP_PLATFORM
 
 #include "esp_log.h"
@@ -48,7 +52,6 @@ static int readSection(jelfLoaderContext_t *ctx, int n, Jelf_Shdr *h );
 static jelfLoaderSection_t *findSection(jelfLoaderContext_t* ctx, int index);
 static bool app_hash_init(jelfLoaderContext_t *ctx, 
         Jelf_Ehdr *header, const char *name);
-static void inline app_hash_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len);
 static int readSymbol(jelfLoaderContext_t *ctx, uint32_t n, Jelf_Sym *sym);
 static Jelf_Addr findSymAddr(jelfLoaderContext_t* ctx, Jelf_Sym *sym);
 static int relocateSymbol(Jelf_Addr relAddr, int type, Jelf_Addr symAddr,
@@ -231,11 +234,8 @@ void jelfLoaderProfilerPrint() {
 
 #endif
 
-#define LOADER_GETDATA_RAW(ctx, off, buffer, size) ({ \
-    size_t n = fread(buffer, 1, size, ctx->fd); \
-    app_hash_update(ctx, (uint8_t*)buffer, n); \
-    n; \
-});
+#define LOADER_GETDATA_RAW(ctx, off, buffer, size) \
+        fread(buffer, 1, size, ctx->fd)
    
 #define LOADER_GETDATA(ctx, off, buffer, size) \
     if(decompress_get(ctx, off, (uint8_t*)buffer, size) != size ) {assert(0); goto err;};
@@ -274,7 +274,7 @@ static int loader_sym(jelfLoaderContext_t *ctx, uint32_t n, Jelf_Sym *h) {
 }
 
 static int loader_rela(jelfLoaderContext_t *ctx, size_t offset, Jelf_Rela *h) {
-    ERR("RELA %08x", (uint32_t)offset);
+    MSG("RELA %08x", (uint32_t)offset);
     uint8_t buf[JELF_RELA_SIZE] = {0};
     LOADER_GETDATA(ctx, offset, (char *)&buf, sizeof(buf));
     h->r_offset = buf[0] |
@@ -300,13 +300,6 @@ static int decompress_get(jelfLoaderContext_t *ctx, size_t offset, uint8_t *inf_
     inf_stream_t *s = &(ctx->inf_stream);
     int amount_written = 0;
 
-#if 0
-    /* Debugging */
-    size_t n = LOADER_GETDATA_RAW(ctx, offset, inf_data, inf_len);
-err:
-    return n;
-#endif
-
     /* Empty the available uncompressed buffer from s->out_read */
     if(s->out_avail > 0 ) {
         if(inf_len <= s->out_avail){
@@ -331,10 +324,21 @@ err:
     }
 
     while( inf_len > amount_written ) {
-        //INFO("amount_written: %d", amount_written);
         if( 0 == s->in_avail ) {
             /* Fetch more compressed data from disk */
             size_t n = LOADER_GETDATA_RAW(ctx, offset, s->in_buf, s->in_buf_len);
+            app_hash_update(ctx, s->in_buf, n);
+
+            { // debug
+                crypto_hash_sha512_state hs;
+                memcpy(&hs, ctx->hs, sizeof(hs));
+                uint8_t hash_bin[64] = { 0 };
+                char hash_hex[129] = { 0 };
+                crypto_hash_sha512_final(&hs, hash_bin);
+                sodium_bin2hex(hash_hex, sizeof(hash_hex),
+                        hash_bin, sizeof(hash_bin));
+                ERR("App Hash: %s", hash_hex);
+			}
             s->in_avail = n;
             s->in_next = s->in_buf;
         }
@@ -372,7 +376,6 @@ err:
                 s->out_next == s->out_buf + s->out_buf_len) {
             size_t amount_remaining = inf_len - amount_written;
             size_t n_bytes_to_cpy = s->out_next - s->out_read;
-            ERR("n_bytes_to_cpy: %d", n_bytes_to_cpy);
             if( n_bytes_to_cpy <= amount_remaining ){
                 /* Copy all of it over */
             }
@@ -454,21 +457,25 @@ static jelfLoaderSection_t *findSection(jelfLoaderContext_t* ctx, int index) {
  * false if public_key doesn't match approved public_key. */
 static bool app_hash_init(jelfLoaderContext_t *ctx, 
         Jelf_Ehdr *header, const char *name) {
-     #if CONFIG_JOLT_APP_SIG_CHECK_EN
-#if ESP_LOG_LEVEL >= ESP_LOG_INFO
-    {
-        /* Print App's 256-bit Public Key and 512-bit Signature */
-        char pub_key[HEX_256] = { 0 };
-        sodium_bin2hex(pub_key, sizeof(pub_key), header->e_public_key, 32);
-        INFO("pub_key: %s", pub_key);
-        char sig[HEX_512] = { 0 };
-        sodium_bin2hex(sig, sizeof(sig), header->e_signature, 64);
-        INFO("signature: %s", sig);
+    /* Initialize Signature Check Hashing */
+    ctx->hs = malloc(sizeof(crypto_hash_sha512_state));
+    if(NULL == ctx->hs){
+        goto err;
     }
-#endif
-    /* Copy over the app signature into the context */
-    memcpy(ctx->app_signature, header->e_signature, sizeof(uint512_t));
+    crypto_hash_sha512_init(ctx->hs);
+    /* Hash the app name */
+    app_hash_update(ctx, (uint8_t*)name, strlen(name));
 
+    /* Copy over the app signature into the context */
+    LOADER_GETDATA_RAW(ctx, 0, ctx->app_signature, 64);
+    {
+        char sig_hex[129] = { 0 };
+        sodium_bin2hex(sig_hex, sizeof(sig_hex),
+                    ctx->app_signature, 64);
+        INFO("App Signature: %s", sig_hex);
+    }
+    LOADER_GETDATA(ctx, 0, header, sizeof(Jelf_Ehdr));
+    #if CONFIG_JOLT_APP_SIG_CHECK_EN
     {
         /* First check to see if the public key is an accepted app key.
          * If it is valid, copy it into the ctx */
@@ -495,29 +502,15 @@ static bool app_hash_init(jelfLoaderContext_t *ctx,
         memcpy(ctx->app_public_key, approved_pub_key, sizeof(uint256_t));
     }
 
-    {
-        /* Initialize Signature Check Hashing */
-        ctx->hs = malloc(sizeof(crypto_hash_sha512_state));
-        crypto_hash_sha512_init(ctx->hs);
-
-        /* Hash the app name */
-        app_hash_update(ctx, (uint8_t*)name, strlen(name));
-
-        /* Hash the JELF Header w/o signature */
-        Jelf_Ehdr header_no_sig;
-        memcpy(&header_no_sig, header, sizeof(header_no_sig));
-        memset(&header_no_sig.e_signature, 0, sizeof(header_no_sig.e_signature));
-        app_hash_update(ctx, (uint8_t*)&header_no_sig, sizeof(header_no_sig));
-    }
     #endif
     return true;
+err:
+    return false;
 }
 
-static void inline app_hash_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len){
+static void app_hash_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len){
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
-    if( NULL != ctx->hs) {
-        crypto_hash_sha512_update(ctx->hs, data, len);
-    }
+    crypto_hash_sha512_update(ctx->hs, data, len);
 #endif
 }
 
@@ -529,7 +522,6 @@ static int readSymbol(jelfLoaderContext_t *ctx, uint32_t n, Jelf_Sym *sym) {
         goto err;
     }
 
-    off_t pos = ctx->symtab_offset + n * JELF_SYM_SIZE;
     if(!loader_sym(ctx, n, sym)){
         PROFILER_STOP_READSYMBOL;
         return -1;
@@ -822,8 +814,17 @@ err:
  ********************/
 
 bool jelfLoaderSigCheck(jelfLoaderContext_t *ctx) {
-    return 0 == crypto_sign_verify_detached(ctx->app_signature,
-            ctx->hash, sizeof(ctx->hash), ctx->app_public_key);
+    if( 0 == crypto_sign_verify_detached(ctx->app_signature,
+            ctx->hash, sizeof(ctx->hash), ctx->app_public_key) ){
+        return true;
+    }
+    else{
+        ERR("Bad Signature");
+        char hash[HEX_512] = { 0 };
+        sodium_bin2hex(hash, sizeof(hash), jelfLoaderGetHash(ctx), 64);
+        ERR("App Hash: %s", hash);
+        return false;
+    }
 }
 
 // returns 512 bit hash
@@ -918,10 +919,13 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     ctx->inf_stream.out_read = ctx->inf_stream.out_buf;
     ctx->inf_stream.out_avail = 0;
 
-    /*********************************************************************
-     * Load the JELF header (Ehdr), located at the beginning of the file *
-     *********************************************************************/
-    LOADER_GETDATA(ctx, 0, (char*)&header, JELF_EHDR_SIZE);
+    /**********************************
+     * Initialize App Signature Check *
+     **********************************/
+    // Will populate the main JELF header
+    if( !app_hash_init(ctx, &header, name) ) {
+        goto err;
+    }
 
     /* Make sure that we have a correct and compatible ELF header. */
     char JelfMagic[] = { 0x7f, 'J', 'E', 'L', 'F', '\0' };
@@ -942,13 +946,6 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     MSG( "Derivation Purpose: %08X", header.e_coin_purpose );
     MSG( "Derivation Path: %08X", header.e_coin_path );
     MSG( "bip32key: %s", header.e_bip32key);
-
-    /**********************************
-     * Initialize App Signature Check *
-     **********************************/
-    if( !app_hash_init(ctx, &header, name) ) {
-        goto err;
-    }
     
     {
         /**************************************
@@ -1000,17 +997,6 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
             goto err;
         }
 
-        #if 1
-        /* Debug: Print out the bytes that make up sectHdr */
-        {
-            MSG("Type:   %d", sectHdr.sh_type);
-            MSG("Flags:  %d", sectHdr.sh_flags);
-            MSG("Offset: %0x", sectHdr.sh_offset);
-            MSG("Size:   %0x", sectHdr.sh_size);
-            MSG("Info:   %d", sectHdr.sh_info);
-        } 
-        #endif
-
         /* This  section  occupies  memory during process execution */
         if (sectHdr.sh_flags & SHF_ALLOC) {
             MSG("Section %d has SHF_ALLOC flag.", n);
@@ -1045,7 +1031,7 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
                         LOADER_ALLOC_EXEC(CEIL4(sectHdr.sh_size)) : // Executable Memory
                         LOADER_ALLOC_DATA(sectHdr.sh_size) ; // Normal Memory
 
-                ERR("ALLC %08X; SIZE %08X", sectHdr.sh_offset, sectHdr.sh_size);
+                MSG("ALLC %08X; SIZE %08X", sectHdr.sh_offset, sectHdr.sh_size);
                 if (!section->data) {
                     ERR("Section %d malloc failed.", n);
                     goto err;
@@ -1060,6 +1046,7 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
                         char *tmp = LOADER_ALLOC_DATA(CEIL4(sectHdr.sh_size));
                         /* Zero out the last 4 bytes, just in case */
                         memset(&tmp[CEIL4(sectHdr.sh_size)-4], 0, 4);
+                        //memset(tmp, 0, CEIL4(sectHdr.sh_size));
                         LOADER_GETDATA( ctx, sectHdr.sh_offset, tmp,
                                 sectHdr.sh_size );
                         memcpy(section->data, tmp, CEIL4(sectHdr.sh_size));
@@ -1107,13 +1094,13 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
             MSG("  section %2d", n);
             ctx->symtab_offset = sectHdr.sh_offset;
             ctx->symtab_count = sectHdr.sh_size / JELF_SYM_SIZE;
-            ERR("symtab is %u (0x%04X) bytes.", sectHdr.sh_size, sectHdr.sh_size);
-            ERR("symtab contains %zu entires.", ctx->symtab_count);
+            MSG("symtab is %u (0x%04X) bytes.", sectHdr.sh_size, sectHdr.sh_size);
+            MSG("symtab contains %zu entires.", ctx->symtab_count);
 
             /**************************
              * Cache symtab to memory *
              **************************/
-            ERR("Reading symtab from offset 0x%08x", sectHdr.sh_offset);
+            MSG("Reading symtab from offset 0x%08x", sectHdr.sh_offset);
             ctx->symtab_cache = malloc(sectHdr.sh_size);
             if( NULL == ctx->symtab_cache){
                 goto err;

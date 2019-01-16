@@ -42,6 +42,10 @@ from binascii import hexlify, unhexlify
 import zlib
 import nacl.encoding
 from nacl.signing import SigningKey
+from nacl.bindings import \
+        crypto_sign_ed25519ph_state, \
+        crypto_sign_ed25519ph_update, \
+        crypto_sign_ed25519ph_final_create
 
 from pprint import pprint
 import ipdb as pdb
@@ -669,7 +673,6 @@ def main():
 
     jelf_ehdr_d = OrderedDict()
     jelf_ehdr_d['e_ident']          = '\x7fJELF\x00'
-    jelf_ehdr_d['e_signature']      = b'\x00'*64           # Placeholder
     jelf_ehdr_d['e_public_key']     = pk
     jelf_ehdr_d['e_version_major']  = _JELF_VERSION_MAJOR
     jelf_ehdr_d['e_version_minor']  = _JELF_VERSION_MINOR
@@ -697,7 +700,7 @@ def main():
     # write the compressed unsigned jelf file
     compressed_jelf = compress_data(jelf_contents);
     with open(output_fn, 'wb') as f:
-        f.write(compressed_jelf)
+        f.write(bytes(64) + compressed_jelf)
 
     # Get the transversal hash
     name_to_sign = os.path.basename(output_fn[:-5]).encode('utf-8')
@@ -709,18 +712,22 @@ def main():
     log.info("t_hash: %s" % t_hash.hex())
     signature = signing_key.sign(t_hash).signature
     assert(len(signature) == 64)
-    log.info("Signature: %s", hexlify(signature).decode('utf-8'))
-    # Rewrite the header
-    jelf_ehdr_d['e_signature'] = signature
-    jelf_contents[:Jelf_Ehdr.size_bytes()] = Jelf_Ehdr.pack(
-            *jelf_ehdr_d.values() )
+    log.info("C Signature: %s", hexlify(signature).decode('utf-8'))
 
+    '''
+    state = crypto_sign_ed25519ph_state()
+    crypto_sign_ed25519ph_update(state, name_to_sign)
+    crypto_sign_ed25519ph_update(state, bytes(compressed_jelf))
+    signature = crypto_sign_ed25519ph_final_create(state, sk+pk)
+    log.info("P Signature: %s", hexlify(signature))
+    '''
+
+    #jelf_contents[:64] = signature # prepend compressed data with signature
     ########################################
     # Write Signed Compressed JELF binary to file #
     ########################################
-    compressed_jelf = compress_data(jelf_contents);
     with open(output_fn, 'wb') as f:
-        f.write(compressed_jelf)
+        f.write(signature + compressed_jelf)
 
     log.info("Complete!")
 
