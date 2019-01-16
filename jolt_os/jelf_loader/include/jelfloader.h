@@ -56,12 +56,10 @@ typedef struct inf_stream_t {
 
     const unsigned char *in_next;     // pointer to next compressed byte to read
     size_t in_avail;                  // number of compressed bytes available at next_in
-    size_t in_total;                  // total number of compressed bytes consumed so far
 
     uint8_t *out_buf;                 /* miniz output buffer to hold uncompressed bytes*/
     size_t out_buf_len;                /* Size of output buffer. MUST BE A POWER OF 2 */
     uint8_t *out_next;                /* For internal tinfl state */
-    size_t out_total;                 /* total number of uncompressed bytes produced so far */
 
     uint8_t *out_read;                /* Pointer to available uncompressed data to read from*/ 
     size_t out_avail;

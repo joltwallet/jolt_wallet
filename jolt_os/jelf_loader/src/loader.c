@@ -35,6 +35,7 @@ static const char* TAG = "JelfLoader";
 #include <stdio.h>
 
 #define MSG(...)
+//#define MSG(...) printf( __VA_ARGS__ ); printf("\n");
 #define INFO(...) printf( __VA_ARGS__ ); printf("\n");
 #define ERR(...) printf( __VA_ARGS__ ); printf("\n");
 
@@ -328,26 +329,17 @@ err:
 #define LOADER_GETDATA(ctx, off, buffer, size) \
     if( 0 != LOADER_GETDATA_CACHE(ctx, off, buffer, size)) { assert(0); goto err; } \
     app_hash_update(ctx, (uint8_t*)buffer, size);
+
 #else // Use POSIX readers without caching
 
-//    if(fseek(ctx->fd, off, SEEK_SET) != 0) { assert(0); goto err; }
 #define LOADER_GETDATA_RAW(ctx, off, buffer, size) ({ \
     size_t n = fread(buffer, 1, size, ctx->fd); \
     app_hash_update(ctx, (uint8_t*)buffer, n); \
     n; \
 });
    
-/* todo: have this call the inflator */
-#if 0
 #define LOADER_GETDATA(ctx, off, buffer, size) \
-    if(decompress_get(ctx, off, (uint8_t*)buffer, size) != size ) {assert(0); goto err;};\
-    app_hash_update(ctx, (uint8_t*)buffer, size);
-#else
-#define LOADER_GETDATA(ctx, off, buffer, size) \
-    if(fseek(ctx->fd, off, SEEK_SET) != 0) { assert(0); goto err; }\
-    if(fread(buffer, 1, size, ctx->fd) != size) { assert(0); goto err; }\
-    app_hash_update(ctx, (uint8_t*)buffer, size);
-#endif
+    if(decompress_get(ctx, off, (uint8_t*)buffer, size) != size ) {assert(0); goto err;};
 
 #endif // CONFIG_JELFLOADER_CACHE_LOCALITY
 
@@ -422,27 +414,47 @@ err:
  * offset - for initial debugging purposes only*/
 static int decompress_get(jelfLoaderContext_t *ctx, size_t offset, uint8_t *inf_data, size_t inf_len) {
     inf_stream_t *s = &(ctx->inf_stream);
+    int amount_written = 0;
 
-    size_t out_total_before = s->out_total;
-    uint8_t *inf_cpy_start = s->out_next;
+#if 0
+    /* Debugging */
+    size_t n = LOADER_GETDATA_RAW(ctx, offset, inf_data, inf_len);
+err:
+    return n;
+#endif
 
-    /* check if requeted data is where we currently are in the file */
-    if( offset != s->out_total ) {
-        assert(0);
-        return -1;
+    /* Empty the available uncompressed buffer from s->out_read */
+    if(s->out_avail > 0 ) {
+        if(inf_len <= s->out_avail){
+            /* The uncompressed data is already in the out_buf */
+            memcpy(inf_data, s->out_read, inf_len);
+            s->out_read += inf_len;
+            s->out_avail -= inf_len;
+            return inf_len;
+        }
+        else{
+            /* There's not enough data already uncompressed; copy over all avail */
+            memcpy(inf_data, s->out_read, s->out_avail);
+            s->out_read    += s->out_avail;
+            if(s->out_read == s->out_buf + s->out_buf_len ){
+                s->out_read = s->out_buf;
+            }
+
+            inf_data       += s->out_avail;
+            amount_written += s->out_avail;
+            s->out_avail    = 0;
+        }
     }
 
-    int out_len_remain = inf_len;
-    ERR("out_len_remain_init: %d", out_len_remain);
-    while( out_len_remain > 0 ) {
+    while( inf_len > amount_written ) {
+        //INFO("amount_written: %d", amount_written);
         if( 0 == s->in_avail ) {
             /* Fetch more compressed data from disk */
             size_t n = LOADER_GETDATA_RAW(ctx, offset, s->in_buf, s->in_buf_len);
             s->in_avail = n;
-            s->in_total += n; // not actually used anywhere
             s->in_next = s->in_buf;
         }
-        
+
         size_t in_bytes = s->in_avail;
         size_t out_bytes = s->out_buf + s->out_buf_len - s->out_next;
         int flags = TINFL_FLAG_PARSE_ZLIB_HEADER | TINFL_FLAG_HAS_MORE_INPUT;
@@ -451,73 +463,70 @@ static int decompress_get(jelfLoaderContext_t *ctx, size_t offset, uint8_t *inf_
          * tinfl_status tinfl_decompress(
          *     tinfl_decompressor *r,
          *     const mz_uint8 *pIn_buf_next,    0x3ffccf00 -> 0x3ffccf00 (ptr to compressed data)
-         *     size_t *pIn_buf_size,            2048 -> 1708
+         *     size_t *pIn_buf_size,            2048 -> 1708 (it used up 1708 bytes of the compressed bytes)
          *     mz_uint8 *pOut_buf_start,        0x3ffcd710 -> 0x3ffcd710 (ptr to uncompressed buffer)
          *     mz_uint8 *pOut_buf_next,         0x3ffcd710 -> 0x3ffcd710
-         *     size_t *pOut_buf_size,           4096 -> 4096
+         *     size_t *pOut_buf_size,           4096 -> 4096 (it filled the output buffer)
          *     const mz_uint32 decomp_flags);
          */
 
+#if 0
         ERR("s->in_next: %p", s->in_next);
-        ERR("s->in_avail: %d", s->in_avail);
+        ERR("in_bytes: %d", in_bytes);
         ERR("s->out_buf: %p", s->out_buf);
         ERR("s->out_next: %p", s->out_next);
         ERR("out_bytes: %d", out_bytes);
-        int status = tinfl_decompress(&(s->inf),
+#endif
+        tinfl_status status = tinfl_decompress(&(s->inf),
                 s->in_next, &in_bytes,
                 s->out_buf, s->out_next, &out_bytes,
                 flags);
+#if 0
         ERR("After");
         ERR("s->in_next: %p", s->in_next);
-        ERR("s->in_avail: %d", s->in_avail);
+        ERR("in_bytes: %d", in_bytes);
         ERR("s->out_buf: %p", s->out_buf);
         ERR("s->out_next: %p", s->out_next);
         ERR("out_bytes: %d", out_bytes);
         ERR("");
+#endif
 
-        if(TINFL_STATUS_FAILED == status || in_bytes == 0){
-            assert( 0 );
+        if(status <= TINFL_STATUS_FAILED || in_bytes == 0){
+            exit(1);
         }
         s->in_next  += in_bytes;
         s->in_avail -= in_bytes;
-        s->in_total += in_bytes;
 
         s->out_next += out_bytes;
+        s->out_avail += out_bytes;
 
-
-
-
-
-        s->in_total += in_bytes;
-        s->in_next += in_bytes;
-
-        out_len_remain -= out_bytes;
-        s->out_total += out_bytes;
-        s->out_next += out_bytes;
-
-        ERR("out_len_remain %d", out_len_remain);
-        ERR("out_bytes %d", out_bytes);
-        ERR(" ");
-        
-        size_t bytes_in_out_buf = s->out_next - s->out_buf; // should be the same as out_bytes?
-        if (status <= TINFL_STATUS_DONE || 
+        if (status <= TINFL_STATUS_DONE ||
                 s->out_next == s->out_buf + s->out_buf_len) {
-            size_t n_bytes_to_cpy = s->out_next - inf_cpy_start;
-            if (status <= TINFL_STATUS_DONE){
-                ERR("Decompression Done");
+            size_t amount_remaining = inf_len - amount_written;
+            size_t n_bytes_to_cpy = s->out_next - s->out_read;
+            ERR("n_bytes_to_cpy: %d", n_bytes_to_cpy);
+            //exit(1);
+            if( n_bytes_to_cpy <= amount_remaining ){
+                /* Copy all of it over */
             }
             else{
-                MSG("Writing a bunch of bytes to inf_data");
+                /* Copy some of it over */
+                n_bytes_to_cpy = amount_remaining;
             }
-            memcpy(inf_data, inf_cpy_start, n_bytes_to_cpy);
-            inf_data += bytes_in_out_buf;
+            memcpy(inf_data, s->out_read, n_bytes_to_cpy);
+            inf_data += n_bytes_to_cpy;
+            amount_written += n_bytes_to_cpy;
+            s->out_read += n_bytes_to_cpy;
+            if(s->out_read == s->out_buf + s->out_buf_len ){
+                s->out_read = s->out_buf;
+            }
+            s->out_avail -= n_bytes_to_cpy;
             s->out_next = s->out_buf;
-            inf_cpy_start = s->out_next;
         }
     }
-    /* copy any remaining uncompressed data in the out_buf to the returned buf */
-    memcpy(inf_data, inf_cpy_start, s->out_next - inf_cpy_start);
-    return s->out_total - out_total_before; // return number of uncompressed bytes read
+
+    //INFO("exiting: amount_written: %d", amount_written);
+    return amount_written;
 }
 
 static const char *type2String(int symt) {
@@ -1042,7 +1051,6 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     ctx->inf_stream.in_buf_len = 2048;
     ctx->inf_stream.in_next = ctx->inf_stream.in_buf;
     ctx->inf_stream.in_avail = 0;
-    ctx->inf_stream.in_total = 0;
 
     ctx->inf_stream.out_buf = malloc(CONFIG_JOLT_COMPRESSION_OUTPUT_BUFFER);
     if(NULL == ctx->inf_stream.out_buf) {
@@ -1051,7 +1059,6 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     }
     ctx->inf_stream.out_buf_len = CONFIG_JOLT_COMPRESSION_OUTPUT_BUFFER;
     ctx->inf_stream.out_next = ctx->inf_stream.out_buf;
-    ctx->inf_stream.out_total = 0;
 
     ctx->inf_stream.out_read = ctx->inf_stream.out_buf;
     ctx->inf_stream.out_avail = 0;
@@ -1120,7 +1127,6 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
             goto err;
         }
         /* Populate the cache */
-        ERR("%08x", (uint32_t)header.e_shoff);
         INFO("Loading sectionheadertable from 0x%08X", header.e_shoff);
         LOADER_GETDATA(ctx, header.e_shoff, (char *)(ctx->shdr_cache), sht_size);
     }
@@ -1165,8 +1171,8 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
         {
             MSG("Type:   %d", sectHdr.sh_type);
             MSG("Flags:  %d", sectHdr.sh_flags);
-            MSG("Offset: %d", sectHdr.sh_offset);
-            MSG("Size:   %d", sectHdr.sh_size);
+            MSG("Offset: %0x", sectHdr.sh_offset);
+            MSG("Size:   %0x", sectHdr.sh_size);
             MSG("Info:   %d", sectHdr.sh_info);
         } 
         #endif
@@ -1203,28 +1209,31 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
                  * see to always be increasing. */
                 section->data = ( sectHdr.sh_flags & SHF_EXECINSTR ) ?
                         LOADER_ALLOC_EXEC(CEIL4(sectHdr.sh_size)) : // Executable Memory
-                        LOADER_ALLOC_DATA(CEIL4(sectHdr.sh_size)) ; // Normal Memory
+                        LOADER_ALLOC_DATA(sectHdr.sh_size) ; // Normal Memory
 
+                ERR("ALLC %08X; SIZE %08X", sectHdr.sh_offset, sectHdr.sh_size);
                 if (!section->data) {
                     ERR("Section %d malloc failed.", n);
                     goto err;
                 }
 
-                /* Load Section into allocated data */
+                /* Load Section into allocated data (if there's data
+                 * to load) */
                 if (sectHdr.sh_type != SHT_NOBITS) {
                     if( sectHdr.sh_flags & SHF_EXECINSTR ){
                         /* To get around LoadStoreErrors with reading single 
                          * bytes from instruction memory */
                         char *tmp = LOADER_ALLOC_DATA(CEIL4(sectHdr.sh_size));
-                        ERR("ALLC %08X", sectHdr.sh_offset);
+                        /* Zero out the last 4 bytes, just in case */
+                        memset(&tmp[CEIL4(sectHdr.sh_size)-4], 0, 4);
                         LOADER_GETDATA( ctx, sectHdr.sh_offset, tmp,
-                                CEIL4(sectHdr.sh_size) );
+                                sectHdr.sh_size );
                         memcpy(section->data, tmp, CEIL4(sectHdr.sh_size));
                         LOADER_FREE(tmp);
                     }
                     else{
                         LOADER_GETDATA( ctx, sectHdr.sh_offset, section->data,
-                                CEIL4(sectHdr.sh_size) );
+                                sectHdr.sh_size );
                     }
                 }
 
@@ -1286,9 +1295,7 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
     MSG("successfully loaded sections");
 
     Jelf_Sym sym;
-    LOADER_GETDATA( ctx,
-            ctx->symtab_offset + ctx->entry_index * JELF_SYM_SIZE,
-            (char*)&sym, CEIL4(JELF_SYM_SIZE) );
+    loader_sym(ctx, ctx->entry_index, &sym);
 
     jelfLoaderSection_t *symbol_section = findSection(ctx, sym.st_shndx);
     if( NULL == symbol_section ) {

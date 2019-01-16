@@ -339,30 +339,24 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
             other_rela_index.append(jelf_shdrs_rela_index[rela_index])
             other_rela_names.append('.rela'+name)
 
-    #+ list(reversed(other_alloc_index + text_alloc_index+ literal_alloc_index)) \
     mapping = jelf_shdrs_index[0:2] \
             + list(reversed(other_alloc_index + text_alloc_index+ literal_alloc_index)) \
             + other_rela_index \
             + text_rela_index \
-            + literal_rela_index \
-            + jelf_shdrs_index[2:]
+            + literal_rela_index
 
-    #+ list(reversed(other_alloc + text_alloc + literal_alloc)) \
     jelf_shdrs = jelf_shdrs[0:2] \
             + list(reversed(other_alloc + text_alloc + literal_alloc)) \
             + other_rela \
             + text_rela \
-            + literal_rela \
-            + jelf_shdrs[2:]
+            + literal_rela
 
-    #+ list(reversed(other_alloc_names + text_alloc_names + literal_alloc_names)) \
     names = jelf_shdrs_names[0:2] \
             + list(reversed(other_alloc_names + text_alloc_names + literal_alloc_names)) \
             + other_rela_names \
             + text_rela_names \
-            + literal_rela_names \
-            + jelf_shdrs_names[2:]
-    pdb.set_trace()
+            + literal_rela_names
+
     for i in range(len(jelf_shdrs)):
         jelf_shdr_d = jelf_shdrs[i]
         jelf_shdrs[i]['sh_info'] = mapping.index(
@@ -433,7 +427,7 @@ def convert_relas(elf_contents, elf32_shdrs, jelf_shdrs, mapping):
     returns: jelf_relas, jelf_shdrs
     """
     # Sanity Check
-    assert( len(jelf_shdrs) == len(elf32_shdrs) )
+    #assert( len(jelf_shdrs) == len(elf32_shdrs) )
 
     jelf_relas = {}
     for i in range(len(jelf_shdrs)):
@@ -497,13 +491,15 @@ def write_jelf_sections(elf_contents,
     Updates the SectionHeaders with the correct size, type, and offset
     """
     # Sanity Check
-    assert( len(jelf_shdrs) == len(elf32_shdrs) )
+    #assert( len(jelf_shdrs) == len(elf32_shdrs) )
     assert( len(elf32_shdrs) == len(elf32_shdr_names) )
 
     for i in range(len(jelf_shdrs)):
         elf32_idx = mapping[i]
         name = elf32_shdr_names[elf32_idx]
         jelf_shdrs[i]['sh_offset'] = jelf_ptr
+        if( False and i >= 120):
+            pdb.set_trace()
         if name == b'.symtab':
             # Copy over our updated Jelf symtab
             jelf_shdrs[i]['sh_size'] = len(jelf_symtab)
@@ -515,6 +511,8 @@ def write_jelf_sections(elf_contents,
             # We'll filter this out later
             jelf_shdrs[i] = None
             continue
+        elif jelf_shdrs[i]['sh_type'] == Jelf_SHT_NOBITS:
+            new_jelf_ptr = jelf_ptr
         elif jelf_shdrs[i]['sh_type'] == Jelf_SHT_RELA:
             new_jelf_ptr = jelf_ptr + jelf_shdrs[i]['sh_size']
             jelf_contents[jelf_ptr:new_jelf_ptr] = jelf_relas[i]
@@ -678,7 +676,7 @@ def main():
     jelf_ehdr_d['e_version_major']  = _JELF_VERSION_MAJOR
     jelf_ehdr_d['e_version_minor']  = _JELF_VERSION_MINOR
     jelf_ehdr_d['e_entry_offset']   = jelf_entrypoint_sym_idx
-    jelf_ehdr_d['e_shnum']          = mapping.index(jelf_ehdr_shnum)
+    jelf_ehdr_d['e_shnum']          = len(jelf_shdrs)
     jelf_ehdr_d['e_shoff']          = Jelf_Ehdr.size_bytes()
     jelf_ehdr_d['e_coin_purpose']   = purpose
     jelf_ehdr_d['e_coin_path']      = coin
@@ -698,9 +696,10 @@ def main():
     #############################
     # Write JELF binary to file #
     #############################
-    # write the unsigned jelf file
+    # write the compressed unsigned jelf file
+    compressed_jelf = compress_data(jelf_contents);
     with open(output_fn, 'wb') as f:
-        f.write(jelf_contents)
+        f.write(compressed_jelf)
 
     # Get the transversal hash
     name_to_sign = os.path.basename(output_fn[:-5]).encode('utf-8')
@@ -718,16 +717,11 @@ def main():
     jelf_contents[:Jelf_Ehdr.size_bytes()] = Jelf_Ehdr.pack(
             *jelf_ehdr_d.values() )
 
-    # rewrite the jelf file with signature
-    with open(output_fn, 'wb') as f:
-        f.write(jelf_contents)
-
     ########################################
-    # Write Compressed JELF binary to file #
+    # Write Signed Compressed JELF binary to file #
     ########################################
     compressed_jelf = compress_data(jelf_contents);
-    #with open(output_fn, 'wb') as f:
-    with open(output_fn + '.gz', 'wb') as f:
+    with open(output_fn, 'wb') as f:
         f.write(compressed_jelf)
 
     log.info("Complete!")

@@ -3,28 +3,6 @@
 /* BEGIN: Cython Metadata
 {
     "distutils": {
-        "define_macros": [
-            [
-                "ESP_PLATFORM",
-                "0"
-            ],
-            [
-                "CONFIG_JELFLOADER_CACHE_LOCALITY",
-                null
-            ],
-            [
-                "CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N",
-                "6"
-            ],
-            [
-                "CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE",
-                "2048"
-            ],
-            [
-                "CONFIG_JELFLOADER_PROFILER_EN",
-                null
-            ]
-        ],
         "depends": [
             "../jolt_os/jelf_loader/include/jelfloader.h",
             "../jolt_os/jolt_lib.h"
