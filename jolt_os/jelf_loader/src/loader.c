@@ -45,7 +45,7 @@ static const char* TAG = "JelfLoader";
 /********************************
  * STATIC FUNCTIONS DECLARATION *
  ********************************/
-static int decompress_get(jelfLoaderContext_t *ctx, size_t offset, uint8_t *data, size_t len);
+static int decompress_get(jelfLoaderContext_t *ctx, uint8_t *data, size_t len);
 static void app_hash_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len);
 static const char *type2String(int symt);
 static int readSection(jelfLoaderContext_t *ctx, int n, Jelf_Shdr *h );
@@ -234,11 +234,11 @@ void jelfLoaderProfilerPrint() {
 
 #endif
 
-#define LOADER_GETDATA_RAW(ctx, off, buffer, size) \
+#define LOADER_GETDATA_RAW(ctx, buffer, size) \
         fread(buffer, 1, size, ctx->fd)
    
-#define LOADER_GETDATA(ctx, off, buffer, size) \
-    if(decompress_get(ctx, off, (uint8_t*)buffer, size) != size ) {assert(0); goto err;};
+#define LOADER_GETDATA(ctx, buffer, size) \
+    if(decompress_get(ctx, (uint8_t*)buffer, size) != size ) {assert(0); goto err;};
 
 
 /******************************************************
@@ -273,10 +273,9 @@ static int loader_sym(jelfLoaderContext_t *ctx, uint32_t n, Jelf_Sym *h) {
     return 0;
 }
 
-static int loader_rela(jelfLoaderContext_t *ctx, size_t offset, Jelf_Rela *h) {
-    MSG("RELA %08x", (uint32_t)offset);
+static int loader_rela(jelfLoaderContext_t *ctx, Jelf_Rela *h) {
     uint8_t buf[JELF_RELA_SIZE] = {0};
-    LOADER_GETDATA(ctx, offset, (char *)&buf, sizeof(buf));
+    LOADER_GETDATA(ctx, (char *)&buf, sizeof(buf));
     h->r_offset = buf[0] |
             ((uint32_t)buf[1] << 8);
     h->r_info   = buf[2] |
@@ -296,7 +295,7 @@ err:
  * Returns the number of bytes read. Returns -1 on error. 
  *
  * offset - for initial debugging purposes only*/
-static int decompress_get(jelfLoaderContext_t *ctx, size_t offset, uint8_t *inf_data, size_t inf_len) {
+static int decompress_get(jelfLoaderContext_t *ctx, uint8_t *inf_data, size_t inf_len) {
     inf_stream_t *s = &(ctx->inf_stream);
     int amount_written = 0;
 
@@ -326,7 +325,7 @@ static int decompress_get(jelfLoaderContext_t *ctx, size_t offset, uint8_t *inf_
     while( inf_len > amount_written ) {
         if( 0 == s->in_avail ) {
             /* Fetch more compressed data from disk */
-            size_t n = LOADER_GETDATA_RAW(ctx, offset, s->in_buf, s->in_buf_len);
+            size_t n = LOADER_GETDATA_RAW(ctx, s->in_buf, s->in_buf_len);
             app_hash_update(ctx, s->in_buf, n);
 
             { // debug
@@ -467,14 +466,14 @@ static bool app_hash_init(jelfLoaderContext_t *ctx,
     app_hash_update(ctx, (uint8_t*)name, strlen(name));
 
     /* Copy over the app signature into the context */
-    LOADER_GETDATA_RAW(ctx, 0, ctx->app_signature, 64);
+    LOADER_GETDATA_RAW(ctx, ctx->app_signature, 64);
     {
         char sig_hex[129] = { 0 };
         sodium_bin2hex(sig_hex, sizeof(sig_hex),
                     ctx->app_signature, 64);
         INFO("App Signature: %s", sig_hex);
     }
-    LOADER_GETDATA(ctx, 0, header, sizeof(Jelf_Ehdr));
+    LOADER_GETDATA(ctx, header, sizeof(Jelf_Ehdr));
     #if CONFIG_JOLT_APP_SIG_CHECK_EN
     {
         /* First check to see if the public key is an accepted app key.
@@ -743,13 +742,11 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
     size_t relEntries = sectHdr.sh_size / sizeof(rel);
     PROFILER_REL_COUNT(relEntries);
     MSG("RELOCATING SECTION")
-    MSG("  Offset   Sym  Type                      relAddr  "
+    MSG("  Sym  Type                      relAddr  "
         "symAddr  defValue                    Name + addend");
     /* Read every RELA entry in the current RELA section */
     for (size_t relCount = 0; relCount < relEntries; relCount++) {
-        off_t offset = sectHdr.sh_offset + relCount * (sizeof(rel));
-        MSG("Reading in JELF_Rela from offset 0x%x", (uint32_t)offset);
-        r |= loader_rela(ctx, offset, &rel);
+        r |= loader_rela(ctx, &rel);
         PROFILER_MAX_R_OFFSET(rel.r_offset);
         PROFILER_MAX_R_ADDEND(rel.r_addend);
 
@@ -772,30 +769,30 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
         uint32_t from = 0, to = 0;
         if (relType == R_XTENSA_NONE || relType == R_XTENSA_ASM_EXPAND) {
             #if 0
-            MSG("  %08X %04X %04X %-20s %08X          %08X"
+            MSG("  %04X %04X %-20s %08X          %08X"
                 "                    %s + %X",
-                rel.r_offset, symEntry, relType, type2String(relType),
+                symEntry, relType, type2String(relType),
                 relAddr, sym.st_value, name, rel.r_addend);
             #endif
         }
         else if ( (symAddr == 0xffffffff) && (sym.st_value == 0x00000000) ) {
             ERR("Relocation - undefined symAddr");
-            MSG("  %08X %04X %04X %-20s %08zX %08zX %08X"
+            MSG("  %04X %04X %-20s %08zX %08zX %08X"
                 "                     + %X",
-                rel.r_offset, symEntry, relType, type2String(relType),
+                symEntry, relType, type2String(relType),
                 relAddr, symAddr, sym.st_value, rel.r_addend);
             r |= -1;
         }
         else if(relocateSymbol(relAddr, relType, symAddr, sym.st_value, &from, &to) != 0) {
             ERR("relocateSymbol fail");
-            ERR("  %08X %04X %04X %-20s %08zX %08zX %08X %08X->%08X  + %X",
-                    rel.r_offset, symEntry, relType, type2String(relType),
+            ERR("  %04X %04X %-20s %08zX %08zX %08X %08X->%08X  + %X",
+                    symEntry, relType, type2String(relType),
                     relAddr, symAddr, sym.st_value, from, to, rel.r_addend);
             r |= -1;
         }
         else {
-            MSG("  %08X %04X %04X %-20s %08zX %08zX %08X %08X->%08X  + %X",
-                    rel.r_offset, symEntry, relType, type2String(relType),
+            MSG("  %04X %04X %-20s %08zX %08zX %08X %08X->%08X  + %X",
+                    symEntry, relType, type2String(relType),
                     relAddr, symAddr, sym.st_value, from, to, rel.r_addend);
         }
     }
@@ -941,7 +938,7 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     assert( header.e_version_minor == 1 );
 
     /* Debug Sanity Checks */
-    MSG( "SectionHeaderTableOffset: %08X", header.e_shoff );
+    //MSG( "SectionHeaderTableOffset: %08X", header.e_shoff );
     MSG( "SectionHeaderTableEntries: %d", header.e_shnum );
     MSG( "Derivation Purpose: %08X", header.e_coin_purpose );
     MSG( "Derivation Path: %08X", header.e_coin_path );
@@ -959,14 +956,14 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
             goto err;
         }
         /* Populate the cache */
-        INFO("Loading sectionheadertable from 0x%08X", header.e_shoff);
-        LOADER_GETDATA(ctx, header.e_shoff, (char *)(ctx->shdr_cache), sht_size);
+        //INFO("Loading sectionheadertable from 0x%08X", header.e_shoff);
+        LOADER_GETDATA(ctx, (char *)(ctx->shdr_cache), sht_size);
     }
 
     /* Populate context with ELF Header information*/
     ctx->e_shnum = header.e_shnum; // Number of Sections
-    ctx->e_shoff = header.e_shoff; // offset to SectionHeaderTable
-    ctx->entry_index = header.e_entry_offset;
+    //ctx->e_shoff = header.e_shoff; // offset to SectionHeaderTable
+    ctx->entry_index = header.e_entry_offset; //misleading name
     ctx->coin_purpose = header.e_coin_purpose;
     ctx->coin_path = header.e_coin_path;
     strlcpy(ctx->bip32_key, header.e_bip32key, sizeof(ctx->bip32_key));
@@ -1031,7 +1028,6 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
                         LOADER_ALLOC_EXEC(CEIL4(sectHdr.sh_size)) : // Executable Memory
                         LOADER_ALLOC_DATA(sectHdr.sh_size) ; // Normal Memory
 
-                MSG("ALLC %08X; SIZE %08X", sectHdr.sh_offset, sectHdr.sh_size);
                 if (!section->data) {
                     ERR("Section %d malloc failed.", n);
                     goto err;
@@ -1047,14 +1043,12 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
                         /* Zero out the last 4 bytes, just in case */
                         memset(&tmp[CEIL4(sectHdr.sh_size)-4], 0, 4);
                         //memset(tmp, 0, CEIL4(sectHdr.sh_size));
-                        LOADER_GETDATA( ctx, sectHdr.sh_offset, tmp,
-                                sectHdr.sh_size );
+                        LOADER_GETDATA( ctx, tmp, sectHdr.sh_size );
                         memcpy(section->data, tmp, CEIL4(sectHdr.sh_size));
                         LOADER_FREE(tmp);
                     }
                     else{
-                        LOADER_GETDATA( ctx, sectHdr.sh_offset, section->data,
-                                sectHdr.sh_size );
+                        LOADER_GETDATA( ctx, section->data, sectHdr.sh_size );
                     }
                 }
 
@@ -1092,7 +1086,6 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
             /* todo: we already know the location of the symtab;
              * this is unnecessary */
             MSG("  section %2d", n);
-            ctx->symtab_offset = sectHdr.sh_offset;
             ctx->symtab_count = sectHdr.sh_size / JELF_SYM_SIZE;
             MSG("symtab is %u (0x%04X) bytes.", sectHdr.sh_size, sectHdr.sh_size);
             MSG("symtab contains %zu entires.", ctx->symtab_count);
@@ -1100,16 +1093,14 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
             /**************************
              * Cache symtab to memory *
              **************************/
-            MSG("Reading symtab from offset 0x%08x", sectHdr.sh_offset);
             ctx->symtab_cache = malloc(sectHdr.sh_size);
             if( NULL == ctx->symtab_cache){
                 goto err;
             }
-            LOADER_GETDATA(ctx, sectHdr.sh_offset,
-                    (char *)(ctx->symtab_cache), sectHdr.sh_size);
+            LOADER_GETDATA(ctx, (char *)(ctx->symtab_cache), sectHdr.sh_size);
         }
     }
-    if (ctx->symtab_offset == 0 ) {
+    if (NULL == ctx->symtab_cache ) {
         ERR("Missing .symtab");
         goto err;
     }
