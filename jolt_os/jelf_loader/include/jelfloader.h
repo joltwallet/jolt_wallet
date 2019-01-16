@@ -29,15 +29,6 @@ typedef struct {
     unsigned int exported_size; /*!< Elements on exported symbol array */
 } jelfLoaderEnv_t;
 
-/* LRU cache to read larger chunks of data from flash to memory */
-#if CONFIG_JELFLOADER_CACHE_LOCALITY
-typedef struct jelfLoader_locality_cache_t {
-    char *data;
-    uint8_t age; // lower number means more recently used
-    size_t offset;
-    bool valid;
-} jelfLoader_locality_cache_t;
-#endif
 
 /* Singly Linked List Used to cache sections needed at runtime */
 typedef struct jelfLoaderSection_t {
@@ -76,7 +67,6 @@ typedef struct jelfLoaderContext_t {
 
     size_t symtab_count;
     off_t symtab_offset; // can probably get rid of this
-    uint8_t *symtab_cache;
 
     jelfLoaderSection_t *section; // First element of singly linked list sections.
 
@@ -97,13 +87,8 @@ typedef struct jelfLoaderContext_t {
 #endif
 
     /* Caching Data Structures */
-#if CONFIG_JELFLOADER_CACHE_SHT
     uint8_t *shdr_cache;
-#endif
-
-#if CONFIG_JELFLOADER_CACHE_LOCALITY
-    jelfLoader_locality_cache_t locality_cache[CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N];
-#endif
+    uint8_t *symtab_cache;
 } jelfLoaderContext_t;
 
 

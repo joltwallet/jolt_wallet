@@ -427,7 +427,6 @@ def convert_relas(elf_contents, elf32_shdrs, jelf_shdrs, mapping):
     returns: jelf_relas, jelf_shdrs
     """
     # Sanity Check
-    #assert( len(jelf_shdrs) == len(elf32_shdrs) )
 
     jelf_relas = {}
     for i in range(len(jelf_shdrs)):
@@ -491,7 +490,6 @@ def write_jelf_sections(elf_contents,
     Updates the SectionHeaders with the correct size, type, and offset
     """
     # Sanity Check
-    #assert( len(jelf_shdrs) == len(elf32_shdrs) )
     assert( len(elf32_shdrs) == len(elf32_shdr_names) )
 
     for i in range(len(jelf_shdrs)):

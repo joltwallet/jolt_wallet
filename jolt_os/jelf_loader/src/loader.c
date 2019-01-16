@@ -16,9 +16,6 @@
 
 #include "sodium.h"
 
-#undef CONFIG_JELFLOADER_CACHE_SHT
-#define CONFIG_JELFLOADER_CACHE_SHT 1
-
 #if ESP_PLATFORM
 
 #include "esp_log.h"
@@ -109,10 +106,6 @@ static profiler_timer_t profiler_findSymAddr;
 static profiler_timer_t profiler_findSection;
 static profiler_timer_t profiler_relocateSection;
  
-// Caching Statistics
-static uint32_t profiler_cache_hit;
-static uint32_t profiler_cache_miss;
-
 // Relocation Information
 static uint32_t profiler_rel_count;
 static uint32_t profiler_max_r_offset;
@@ -154,9 +147,6 @@ static uint32_t profiler_max_r_addend;
 #define PROFILER_INC_FINDSECTION       PROFILER_INC(profiler_findSection)
 #define PROFILER_INC_RELOCATESECTION   PROFILER_INC(profiler_relocateSection)
 
-#define PROFILER_CACHE_HIT             profiler_cache_hit++;
-#define PROFILER_CACHE_MISS            profiler_cache_miss++;
-
 #define PROFILER_MAX_R_OFFSET(x)       if(x>profiler_max_r_offset) \
                                            profiler_max_r_offset = x;
 #define PROFILER_MAX_R_ADDEND(x)       if(x>profiler_max_r_addend) \
@@ -171,8 +161,6 @@ void jelfLoaderProfilerReset() {
     memset(&profiler_findSymAddr, 0, sizeof(profiler_timer_t));
     memset(&profiler_findSection, 0, sizeof(profiler_timer_t));
     memset(&profiler_relocateSection, 0, sizeof(profiler_timer_t));
-    profiler_cache_hit = 0;
-    profiler_cache_miss = 0;
     profiler_max_r_offset = 0;
     profiler_max_r_addend = 0;
     profiler_rel_count = 0;
@@ -198,8 +186,6 @@ void jelfLoaderProfilerPrint() {
             "findSymAddr:           %8d    %8d\n"
             "relocateSection:       %8d    %8d\n"
             "total time:            %8d\n"
-            "Cache Hit:             %8d\n"
-            "Cache Miss:            %8d\n"
             "Relocations Performed: %8d\n"
             "Max RELA r_offset:     %8d (0x%08X)\n"
             "Max RELA r_addend:     %8d (0x%08X)\n"
@@ -210,7 +196,6 @@ void jelfLoaderProfilerPrint() {
             profiler_findSymAddr.t,     profiler_findSymAddr.n,
             profiler_relocateSection.t, profiler_relocateSection.n,
             total_time,
-            profiler_cache_hit, profiler_cache_miss,
             profiler_rel_count,
             profiler_max_r_offset, profiler_max_r_offset,
             profiler_max_r_addend, profiler_max_r_addend);
@@ -240,97 +225,11 @@ void jelfLoaderProfilerPrint() {
 #define PROFILER_INC_FINDSECTION 
 #define PROFILER_INC_RELOCATESECTION
 
-#define PROFILER_CACHE_HIT
-#define PROFILER_CACHE_MISS
-
 #define PROFILER_MAX_R_OFFSET(x)
 #define PROFILER_MAX_R_ADDEND(x)
 #define PROFILER_REL_COUNT(x)
 
 #endif
-
-#if CONFIG_JELFLOADER_CACHE_LOCALITY
-static int LOADER_GETDATA_CACHE(jelfLoaderContext_t *ctx,
-        size_t off, char *buffer, size_t size) {
-    uint8_t i;
-    size_t amount_read;
-    /* Check if the requested data is in the cache */
-    jelfLoader_locality_cache_t *lru = &(ctx->locality_cache[0]);
-    if( NULL != lru->data ) {
-        /* Increment age of all chunks */
-        for( i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
-            ctx->locality_cache[i].age++;
-        }
-
-        for( i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
-            if( false == ctx->locality_cache[i].valid ) {
-                lru = &(ctx->locality_cache[i]);
-                break;
-            }
-
-            /* Store the LRU cache */
-            if( ctx->locality_cache[i].age > lru->age ) {
-                lru = &(ctx->locality_cache[i]);
-            }
-
-            /* See if data is cached */
-            if( off >= ctx->locality_cache[i].offset
-                    && (off + size) <= (ctx->locality_cache[i].offset 
-                        + CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE) ) {
-                PROFILER_CACHE_HIT;
-                #if CONFIG_JELFLOADER_PROFILER_EN
-                MSG( "Hit! Hit Counter: %d. Offset: 0x%06x. Size: 0x%06X", 
-                        profiler_cache_hit, (uint32_t)off, size );
-                #endif
-                ctx->locality_cache[i].age = 0;
-                off_t locality_offset;
-                locality_offset = off - ctx->locality_cache[i].offset;
-                memcpy(buffer, ctx->locality_cache[i].data + locality_offset, size);
-                return 0;
-            }
-        }
-    }
-    
-    PROFILER_CACHE_MISS;
-    #if CONFIG_JELFLOADER_PROFILER_EN
-    MSG("Miss... Miss Counter: %d. Offset: 0x%06x. Size: 0x%06X",
-            profiler_cache_miss, (uint32_t) off, size);
-    #endif
-
-    if( fseek(ctx->fd, off, SEEK_SET) != 0 ) {
-        assert(0);
-        goto err;
-    }
-    if( size > CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE ||
-            NULL == lru->data) {
-        /* Can't fit desired data into a chunk, don't cache */
-        MSG("Can't fit read into locality cache chunk, reading directly to buffer.")
-        amount_read = fread(buffer, 1, size, ctx->fd); 
-    }
-    else {
-        amount_read = fread(lru->data, 1,
-                CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE, ctx->fd); 
-        lru->offset = off;
-        lru->valid = true;
-        lru->age = 0;
-        memcpy(buffer, lru->data, size);
-    }
-
-    if( amount_read < size) {
-        ERR("Requested %zd bytes, but could only read %zd.", size, amount_read);
-        assert(0);
-        goto err;
-    }
-    return 0;
-
-err:
-    return -1;
-}
-#define LOADER_GETDATA(ctx, off, buffer, size) \
-    if( 0 != LOADER_GETDATA_CACHE(ctx, off, buffer, size)) { assert(0); goto err; } \
-    app_hash_update(ctx, (uint8_t*)buffer, size);
-
-#else // Use POSIX readers without caching
 
 #define LOADER_GETDATA_RAW(ctx, off, buffer, size) ({ \
     size_t n = fread(buffer, 1, size, ctx->fd); \
@@ -341,23 +240,12 @@ err:
 #define LOADER_GETDATA(ctx, off, buffer, size) \
     if(decompress_get(ctx, off, (uint8_t*)buffer, size) != size ) {assert(0); goto err;};
 
-#endif // CONFIG_JELFLOADER_CACHE_LOCALITY
-
 
 /******************************************************
  * More specific readers to handle proper bitshifting *
  ******************************************************/
 static int loader_shdr(jelfLoaderContext_t *ctx, size_t n, Jelf_Shdr *h) {
-    #if CONFIG_JELFLOADER_CACHE_SHT
-        uint8_t *buf = (uint8_t*)ctx->shdr_cache + n * JELF_SHDR_SIZE;
-        MSG("loader_shdr cache: %p", ctx->shdr_cache); 
-        MSG("loader_shdr buf: %p", buf);
-    #else
-        off_t offset = (off_t)((uint8_t*)ctx->e_shoff + n * JELF_SHDR_SIZE);
-        uint8_t buf[JELF_SHDR_SIZE] = {0};
-        LOADER_GETDATA(ctx, offset, (char *)&buf, sizeof(buf));
-    #endif
-
+    uint8_t *buf = (uint8_t*)ctx->shdr_cache + n * JELF_SHDR_SIZE;
     h->sh_type   = (buf[0] >> 6) & 0x03;
     h->sh_flags  = (buf[0] >> 4) & 0x03;
     h->sh_offset = ((buf[0] & 0x0F) ) |
@@ -370,10 +258,6 @@ static int loader_shdr(jelfLoaderContext_t *ctx, size_t n, Jelf_Shdr *h) {
     h->sh_info   = (buf[5] & 0x03F) |
             ((uint32_t)buf[6] << 6);
     return 0;
-#if !CONFIG_JELFLOADER_CACHE_SHT
-err:
-    return -1;
-#endif
 }
 
 static int loader_sym(jelfLoaderContext_t *ctx, uint32_t n, Jelf_Sym *h) {
@@ -470,26 +354,10 @@ err:
          *     const mz_uint32 decomp_flags);
          */
 
-#if 0
-        ERR("s->in_next: %p", s->in_next);
-        ERR("in_bytes: %d", in_bytes);
-        ERR("s->out_buf: %p", s->out_buf);
-        ERR("s->out_next: %p", s->out_next);
-        ERR("out_bytes: %d", out_bytes);
-#endif
         tinfl_status status = tinfl_decompress(&(s->inf),
                 s->in_next, &in_bytes,
                 s->out_buf, s->out_next, &out_bytes,
                 flags);
-#if 0
-        ERR("After");
-        ERR("s->in_next: %p", s->in_next);
-        ERR("in_bytes: %d", in_bytes);
-        ERR("s->out_buf: %p", s->out_buf);
-        ERR("s->out_next: %p", s->out_next);
-        ERR("out_bytes: %d", out_bytes);
-        ERR("");
-#endif
 
         if(status <= TINFL_STATUS_FAILED || in_bytes == 0){
             exit(1);
@@ -505,7 +373,6 @@ err:
             size_t amount_remaining = inf_len - amount_written;
             size_t n_bytes_to_cpy = s->out_next - s->out_read;
             ERR("n_bytes_to_cpy: %d", n_bytes_to_cpy);
-            //exit(1);
             if( n_bytes_to_cpy <= amount_remaining ){
                 /* Copy all of it over */
             }
@@ -525,7 +392,6 @@ err:
         }
     }
 
-    //INFO("exiting: amount_written: %d", amount_written);
     return amount_written;
 }
 
@@ -974,21 +840,10 @@ int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv) {
     }
 
     /* Free up loading cache */
-    #if CONFIG_JELFLOADER_CACHE_SHT
     if( NULL != ctx->shdr_cache ) {
         free( ctx->shdr_cache );
         ctx->shdr_cache = NULL;
     }
-    #endif
-
-    #if CONFIG_ELFLOADER_CACHE_LOCALITY
-    for(uint8_t i=0; i < CONFIG_ELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
-        if( NULL != ctx->locality_cache[i].data) {
-            free(ctx->locality_cache[i].data);
-            ctx->locality_cache[i].data = NULL;
-        }
-    }
-    #endif
 
     {
         typedef int (*func_t)(int, char**);
@@ -1095,26 +950,6 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
         goto err;
     }
     
-    /*****************************
-     * Initialize Locality Cache *
-     *****************************/
-    /* Locality cache is initialized after signature checking so that the 
-     * overall memory footprint is relatively consistent. */
-    #if CONFIG_JELFLOADER_CACHE_LOCALITY
-    {
-        for(uint8_t i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
-            ctx->locality_cache[i].data = malloc(
-                    CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE );
-                if( NULL ==  ctx->locality_cache[i].data ) {
-                    ERR("Insufficient memory for Locality Cache Data");
-                    goto err;
-                }
-            ctx->locality_cache[i].valid = false;
-        }
-    }
-    #endif
-
-    #if CONFIG_JELFLOADER_CACHE_SHT
     {
         /**************************************
          * Cache sectionheadertable to memory *
@@ -1130,7 +965,6 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
         INFO("Loading sectionheadertable from 0x%08X", header.e_shoff);
         LOADER_GETDATA(ctx, header.e_shoff, (char *)(ctx->shdr_cache), sht_size);
     }
-    #endif
 
     /* Populate context with ELF Header information*/
     ctx->e_shnum = header.e_shnum; // Number of Sections
@@ -1343,14 +1177,6 @@ void jelfLoaderFree(jelfLoaderContext_t *ctx) {
     if (NULL == ctx) {
         return;
     }
-    #if CONFIG_JELFLOADER_CACHE_LOCALITY
-    for(uint8_t i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
-        if( NULL != ctx->locality_cache[i].data) {
-            free(ctx->locality_cache[i].data);
-            ctx->locality_cache[i].data = NULL;
-        }
-    }
-    #endif
 
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
     if( NULL != ctx->hs ) {
