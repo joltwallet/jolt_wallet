@@ -16,14 +16,13 @@ typedef struct {
     uint8_t        e_public_key[32];
     uint8_t        e_version_major;
     uint8_t        e_version_minor;
-    uint16_t       e_entry_offset;      /* Entry point function offset */
+    uint16_t       e_entry_index;       /* Entry point function offset */
     uint16_t       e_shnum;             /* Section header table entry count */
-    uint32_t       e_shoff;
     uint32_t       e_coin_purpose;
     uint32_t       e_coin_path;
     char           e_bip32key[32];
 } Jelf_Ehdr;
-#define JELF_EHDR_SIZE 152
+#define JELF_EHDR_SIZE 86
 
 typedef struct {
     uint16_t         st_name;         /* Index, also Name */
@@ -35,11 +34,10 @@ typedef struct {
 typedef struct {
     uint8_t       sh_type     :2;         /* Section type */
     uint8_t       sh_flags    :2;         /* Section flags */
-    uint32_t      sh_offset   :19;        /* Section file offset */
-    uint32_t      sh_size     :19;        /* Section size in bytes */
-    uint16_t      sh_info     :14;        /* Additional section information */
+    uint32_t      sh_size     :16;        /* Section size in bytes */
+    uint16_t      sh_info     :12;        /* Additional section information */
 } Jelf_Shdr;
-#define JELF_SHDR_SIZE 7
+#define JELF_SHDR_SIZE 4
 
 typedef struct {
     uint16_t    r_offset;        /* Address */

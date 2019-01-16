@@ -239,16 +239,13 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
         if elf32_shdr.sh_flags & Elf32_SHF_EXECINSTR:
             jelf_shdr_d['sh_flags'] |= Jelf_SHF_EXECINSTR
 
-        # This is a placeholder and will be updated later
-        jelf_shdr_d['sh_offset'] = None
-
-        if elf32_shdr.sh_size > 2**19:
+        if elf32_shdr.sh_size > 2**16:
             raise("Overflow Detected")
         # for symtab and relas, this will be updated later;
         # All other sections maintain the same size
         jelf_shdr_d['sh_size'] = elf32_shdr.sh_size
 
-        if elf32_shdr.sh_info > 2**14:
+        if elf32_shdr.sh_info > 2**12:
             raise("Overflow Detected")
         # index for the header in which the rela information applies to
         jelf_shdr_d['sh_info'] = elf32_shdr.sh_info
@@ -499,7 +496,6 @@ def write_jelf_sections(elf_contents,
     for i in range(len(jelf_shdrs)):
         elf32_idx = mapping[i]
         name = elf32_shdr_names[elf32_idx]
-        jelf_shdrs[i]['sh_offset'] = jelf_ptr
         if( False and i >= 120):
             pdb.set_trace()
         if name == b'.symtab':
@@ -527,8 +523,6 @@ def write_jelf_sections(elf_contents,
                             elf32_shdrs[elf32_idx].sh_offset :
                             elf32_shdrs[elf32_idx].sh_offset+jelf_shdrs[i]['sh_size']
                             ]
-        if jelf_shdrs[i]['sh_offset'] > 2**19:
-            raise("Overflow Detected")
         jelf_ptr = new_jelf_ptr
     return jelf_contents, jelf_ptr, jelf_shdrs
 
@@ -676,9 +670,8 @@ def main():
     jelf_ehdr_d['e_public_key']     = pk
     jelf_ehdr_d['e_version_major']  = _JELF_VERSION_MAJOR
     jelf_ehdr_d['e_version_minor']  = _JELF_VERSION_MINOR
-    jelf_ehdr_d['e_entry_offset']   = jelf_entrypoint_sym_idx
+    jelf_ehdr_d['e_entry_index']    = jelf_entrypoint_sym_idx
     jelf_ehdr_d['e_shnum']          = len(jelf_shdrs)
-    jelf_ehdr_d['e_shoff']          = Jelf_Ehdr.size_bytes()
     jelf_ehdr_d['e_coin_purpose']   = purpose
     jelf_ehdr_d['e_coin_path']      = coin
     jelf_ehdr_d['e_bip32key']       = args.bip32key
@@ -714,15 +707,6 @@ def main():
     assert(len(signature) == 64)
     log.info("C Signature: %s", hexlify(signature).decode('utf-8'))
 
-    '''
-    state = crypto_sign_ed25519ph_state()
-    crypto_sign_ed25519ph_update(state, name_to_sign)
-    crypto_sign_ed25519ph_update(state, bytes(compressed_jelf))
-    signature = crypto_sign_ed25519ph_final_create(state, sk+pk)
-    log.info("P Signature: %s", hexlify(signature))
-    '''
-
-    #jelf_contents[:64] = signature # prepend compressed data with signature
     ########################################
     # Write Signed Compressed JELF binary to file #
     ########################################

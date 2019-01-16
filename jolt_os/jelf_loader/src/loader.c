@@ -248,15 +248,11 @@ static int loader_shdr(jelfLoaderContext_t *ctx, size_t n, Jelf_Shdr *h) {
     uint8_t *buf = (uint8_t*)ctx->shdr_cache + n * JELF_SHDR_SIZE;
     h->sh_type   = (buf[0] >> 6) & 0x03;
     h->sh_flags  = (buf[0] >> 4) & 0x03;
-    h->sh_offset = ((buf[0] & 0x0F) ) |
+    h->sh_size = ((buf[0] & 0x0F) ) |
             ((uint32_t)buf[1] << 4) |
-            ((uint32_t)(buf[2] & 0xFE) << 11);
-    h->sh_size   = ( buf[2] & 0x01 ) |
-            ((uint32_t)buf[3] << 1) |
-            ((uint32_t)buf[4] << 9) |
-            ((uint32_t)(buf[5] & 0xC0) << 11);
-    h->sh_info   = (buf[5] & 0x03F) |
-            ((uint32_t)buf[6] << 6);
+            ((uint32_t)(buf[2] & 0xF0) << 8);
+    h->sh_info   = (buf[2] & 0x0F) |
+            ((uint32_t)buf[3] << 4);
     return 0;
 }
 
@@ -938,7 +934,6 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     assert( header.e_version_minor == 1 );
 
     /* Debug Sanity Checks */
-    //MSG( "SectionHeaderTableOffset: %08X", header.e_shoff );
     MSG( "SectionHeaderTableEntries: %d", header.e_shnum );
     MSG( "Derivation Purpose: %08X", header.e_coin_purpose );
     MSG( "Derivation Path: %08X", header.e_coin_path );
@@ -956,14 +951,12 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
             goto err;
         }
         /* Populate the cache */
-        //INFO("Loading sectionheadertable from 0x%08X", header.e_shoff);
         LOADER_GETDATA(ctx, (char *)(ctx->shdr_cache), sht_size);
     }
 
     /* Populate context with ELF Header information*/
     ctx->e_shnum = header.e_shnum; // Number of Sections
-    //ctx->e_shoff = header.e_shoff; // offset to SectionHeaderTable
-    ctx->entry_index = header.e_entry_offset; //misleading name
+    ctx->entry_index = header.e_entry_index;
     ctx->coin_purpose = header.e_coin_purpose;
     ctx->coin_path = header.e_coin_path;
     strlcpy(ctx->bip32_key, header.e_bip32key, sizeof(ctx->bip32_key));
