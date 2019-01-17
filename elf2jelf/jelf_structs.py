@@ -43,9 +43,9 @@ Jelf_SHF_EXECINSTR = 1 << 1
 JELF Symbol
 '''
 _Jelf_Sym_d = OrderedDict()
-_Jelf_Sym_d['st_name']    = 'u16'
-_Jelf_Sym_d['st_shndx']   = 'u16'
-_Jelf_Sym_d['st_value']   = 'u32'
+_Jelf_Sym_d['st_name']    = 'u13'
+_Jelf_Sym_d['st_shndx']   = 'u12'
+_Jelf_Sym_d['st_value']   = 'u7'
 Jelf_Sym = Unpacker( 'Jelf_Sym', _Jelf_Sym_d )
 
 '''

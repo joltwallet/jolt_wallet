@@ -294,3 +294,14 @@ we can stop reading. This has two nice properties:
 ## Gotchas
 
 * `literal` sections  *must* go before their corresponding `text` section. See https://stackoverflow.com/a/26610227
+
+
+# Going Further
+Now that everything is a sequential read (with absolutely no random reads, assuming cached section header table and cached symtab), we can get rid of offsets in the section header table. In the Nano app, this saves about 681 bytes of compressed data.
+
+## Modified symtab
+The symtab also contains an unnecessary number of zeros in the `uint32_t` `st_value` slot. This value 90% of the time is `0x00000000`. To reduce this overhead, we shrink the `st_value` field to a `uint8_t` and make it's value an index into a small auxilary table. We put this table at the beginning of the `symtab section` as follows:
+
+1. `uint8_t` indicating the number of entries `n` in the table that follows
+2. n `uint32_t` non-zero `st_values`
+3. The actual `symtab`

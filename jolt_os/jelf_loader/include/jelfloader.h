@@ -61,14 +61,22 @@ typedef struct jelfLoaderContext_t {
     void* exec;
     const jelfLoaderEnv_t *env;
 
+    /* Section Header Stuff */
+    uint8_t *shdr_cache;
     uint16_t entry_index;
     uint16_t e_shnum;
     off_t e_shoff;
 
-    size_t symtab_count;
-    off_t symtab_offset; // can probably get rid of this
-
     jelfLoaderSection_t *section; // First element of singly linked list sections.
+
+    /* symtab stuff */
+    size_t symtab_count;
+    uint8_t *symtab_cache;
+    uint32_t *symtab_aux;
+    uint8_t symtab_aux_len;
+    void *symtab_symbols;
+    size_t symtab_cache_size;
+
 
     /* Coin Derivation Data */
     uint32_t coin_purpose;
@@ -85,10 +93,6 @@ typedef struct jelfLoaderContext_t {
     uint8_t app_public_key[BIN_256];
     uint8_t app_signature[BIN_512];
 #endif
-
-    /* Caching Data Structures */
-    uint8_t *shdr_cache;
-    uint8_t *symtab_cache;
 } jelfLoaderContext_t;
 
 

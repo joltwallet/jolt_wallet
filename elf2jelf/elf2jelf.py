@@ -372,6 +372,8 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
     symtab_nent = int( len(elf32_symtab)/elf32_sym_size )
     jelf_symtab = bytearray( symtab_nent * jelf_sym_size )
 
+    jelf_symtab_header = [] # holds non-zero st_values
+
     for i in range(symtab_nent):
         begin = i * elf32_sym_size
         end = begin + elf32_sym_size
@@ -403,19 +405,36 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
         if elf32_symbol.st_shndx > 0xFF00 or elf32_symbol.st_shndx == 0:
             # Special values
             # e.g. 0xFFF1 means SHN_ABS
-            new_st_shndx = elf32_symbol.st_shndx
+            # we don't care about special values
+            new_st_shndx = 0
         else:
             new_st_shndx = mapping.index(elf32_symbol.st_shndx)
         begin = i * jelf_sym_size
         end = begin + jelf_sym_size
+
+        jelf_st_value = elf32_symbol.st_value
+        if jelf_st_value > 0:
+            jelf_symtab_header.append(jelf_st_value)
+            jelf_st_value = len(jelf_symtab_header)
         jelf_symtab[begin:end] = Jelf_Sym.pack(
                 jelf_name_index,
                 new_st_shndx,
-                elf32_symbol.st_value,
+                jelf_st_value,
                 )
+        print("Symbol at n: %d; name %d, shndx %d, value %d" %( i,
+                jelf_name_index, new_st_shndx, jelf_st_value));
+
         del(begin, end)
         if sym_name == "app_main":
             jelf_entrypoint_sym_idx = i
+
+    # Prepend jelf_symtab with the auxilary st_value table
+    assert(len(jelf_symtab_header) <= 127)
+    preamble = [len(jelf_symtab_header).to_bytes(length=1, byteorder='little')] \
+            + [x.to_bytes(length=4, byteorder='little') for x in jelf_symtab_header]
+    jelf_symtab = b''.join(preamble) + jelf_symtab
+    pdb.set_trace()
+
     return jelf_symtab, jelf_entrypoint_sym_idx
 
 def convert_relas(elf_contents, elf32_shdrs, jelf_shdrs, mapping):
@@ -496,8 +515,6 @@ def write_jelf_sections(elf_contents,
     for i in range(len(jelf_shdrs)):
         elf32_idx = mapping[i]
         name = elf32_shdr_names[elf32_idx]
-        if( False and i >= 120):
-            pdb.set_trace()
         if name == b'.symtab':
             # Copy over our updated Jelf symtab
             jelf_shdrs[i]['sh_size'] = len(jelf_symtab)

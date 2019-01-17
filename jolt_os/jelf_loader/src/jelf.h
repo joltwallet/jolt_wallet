@@ -22,14 +22,14 @@ typedef struct {
     uint32_t       e_coin_path;
     char           e_bip32key[32];
 } Jelf_Ehdr;
-#define JELF_EHDR_SIZE 86
+#define JELF_EHDR_SIZE 84
 
 typedef struct {
-    uint16_t         st_name;         /* Index, also Name */
-    uint16_t         st_shndx;        /* Section index */
-    uint32_t         st_value;        /* Unused most the time, but cant think of a good way of removing */
+    uint32_t         st_name:13;         /* Index, also Name */
+    uint32_t         st_shndx:12;        /* Section index */
+    uint32_t         st_value:7;        /* Unused most the time, but cant think of a good way of removing */
 } Jelf_Sym;
-#define JELF_SYM_SIZE 8
+#define JELF_SYM_SIZE 4
 
 typedef struct {
     uint8_t       sh_type     :2;         /* Section type */
