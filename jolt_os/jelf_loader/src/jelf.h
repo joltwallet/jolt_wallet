@@ -13,37 +13,34 @@ typedef size_t Jelf_Addr;
 #define EI_NIDENT 6
 typedef struct {
     unsigned char  e_ident[EI_NIDENT];  /* Magic number and other info */
-    uint8_t        e_signature[64];
     uint8_t        e_public_key[32];
     uint8_t        e_version_major;
     uint8_t        e_version_minor;
-    uint16_t       e_entry_offset;      /* Entry point function offset */
+    uint16_t       e_entry_index;       /* Entry point function offset */
     uint16_t       e_shnum;             /* Section header table entry count */
-    uint32_t       e_shoff;
     uint32_t       e_coin_purpose;
     uint32_t       e_coin_path;
     char           e_bip32key[32];
 } Jelf_Ehdr;
-#define JELF_EHDR_SIZE 152
+#define JELF_EHDR_SIZE 84
 
 typedef struct {
-    uint16_t         st_name;         /* Index, also Name */
-    uint16_t         st_shndx;        /* Section index */
-    uint32_t         st_value;        /* Unused most the time, but cant think of a good way of removing */
+    uint32_t         st_name:13;         /* Index, also Name */
+    uint32_t         st_shndx:12;        /* Section index */
+    uint32_t         st_value:7;        /* Unused most the time, but cant think of a good way of removing */
 } Jelf_Sym;
-#define JELF_SYM_SIZE 8
+#define JELF_SYM_SIZE 4
 
 typedef struct {
     uint8_t       sh_type     :2;         /* Section type */
     uint8_t       sh_flags    :2;         /* Section flags */
-    uint32_t      sh_offset   :19;        /* Section file offset */
-    uint32_t      sh_size     :19;        /* Section size in bytes */
-    uint16_t      sh_info     :14;        /* Additional section information */
+    uint32_t      sh_size     :16;        /* Section size in bytes */
+    uint16_t      sh_info     :12;        /* Additional section information */
 } Jelf_Shdr;
-#define JELF_SHDR_SIZE 7
+#define JELF_SHDR_SIZE 4
 
 typedef struct {
-    uint16_t    r_offset;        /* Address */
+    uint16_t    r_offset;        /* offset bytes into section data to relocate*/
     uint16_t    r_info;          /* Relocation type and symbol index */
     int16_t     r_addend;        /* Addend */
 } Jelf_Rela;

@@ -3,37 +3,17 @@
 /* BEGIN: Cython Metadata
 {
     "distutils": {
-        "define_macros": [
-            [
-                "ESP_PLATFORM",
-                "0"
-            ],
-            [
-                "CONFIG_JELFLOADER_CACHE_LOCALITY",
-                null
-            ],
-            [
-                "CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N",
-                "6"
-            ],
-            [
-                "CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE",
-                "2048"
-            ],
-            [
-                "CONFIG_JELFLOADER_PROFILER_EN",
-                null
-            ]
-        ],
         "depends": [
             "../jolt_os/jelf_loader/include/jelfloader.h",
             "../jolt_os/jolt_lib.h"
         ],
         "include_dirs": [
+            ".",
             "../components/jolt-types/include",
             "../jolt_os/jelf_loader/src",
             "../jolt_os/jelf_loader/include",
-            "../jolt_os"
+            "../jolt_os",
+            "../build/include"
         ],
         "language": "c",
         "libraries": [
@@ -43,7 +23,8 @@
         "sources": [
             "../jolt_os/jelf_loader/src/loader.c",
             "../jolt_os/jelf_loader/src/unaligned.c",
-            "../jolt_os/jolt_lib.c"
+            "../jolt_os/jolt_lib.c",
+            "miniz.c"
         ]
     }
 }
@@ -1046,8 +1027,8 @@ PyMODINIT_FUNC PyInit_jelf_loader(void)
 
   /* "elf2jelf/jelf_loader.pyx":1
  * # distutils: libraries = sodium c             # <<<<<<<<<<<<<<
- * # distutils: include_dirs = ../components/jolt-types/include ../jolt_os/jelf_loader/src ../jolt_os/jelf_loader/include ../jolt_os
- * # distutils: sources = ../jolt_os/jelf_loader/src/loader.c ../jolt_os/jelf_loader/src/unaligned.c ../jolt_os/jolt_lib.c
+ * # distutils: include_dirs = . ../components/jolt-types/include ../jolt_os/jelf_loader/src ../jolt_os/jelf_loader/include ../jolt_os ../build/include
+ * # distutils: sources = ../jolt_os/jelf_loader/src/loader.c ../jolt_os/jelf_loader/src/unaligned.c ../jolt_os/jolt_lib.c miniz.c
  */
   __pyx_t_1 = PyDict_New(); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);

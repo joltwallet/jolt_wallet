@@ -157,10 +157,6 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
 exec:
     /* Verify Signature */
     if(!jelfLoaderSigCheck(app_cache.ctx)) {
-        ESP_LOGE(TAG, "Bad Signature");
-        char hash[HEX_512] = { 0 };
-        sodium_bin2hex(hash, sizeof(hash), jelfLoaderGetHash(app_cache.ctx), 64);
-        ESP_LOGE(TAG, "App Hash: %s", hash);
         goto exit;
     }
     /* Prepare vault for app launching. vault_set() creates the PIN entry screen */

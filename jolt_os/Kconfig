@@ -451,30 +451,28 @@ menu "JoltOS"
             help
                 Enable profiling tools. Takes up additional memory and some CPU cycles.
 
-        config JELFLOADER_CACHE_LOCALITY
-            bool
-            prompt "Read ahead as filesystem is accessed"
-            default y
-            help
-                help text here.
+        config JOLT_APP_SIG_CHECK_EN
+           bool
+           prompt "Require applications to have a valid signature prior to launching"
+           default y
+           help
+               help text here
 
-        config JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE
+        config JELFLOADER_INPUTBUF_LEN
             int
-            depends on JELFLOADER_CACHE_LOCALITY
-            prompt "Read ahead as filesystem is accessed"
-            default 1024
-            range 128 65536
+            prompt "Amount in bytes to read from disk at a time while loading an app"
+            default 256
             help
-                chunk size for read ahead in bytes.
+                Increasing this buffer directly increases memory usage. In this 
+                use case, SPIFFS performance seems to plateu at 256 bytes.
 
-        config JELFLOADER_CACHE_LOCALITY_CHUNK_N
-            int
-            depends on JELFLOADER_CACHE_LOCALITY
-            prompt "Number of chunks to cache"
-            default 5
-            range 0 255
+        config JOLT_APP_KEY_DEFAULT
+            depends on JOLT_APP_SIG_CHECK_EN
+            string
+            prompt "Default Application Public Key"
+            default "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8"
             help
-                number of chunks to cache.
+                Only launch apps with signatures that match this public key.
     endmenu
 
     menu "PIN Entry"
@@ -502,24 +500,6 @@ menu "JoltOS"
             help
                 help text here
 
-    endmenu
-
-    menu "Application Signature Verification"
-
-        config JOLT_APP_SIG_CHECK_EN
-           bool
-           prompt "Require applications to have a valid signature prior to launching"
-           default y
-           help
-               help text here
-
-        config JOLT_APP_KEY_DEFAULT
-            depends on JOLT_APP_SIG_CHECK_EN
-            string
-            prompt "Default Application Public Key"
-            default "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8"
-            help
-                Only launch apps with signatures that match this public key.
     endmenu
 
     menu "Language"

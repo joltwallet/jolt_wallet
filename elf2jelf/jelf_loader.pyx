@@ -1,6 +1,6 @@
 # distutils: libraries = sodium c
-# distutils: include_dirs = ../components/jolt-types/include ../jolt_os/jelf_loader/src ../jolt_os/jelf_loader/include ../jolt_os
-# distutils: sources = ../jolt_os/jelf_loader/src/loader.c ../jolt_os/jelf_loader/src/unaligned.c ../jolt_os/jolt_lib.c
+# distutils: include_dirs = . ../components/jolt-types/include ../jolt_os/jelf_loader/src ../jolt_os/jelf_loader/include ../jolt_os ../build/include
+# distutils: sources = ../jolt_os/jelf_loader/src/loader.c ../jolt_os/jelf_loader/src/unaligned.c ../jolt_os/jolt_lib.c miniz.c
 
 from libc.stdio cimport FILE, fopen
 from libc.stdint cimport uint8_t, uint16_t, uint32_t

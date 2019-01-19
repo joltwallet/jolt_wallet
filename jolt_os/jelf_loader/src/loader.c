@@ -8,12 +8,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "sdkconfig.h"
 
 #include "unaligned.h"
 #include "jelf.h"
 #include "jelfloader.h"
 
 #include "sodium.h"
+
+#ifndef CONFIG_JOLT_APP_SIG_CHECK_EN
+#define CONFIG_JOLT_APP_SIG_CHECK_EN 1
+#endif
 
 #if ESP_PLATFORM
 
@@ -29,6 +34,7 @@ static const char* TAG = "JelfLoader";
 #else
 
 #include <stdio.h>
+
 #define MSG(...)
 #define INFO(...) printf( __VA_ARGS__ ); printf("\n");
 #define ERR(...) printf( __VA_ARGS__ ); printf("\n");
@@ -38,14 +44,13 @@ static const char* TAG = "JelfLoader";
 /********************************
  * STATIC FUNCTIONS DECLARATION *
  ********************************/
+static uint32_t get_st_value(jelfLoaderContext_t *ctx, Jelf_Sym *sym);
+static int decompress_get(jelfLoaderContext_t *ctx, uint8_t *data, size_t len);
 static void app_hash_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len);
 static const char *type2String(int symt);
-static int readSection(jelfLoaderContext_t *ctx, int n, Jelf_Shdr *h );
 static jelfLoaderSection_t *findSection(jelfLoaderContext_t* ctx, int index);
 static bool app_hash_init(jelfLoaderContext_t *ctx, 
         Jelf_Ehdr *header, const char *name);
-static void inline app_hash_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len);
-static int readSymbol(jelfLoaderContext_t *ctx, uint32_t n, Jelf_Sym *sym);
 static Jelf_Addr findSymAddr(jelfLoaderContext_t* ctx, Jelf_Sym *sym);
 static int relocateSymbol(Jelf_Addr relAddr, int type, Jelf_Addr symAddr,
         Jelf_Addr defAddr, uint32_t* from, uint32_t* to);
@@ -95,21 +100,14 @@ typedef struct profiler_timer_t{
     uint8_t running;    // if timer is running
 } profiler_timer_t;
 
-static profiler_timer_t profiler_readSection;
-static profiler_timer_t profiler_readSymbol;
 static profiler_timer_t profiler_relocateSymbol;
 static profiler_timer_t profiler_findSymAddr;
 static profiler_timer_t profiler_findSection;
 static profiler_timer_t profiler_relocateSection;
  
-// Caching Statistics
-static uint32_t profiler_cache_hit;
-static uint32_t profiler_cache_miss;
-
 // Relocation Information
 static uint32_t profiler_rel_count;
 static uint32_t profiler_max_r_offset;
-static uint32_t profiler_max_r_addend;
 
 #define PROFILER_START(x) \
     if(!x.running) { \
@@ -126,48 +124,32 @@ static uint32_t profiler_max_r_addend;
         x.t += get_time(); \
     }
 
-#define PROFILER_START_READSECTION     PROFILER_START(profiler_readSection)
-#define PROFILER_START_READSYMBOL      PROFILER_START(profiler_readSymbol)
 #define PROFILER_START_RELOCATESYMBOL  PROFILER_START(profiler_relocateSymbol)
 #define PROFILER_START_FINDSYMADDR     PROFILER_START(profiler_findSymAddr)
 #define PROFILER_START_FINDSECTION     PROFILER_START(profiler_findSection)
 #define PROFILER_START_RELOCATESECTION PROFILER_START(profiler_relocateSection)
 
-#define PROFILER_STOP_READSECTION      PROFILER_STOP(profiler_readSection)
-#define PROFILER_STOP_READSYMBOL       PROFILER_STOP(profiler_readSymbol)
 #define PROFILER_STOP_RELOCATESYMBOL   PROFILER_STOP(profiler_relocateSymbol)
 #define PROFILER_STOP_FINDSYMADDR      PROFILER_STOP(profiler_findSymAddr)
 #define PROFILER_STOP_FINDSECTION      PROFILER_STOP(profiler_findSection)
 #define PROFILER_STOP_RELOCATESECTION  PROFILER_STOP(profiler_relocateSection)
 
-#define PROFILER_INC_READSECTION       PROFILER_INC(profiler_readSection)
-#define PROFILER_INC_READSYMBOL        PROFILER_INC(profiler_readSymbol)
 #define PROFILER_INC_RELOCATESYMBOL    PROFILER_INC(profiler_relocateSymbol)
 #define PROFILER_INC_FINDSYMADDR       PROFILER_INC(profiler_findSymAddr)
 #define PROFILER_INC_FINDSECTION       PROFILER_INC(profiler_findSection)
 #define PROFILER_INC_RELOCATESECTION   PROFILER_INC(profiler_relocateSection)
 
-#define PROFILER_CACHE_HIT             profiler_cache_hit++;
-#define PROFILER_CACHE_MISS            profiler_cache_miss++;
-
 #define PROFILER_MAX_R_OFFSET(x)       if(x>profiler_max_r_offset) \
                                            profiler_max_r_offset = x;
-#define PROFILER_MAX_R_ADDEND(x)       if(x>profiler_max_r_addend) \
-                                           profiler_max_r_addend = x;
 #define PROFILER_REL_COUNT(x)          profiler_rel_count += x;
 
 /* Sets all profiler variables to 0 */
 void jelfLoaderProfilerReset() {
-    memset(&profiler_readSection, 0, sizeof(profiler_timer_t));
-    memset(&profiler_readSymbol, 0, sizeof(profiler_timer_t));
     memset(&profiler_relocateSymbol, 0, sizeof(profiler_timer_t));
     memset(&profiler_findSymAddr, 0, sizeof(profiler_timer_t));
     memset(&profiler_findSection, 0, sizeof(profiler_timer_t));
     memset(&profiler_relocateSection, 0, sizeof(profiler_timer_t));
-    profiler_cache_hit = 0;
-    profiler_cache_miss = 0;
     profiler_max_r_offset = 0;
-    profiler_max_r_addend = 0;
     profiler_rel_count = 0;
 }
 
@@ -175,8 +157,6 @@ void jelfLoaderProfilerReset() {
 void jelfLoaderProfilerPrint() {
     uint32_t total_time;
     total_time = 
-        profiler_readSection.t      +
-        profiler_readSymbol.t       +
         profiler_relocateSymbol.t   +
         profiler_findSymAddr.t      + 
         profiler_relocateSection.t
@@ -185,28 +165,19 @@ void jelfLoaderProfilerPrint() {
     INFO("\n-----------------------------\n"
             "JELF Loader Profiling Results:\n"
             "Function Name          Time (uS)    Calls \n"
-            "readSection:           %8d    %8d\n"
-            "readSymbol:            %8d    %8d\n"
             "relocateSymbol:        %8d    %8d\n"
             "findSymAddr:           %8d    %8d\n"
             "relocateSection:       %8d    %8d\n"
             "total time:            %8d\n"
-            "Cache Hit:             %8d\n"
-            "Cache Miss:            %8d\n"
             "Relocations Performed: %8d\n"
             "Max RELA r_offset:     %8d (0x%08X)\n"
-            "Max RELA r_addend:     %8d (0x%08X)\n"
             "-----------------------------\n\n",
-            profiler_readSection.t,     profiler_readSection.n,
-            profiler_readSymbol.t,      profiler_readSymbol.n,
             profiler_relocateSymbol.t,  profiler_relocateSymbol.n,
             profiler_findSymAddr.t,     profiler_findSymAddr.n,
             profiler_relocateSection.t, profiler_relocateSection.n,
             total_time,
-            profiler_cache_hit, profiler_cache_miss,
             profiler_rel_count,
-            profiler_max_r_offset, profiler_max_r_offset,
-            profiler_max_r_addend, profiler_max_r_addend);
+            profiler_max_r_offset, profiler_max_r_offset);
 }
 
 #else
@@ -233,147 +204,57 @@ void jelfLoaderProfilerPrint() {
 #define PROFILER_INC_FINDSECTION 
 #define PROFILER_INC_RELOCATESECTION
 
-#define PROFILER_CACHE_HIT
-#define PROFILER_CACHE_MISS
-
 #define PROFILER_MAX_R_OFFSET(x)
-#define PROFILER_MAX_R_ADDEND(x)
 #define PROFILER_REL_COUNT(x)
 
 #endif
 
-#if CONFIG_JELFLOADER_CACHE_LOCALITY
-static int LOADER_GETDATA_CACHE(jelfLoaderContext_t *ctx,
-        size_t off, char *buffer, size_t size) {
-    uint8_t i;
-    size_t amount_read;
-    /* Check if the requested data is in the cache */
-    jelfLoader_locality_cache_t *lru = &(ctx->locality_cache[0]);
-    if( NULL != lru->data ) {
-        /* Increment age of all chunks */
-        for( i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
-            ctx->locality_cache[i].age++;
-        }
-
-        for( i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
-            if( false == ctx->locality_cache[i].valid ) {
-                lru = &(ctx->locality_cache[i]);
-                break;
-            }
-
-            /* Store the LRU cache */
-            if( ctx->locality_cache[i].age > lru->age ) {
-                lru = &(ctx->locality_cache[i]);
-            }
-
-            /* See if data is cached */
-            if( off >= ctx->locality_cache[i].offset
-                    && (off + size) <= (ctx->locality_cache[i].offset 
-                        + CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE) ) {
-                PROFILER_CACHE_HIT;
-                #if CONFIG_JELFLOADER_PROFILER_EN
-                MSG( "Hit! Hit Counter: %d. Offset: 0x%06x. Size: 0x%06X", 
-                        profiler_cache_hit, (uint32_t)off, size );
-                #endif
-                ctx->locality_cache[i].age = 0;
-                off_t locality_offset;
-                locality_offset = off - ctx->locality_cache[i].offset;
-                memcpy(buffer, ctx->locality_cache[i].data + locality_offset, size);
-                return 0;
-            }
-        }
-    }
-    
-    PROFILER_CACHE_MISS;
-    #if CONFIG_JELFLOADER_PROFILER_EN
-    MSG("Miss... Miss Counter: %d. Offset: 0x%06x. Size: 0x%06X",
-            profiler_cache_miss, (uint32_t) off, size);
-    #endif
-
-    if( fseek(ctx->fd, off, SEEK_SET) != 0 ) {
-        assert(0);
-        goto err;
-    }
-    if( size > CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE ||
-            NULL == lru->data) {
-        /* Can't fit desired data into a chunk, don't cache */
-        MSG("Can't fit read into locality cache chunk, reading directly to buffer.")
-        amount_read = fread(buffer, 1, size, ctx->fd); 
-    }
-    else {
-        amount_read = fread(lru->data, 1,
-                CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE, ctx->fd); 
-        lru->offset = off;
-        lru->valid = true;
-        lru->age = 0;
-        memcpy(buffer, lru->data, size);
-    }
-
-    if( amount_read < size) {
-        ERR("Requested %zd bytes, but could only read %zd.", size, amount_read);
-        assert(0);
-        goto err;
-    }
-    return 0;
-
-err:
-    return -1;
-}
-#define LOADER_GETDATA(ctx, off, buffer, size) \
-    if( 0 != LOADER_GETDATA_CACHE(ctx, off, buffer, size)) { assert(0); goto err; } \
-    app_hash_update(ctx, (uint8_t*)buffer, size);
-#else // Use POSIX readers without caching
-#define LOADER_GETDATA(ctx, off, buffer, size) \
-    if(fseek(ctx->fd, off, SEEK_SET) != 0) { assert(0); goto err; }\
-    if(fread(buffer, 1, size, ctx->fd) != size) { assert(0); goto err; }\
-    app_hash_update(ctx, (uint8_t*)buffer, size);
-#endif // CONFIG_JELFLOADER_CACHE_LOCALITY
+#define LOADER_GETDATA_RAW(ctx, buffer, size) \
+        fread(buffer, 1, size, ctx->fd)
+   
+#define LOADER_GETDATA(ctx, buffer, size) \
+    if(decompress_get(ctx, (uint8_t*)buffer, size) != (int)size ) {assert(0); goto err;};
 
 
 /******************************************************
  * More specific readers to handle proper bitshifting *
  ******************************************************/
-static int loader_shdr(jelfLoaderContext_t *ctx, size_t n, Jelf_Shdr *h) {
-    off_t offset = (off_t)((uint8_t*)ctx->e_shoff + n * JELF_SHDR_SIZE);
-    uint8_t buf[JELF_SHDR_SIZE] = {0};
-    LOADER_GETDATA(ctx, offset, (char *)&buf, sizeof(buf));
+static int loader_shdr(jelfLoaderContext_t *ctx, uint16_t n, Jelf_Shdr *h) {
+    uint8_t *buf = (uint8_t*)ctx->shdr_cache + n * JELF_SHDR_SIZE;
+    if( n > ctx->e_shnum ){
+        ERR("Attempt to index past SectionHeaderTable");
+        return -1;
+    }
 
     h->sh_type   = (buf[0] >> 6) & 0x03;
     h->sh_flags  = (buf[0] >> 4) & 0x03;
-    h->sh_offset = ((buf[0] & 0x0F) ) |
+    h->sh_size = ((buf[0] & 0x0F) ) |
             ((uint32_t)buf[1] << 4) |
-            ((uint32_t)(buf[2] & 0xFE) << 11);
-    h->sh_size   = ( buf[2] & 0x01 ) |
-            ((uint32_t)buf[3] << 1) |
-            ((uint32_t)buf[4] << 9) |
-            ((uint32_t)(buf[5] & 0xC0) << 11);
-    h->sh_info   = (buf[5] & 0x03F) |
-            ((uint32_t)buf[6] << 6);
+            ((uint32_t)(buf[2] & 0xF0) << 8);
+    h->sh_info   = (buf[2] & 0x0F) |
+            ((uint32_t)buf[3] << 4);
     return 0;
-
-err:
-    return -1;
 }
 
-static int loader_sym(jelfLoaderContext_t *ctx, size_t offset, Jelf_Sym *h) {
-    uint8_t buf[JELF_SYM_SIZE] = {0};
-    LOADER_GETDATA(ctx, offset, (char *)&buf, sizeof(buf));
+static int loader_sym(jelfLoaderContext_t *ctx, uint16_t n, Jelf_Sym *h) {
+    uint8_t *buf = (uint8_t*)ctx->symtab_symbols + n * JELF_SYM_SIZE;
+    if( n >= ctx->symtab_count ){
+        ERR("Attempt to index past SymbolTable");
+        return -1;
+    }
+
     h->st_name  = buf[0] | 
-            ((uint32_t)buf[1] << 8);
-    h->st_shndx = buf[2] |
-            ((uint32_t)buf[3] << 8);
-    h->st_value = buf[4] | 
-            ((uint32_t)buf[5] <<  8) |
-            ((uint32_t)buf[6] << 16) |
-            ((uint32_t)buf[7] << 24);
+            ((uint32_t)(buf[1] & 0xF8) << 5);
+    h->st_shndx = (buf[1] & 0x07) |
+            ((uint32_t)buf[2] << 3) |
+            ((uint32_t)(buf[3] & 0x80) << 4);
+    h->st_value = buf[3] & 0x7F;
     return 0;
-err:
-    return -1;
 }
 
-static int loader_rela(jelfLoaderContext_t *ctx, size_t offset, Jelf_Rela *h) {
+static int loader_rela(jelfLoaderContext_t *ctx, Jelf_Rela *h) {
     uint8_t buf[JELF_RELA_SIZE] = {0};
-    LOADER_GETDATA(ctx, offset, (char *)&buf, sizeof(buf));
+    LOADER_GETDATA(ctx, (char *)&buf, sizeof(buf));
     h->r_offset = buf[0] |
             ((uint32_t)buf[1] << 8);
     h->r_info   = buf[2] |
@@ -389,6 +270,112 @@ err:
  * STATIC FUNCTIONS *
  ********************/
 
+static uint32_t get_st_value(jelfLoaderContext_t *ctx, Jelf_Sym *sym) {
+    if( 0 == sym->st_value ) {
+        return 0;
+    }
+    if( sym->st_value > ctx->symtab_aux_len ){
+        /* error */
+        exit(1);
+        return 0;
+    }
+    return ctx->symtab_aux[sym->st_value - 1];
+}
+
+/* Reads len bytes of uncompressed data. *No seeking*.
+ * Returns the number of bytes read. Returns -1 on error. 
+ *
+ * offset - for initial debugging purposes only*/
+static int decompress_get(jelfLoaderContext_t *ctx, uint8_t *inf_data, size_t inf_len) {
+    inf_stream_t *s = &(ctx->inf_stream);
+    size_t amount_written = 0;
+
+    /* Empty the available uncompressed buffer from s->out_read */
+    if(s->out_avail > 0 ) {
+        if(inf_len <= s->out_avail){
+            /* The uncompressed data is already in the out_buf */
+            memcpy(inf_data, s->out_read, inf_len);
+            s->out_read += inf_len;
+            s->out_avail -= inf_len;
+            return inf_len;
+        }
+        else{
+            /* There's not enough data already uncompressed; copy over all avail */
+            memcpy(inf_data, s->out_read, s->out_avail);
+            s->out_read    += s->out_avail;
+            inf_data       += s->out_avail;
+            amount_written += s->out_avail;
+            s->out_avail    = 0;
+        }
+    }
+    if(s->out_read == s->out_buf + s->out_buf_len ){
+        s->out_read = s->out_buf;
+    }
+
+    while( inf_len > amount_written ) {
+        if( 0 == s->in_avail ) {
+            /* Fetch more compressed data from disk */
+            size_t n = LOADER_GETDATA_RAW(ctx, s->in_buf, s->in_buf_len);
+            app_hash_update(ctx, s->in_buf, n);
+            s->in_avail = n;
+            s->in_next = s->in_buf;
+        }
+
+        size_t in_bytes = s->in_avail;
+        size_t out_bytes = s->out_buf + s->out_buf_len - s->out_next;
+        int flags = TINFL_FLAG_PARSE_ZLIB_HEADER | TINFL_FLAG_HAS_MORE_INPUT;
+
+        /* Example values of params before and after call
+         * tinfl_status tinfl_decompress(
+         *     tinfl_decompressor *r,
+         *     const mz_uint8 *pIn_buf_next,    0x3ffccf00 -> 0x3ffccf00 (ptr to compressed data)
+         *     size_t *pIn_buf_size,            2048 -> 1708 (it used up 1708 bytes of the compressed bytes)
+         *     mz_uint8 *pOut_buf_start,        0x3ffcd710 -> 0x3ffcd710 (ptr to uncompressed buffer)
+         *     mz_uint8 *pOut_buf_next,         0x3ffcd710 -> 0x3ffcd710
+         *     size_t *pOut_buf_size,           4096 -> 4096 (it filled the output buffer)
+         *     const mz_uint32 decomp_flags);
+         */
+
+        tinfl_status status = tinfl_decompress(&(s->inf),
+                s->in_next, &in_bytes,
+                s->out_buf, s->out_next, &out_bytes,
+                flags);
+
+        if(status <= TINFL_STATUS_FAILED || in_bytes == 0){
+            return -1;
+        }
+        s->in_next  += in_bytes;
+        s->in_avail -= in_bytes;
+
+        s->out_next += out_bytes;
+        s->out_avail += out_bytes;
+
+        if (status <= TINFL_STATUS_DONE ||
+                s->out_next == s->out_buf + s->out_buf_len) {
+            size_t amount_remaining = inf_len - amount_written;
+            size_t n_bytes_to_cpy = s->out_next - s->out_read;
+            if( n_bytes_to_cpy <= amount_remaining ){
+                /* Copy all of it over */
+            }
+            else{
+                /* Copy some of it over */
+                n_bytes_to_cpy = amount_remaining;
+            }
+            memcpy(inf_data, s->out_read, n_bytes_to_cpy);
+            inf_data += n_bytes_to_cpy;
+            amount_written += n_bytes_to_cpy;
+            s->out_read += n_bytes_to_cpy;
+            if(s->out_read == s->out_buf + s->out_buf_len ){
+                s->out_read = s->out_buf;
+            }
+            s->out_avail -= n_bytes_to_cpy;
+            s->out_next = s->out_buf;
+        }
+    }
+
+    return amount_written;
+}
+
 static const char *type2String(int symt) {
 #define STRCASE(name) case name: return #name;
     switch (symt) {
@@ -402,27 +389,6 @@ static const char *type2String(int symt) {
 #undef STRCASE
 }
 
-/* Reads section header and name for given section index
- * n - Section Index to query
- * h - Returns Section Header
- */
-static int readSection(jelfLoaderContext_t *ctx, int n, Jelf_Shdr *h ) {
-    PROFILER_START_READSECTION;
-    PROFILER_INC_READSECTION;
-
-    /* Read Section Header */
-    int res = loader_shdr(ctx, n, h);
-    PROFILER_STOP_READSECTION;
-    if ( 0 != res ){
-        goto err;
-    }
-
-    return 0;
-err:
-    PROFILER_STOP_READSECTION;
-    return -1;
-}
-
 /* Iterate through the singly linked list of sections until you find the one
  * that matches the provided index.
  * All these section structs are in RAM. */
@@ -430,8 +396,7 @@ static jelfLoaderSection_t *findSection(jelfLoaderContext_t* ctx, int index) {
     PROFILER_START_FINDSECTION;
     PROFILER_INC_FINDSECTION;
 
-    for ( jelfLoaderSection_t* section=ctx->section;
-            section != NULL;
+    for ( jelfLoaderSection_t* section=ctx->section; section != NULL;
             section = section->next ) {
         if (section->secIdx == index) {
             PROFILER_STOP_FINDSECTION;
@@ -448,26 +413,30 @@ static jelfLoaderSection_t *findSection(jelfLoaderContext_t* ctx, int index) {
  * false if public_key doesn't match approved public_key. */
 static bool app_hash_init(jelfLoaderContext_t *ctx, 
         Jelf_Ehdr *header, const char *name) {
-     #if CONFIG_JOLT_APP_SIG_CHECK_EN
-#if ESP_LOG_LEVEL >= ESP_LOG_INFO
-    {
-        /* Print App's 256-bit Public Key and 512-bit Signature */
-        char pub_key[HEX_256] = { 0 };
-        sodium_bin2hex(pub_key, sizeof(pub_key), header->e_public_key, 32);
-        INFO("pub_key: %s", pub_key);
-        char sig[HEX_512] = { 0 };
-        sodium_bin2hex(sig, sizeof(sig), header->e_signature, 64);
-        INFO("signature: %s", sig);
+    /* Initialize Signature Check Hashing */
+    ctx->hs = LOADER_ALLOC_DATA(sizeof(crypto_hash_sha512_state));
+    if(NULL == ctx->hs){
+        goto err;
     }
-#endif
-    /* Copy over the app signature into the context */
-    memcpy(ctx->app_signature, header->e_signature, sizeof(uint512_t));
+    crypto_hash_sha512_init(ctx->hs);
+    /* Hash the app name */
+    app_hash_update(ctx, (uint8_t*)name, strlen(name));
 
+    /* Copy over the app signature into the context */
+    LOADER_GETDATA_RAW(ctx, ctx->app_signature, 64);
+    {
+        char sig_hex[129] = { 0 };
+        sodium_bin2hex(sig_hex, sizeof(sig_hex),
+                    ctx->app_signature, 64);
+        INFO("App Signature: %s", sig_hex);
+    }
+    LOADER_GETDATA(ctx, header, sizeof(Jelf_Ehdr));
+    #if CONFIG_JOLT_APP_SIG_CHECK_EN
     {
         /* First check to see if the public key is an accepted app key.
          * If it is valid, copy it into the ctx */
         uint256_t approved_pub_key = { 0 };
-#if ESP_PLATFORM
+        #if ESP_PLATFORM
         size_t required_size;
         if( !storage_get_blob(NULL, &required_size, "user", "app_key") ) {
             ERR("Approved Public Key not found; using default");
@@ -484,55 +453,21 @@ static bool app_hash_init(jelfLoaderContext_t *ctx,
             ERR("Application Public Key doesn't match approved public key.");
             return false;
         }
-#endif
+        #endif
 
         memcpy(ctx->app_public_key, approved_pub_key, sizeof(uint256_t));
     }
 
-    {
-        /* Initialize Signature Check Hashing */
-        ctx->hs = malloc(sizeof(crypto_hash_sha512_state));
-        crypto_hash_sha512_init(ctx->hs);
-
-        /* Hash the app name */
-        app_hash_update(ctx, (uint8_t*)name, strlen(name));
-
-        /* Hash the JELF Header w/o signature */
-        Jelf_Ehdr header_no_sig;
-        memcpy(&header_no_sig, header, sizeof(header_no_sig));
-        memset(&header_no_sig.e_signature, 0, sizeof(header_no_sig.e_signature));
-        app_hash_update(ctx, (uint8_t*)&header_no_sig, sizeof(header_no_sig));
-    }
     #endif
     return true;
-}
-
-static void inline app_hash_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len){
-#if CONFIG_JOLT_APP_SIG_CHECK_EN
-    if( NULL != ctx->hs) {
-        crypto_hash_sha512_update(ctx->hs, data, len);
-    }
-#endif
-}
-
-static int readSymbol(jelfLoaderContext_t *ctx, uint32_t n, Jelf_Sym *sym) {
-    PROFILER_START_READSYMBOL;
-    PROFILER_INC_READSYMBOL;
-    if( n >= ctx->symtab_count ){
-        MSG("Symbol index exceeds symboltable");
-        goto err;
-    }
-
-    off_t pos = ctx->symtab_offset + n * JELF_SYM_SIZE;
-    if(!loader_sym(ctx, pos, sym)){
-        PROFILER_STOP_READSYMBOL;
-        return -1;
-    }
-    PROFILER_STOP_READSYMBOL;
-    return 0;
 err:
-    PROFILER_STOP_READSYMBOL;
-    return -1;
+    return false;
+}
+
+static void app_hash_update(jelfLoaderContext_t *ctx, const uint8_t* data, size_t len){
+#if CONFIG_JOLT_APP_SIG_CHECK_EN
+    crypto_hash_sha512_update(ctx->hs, data, len);
+#endif
 }
 
 /* Returns the Symbol's address in memory. This could either be coming from
@@ -552,7 +487,7 @@ static Jelf_Addr findSymAddr(jelfLoaderContext_t* ctx, Jelf_Sym *sym) {
         jelfLoaderSection_t *symSec = findSection(ctx, sym->st_shndx);
         if (symSec) {
             PROFILER_STOP_FINDSYMADDR;
-            return ((Jelf_Addr) symSec->data) + sym->st_value;
+            return ((Jelf_Addr) symSec->data) + get_st_value(ctx, sym);
         }
     }
 
@@ -734,7 +669,7 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
 
     /* Read the current rela section header */
     PROFILER_STOP_RELOCATESECTION;
-    if (readSection(ctx, s->relSecIdx, &sectHdr) != 0) {
+    if (loader_shdr(ctx, s->relSecIdx, &sectHdr) != 0) {
         ERR("Error reading rela section header");
         goto err;
     }
@@ -745,15 +680,12 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
     size_t relEntries = sectHdr.sh_size / sizeof(rel);
     PROFILER_REL_COUNT(relEntries);
     MSG("RELOCATING SECTION")
-    MSG("  Offset   Sym  Type                      relAddr  "
+    MSG("  Sym  Type                      relAddr  "
         "symAddr  defValue                    Name + addend");
     /* Read every RELA entry in the current RELA section */
     for (size_t relCount = 0; relCount < relEntries; relCount++) {
-        off_t offset = sectHdr.sh_offset + relCount * (sizeof(rel));
-        MSG("Reading in JELF_Rela from offset 0x%x", (uint32_t)offset);
-        r |= loader_rela(ctx, offset, &rel);
+        r |= loader_rela(ctx, &rel);
         PROFILER_MAX_R_OFFSET(rel.r_offset);
-        PROFILER_MAX_R_ADDEND(rel.r_addend);
 
         Jelf_Sym sym = { 0 };
         int symEntry = JELF_R_SYM( rel.r_info); // SymbolTable Index
@@ -762,7 +694,9 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
         /* data to be updated address */
         Jelf_Addr relAddr = ((Jelf_Addr) s->data) + rel.r_offset;
         PROFILER_STOP_RELOCATESECTION;
-        readSymbol(ctx, symEntry, &sym);
+        if( 0 != loader_sym(ctx, symEntry, &sym) ) {
+            goto err;
+        }
         PROFILER_START_RELOCATESECTION;
 
         /* Target Symbol Address */
@@ -774,31 +708,31 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
         uint32_t from = 0, to = 0;
         if (relType == R_XTENSA_NONE || relType == R_XTENSA_ASM_EXPAND) {
             #if 0
-            MSG("  %08X %04X %04X %-20s %08X          %08X"
+            MSG("  %04X %04X %-20s %08X          %08X"
                 "                    %s + %X",
-                rel.r_offset, symEntry, relType, type2String(relType),
+                symEntry, relType, type2String(relType),
                 relAddr, sym.st_value, name, rel.r_addend);
             #endif
         }
-        else if ( (symAddr == 0xffffffff) && (sym.st_value == 0x00000000) ) {
+        else if ( (symAddr == 0xffffffff) && (get_st_value(ctx, &sym) == 0) ) {
             ERR("Relocation - undefined symAddr");
-            MSG("  %08X %04X %04X %-20s %08zX %08zX %08X"
+            MSG("  %04X %04X %-20s %08zX %08zX %08X"
                 "                     + %X",
-                rel.r_offset, symEntry, relType, type2String(relType),
-                relAddr, symAddr, sym.st_value, rel.r_addend);
+                symEntry, relType, type2String(relType),
+                relAddr, symAddr, get_st_value(ctx, &sym), rel.r_addend);
             r |= -1;
         }
-        else if(relocateSymbol(relAddr, relType, symAddr, sym.st_value, &from, &to) != 0) {
+        else if(relocateSymbol(relAddr, relType, symAddr, get_st_value(ctx, &sym), &from, &to) != 0) {
             ERR("relocateSymbol fail");
-            ERR("  %08X %04X %04X %-20s %08zX %08zX %08X %08X->%08X  + %X",
-                    rel.r_offset, symEntry, relType, type2String(relType),
-                    relAddr, symAddr, sym.st_value, from, to, rel.r_addend);
+            ERR("  %04X %04X %-20s %08zX %08zX %08X %08X->%08X  + %X",
+                    symEntry, relType, type2String(relType),
+                    relAddr, symAddr, get_st_value(ctx, &sym), from, to, rel.r_addend);
             r |= -1;
         }
         else {
-            MSG("  %08X %04X %04X %-20s %08zX %08zX %08X %08X->%08X  + %X",
-                    rel.r_offset, symEntry, relType, type2String(relType),
-                    relAddr, symAddr, sym.st_value, from, to, rel.r_addend);
+            MSG("  %04X %04X %-20s %08zX %08zX %08X %08X->%08X  + %X",
+                    symEntry, relType, type2String(relType),
+                    relAddr, symAddr, get_st_value(ctx, &sym), from, to, rel.r_addend);
         }
     }
     PROFILER_STOP_RELOCATESECTION;
@@ -816,8 +750,17 @@ err:
  ********************/
 
 bool jelfLoaderSigCheck(jelfLoaderContext_t *ctx) {
-    return 0 == crypto_sign_verify_detached(ctx->app_signature,
-            ctx->hash, sizeof(ctx->hash), ctx->app_public_key);
+    if( 0 == crypto_sign_verify_detached(ctx->app_signature,
+            ctx->hash, sizeof(ctx->hash), ctx->app_public_key) ){
+        return true;
+    }
+    else{
+        ERR("Bad Signature");
+        char hash[HEX_512] = { 0 };
+        sodium_bin2hex(hash, sizeof(hash), jelfLoaderGetHash(ctx), 64);
+        ERR("App Hash: %s", hash);
+        return false;
+    }
 }
 
 // returns 512 bit hash
@@ -833,15 +776,23 @@ int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv) {
         return 0;
     }
 
-    #if CONFIG_ELFLOADER_CACHE_LOCALITY
-    for(uint8_t i=0; i < CONFIG_ELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
-        if( NULL != ctx->locality_cache[i].data) {
-            free(ctx->locality_cache[i].data);
-            ctx->locality_cache[i].data = NULL;
-        }
+    /* Free up loading cache */
+    if( NULL != ctx->shdr_cache ) {
+        free( ctx->shdr_cache );
+        ctx->shdr_cache = NULL;
     }
-    #endif
-
+    if( NULL != ctx->symtab_cache ) {
+        free( ctx->symtab_cache );
+        ctx->symtab_cache = NULL;
+    }
+    if( NULL != ctx->inf_stream.in_buf ) {
+        free(ctx->inf_stream.in_buf);
+        ctx->inf_stream.in_buf = NULL;
+    }
+    if( NULL != ctx->inf_stream.out_buf ) {
+        free(ctx->inf_stream.out_buf);
+        ctx->inf_stream.out_buf = NULL;
+    }
     {
         typedef int (*func_t)(int, char**);
         func_t func = (func_t)ctx->exec;
@@ -876,10 +827,10 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     jelfLoaderContext_t *ctx;
 
     /* Debugging Size Sanity Check */
-    MSG("Jelf_Ehdr: %zd", sizeof(Jelf_Ehdr));
-    MSG("Jelf_Sym:  %zd", sizeof(Jelf_Sym));
-    MSG("Jelf_Shdr: %zd", sizeof(Jelf_Shdr));
-    MSG("Jelf_Rela: %zd", sizeof(Jelf_Rela));
+    MSG("Jelf_Ehdr: %d", sizeof(Jelf_Ehdr));
+    MSG("Jelf_Sym:  %d", sizeof(Jelf_Sym));
+    MSG("Jelf_Shdr: %d", sizeof(Jelf_Shdr));
+    MSG("Jelf_Rela: %d", sizeof(Jelf_Rela));
 
     /***********************************************
      * Initialize the context object with pointers *
@@ -893,10 +844,35 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     ctx->fd = fd;
     ctx->env = env;
 
-    /*********************************************************************
-     * Load the JELF header (Ehdr), located at the beginning of the file *
-     *********************************************************************/
-    LOADER_GETDATA(ctx, 0, (char*)&header, JELF_EHDR_SIZE);
+    /* Initialize Inflator */
+    tinfl_init(&(ctx->inf_stream.inf));
+    ctx->inf_stream.in_buf = malloc(CONFIG_JELFLOADER_INPUTBUF_LEN); // todo macro
+    if(NULL == ctx->inf_stream.in_buf) {
+        ERR( "Insufficient memory for miniz input buffer" );
+        goto err;
+    }
+    ctx->inf_stream.in_buf_len = CONFIG_JELFLOADER_INPUTBUF_LEN;
+    ctx->inf_stream.in_next = ctx->inf_stream.in_buf;
+    ctx->inf_stream.in_avail = 0;
+
+    ctx->inf_stream.out_buf = malloc(CONFIG_JOLT_COMPRESSION_OUTPUT_BUFFER);
+    if(NULL == ctx->inf_stream.out_buf) {
+        ERR( "Insufficient memory for miniz output buffer" );
+        goto err;
+    }
+    ctx->inf_stream.out_buf_len = CONFIG_JOLT_COMPRESSION_OUTPUT_BUFFER;
+    ctx->inf_stream.out_next = ctx->inf_stream.out_buf;
+
+    ctx->inf_stream.out_read = ctx->inf_stream.out_buf;
+    ctx->inf_stream.out_avail = 0;
+
+    /**********************************
+     * Initialize App Signature Check *
+     **********************************/
+    // Will populate the main JELF header
+    if( !app_hash_init(ctx, &header, name) ) {
+        goto err;
+    }
 
     /* Make sure that we have a correct and compatible ELF header. */
     char JelfMagic[] = { 0x7f, 'J', 'E', 'L', 'F', '\0' };
@@ -912,42 +888,28 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     assert( header.e_version_minor == 1 );
 
     /* Debug Sanity Checks */
-    MSG( "SectionHeaderTableOffset: %08X", header.e_shoff );
     MSG( "SectionHeaderTableEntries: %d", header.e_shnum );
     MSG( "Derivation Purpose: %08X", header.e_coin_purpose );
     MSG( "Derivation Path: %08X", header.e_coin_path );
     MSG( "bip32key: %s", header.e_bip32key);
-
-    /**********************************
-     * Initialize App Signature Check *
-     **********************************/
-    if( !app_hash_init(ctx, &header, name) ) {
-        goto err;
-    }
     
-    /*****************************
-     * Initialize Locality Cache *
-     *****************************/
-    /* Locality cache is initialized after signature checking so that the 
-     * overall memory footprint is relatively consistent. */
-    #if CONFIG_JELFLOADER_CACHE_LOCALITY
     {
-        for(uint8_t i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
-            ctx->locality_cache[i].data = malloc(
-                    CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_SIZE );
-                if( NULL ==  ctx->locality_cache[i].data ) {
-                    ERR("Insufficient memory for Locality Cache Data");
-                    goto err;
-                }
-            ctx->locality_cache[i].valid = false;
+        /**************************************
+         * Cache sectionheadertable to memory *
+         **************************************/
+        size_t sht_size = header.e_shnum * JELF_SHDR_SIZE;
+        ctx->shdr_cache = malloc(sht_size);
+        if( NULL == ctx->shdr_cache  ) {
+            ERR("Insufficient memory for section header table cache");
+            goto err;
         }
+        /* Populate the cache */
+        LOADER_GETDATA(ctx, (char *)(ctx->shdr_cache), sht_size);
     }
-    #endif
 
     /* Populate context with ELF Header information*/
     ctx->e_shnum = header.e_shnum; // Number of Sections
-    ctx->e_shoff = header.e_shoff; // offset to SectionHeaderTable
-    ctx->entry_index = header.e_entry_offset;
+    ctx->entry_index = header.e_entry_index;
     ctx->coin_purpose = header.e_coin_purpose;
     ctx->coin_path = header.e_coin_path;
     strlcpy(ctx->bip32_key, header.e_bip32key, sizeof(ctx->bip32_key));
@@ -973,21 +935,10 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
          ***********************/
         // Read the section header at index n
         // Populates "secHdr" with the Section's Header
-        if ( 0 != readSection(ctx, n, &sectHdr) ) {
+        if ( 0 != loader_shdr(ctx, n, &sectHdr) ) {
             ERR("Error reading section");
             goto err;
         }
-
-        #if 1
-        /* Debug: Print out the bytes that make up sectHdr */
-        {
-            MSG("Type:   %d", sectHdr.sh_type);
-            MSG("Flags:  %d", sectHdr.sh_flags);
-            MSG("Offset: %d", sectHdr.sh_offset);
-            MSG("Size:   %d", sectHdr.sh_size);
-            MSG("Info:   %d", sectHdr.sh_info);
-        } 
-        #endif
 
         /* This  section  occupies  memory during process execution */
         if (sectHdr.sh_flags & SHF_ALLOC) {
@@ -1021,27 +972,29 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
                  * see to always be increasing. */
                 section->data = ( sectHdr.sh_flags & SHF_EXECINSTR ) ?
                         LOADER_ALLOC_EXEC(CEIL4(sectHdr.sh_size)) : // Executable Memory
-                        LOADER_ALLOC_DATA(CEIL4(sectHdr.sh_size)) ; // Normal Memory
+                        LOADER_ALLOC_DATA(sectHdr.sh_size) ; // Normal Memory
 
                 if (!section->data) {
                     ERR("Section %d malloc failed.", n);
                     goto err;
                 }
 
-                /* Load Section into allocated data */
+                /* Load Section into allocated data (if there's data
+                 * to load) */
                 if (sectHdr.sh_type != SHT_NOBITS) {
                     if( sectHdr.sh_flags & SHF_EXECINSTR ){
                         /* To get around LoadStoreErrors with reading single 
                          * bytes from instruction memory */
                         char *tmp = LOADER_ALLOC_DATA(CEIL4(sectHdr.sh_size));
-                        LOADER_GETDATA( ctx, sectHdr.sh_offset, tmp,
-                                CEIL4(sectHdr.sh_size) );
+                        /* Zero out the last 4 bytes, just in case */
+                        memset(&tmp[CEIL4(sectHdr.sh_size)-4], 0, 4);
+                        //memset(tmp, 0, CEIL4(sectHdr.sh_size));
+                        LOADER_GETDATA( ctx, tmp, sectHdr.sh_size );
                         memcpy(section->data, tmp, CEIL4(sectHdr.sh_size));
                         LOADER_FREE(tmp);
                     }
                     else{
-                        LOADER_GETDATA( ctx, sectHdr.sh_offset, section->data,
-                                CEIL4(sectHdr.sh_size) );
+                        LOADER_GETDATA( ctx, section->data, sectHdr.sh_size );
                     }
                 }
 
@@ -1076,30 +1029,41 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
             }
         }
         else if ( SHT_SYMTAB == sectHdr.sh_type ) {
-            MSG("  section %2d", n);
-                ctx->symtab_offset = sectHdr.sh_offset;
-                ctx->symtab_count = sectHdr.sh_size / JELF_SYM_SIZE;
-                MSG("symtab is %u bytes.", sectHdr.sh_size);
-                MSG("symtab contains %zu entires.", ctx->symtab_count);
+            MSG("  section %2d symtab", n);
+
+            /**************************
+             * Cache symtab to memory *
+             **************************/
+            ctx->symtab_cache = malloc(sectHdr.sh_size);
+            if( NULL == ctx->symtab_cache){
+                goto err;
+            }
+            LOADER_GETDATA(ctx, (char *)(ctx->symtab_cache), sectHdr.sh_size);
+            ctx->symtab_cache_size = sectHdr.sh_size;
+            uint8_t aux_len = *(uint8_t*)ctx->symtab_cache;
+            ctx->symtab_aux_len = aux_len;
+            ctx->symtab_aux = (uint32_t*)((uint8_t*)ctx->symtab_cache +1);
+            ctx->symtab_symbols = (uint8_t*)ctx->symtab_aux + aux_len*4;
+            ctx->symtab_count = (ctx->symtab_cache_size - 1 - aux_len*4) / 4;
         }
     }
-    if (ctx->symtab_offset == 0 ) {
+    if (NULL == ctx->symtab_cache ) {
         ERR("Missing .symtab");
         goto err;
     }
     MSG("successfully loaded sections");
 
     Jelf_Sym sym;
-    LOADER_GETDATA( ctx,
-            ctx->symtab_offset + ctx->entry_index * JELF_SYM_SIZE,
-            (char*)&sym, CEIL4(JELF_SYM_SIZE) );
+    if( 0 != loader_sym(ctx, ctx->entry_index, &sym) ) {
+        goto err;
+    }
 
     jelfLoaderSection_t *symbol_section = findSection(ctx, sym.st_shndx);
     if( NULL == symbol_section ) {
         ERR("Error setting entrypoint.");
         goto err;
     }
-    ctx->exec = (void*)(((Jelf_Addr) symbol_section->data) + sym.st_value);
+    ctx->exec = (void*)(((Jelf_Addr) symbol_section->data) + get_st_value(ctx, &sym));
     MSG("successfully set entrypoint");
 
     return ctx;
@@ -1140,14 +1104,6 @@ void jelfLoaderFree(jelfLoaderContext_t *ctx) {
     if (NULL == ctx) {
         return;
     }
-    #if CONFIG_JELFLOADER_CACHE_LOCALITY
-    for(uint8_t i=0; i < CONFIG_JELFLOADER_CACHE_LOCALITY_CHUNK_N; i++ ) {
-        if( NULL != ctx->locality_cache[i].data) {
-            free(ctx->locality_cache[i].data);
-            ctx->locality_cache[i].data = NULL;
-        }
-    }
-    #endif
 
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
     if( NULL != ctx->hs ) {
@@ -1155,6 +1111,23 @@ void jelfLoaderFree(jelfLoaderContext_t *ctx) {
         ctx->hs = NULL;
     }
 #endif
+
+    if( NULL != ctx->shdr_cache ) {
+        free( ctx->shdr_cache );
+        ctx->shdr_cache = NULL;
+    }
+    if( NULL != ctx->symtab_cache ) {
+        free( ctx->symtab_cache );
+        ctx->symtab_cache = NULL;
+    }
+    if( NULL != ctx->inf_stream.in_buf ) {
+        free(ctx->inf_stream.in_buf);
+        ctx->inf_stream.in_buf = NULL;
+    }
+    if( NULL != ctx->inf_stream.out_buf ) {
+        free(ctx->inf_stream.out_buf);
+        ctx->inf_stream.out_buf = NULL;
+    }
 
     jelfLoaderSection_t* section = ctx->section;
     jelfLoaderSection_t* next;
