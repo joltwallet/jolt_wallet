@@ -458,6 +458,14 @@ menu "JoltOS"
            help
                help text here
 
+        config JELFLOADER_INPUTBUF_LEN
+            int
+            prompt "Amount in bytes to read from disk at a time while loading an app"
+            default 256
+            help
+                Increasing this buffer directly increases memory usage. In this 
+                use case, SPIFFS performance seems to plateu at 256 bytes.
+
         config JOLT_APP_KEY_DEFAULT
             depends on JOLT_APP_SIG_CHECK_EN
             string
