@@ -40,7 +40,7 @@ typedef struct {
 #define JELF_SHDR_SIZE 4
 
 typedef struct {
-    uint16_t    r_offset;        /* Address */
+    uint16_t    r_offset;        /* offset bytes into section data to relocate*/
     uint16_t    r_info;          /* Relocation type and symbol index */
     int16_t     r_addend;        /* Addend */
 } Jelf_Rela;

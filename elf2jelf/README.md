@@ -69,7 +69,7 @@ typedef struct {
     unsigned char  e_ident[EI_NIDENT];  /* Magic number and other info */
     uint8_t        e_version_major;
     uint8_t        e_version_minor;
-    uint32_t       e_entry_offset;      /* Entry point function offset */
+    uint16_t       e_entry_offset;      /* Entry point function offset */
     uint16_t       e_shnum;             /* Section header table entry count */
     uint32_t       e_coin_purpose;
     uint32_t       e_coin_path;
@@ -77,7 +77,7 @@ typedef struct {
     uint8_t        e_signature[32];
 } Jelf_Ehdr;
 ```
-92 Bytes
+84 Bytes
 
 `EI_NIDENT` - Reduced from 16 bytes to 6 bytes. The magic value for a JELF file
  is `{0x7F, 'J', 'E', 'L', 'F', '\0'}`.
@@ -85,7 +85,7 @@ typedef struct {
  `e_type` - Removed; unused
  `e_machine` - Removed; not used since it's always Xtensa
  `e_version` - Reduced to 2 uint8_t for major, minor
- `e_entry` - This needs to be populated to the symtab *offset* referencing `app_main`, currently the ELF32 file doesn't populate this field
+ `e_entry_offset` - This needs to be populated to the symtab index referencing `app_main`, currently the ELF32 file doesn't populate this field
  `e_phoff` - Removed; unused
  `e_flags` - Removed; unused
  `e_ehsize` - redundent since the version major specifier indicates compatability
@@ -125,15 +125,11 @@ typedef struct {
 typedef struct {
     uint64_t      sh_type     :2;         /* Section type */
     uint64_t      sh_flags    :2;         /* Section flags */
-    uint64_t      sh_offset   :19;        /* Section file offset */
-    uint64_t      sh_size     :19;        /* Section size in bytes */
+    uint64_t      sh_size     :16;        /* Section size in bytes */
     uint64_t      sh_info     :14;        /* Additional section information */
     uint64_t      padding     :8;         /* Not actually in JELF file */
 } Jelf_Shdr;
 ```
-
-todo: The program header now needs pointers/index to `.strtab` and `.symtab` since we dont have section names anymore. Will probably also need pointers to `entrypoint` as well as `secondary_entrypoint`
-
 
 `sh_name` - section header names are not necessary (so `.shstrtab` can also be removed)
 
@@ -303,5 +299,7 @@ Now that everything is a sequential read (with absolutely no random reads, assum
 The symtab also contains an unnecessary number of zeros in the `uint32_t` `st_value` slot. This value 90% of the time is `0x00000000`. To reduce this overhead, we shrink the `st_value` field to a `uint8_t` and make it's value an index into a small auxilary table. We put this table at the beginning of the `symtab section` as follows:
 
 1. `uint8_t` indicating the number of entries `n` in the table that follows
-2. n `uint32_t` non-zero `st_values`
+2. n `uint32_t` non-zero `st_values`; denoted as the auxilary symbol table
 3. The actual `symtab`
+
+This only saves about of 100 bytes in the compressed binary, but will cut the amount of RAM required by the symtab cache in half. In the Nano app, this saves about 1KB of RAM.
