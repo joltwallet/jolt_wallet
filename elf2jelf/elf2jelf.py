@@ -421,9 +421,6 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
                 new_st_shndx,
                 jelf_st_value,
                 )
-        print("Symbol at n: %d; name %d, shndx %d, value %d" %( i,
-                jelf_name_index, new_st_shndx, jelf_st_value));
-
         del(begin, end)
         if sym_name == "app_main":
             jelf_entrypoint_sym_idx = i
@@ -433,7 +430,6 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
     preamble = [len(jelf_symtab_header).to_bytes(length=1, byteorder='little')] \
             + [x.to_bytes(length=4, byteorder='little') for x in jelf_symtab_header]
     jelf_symtab = b''.join(preamble) + jelf_symtab
-    pdb.set_trace()
 
     return jelf_symtab, jelf_entrypoint_sym_idx
 

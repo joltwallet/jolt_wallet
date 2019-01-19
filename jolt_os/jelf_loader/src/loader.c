@@ -296,9 +296,6 @@ static uint32_t get_st_value(jelfLoaderContext_t *ctx, Jelf_Sym *sym) {
         exit(1);
         return 0;
     }
-    ERR("FAT VALUE: %08X ########################################",
-            ctx->symtab_aux[sym->st_value - 1]
-            );
     return ctx->symtab_aux[sym->st_value - 1];
 }
 
@@ -323,14 +320,13 @@ static int decompress_get(jelfLoaderContext_t *ctx, uint8_t *inf_data, size_t in
             /* There's not enough data already uncompressed; copy over all avail */
             memcpy(inf_data, s->out_read, s->out_avail);
             s->out_read    += s->out_avail;
-            if(s->out_read == s->out_buf + s->out_buf_len ){
-                s->out_read = s->out_buf;
-            }
-
             inf_data       += s->out_avail;
             amount_written += s->out_avail;
             s->out_avail    = 0;
         }
+    }
+    if(s->out_read == s->out_buf + s->out_buf_len ){
+        s->out_read = s->out_buf;
     }
 
     while( inf_len > amount_written ) {
@@ -1115,14 +1111,6 @@ jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx) {
             LOADER_GETDATA(ctx, (char *)(ctx->symtab_cache), sectHdr.sh_size);
             ctx->symtab_cache_size = sectHdr.sh_size;
             preprocess_symtab(ctx);
-            { // dbg
-                for(uint16_t i = 0; i<ctx->symtab_count; i++) {
-                    Jelf_Sym sym = { 0 };
-                    readSymbol(ctx, i, &sym);
-                    ERR("Symbol at n: %d; name %d, shndx %d, value %d", i, 
-                            sym.st_name, sym.st_shndx, get_st_value(ctx, &sym));
-                }
-            }
         }
     }
     if (NULL == ctx->symtab_cache ) {
