@@ -5,6 +5,9 @@
 #include "syscore/console_helpers.h"
 #include "syscore/filesystem.h"
 #include "syscore/ymodem.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 
 static const char TAG[] = "cmd_download";
 
@@ -35,8 +38,8 @@ int jolt_cmd_download(int argc, char** argv) {
             return_code = 0;
         }
         else {
-            ESP_LOGE(TAG, "Transfer complete, Error=%d", trans_res);
-            return_code = 2;
+            ESP_LOGE(TAG, "Transfer failed, Error=%d", trans_res);
+            return_code = trans_res;
             goto exit;
         }
     }

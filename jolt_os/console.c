@@ -80,7 +80,7 @@ static void jolt_process_cmd_task(void *param){
         } else if (err == ESP_ERR_INVALID_ARG) {
             // command was empty
         } else if (err == ESP_OK && ret != ESP_OK) {
-            printf("Command returned non-zero error code: 0x%x\n", ret);
+            printf("Command returned non-zero error code: %d\n", ret);
         } else if (err != ESP_OK) {
             printf("Internal error: 0x%x\n", err);
         }

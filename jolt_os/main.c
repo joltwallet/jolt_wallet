@@ -200,9 +200,9 @@ void app_main() {
             NULL, CONFIG_JOLT_TASK_PRIORITY_HW_MONITORS, NULL);
 
     // Initiate Console
-    jolt_bluetooth_setup();
+    jolt_bluetooth_setup(); // starts a task adding bluetooth commands to the command queue
     console_init();
-    console_start();
+    console_start(); // starts a task adding uart commands to the command queue. Also starts the task to process the command queue.
 
     BaseType_t ret;
     ESP_LOGI(TAG, "Creating Screen Draw Task");
