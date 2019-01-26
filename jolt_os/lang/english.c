@@ -24,6 +24,7 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
 
     /* Settings */
     "Screen Brightness",
+    "Touch Brightness",
     "Brightness",
     "Factory Reset",
 

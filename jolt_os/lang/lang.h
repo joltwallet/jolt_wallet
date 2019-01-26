@@ -33,6 +33,7 @@ typedef enum jolt_text_id_t {
 
     /* Settings */
     JOLT_TEXT_SCREEN_BRIGHTNESS,
+    JOLT_TEXT_LED_BRIGHTNESS,
     JOLT_TEXT_BRIGHTNESS,
     JOLT_TEXT_FACTORY_RESET,
 
