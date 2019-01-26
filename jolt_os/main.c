@@ -31,6 +31,7 @@
 #include "hal/i2c.h"
 #include "hal/storage/storage.h"
 #include "hal/hw_monitor.h"
+#include "hal/led.h"
 #include "syscore/filesystem.h"
 #include "vault.h"
 
@@ -198,6 +199,8 @@ void app_main() {
     xTaskCreate(jolt_hw_monitor_task,
             "HW_Monitor", CONFIG_JOLT_TASK_STACK_SIZE_HW_MONITORS,
             NULL, CONFIG_JOLT_TASK_PRIORITY_HW_MONITORS, NULL);
+
+    jolt_led_setup();
 
     // Initiate Console
     jolt_bluetooth_setup(); // starts a task adding bluetooth commands to the command queue
