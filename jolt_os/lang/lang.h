@@ -44,6 +44,9 @@ typedef enum jolt_text_id_t {
     /* App Launcher */
     JOLT_TEXT_PRELOAD_LAUNCHING,
 
+    /* Bluetooth Options */
+    JOLT_TEXT_BLUETOOTH_ENABLE,
+
     /* Used for allocating resources. Not actually a string */
     JOLT_TEXT_LAST_STR,
 } jolt_text_id_t;

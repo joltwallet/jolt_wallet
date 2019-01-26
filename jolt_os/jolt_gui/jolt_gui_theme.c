@@ -185,10 +185,44 @@ static void slider_init(void)
 static void sw_init(void)
 {
 #if USE_LV_SW != 0
-    theme.sw.bg = theme.slider.bg;
-    theme.sw.indic = theme.slider.indic;
-    theme.sw.knob_off = theme.slider.knob;
-    theme.sw.knob_on = theme.slider.knob;
+    static lv_style_t bg, indic;
+    static lv_style_t knob_on, knob_off;
+
+    lv_style_copy(&bg, theme.slider.bg);
+    lv_style_copy(&indic, theme.slider.indic);
+    lv_style_copy(&knob_on, theme.slider.knob);
+    lv_style_copy(&knob_off, theme.slider.knob);
+
+    bg.body.border.width = 0;
+    bg.body.border.part = 0;
+    bg.body.padding.hor = -6;
+    bg.body.padding.ver = 0;
+    bg.body.radius = 0;
+    bg.body.main_color = LV_COLOR_WHITE;
+    bg.body.grad_color = LV_COLOR_WHITE;
+
+    indic.body.padding.hor = 6;  /* horizontal gap between border and the line indicator (bigger numbers make it shorter) */
+    indic.body.padding.ver = 3;  /* vertical gap between border and the line indicator (bigger numbers make it skinnier) */
+    indic.body.radius = LV_RADIUS_CIRCLE;
+    indic.body.border.width = 1;
+    indic.body.border.color = LV_COLOR_BLACK;
+    indic.body.border.part = LV_BORDER_FULL;
+    indic.body.border.opa = LV_OPA_COVER;
+
+    knob_off.body.radius = LV_RADIUS_CIRCLE;
+    knob_off.body.border.color = LV_COLOR_BLACK;
+    knob_off.body.main_color = LV_COLOR_WHITE;
+    knob_off.body.grad_color = LV_COLOR_WHITE;
+
+    knob_on.body.radius = LV_RADIUS_CIRCLE;
+    knob_on.body.border.color = LV_COLOR_BLACK;
+    knob_on.body.main_color = LV_COLOR_BLACK;
+    knob_on.body.grad_color = LV_COLOR_BLACK;
+
+    theme.sw.bg = &bg;
+    theme.sw.indic = &indic;
+    theme.sw.knob_off = &knob_off;
+    theme.sw.knob_on = &knob_on;
 #endif
 }
 

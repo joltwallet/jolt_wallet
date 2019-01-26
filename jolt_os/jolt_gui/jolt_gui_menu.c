@@ -63,6 +63,7 @@ lv_obj_t *jolt_gui_scr_menu_create(const char *title) {
         lv_obj_set_size(menu,
                 lv_obj_get_width(cont_body), lv_obj_get_height(cont_body));
         lv_list_set_sb_mode(menu, LV_SB_MODE_AUTO);
+        lv_page_set_scrl_layout(menu, LV_LAYOUT_COL_L);
         lv_obj_align(menu, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
         jolt_gui_group_add( menu );
         BREAK_IF_NULL(jolt_gui_scr_set_enter_action(parent, jolt_gui_send_enter_main));
@@ -96,8 +97,20 @@ lv_obj_t *jolt_gui_scr_menu_add(lv_obj_t *par, const void *img_src,
         else{
             lv_label_set_long_mode(label, LABEL_LONG_MODE_DEFAULT);
         }
+        lv_btn_set_fit(btn, false, false);
     }
     return btn;
+}
+
+/* Adds and returns a lv_sw to the specified menu button */
+lv_obj_t *jolt_gui_scr_menu_add_sw( lv_obj_t *btn ) {
+    lv_obj_t *label = lv_list_get_btn_label( btn );
+    lv_coord_t width = lv_obj_get_width( label );
+    lv_obj_set_width( label, width - JOLT_GUI_SW_WIDTH );
+    lv_obj_t *sw = lv_sw_create( btn, NULL );
+    lv_sw_set_anim_time(sw, JOLT_GUI_SW_ANIM_TIME_MS);
+    lv_obj_set_size( sw, JOLT_GUI_SW_WIDTH, JOLT_GUI_SW_HEIGHT );
+    return sw;
 }
 
 void jolt_gui_scr_menu_set_btn_selected(lv_obj_t *par, lv_obj_t *btn){

@@ -34,6 +34,9 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
 
     /* App Launcher */
     "Launching", /* Label for spinning preloader */
+
+    /* Bluetooth Options */
+    "Bluetooth Enable",
 };
 
 

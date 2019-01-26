@@ -21,10 +21,12 @@ void jolt_gui_debug_obj_print(lv_obj_t *obj) {
             "\n###################\n"
             "LVGL Object at %p\n"
             "Object Type: %s\n"
+            "Object Size: w:%d, h:%d\n"
             "Parent at %p\n"
             "Parent Type: %s\n"
             "###################\n",
             obj, obj_type.type[0],
+            lv_obj_get_width(obj), lv_obj_get_height(obj),
             parent, parent_type.type[0]
             );
 }
