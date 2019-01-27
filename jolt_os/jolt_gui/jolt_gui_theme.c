@@ -95,8 +95,8 @@ static void basic_init(void)
     dark_frame.body.radius = 2;
 
     lv_style_copy(&scrollbar_style, &dark_frame);
-    scrollbar_style.body.padding.hor = 0; // Scrollbar distance from the Right 
-    scrollbar_style.body.padding.inner = 4; // Scrollbar's Width 
+    scrollbar_style.body.padding.hor = -1; // Scrollbar distance from the Right 
+    scrollbar_style.body.padding.inner = 3; // Scrollbar's Width 
 
     theme.bg = &def;
     theme.panel = &light_frame;
@@ -348,6 +348,7 @@ static void list_init(void)
 #if USE_LV_LIST != 0
     static lv_style_t scrl;
     lv_style_copy(&scrl, &light_plain);
+
     scrl.body.padding.ver = 1; // V padding whole list
     scrl.body.padding.hor = 1; // H padding whole list
     scrl.body.padding.inner = 1; // Space between list elements

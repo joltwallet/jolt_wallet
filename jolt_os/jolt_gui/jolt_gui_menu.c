@@ -58,10 +58,11 @@ lv_obj_t *jolt_gui_scr_menu_create(const char *title) {
         if ( NULL == old_list_signal ) {
             old_list_signal = lv_obj_get_signal_func(menu);
         }
+        lv_style_t *sb_style = lv_obj_get_style(menu);
         lv_obj_set_signal_func(menu, new_list_signal);
         lv_obj_set_free_num(menu, JOLT_GUI_OBJ_ID_LIST);
         lv_obj_set_size(menu,
-                lv_obj_get_width(cont_body), lv_obj_get_height(cont_body));
+                lv_obj_get_width(cont_body) - sb_style->body.padding.inner, lv_obj_get_height(cont_body));
         lv_list_set_sb_mode(menu, LV_SB_MODE_AUTO);
         lv_page_set_scrl_layout(menu, LV_LAYOUT_COL_L);
         lv_obj_align(menu, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
