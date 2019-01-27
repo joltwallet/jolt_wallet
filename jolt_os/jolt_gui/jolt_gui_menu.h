@@ -6,6 +6,9 @@
 #define JOLT_GUI_SW_WIDTH 20
 #define JOLT_GUI_SW_HEIGHT 10
 #define JOLT_GUI_SW_ANIM_TIME_MS 150
+#define JOLT_GUI_SW_LEFT_PADDING 6
+#define JOLT_GUI_SW_RIGHT_PADDING 2
+#define JOLT_GUI_SW_CONT_WIDTH (JOLT_GUI_SW_LEFT_PADDING + JOLT_GUI_SW_RIGHT_PADDING + JOLT_GUI_SW_WIDTH)
 
 /* Creates a submenu of correct size, location, group, and infocus. 
  * Need to provide arguments for first element so focus works correctly.*/

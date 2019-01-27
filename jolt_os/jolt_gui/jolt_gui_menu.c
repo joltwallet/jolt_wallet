@@ -104,12 +104,23 @@ lv_obj_t *jolt_gui_scr_menu_add(lv_obj_t *par, const void *img_src,
 
 /* Adds and returns a lv_sw to the specified menu button */
 lv_obj_t *jolt_gui_scr_menu_add_sw( lv_obj_t *btn ) {
-    lv_obj_t *label = lv_list_get_btn_label( btn );
-    lv_coord_t width = lv_obj_get_width( label );
-    lv_obj_set_width( label, width - JOLT_GUI_SW_WIDTH );
-    lv_obj_t *sw = lv_sw_create( btn, NULL );
-    lv_sw_set_anim_time(sw, JOLT_GUI_SW_ANIM_TIME_MS);
-    lv_obj_set_size( sw, JOLT_GUI_SW_WIDTH, JOLT_GUI_SW_HEIGHT );
+    lv_obj_t *sw = NULL;
+    JOLT_GUI_CTX{
+        lv_obj_t *label = lv_list_get_btn_label( btn );
+        lv_coord_t width = lv_obj_get_width( label );
+        lv_obj_set_width( label, width - JOLT_GUI_SW_CONT_WIDTH );
+
+        lv_obj_t *cont = lv_cont_create(btn, NULL);
+        lv_coord_t height = lv_obj_get_height( btn );
+        lv_obj_set_protect(cont, LV_PROTECT_POS);
+        lv_obj_set_size(cont, JOLT_GUI_SW_CONT_WIDTH, height);
+        lv_obj_align(cont, NULL, LV_ALIGN_IN_RIGHT_MID, 0, 0);
+
+        sw = lv_sw_create( cont, NULL );
+        lv_sw_set_anim_time(sw, JOLT_GUI_SW_ANIM_TIME_MS);
+        lv_obj_set_size( sw, JOLT_GUI_SW_WIDTH, JOLT_GUI_SW_HEIGHT );
+        lv_obj_align(sw, NULL, LV_ALIGN_IN_LEFT_MID, JOLT_GUI_SW_LEFT_PADDING, 0);
+    }
     return sw;
 }
 

@@ -193,16 +193,16 @@ static void sw_init(void)
     lv_style_copy(&knob_on, theme.slider.knob);
     lv_style_copy(&knob_off, theme.slider.knob);
 
-    bg.body.border.width = 0;
-    bg.body.border.part = 0;
-    bg.body.padding.hor = -6;
-    bg.body.padding.ver = 0;
-    bg.body.radius = 0;
+    bg.body.border.width = 1;
+    bg.body.border.part = LV_BORDER_FULL;
+    bg.body.padding.hor = 3;
+    bg.body.padding.ver = 3;
+    bg.body.radius = LV_RADIUS_CIRCLE;
     bg.body.main_color = LV_COLOR_WHITE;
     bg.body.grad_color = LV_COLOR_WHITE;
 
-    indic.body.padding.hor = 6;  /* horizontal gap between border and the line indicator (bigger numbers make it shorter) */
-    indic.body.padding.ver = 3;  /* vertical gap between border and the line indicator (bigger numbers make it skinnier) */
+    indic.body.padding.hor = 0;  /* horizontal gap between border and the line indicator (bigger numbers make it shorter) */
+    indic.body.padding.ver = 0;  /* vertical gap between border and the line indicator (bigger numbers make it skinnier) */
     indic.body.radius = LV_RADIUS_CIRCLE;
     indic.body.border.width = 1;
     indic.body.border.color = LV_COLOR_BLACK;
@@ -211,8 +211,8 @@ static void sw_init(void)
 
     knob_off.body.radius = LV_RADIUS_CIRCLE;
     knob_off.body.border.color = LV_COLOR_BLACK;
-    knob_off.body.main_color = LV_COLOR_WHITE;
-    knob_off.body.grad_color = LV_COLOR_WHITE;
+    knob_off.body.main_color = LV_COLOR_BLACK;
+    knob_off.body.grad_color = LV_COLOR_BLACK;
 
     knob_on.body.radius = LV_RADIUS_CIRCLE;
     knob_on.body.border.color = LV_COLOR_BLACK;
