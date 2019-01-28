@@ -196,7 +196,7 @@ static void sw_init(void)
     bg.body.border.width = 1;
     bg.body.border.part = LV_BORDER_FULL;
     bg.body.padding.hor = 3;
-    bg.body.padding.ver = 3;
+    bg.body.padding.ver = 0;
     bg.body.radius = LV_RADIUS_CIRCLE;
     bg.body.main_color = LV_COLOR_WHITE;
     bg.body.grad_color = LV_COLOR_WHITE;
@@ -204,9 +204,7 @@ static void sw_init(void)
     indic.body.padding.hor = 0;  /* horizontal gap between border and the line indicator (bigger numbers make it shorter) */
     indic.body.padding.ver = 0;  /* vertical gap between border and the line indicator (bigger numbers make it skinnier) */
     indic.body.radius = LV_RADIUS_CIRCLE;
-    indic.body.border.width = 1;
-    indic.body.border.color = LV_COLOR_BLACK;
-    indic.body.border.part = LV_BORDER_FULL;
+    indic.body.border.width = 0;
     indic.body.border.opa = LV_OPA_COVER;
 
     knob_off.body.radius = LV_RADIUS_CIRCLE;
