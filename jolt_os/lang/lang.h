@@ -46,6 +46,13 @@ typedef enum jolt_text_id_t {
 
     /* Bluetooth Options */
     JOLT_TEXT_BLUETOOTH_ENABLE,
+    JOLT_TEXT_PAIR,
+
+    /* Mnemonic Restore */
+    JOLT_TEXT_MNEMONIC_RESTORE,
+    JOLT_TEXT_RESTORE,
+    JOLT_TEXT_BEGIN_MNEMONIC_RESTORE,
+    JOLT_TEXT_ENTER_MNEMONIC_WORD,
 
     /* Used for allocating resources. Not actually a string */
     JOLT_TEXT_LAST_STR,

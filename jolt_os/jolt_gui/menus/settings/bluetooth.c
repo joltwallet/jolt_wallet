@@ -5,7 +5,7 @@ static lv_obj_t *scr = NULL;
 static lv_obj_t *sw_en = NULL;
 
 static void create_list() {
-    jolt_gui_scr_menu_add(scr, NULL, "test", NULL);
+    jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_PAIR), NULL);
 }
 
 static void destroy_list() {

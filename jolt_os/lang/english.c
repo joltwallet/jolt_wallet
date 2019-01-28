@@ -37,6 +37,13 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
 
     /* Bluetooth Options */
     "Bluetooth Enable",
+    "Pair",
+
+    /* Mnemonic Restore */
+    "Mnemonic Restore",
+    "Restore",
+    "Begin mnemonic restore?",
+    "Enter Mnemonic Word",
 };
 
 
