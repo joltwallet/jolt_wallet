@@ -3,10 +3,12 @@
 
 #include "lvgl/lvgl.h"
 
+lv_res_t menu_wifi_create(lv_obj_t *btn);
 lv_res_t menu_wifi_details_create(lv_obj_t *btn);
 lv_res_t menu_screen_brightness_create();
 lv_res_t menu_language_create(lv_obj_t *btn);
 lv_res_t menu_factory_reset_create(lv_obj_t *btn);
 lv_res_t menu_bluetooth_create(lv_obj_t *btn);
+lv_res_t menu_bluetooth_pair_create(lv_obj_t *btn);
 
 #endif

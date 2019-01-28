@@ -8,7 +8,6 @@
 #include "freertos/event_groups.h"
 #include "esp_wifi.h"
 #include "esp_wpa2.h"
-#include "esp_event_loop.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
@@ -27,7 +26,7 @@
 #if !CONFIG_NO_BLOBS
 static const char TAG[] = "wifi_task";
 
-esp_err_t event_handler(void *ctx, system_event_t *event)
+esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
 {
     uint8_t primary;
     wifi_second_chan_t second;
@@ -47,7 +46,7 @@ esp_err_t event_handler(void *ctx, system_event_t *event)
             break;
         case SYSTEM_EVENT_STA_DISCONNECTED:
             ESP_LOGD(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
-            ESP_ERROR_CHECK(esp_wifi_connect());
+            //ESP_ERROR_CHECK(esp_wifi_connect());
             break;
         default:
             break;
@@ -81,7 +80,6 @@ void wifi_connect(){
     storage_get_str(wifi_pass, &string_size_pass, "user", "wifi_pass",
             CONFIG_AP_TARGET_PASSWORD);
   
-    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg) );
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));

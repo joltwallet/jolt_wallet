@@ -1,11 +1,12 @@
 #include "jolt_gui/jolt_gui.h"
+#include "jolt_gui/menus/settings/submenus.h"
 #include "hal/storage/storage.h"
 
 static lv_obj_t *scr = NULL;
 static lv_obj_t *sw_en = NULL;
 
 static void create_list() {
-    jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_PAIR), NULL);
+    jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_PAIR), menu_bluetooth_pair_create);
 }
 
 static void destroy_list() {
@@ -19,9 +20,11 @@ static lv_res_t sw_en_cb(lv_obj_t *btn) {
 
     if( state ) {
         create_list();
+        /* todo turn on bluetooth */
     }
     else {
         destroy_list();
+        /* todo turn off bluetooth */
     }
     return LV_RES_OK;
 }

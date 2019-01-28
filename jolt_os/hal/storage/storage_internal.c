@@ -41,7 +41,6 @@ static jolt_err_t init_nvs_namespace(nvs_handle *nvs_h, const char *namespace) {
         esp_restart();
         return E_FAILURE;
     } else {
-        ESP_LOGI(TAG, "Successfully opened NVS with namespace %s!", namespace);
         return E_SUCCESS;
     }
 }

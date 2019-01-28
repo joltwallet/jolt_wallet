@@ -48,6 +48,10 @@ typedef enum jolt_text_id_t {
     JOLT_TEXT_BLUETOOTH_ENABLE,
     JOLT_TEXT_PAIR,
 
+    /* WiFi Options */
+    JOLT_TEXT_WIFI_ENABLE,
+    JOLT_TEXT_WIFI_DETAILS,
+
     /* Mnemonic Restore */
     JOLT_TEXT_MNEMONIC_RESTORE,
     JOLT_TEXT_RESTORE,

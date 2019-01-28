@@ -14,6 +14,7 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "esp_freertos_hooks.h"
+#include "esp_event_loop.h"
 
 #include <driver/adc.h>
 #include "esp_adc_cal.h"
@@ -156,13 +157,21 @@ void app_main() {
     /* Run Key/Value Storage Initialization */
     storage_startup();
 
+    ESP_ERROR_CHECK(esp_event_loop_init(wifi_event_handler, NULL));
+
     // Initialize Wireless
     /* todo: this must be before first_boot_setup otherwise attempting
      * to get ap_info before initializing wifi causes a boot loop. investigate
      * more robust solutions */
     esp_log_level_set("wifi", ESP_LOG_NONE);
     set_jolt_cast();
-    wifi_connect();
+    {
+        uint8_t wifi_en;
+        storage_get_u8(&wifi_en, "user", "wifi_en", 0 );
+        if( wifi_en ) {
+            wifi_connect();
+        }
+    }
 
     // Allocate space for the vault and see if a copy exists in NVS
     jolt_gui_store.first_boot = ( false == vault_setup() );
@@ -200,7 +209,14 @@ void app_main() {
             NULL, CONFIG_JOLT_TASK_PRIORITY_HW_MONITORS, NULL);
 
     // Initiate Console
-    jolt_bluetooth_setup(); // starts a task adding bluetooth commands to the command queue
+    {
+        uint8_t bluetooth_en;
+        storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 0 );
+        if( bluetooth_en ) {
+            jolt_bluetooth_setup(); // starts a task adding bluetooth commands to the command queue
+        }
+    }
+
     console_init();
     console_start(); // starts a task adding uart commands to the command queue. Also starts the task to process the command queue.
 

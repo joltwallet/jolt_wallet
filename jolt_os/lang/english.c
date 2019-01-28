@@ -39,6 +39,10 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Bluetooth Enable",
     "Pair",
 
+    /* WiFi Options */
+    "WiFi Enable",
+    "WiFi Details",
+
     /* Mnemonic Restore */
     "Mnemonic Restore",
     "Restore",
