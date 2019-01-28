@@ -136,3 +136,22 @@ void jolt_gui_scr_menu_set_btn_selected(lv_obj_t *par, lv_obj_t *btn){
         set_selected_label_long_mode(list, LABEL_LONG_MODE_SELECTED);
     }
 }
+
+void jolt_gui_scr_menu_remove(lv_obj_t *par, uint16_t start, uint16_t end) {
+    if( 0 == end ) {
+        end = UINT16_MAX;
+    }
+    else {
+        end += 1;
+    }
+
+    JOLT_GUI_CTX{
+        lv_obj_t *list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list(par));
+        for(uint16_t i=start; i<end; i++) {
+            bool res = lv_list_remove(list, start);
+            if(!res) {
+                break;
+            }
+        }
+    }
+}

@@ -27,4 +27,7 @@ lv_obj_t *jolt_gui_scr_menu_add_sw( lv_obj_t *btn );
 /* Sets the current selection to btn */
 void jolt_gui_scr_menu_set_btn_selected(lv_obj_t *par, lv_obj_t *btn);
 
+/* Deletes elements from indicies start to end (inclusive) */
+void jolt_gui_scr_menu_remove(lv_obj_t *par, uint16_t start, uint16_t end);
+
 #endif
