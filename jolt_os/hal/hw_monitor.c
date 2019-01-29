@@ -3,6 +3,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "sdkconfig.h"
 #include "hw_monitor.h"
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_helpers.h"

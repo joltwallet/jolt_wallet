@@ -1,3 +1,5 @@
+#if !CONFIG_NO_BLOBS
+
 #include "esp_log.h"
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_gui/menus/settings/submenus.h"
@@ -54,3 +56,4 @@ lv_res_t menu_wifi_create(lv_obj_t *btn) {
     return LV_RES_OK;
 }
 
+#endif

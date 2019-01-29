@@ -76,6 +76,7 @@ void statusbar_create() {
     jolt_gui_store.statusbar.container = lv_cont_create(lv_scr_act(), NULL);
     lv_style_copy(&header_style, 
             lv_cont_get_style(jolt_gui_store.statusbar.container) );
+    header_style.body.border.width = 1;
     header_style.body.border.part = LV_BORDER_BOTTOM;
     header_style.body.border.color = LV_COLOR_BLACK;
     lv_cont_set_style(jolt_gui_store.statusbar.container, &header_style);

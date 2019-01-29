@@ -1,6 +1,9 @@
 #include "string.h"
 #include "jolt_gui/jolt_gui.h"
 
+static bool first = true;
+static lv_style_t bignum_style;
+
 lv_obj_t *jolt_gui_scr_bignum_create(const char *title, const char *subtitle, uint32_t n) {
     JOLT_GUI_SCR_CTX(title){
         /* Create text for above the big number */
@@ -17,11 +20,14 @@ lv_obj_t *jolt_gui_scr_bignum_create(const char *title, const char *subtitle, ui
         lv_label_set_text(number_label, number_str);
 
         /* Set a Big Font Style for number*/
-        static lv_style_t number_style;
-        lv_style_t *old_style = lv_label_get_style(number_label);
-        lv_style_copy(&number_style, old_style);
-        number_style.text.font = &lv_font_dejavu_40_numeric;
-        lv_label_set_style(number_label, &number_style);
+        if( first ) {
+            first = false;
+            lv_style_copy(&bignum_style, lv_label_get_style(number_label));
+            bignum_style.text.font = &lv_font_dejavu_40_numeric;
+            bignum_style.text.letter_space = 3;
+        }
+
+        lv_label_set_style(number_label, &bignum_style);
 
         /* Align Big Number to Center bottom of screen */
         lv_obj_align(number_label, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);

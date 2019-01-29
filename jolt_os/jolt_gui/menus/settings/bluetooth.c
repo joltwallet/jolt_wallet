@@ -1,3 +1,7 @@
+#include "sdkconfig.h"
+
+#if CONFIG_BT_ENABLED
+
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_gui/menus/settings/submenus.h"
 #include "hal/storage/storage.h"
@@ -47,3 +51,5 @@ lv_res_t menu_bluetooth_create(lv_obj_t *btn) {
 
     return LV_RES_OK;
 }
+
+#endif

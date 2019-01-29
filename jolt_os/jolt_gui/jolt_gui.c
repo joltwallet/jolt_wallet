@@ -121,7 +121,7 @@ void jolt_gui_obj_del(lv_obj_t *obj){
  * Group Stuff *
  ***************/
 static void group_mod_cb(lv_style_t *style) {
-    style->body.border.part = 0;
+    /* Intentionally Empty */
 }
 
 void jolt_gui_group_create() {

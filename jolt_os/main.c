@@ -157,7 +157,11 @@ void app_main() {
     /* Run Key/Value Storage Initialization */
     storage_startup();
 
+    /* Start Event Loop */
+#if !CONFIG_NO_BLOBS
+    /* todo: this probably shouldn't be so tightly coupled with WiFi */
     ESP_ERROR_CHECK(esp_event_loop_init(wifi_event_handler, NULL));
+#endif
 
     // Initialize Wireless
     /* todo: this must be before first_boot_setup otherwise attempting
