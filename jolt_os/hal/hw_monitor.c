@@ -10,6 +10,7 @@
 #include "vault.h"
 #include <driver/adc.h>
 #include "hal/storage/storage.h"
+#include "hal/radio/bluetooth_gatts_profile_a.h"
 
 /**********************
  *  STATIC PROTOTYPES
@@ -83,10 +84,9 @@ static void jolt_hw_monitor_get_battery_level(hardware_monitor_t *monitor) {
 
 static void jolt_hw_monitor_get_bluetooth_level(hardware_monitor_t *monitor) {
     /* Returns with the bluetooth strength level. 0 if no connected. */
-    static uint8_t level;
+    uint8_t level;
 #if CONFIG_BT_ENABLED
-    // Todo; real code to check number of connected clients
-    storage_get_u8(&level, "user", "bluetooth_en", 0);
+    level = gatts_profile_a_is_connected();
 #else
     level = 0;
 #endif
