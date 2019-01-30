@@ -20,11 +20,21 @@ static void statusbar_update() {
 
     uint8_t bluetooth_level;
     bluetooth_level = jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_BLUETOOTH].val;
-    if( bluetooth_level == 0 ){
-    }
-    else {
-        strcpy(ptr, JOLT_GUI_SYMBOL_BLUETOOTH);
-        ptr += 3;
+    switch( bluetooth_level ) {
+        case 0:
+            /* Don't Display Anything */
+            break;
+        case 1:
+            strcpy(ptr, JOLT_GUI_SYMBOL_BLUETOOTH);
+            ptr += 3;
+            break;
+        case 2:
+            strcpy(ptr, JOLT_GUI_SYMBOL_BLUETOOTH_CONN);
+            ptr += 3;
+            break;
+        default:
+            /* Something bad happened */
+            break;
     }
 
     uint8_t wifi_level;

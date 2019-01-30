@@ -74,17 +74,28 @@ static const uint8_t jolt_gui_symbols_glyph_bitmap[] =
     0x00, 0x00,   //................
 
     /* Unicode: U+F006 (JOLT_GUI_SYMBOL_BLUETOOTH), Width: 5 */
-    0x20,   //..@..
-    0x30,   //..@@.
-    0xA8,   //@.@.@
-    0x70,   //.@@@.
-    0x20,   //..@..
-    0x70,   //.@@@.
-    0xA8,   //@.@.@
-    0x30,   //..@@.
-    0x20,   //..@..
+    0x20,         //..@..
+    0x30,         //..@@.
+    0xA8,         //@.@.@
+    0x70,         //.@@@.
+    0x20,         //..@..
+    0x70,         //.@@@.
+    0xA8,         //@.@.@
+    0x30,         //..@@.
+    0x20,         //..@..
 
-    /* Unicode: U+F007 (JOLT_GUI_SYMBOL_WIFI_1), Width: 9 */
+    /* Unicode: U+F007 (JOLT_GUI_SYMBOL_BLUETOOTH_CONN), Width: 9 */
+    0x08, 0x00,   //....@....
+    0x0C, 0x00,   //....@@...
+    0x2A, 0x00,   //..@.@.@..
+    0x9C, 0x80,   //@..@@@..@
+    0xD9, 0x80,   //@@..@..@@
+    0x9C, 0x80,   //@..@@@..@
+    0x2A, 0x00,   //..@.@.@..
+    0x0C, 0x00,   //....@@...
+    0x08, 0x00,   //....@....
+
+    /* Unicode: U+F008 (JOLT_GUI_SYMBOL_WIFI_1), Width: 9 */
     0x00, 0x00,   //.........
     0x00, 0x00,   //.........
     0x00, 0x00,   //.........
@@ -95,7 +106,7 @@ static const uint8_t jolt_gui_symbols_glyph_bitmap[] =
     0x08, 0x00,   //....@....
     0x00, 0x00,   //.........
 
-    /* Unicode: U+F008 (JOLT_GUI_SYMBOL_WIFI_2), Width: 9 */
+    /* Unicode: U+F009 (JOLT_GUI_SYMBOL_WIFI_2), Width: 9 */
     0x00, 0x00,   //.........
     0x00, 0x00,   //.........
     0x00, 0x00,   //.........
@@ -106,7 +117,7 @@ static const uint8_t jolt_gui_symbols_glyph_bitmap[] =
     0x08, 0x00,   //....@....
     0x00, 0x00,   //.........
     
-    /* Unicode: U+F009 (JOLT_GUI_SYMBOL_WIFI_3), Width: 9 */
+    /* Unicode: U+F00A (JOLT_GUI_SYMBOL_WIFI_3), Width: 9 */
     0x00, 0x00,   //.........
     0x3E, 0x00,   //..@@@@@..
     0x41, 0x00,   //.@.....@.
@@ -117,7 +128,7 @@ static const uint8_t jolt_gui_symbols_glyph_bitmap[] =
     0x08, 0x00,   //....@....
     0x00, 0x00,   //.........
 
-    /* Unicode: U+F00A (JOLT_GUI_SYMBOL_LOCK), Width: 6 */
+    /* Unicode: U+F00B (JOLT_GUI_SYMBOL_LOCK), Width: 6 */
     0x30,   //..@@..
     0x48,   //.@..@.
     0x48,   //.@..@.
@@ -138,10 +149,11 @@ static const lv_font_glyph_dsc_t jolt_gui_symbols_dsc[] =
   {.w_px=13, .glyph_index=72}, /*Unicode: U++F004 (JOLT_GUI_SYMBOL_BATTERY_CHARGING)*/
   {.w_px=13, .glyph_index=90}, /*Unicode: U++F005 (JOLT_GUI_SYMBOL_BATTERY_DISCONNECT)*/
   {.w_px=5, .glyph_index=108}, /*Unicode: U++F006 (JOLT_GUI_SYMBOL_BLUETOOTH)*/
-  {.w_px=9, .glyph_index=117}, /*Unicode: U++F007 (JOLT_GUI_SYMBOL_WIFI_1)*/
-  {.w_px=9, .glyph_index=135}, /*Unicode: U++F008 (JOLT_GUI_SYMBOL_WIFI_2)*/
-  {.w_px=9, .glyph_index=153}, /*Unicode: U++F009 (JOLT_GUI_SYMBOL_WIFI_3)*/
-  {.w_px=6, .glyph_index=171}, /*Unicode: U++F00A (JOLT_GUI_SYMBOL_LOCK)*/
+  {.w_px=9, .glyph_index=117}, /*Unicode: U++F007 (JOLT_GUI_SYMBOL_BLUETOOTH_CONN)*/
+  {.w_px=9, .glyph_index=135}, /*Unicode: U++F008 (JOLT_GUI_SYMBOL_WIFI_1)*/
+  {.w_px=9, .glyph_index=153}, /*Unicode: U++F009 (JOLT_GUI_SYMBOL_WIFI_2)*/
+  {.w_px=9, .glyph_index=171}, /*Unicode: U++F00A (JOLT_GUI_SYMBOL_WIFI_3)*/
+  {.w_px=6, .glyph_index=189}, /*Unicode: U++F00B (JOLT_GUI_SYMBOL_LOCK)*/
 };
 
 lv_font_t jolt_gui_symbols = 
@@ -151,7 +163,7 @@ lv_font_t jolt_gui_symbols =
     .h_px = 9,				/*Font height in pixels*/
     .glyph_bitmap = jolt_gui_symbols_glyph_bitmap,	/*Bitmap of glyphs*/
     .glyph_dsc = jolt_gui_symbols_dsc,		/*Description of glyphs*/
-    .glyph_cnt = 11,			/*Number of glyphs in the font*/
+    .glyph_cnt = 12,			/*Number of glyphs in the font*/
     .unicode_list = NULL,	/*Every character in the font from 'unicode_first' to 'unicode_last'*/
     .get_bitmap = lv_font_get_bitmap_continuous,	/*Function pointer to get glyph's bitmap*/
     .get_width = lv_font_get_width_continuous,	/*Function pointer to get glyph's width*/

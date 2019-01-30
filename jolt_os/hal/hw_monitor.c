@@ -86,7 +86,10 @@ static void jolt_hw_monitor_get_bluetooth_level(hardware_monitor_t *monitor) {
     /* Returns with the bluetooth strength level. 0 if no connected. */
     uint8_t level;
 #if CONFIG_BT_ENABLED
-    level = gatts_profile_a_is_connected();
+    storage_get_u8(&level, "user", "bluetooth_en", 0);
+    if(level > 0){
+        level += gatts_profile_a_is_connected();
+    }
 #else
     level = 0;
 #endif
