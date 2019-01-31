@@ -32,7 +32,7 @@ static lv_res_t sw_en_cb(lv_obj_t *btn) {
         destroy_list();
         esp_wifi_disconnect();
         esp_wifi_stop();
-        ESP_ERROR_CHECK(esp_wifi_deinit());
+        esp_wifi_deinit();
     }
     return LV_RES_OK;
 }

@@ -59,9 +59,10 @@ menu "JoltOS"
         config JOLT_DISPLAY_BRIGHTNESS
             int
             prompt "Default display brightness"
-            default 200
+            default 5
+            range 1 6
             help
-                Value from [0-255] indicating screen brightness
+                Brightness index indicating screen brightness level;
 
         config JOLT_DISPLAY_FLIP
             bool

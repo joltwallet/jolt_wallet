@@ -23,7 +23,6 @@ static uint8_t find_char_and_desr_index(uint16_t handle) {
     return 0xff; // error
 }
 
-
 /* Only used to handle events for SPP_PROFILE_A_APP_ID */
 void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, 
         esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) {
