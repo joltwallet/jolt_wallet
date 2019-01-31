@@ -5,7 +5,7 @@
 #include "sdkconfig.h"
 
 typedef struct hardware_monitor_t {
-    uint8_t val;
+    int8_t val;
     void (*update)(struct hardware_monitor_t *); // function to call to update val
 } hardware_monitor_t;
 

@@ -48,11 +48,6 @@ void jolt_hw_monitor_task() {
 static void jolt_hw_monitor_get_battery_level(hardware_monitor_t *monitor) {
     static uint16_t vals[CONFIG_JOLT_VBATT_AVG_WINDOW] = { 0 }; // store moving average
     static uint8_t index = 0;
-#if 0
-    MONITOR_UPDATE(75);
-    return;
-#endif
-
     // todo: check charging gpio
 
     // Get a new reading
@@ -101,14 +96,14 @@ static void jolt_hw_monitor_get_wifi_level(hardware_monitor_t *monitor) {
     uint8_t wifi_strength;
 #if !CONFIG_NO_BLOBS
     wifi_ap_record_t ap_info;
-    if(esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK){
+    if(esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
         wifi_strength = 0;
     }
     else {
         wifi_strength = -ap_info.rssi;
     }
 #else
-    wifi_strength = 0;
+    wifi_strength = -1;
 #endif
 
     MONITOR_UPDATE(wifi_strength);

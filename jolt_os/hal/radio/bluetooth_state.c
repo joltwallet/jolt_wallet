@@ -12,5 +12,4 @@ gatts_profile_inst_t spp_profile_tab[SPP_PROFILE_NUM] = {
 
 uint16_t spp_handle_table[SPP_IDX_NB];
 
-
 xQueueHandle ble_in_queue = NULL;

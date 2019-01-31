@@ -14,7 +14,8 @@
 #define JOLT_GUI_SYMBOL_WIFI_1 "\xEF\x80\x88"
 #define JOLT_GUI_SYMBOL_WIFI_2 "\xEF\x80\x89"
 #define JOLT_GUI_SYMBOL_WIFI_3 "\xEF\x80\x8A"
+#define JOLT_GUI_SYMBOL_WIFI_DISCONN "\xEF\x80\x8B"
 
-#define JOLT_GUI_SYMBOL_LOCK "\xEF\x80\x8B"
+#define JOLT_GUI_SYMBOL_LOCK "\xEF\x80\x8C"
 
 #endif

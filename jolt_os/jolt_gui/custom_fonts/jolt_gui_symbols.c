@@ -128,7 +128,18 @@ static const uint8_t jolt_gui_symbols_glyph_bitmap[] =
     0x08, 0x00,   //....@....
     0x00, 0x00,   //.........
 
-    /* Unicode: U+F00B (JOLT_GUI_SYMBOL_LOCK), Width: 6 */
+    /* Unicode: U+F00B (JOLT_GUI_SYMBOL_WIFI_DISCONN), Width: 9 */
+    0x00, 0x00,   //.........
+    0x3E, 0x00,   //..@@@@@..
+    0x41, 0x00,   //.@.....@.
+    0x80, 0x80,   //@.......@
+    0x41, 0x00,   //.@.....@.
+    0x22, 0x00,   //..@...@..
+    0x14, 0x00,   //...@.@...
+    0x08, 0x00,   //....@....
+    0x00, 0x00,   //.........
+
+    /* Unicode: U+F00C (JOLT_GUI_SYMBOL_LOCK), Width: 6 */
     0x30,   //..@@..
     0x48,   //.@..@.
     0x48,   //.@..@.
@@ -142,28 +153,29 @@ static const uint8_t jolt_gui_symbols_glyph_bitmap[] =
 
 static const lv_font_glyph_dsc_t jolt_gui_symbols_dsc[] =
 {
-  {.w_px=13, .glyph_index=0}, /*Unicode: U++F000 (JOLT_GUI_SYMBOL_BATTERY_EMPTY)*/
-  {.w_px=13, .glyph_index=18}, /*Unicode: U++F001 (JOLT_GUI_SYMBOL_BATTERY_1)*/
-  {.w_px=13, .glyph_index=36}, /*Unicode: U++F002 (JOLT_GUI_SYMBOL_BATTERY_2)*/
-  {.w_px=13, .glyph_index=54}, /*Unicode: U++F003 (JOLT_GUI_SYMBOL_BATTERY_3)*/
-  {.w_px=13, .glyph_index=72}, /*Unicode: U++F004 (JOLT_GUI_SYMBOL_BATTERY_CHARGING)*/
-  {.w_px=13, .glyph_index=90}, /*Unicode: U++F005 (JOLT_GUI_SYMBOL_BATTERY_DISCONNECT)*/
-  {.w_px=5, .glyph_index=108}, /*Unicode: U++F006 (JOLT_GUI_SYMBOL_BLUETOOTH)*/
-  {.w_px=9, .glyph_index=117}, /*Unicode: U++F007 (JOLT_GUI_SYMBOL_BLUETOOTH_CONN)*/
-  {.w_px=9, .glyph_index=135}, /*Unicode: U++F008 (JOLT_GUI_SYMBOL_WIFI_1)*/
-  {.w_px=9, .glyph_index=153}, /*Unicode: U++F009 (JOLT_GUI_SYMBOL_WIFI_2)*/
-  {.w_px=9, .glyph_index=171}, /*Unicode: U++F00A (JOLT_GUI_SYMBOL_WIFI_3)*/
-  {.w_px=6, .glyph_index=189}, /*Unicode: U++F00B (JOLT_GUI_SYMBOL_LOCK)*/
+  {.w_px=13, .glyph_index=0},   /*Unicode: U+F000 (JOLT_GUI_SYMBOL_BATTERY_EMPTY)*/
+  {.w_px=13, .glyph_index=18},  /*Unicode: U+F001 (JOLT_GUI_SYMBOL_BATTERY_1)*/
+  {.w_px=13, .glyph_index=36},  /*Unicode: U+F002 (JOLT_GUI_SYMBOL_BATTERY_2)*/
+  {.w_px=13, .glyph_index=54},  /*Unicode: U+F003 (JOLT_GUI_SYMBOL_BATTERY_3)*/
+  {.w_px=13, .glyph_index=72},  /*Unicode: U+F004 (JOLT_GUI_SYMBOL_BATTERY_CHARGING)*/
+  {.w_px=13, .glyph_index=90},  /*Unicode: U+F005 (JOLT_GUI_SYMBOL_BATTERY_DISCONNECT)*/
+  {.w_px=5,  .glyph_index=108}, /*Unicode: U+F006 (JOLT_GUI_SYMBOL_BLUETOOTH)*/
+  {.w_px=9,  .glyph_index=117}, /*Unicode: U+F007 (JOLT_GUI_SYMBOL_BLUETOOTH_CONN)*/
+  {.w_px=9,  .glyph_index=135}, /*Unicode: U+F008 (JOLT_GUI_SYMBOL_WIFI_1)*/
+  {.w_px=9,  .glyph_index=153}, /*Unicode: U+F009 (JOLT_GUI_SYMBOL_WIFI_2)*/
+  {.w_px=9,  .glyph_index=171}, /*Unicode: U+F00A (JOLT_GUI_SYMBOL_WIFI_3)*/
+  {.w_px=9,  .glyph_index=189}, /*Unicode: U+F00B (JOLT_GUI_SYMBOL_WIFI_DISCONN)*/
+  {.w_px=6,  .glyph_index=207}, /*Unicode: U+F00C (JOLT_GUI_SYMBOL_LOCK)*/
 };
 
 lv_font_t jolt_gui_symbols = 
 {    
     .unicode_first = 0xF000,	/*First Unicode letter in this font*/
-    .unicode_last = 0xF00A,	/*Last Unicode letter in this font*/
+    .unicode_last = 0xF00C,	/*Last Unicode letter in this font*/
     .h_px = 9,				/*Font height in pixels*/
     .glyph_bitmap = jolt_gui_symbols_glyph_bitmap,	/*Bitmap of glyphs*/
     .glyph_dsc = jolt_gui_symbols_dsc,		/*Description of glyphs*/
-    .glyph_cnt = 12,			/*Number of glyphs in the font*/
+    .glyph_cnt = 13,			/*Number of glyphs in the font*/
     .unicode_list = NULL,	/*Every character in the font from 'unicode_first' to 'unicode_last'*/
     .get_bitmap = lv_font_get_bitmap_continuous,	/*Function pointer to get glyph's bitmap*/
     .get_width = lv_font_get_width_continuous,	/*Function pointer to get glyph's width*/

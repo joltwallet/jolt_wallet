@@ -9,7 +9,7 @@ static void statusbar_update() {
     char statusbar_symbols[20] = { 0 };
     char *ptr = statusbar_symbols;
 
-    uint8_t lock_status;
+    int8_t lock_status;
     lock_status = jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_LOCK].val;
     if( lock_status == 0 ) {
     }
@@ -18,7 +18,7 @@ static void statusbar_update() {
         ptr += 3;
     }
 
-    uint8_t bluetooth_level;
+    int8_t bluetooth_level;
     bluetooth_level = jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_BLUETOOTH].val;
     switch( bluetooth_level ) {
         case 0:
@@ -37,9 +37,14 @@ static void statusbar_update() {
             break;
     }
 
-    uint8_t wifi_level;
+    int8_t wifi_level;
     wifi_level = jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_WIFI].val;
-    if( wifi_level == 0 ) {
+    if( wifi_level == -1 ) {
+        /* Display Nothing */
+    }
+    else if( wifi_level == 0 ) {
+        strcpy(ptr, JOLT_GUI_SYMBOL_WIFI_DISCONN);
+        ptr += 3;
     }
     else if (wifi_level <= 55) {
         strcpy(ptr, JOLT_GUI_SYMBOL_WIFI_3);
@@ -54,7 +59,7 @@ static void statusbar_update() {
         ptr += 3;
     }
 
-    uint8_t battery_level = jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_BATTERY].val; 
+    int8_t battery_level = jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_BATTERY].val; 
     if( battery_level > 100 ) {
         strcpy(ptr, JOLT_GUI_SYMBOL_BATTERY_CHARGING);
     }
