@@ -157,18 +157,11 @@ void app_main() {
     /* Run Key/Value Storage Initialization */
     storage_startup();
 
-    /* Start Event Loop */
-#if !CONFIG_NO_BLOBS
-    /* todo: this probably shouldn't be so tightly coupled with WiFi */
+    /* Initialize Wireless */
     ESP_ERROR_CHECK(esp_event_loop_init(wifi_event_handler, NULL));
-#endif
-
-    // Initialize Wireless
-    /* todo: this must be before first_boot_setup otherwise attempting
-     * to get ap_info before initializing wifi causes a boot loop. investigate
-     * more robust solutions */
     esp_log_level_set("wifi", ESP_LOG_NONE);
     set_jolt_cast();
+    /* todo; double check the quality of RNG sources with wifi off */
     {
         uint8_t wifi_en;
         storage_get_u8(&wifi_en, "user", "wifi_en", 0 );

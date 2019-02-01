@@ -159,8 +159,18 @@ void get_ap_info(char * ssid_info, size_t size){
 
 #else
 /* Stubs */
-void wifi_connect(){
+esp_err_t jolt_wifi_start() {
+    return ESP_OK;
 }
+
+esp_err_t jolt_wifi_stop() {
+    return ESP_OK;
+}
+
+esp_err_t wifi_event_handler(void *ctx, system_event_t *event) {
+    return ESP_OK;
+}
+
 
 void get_ap_info(char * ssid_info, size_t size){
     if(size > 0){
