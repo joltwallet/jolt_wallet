@@ -56,6 +56,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t ,
  *  SPP PROFILE ATTRIBUTES *
  ***************************/
 
+
 /* DRIVER STUFF */
 static int     ble_open(const char * path, int flags, int mode );
 static int     ble_fstat( int fd, struct stat * st );
@@ -474,94 +475,173 @@ static void gatts_event_handler(esp_gatts_cb_event_t event,
     }
 }
 
-/* To be called during Jolt startup
- * Initialized/Registers all bluetooth related hardware/software */
-void jolt_bluetooth_setup() {
-    esp_err_t ret;
+esp_err_t jolt_bluetooth_start() {
+    esp_err_t err = ESP_OK;
 
-    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    ret = esp_bt_controller_init(&bt_cfg);
-    if (ret) {
-        ESP_LOGE(TAG, "%s initialize controller failed, error code = %x\n",
-                __func__, ret);
-        return;
-    }
-    else {
-        ESP_LOGI(TAG, "[bt] Initialized Controller");
-    }
-
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-    if (ret) {
-        ESP_LOGE(TAG, "%s enable controller failed, error code = %x\n",
-                __func__, ret);
-        return;
-    }
-    else {
-        ESP_LOGI(TAG, "[bt] Enabled Controller");
-    }
-
-    ret = esp_bluedroid_init();
-    if (ret) {
-        ESP_LOGE(TAG, "%s init bluetooth failed, error code = %x\n",
-                __func__, ret);
-        return;
-    }
-    else {
-        ESP_LOGI(TAG, "[bt] Initialized Bluedroid");
+    /* Create BT Controller */
+    {
+        esp_bt_controller_config_t cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+        esp_bt_controller_status_t status;
+        status = esp_bt_controller_get_status();
+        switch(status) {
+            /* These fall through are on purpose */
+            case ESP_BT_CONTROLLER_STATUS_IDLE:
+                err = esp_bt_controller_init( &cfg );
+                if( err ) {
+                    ESP_LOGE(TAG, "%s bt_controller_init failed, "
+                            "error code = %s\n", __func__, esp_err_to_name(err));
+                    goto exit;
+                }
+            case ESP_BT_CONTROLLER_STATUS_INITED:
+                err = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+                if( err ) {
+                    ESP_LOGE(TAG, "%s bt_controller_enable failed, "
+                            "error code = %s\n", __func__, esp_err_to_name(err));
+                    goto exit;
+                }
+            /* These fall through are on purpose */
+            case ESP_BT_CONTROLLER_STATUS_ENABLED:
+                /* do nothing */
+            default:
+                /* do nothing */
+                break;
+        }
     }
 
-    ret = esp_bluedroid_enable();
-    if (ret) {
-        ESP_LOGE(GATTS_TABLE_TAG, "%s enable bluetooth failed: %s\n",
-                __func__, esp_err_to_name(ret));
-        return;
-    }
-    else {
-        ESP_LOGI(TAG, "[bt] Enabled Bluedroid");
+    /* Create Bluedroid */
+    {
+        esp_bluedroid_status_t status;
+        status = esp_bluedroid_get_status();
+        switch(status){
+            /* These fall through are on purpose */
+            case ESP_BLUEDROID_STATUS_UNINITIALIZED:
+                err = esp_bluedroid_init();
+                if ( err ) {
+                    ESP_LOGE(TAG, "%s init bluedroid failed, error code = %s\n",
+                            __func__, esp_err_to_name(err));
+                    goto exit;
+                }
+            case ESP_BLUEDROID_STATUS_INITIALIZED:
+                err = esp_bluedroid_enable();
+                if ( err ) {
+                    ESP_LOGE(GATTS_TABLE_TAG, "%s enable bluedroid failed: %s\n",
+                            __func__, esp_err_to_name(err));
+                    goto exit;
+                }
+
+            case ESP_BLUEDROID_STATUS_ENABLED:
+                /* do nothing */
+            default:
+                /* do nothing */
+                break;
+        }
     }
 
-    //register the  callback function to the gap module
-    ret = esp_ble_gap_register_callback(gap_event_handler);
-    if (ret){
-        ESP_LOGE(GATTS_TABLE_TAG, "%s gap register failed, error code = %x\n",
-                __func__, ret);
-        return;
-    }
-    else {
-        ESP_LOGI(TAG, "[bt] Registered GAP callback");
+    err = esp_ble_gap_register_callback(gap_event_handler);
+    if ( err ){
+        ESP_LOGE(GATTS_TABLE_TAG, "%s gap register failed, error code = %s\n",
+                __func__, esp_err_to_name(err));
+        goto exit;
     }
 
-
-    ret = esp_ble_gatts_register_callback(gatts_event_handler);
-    if(ret){
-        ESP_LOGE(GATTS_TABLE_TAG, "%s gatts register failed, error code = %x\n",
-                __func__, ret);
-        return;
-    }
-    else {
-        ESP_LOGI(TAG, "[bt] Registered GATTS callback");
+    err = esp_ble_gatts_register_callback(gatts_event_handler);
+    if( err ){
+        ESP_LOGE(GATTS_TABLE_TAG, "%s gatts register failed, error code = %s\n",
+                __func__, esp_err_to_name(err) );
+        goto exit;
     }
 
-    ret = esp_ble_gatts_app_register(SPP_PROFILE_A_APP_ID);
-    if (ret){
-        ESP_LOGE(GATTS_TABLE_TAG, "%s gatts app register failed, error code = %x\n",
-                __func__, ret);
-    }
-    else {
-        ESP_LOGI(TAG, "[bt] Registered GATTS App");
+    err = esp_ble_gatts_app_register(SPP_PROFILE_A_APP_ID);
+    if ( err ){
+        ESP_LOGE(GATTS_TABLE_TAG, "%s gatts app register failed, error code = %s\n",
+                __func__, esp_err_to_name(err) );
+        goto exit;
     }
 
-    ble_in_queue = xQueueCreate(10, sizeof(char *));
-    xTaskCreate(&spp_cmd_task, "spp_cmd_task", 4096, NULL, 10, NULL);
+    if ( NULL == ble_in_queue ) {
+        ble_in_queue = xQueueCreate(10, sizeof(char *));
+    }
+    if ( NULL == ble_in_task) {
+        xTaskCreate(&spp_cmd_task, "spp_cmd_task", 4096, NULL, 10, &ble_in_task);
+    }
 
-    ESP_LOGI(TAG, "Done setting up bluetooth.");
-
+exit:
+    return ESP_OK;
 }
+
+esp_err_t jolt_bluetooth_stop() {
+    esp_err_t err = ESP_OK;
+
+    /* Destroy Bluedroid */
+    {
+        esp_bluedroid_status_t status;
+        status = esp_bluedroid_get_status();
+        switch(status){
+            /* These fall through are on purpose */
+            case ESP_BLUEDROID_STATUS_ENABLED:
+                err = esp_bluedroid_disable();
+                if ( ESP_OK != err ){
+                    ESP_LOGE(GATTS_TABLE_TAG, "%s bluedroid disable failed, "
+                            "error code = %s\n", __func__, esp_err_to_name(err) );
+                    goto exit;
+                }
+            case ESP_BLUEDROID_STATUS_INITIALIZED:
+                err = esp_bluedroid_deinit();
+                if ( ESP_OK != err ){
+                    ESP_LOGE(GATTS_TABLE_TAG, "%s bluedroid deinit failed, "
+                            "error code = %s\n",
+                            __func__, esp_err_to_name(err) );
+                    goto exit;
+                }
+            case ESP_BLUEDROID_STATUS_UNINITIALIZED:
+                /* do nothing */
+            default:
+                /* do nothing */
+                break;
+        }
+    }
+
+    /* Destroy BT Controller */
+    {
+        esp_bt_controller_status_t status;
+        status = esp_bt_controller_get_status();
+        switch(status) {
+            /* These fall through are on purpose */
+            case ESP_BT_CONTROLLER_STATUS_ENABLED:
+                err = esp_bt_controller_disable();
+                if ( ESP_OK != err ){
+                    ESP_LOGE(GATTS_TABLE_TAG, "%s bt controller disable failed, "
+                            "error code = %s\n", __func__, esp_err_to_name(err) );
+                    goto exit;
+                }
+            case ESP_BT_CONTROLLER_STATUS_INITED:
+                err = esp_bt_controller_deinit();
+                if ( ESP_OK != err ) {
+                    ESP_LOGE(GATTS_TABLE_TAG, "%s bt controller deinit failed, "
+                            "error code = %s\n", __func__, esp_err_to_name(err) );
+                    goto exit;
+                }
+
+            case ESP_BT_CONTROLLER_STATUS_IDLE:
+                /* do nothing */
+            default:
+                /* do nothing */
+                break;
+        }
+    }
+exit:
+    return err;
+}
+
 #else
 
 /* Stubs */
-void jolt_bluetooth_setup(){
-    return;
+esp_err_t jolt_bluetooth_start(){
+    return ESP_OK;
+}
+
+esp_err_t jolt_bluetooth_stop(){
+    return ESP_OK;
 }
 
 #endif

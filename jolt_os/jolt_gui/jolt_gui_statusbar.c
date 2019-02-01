@@ -21,14 +21,14 @@ static void statusbar_update() {
     int8_t bluetooth_level;
     bluetooth_level = jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_BLUETOOTH].val;
     switch( bluetooth_level ) {
-        case 0:
+        case JOLT_BLUETOOTH_LEVEL_OFF:
             /* Don't Display Anything */
             break;
-        case 1:
+        case JOLT_BLUETOOTH_LEVEL_ON:
             strcpy(ptr, JOLT_GUI_SYMBOL_BLUETOOTH);
             ptr += 3;
             break;
-        case 2:
+        case JOLT_BLUETOOTH_LEVEL_CONN:
             strcpy(ptr, JOLT_GUI_SYMBOL_BLUETOOTH_CONN);
             ptr += 3;
             break;

@@ -4,6 +4,7 @@
 #include "stdint.h"
 #include "bluetooth_cfg.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "freertos/queue.h"
 
 typedef struct gatts_profile_inst_t {
@@ -26,5 +27,6 @@ extern gatts_profile_inst_t spp_profile_tab[SPP_PROFILE_NUM];
 extern uint16_t spp_handle_table[SPP_IDX_NB];
 
 extern xQueueHandle ble_in_queue;
+extern xTaskHandle ble_in_task;
 
 #endif

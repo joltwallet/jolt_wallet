@@ -11,6 +11,7 @@
 #include <driver/adc.h>
 #include "hal/storage/storage.h"
 #include "hal/radio/bluetooth_gatts_profile_a.h"
+#include "esp_bt.h"
 
 /**********************
  *  STATIC PROTOTYPES
@@ -79,14 +80,19 @@ static void jolt_hw_monitor_get_battery_level(hardware_monitor_t *monitor) {
 
 static void jolt_hw_monitor_get_bluetooth_level(hardware_monitor_t *monitor) {
     /* Returns with the bluetooth strength level. 0 if no connected. */
-    uint8_t level;
+    uint8_t level = JOLT_BLUETOOTH_LEVEL_OFF;
+
 #if CONFIG_BT_ENABLED
-    storage_get_u8(&level, "user", "bluetooth_en", 0);
-    if(level > 0){
-        level += gatts_profile_a_is_connected();
+    esp_bt_controller_status_t status;
+    status = esp_bt_controller_get_status();
+    if( ESP_BT_CONTROLLER_STATUS_ENABLED == status ) {
+        if( gatts_profile_a_is_connected() ) {
+            level = JOLT_BLUETOOTH_LEVEL_CONN;
+        }
+        else {
+            level = JOLT_BLUETOOTH_LEVEL_ON;
+        }
     }
-#else
-    level = 0;
 #endif
     MONITOR_UPDATE(level);
 }

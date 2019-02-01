@@ -4,6 +4,9 @@
 
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_gui/menus/settings/submenus.h"
+#include "esp_bt.h"
+#include "esp_bt_main.h"
+#include "hal/radio/bluetooth.h"
 #include "hal/storage/storage.h"
 
 static lv_obj_t *scr = NULL;
@@ -20,16 +23,25 @@ static void destroy_list() {
 static lv_res_t sw_en_cb(lv_obj_t *btn) {
     uint8_t state;
     state = lv_sw_toggle_anim(sw_en);
-    storage_set_u8(state, "user", "bluetooth_en");
 
     if( state ) {
         create_list();
-        /* todo turn on bluetooth */
+        if( ESP_OK != jolt_bluetooth_start() ) {
+            lv_sw_toggle(sw_en);
+            return LV_RES_OK;
+        }
     }
     else {
         destroy_list();
-        /* todo turn off bluetooth */
+        if( ESP_OK != jolt_bluetooth_stop() ) {
+            /* Bluetooth wasn't successfully stopped */
+            lv_sw_toggle(sw_en);
+            return LV_RES_OK;
+        }
     }
+
+    storage_set_u8(state, "user", "bluetooth_en");
+
     return LV_RES_OK;
 }
 

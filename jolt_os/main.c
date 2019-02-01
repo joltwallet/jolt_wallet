@@ -217,7 +217,8 @@ void app_main() {
         uint8_t bluetooth_en;
         storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 0 );
         if( bluetooth_en ) {
-            jolt_bluetooth_setup(); // starts a task adding bluetooth commands to the command queue
+            //vTaskDelay(pdMS_TO_TICKS(1000));// todo; something better than a delay
+            jolt_bluetooth_start();
         }
     }
 
