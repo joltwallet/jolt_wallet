@@ -54,7 +54,8 @@ esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
     return ESP_OK;
 }
 
-void wifi_connect(){
+esp_err_t jolt_wifi_start(){
+    static bool initiate_tcpip_adapter = true;
     wifi_config_t sta_config = {
         .sta = {
             .ssid      = CONFIG_AP_TARGET_SSID,
@@ -63,56 +64,77 @@ void wifi_connect(){
         }
     };
     
-    tcpip_adapter_init();
+    if ( initiate_tcpip_adapter ) {
+        tcpip_adapter_init();
+        initiate_tcpip_adapter = false;
+    }
     
-    //Check for WiFi credentials in NVS
-    size_t string_size_ssid;
-    storage_get_str(NULL, &string_size_ssid, "user", "wifi_ssid",
-            CONFIG_AP_TARGET_SSID);
-    char* wifi_ssid = malloc(string_size_ssid);
-    storage_get_str(wifi_ssid, &string_size_ssid, "user", "wifi_ssid",
-            CONFIG_AP_TARGET_SSID);
-
-    size_t string_size_pass;
-    storage_get_str(NULL, &string_size_pass, "user", "wifi_pass",
-            CONFIG_AP_TARGET_PASSWORD);
-    char* wifi_pass = malloc(string_size_pass);
-    storage_get_str(wifi_pass, &string_size_pass, "user", "wifi_pass",
-            CONFIG_AP_TARGET_PASSWORD);
-  
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg) );
-    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-
-    strcpy((char *)sta_config.sta.ssid, (char *)wifi_ssid);
-    strcpy((char *)sta_config.sta.password, (char *)wifi_pass);
+    /* Check for WiFi credentials in NVS */
+    {
+        size_t ssid_len;
+        storage_get_str(NULL, &ssid_len, "user", "wifi_ssid",
+                CONFIG_AP_TARGET_SSID);
+        if( ssid_len > 31 ) {
+            // todo err
+        }
+        storage_get_str((char *)sta_config.sta.ssid, &ssid_len,
+                "user", "wifi_ssid",
+                CONFIG_AP_TARGET_SSID);
+    }
+    {
+        size_t pass_len;
+        storage_get_str(NULL, &pass_len, "user", "wifi_pass",
+                CONFIG_AP_TARGET_PASSWORD);
+        if( pass_len > 63 ) {
+            // todo err
+        }
+        storage_get_str((char *)sta_config.sta.password, &pass_len,
+                "user", "wifi_pass",
+                CONFIG_AP_TARGET_PASSWORD);
+    }
    
-#if 0
-    ESP_LOGI(TAG, "wifi_ssid: %s\n"
-            "wifi_pass: %s\n"
-            "strlen(wifi_ssid): %d\n"
-            "strlen(wifi_pass): %d\n"
-            "string_size_ssid: %d\n"
-            "string_size_pass: %d\n"
-            "sta_config.sta.ssid: %s\n"
-            "sta_config.sta.password: %s\n"
-            "sizeof(sta_config.sta.ssid): %d\n"
-            "sizeof(sta_config.sta.pass): %d\n", 
-            wifi_ssid, 
-            wifi_pass, 
-            strlen(wifi_ssid), 
-            strlen(wifi_pass), 
-            string_size_ssid, 
-            string_size_pass, 
-            sta_config.sta.ssid, 
-            sta_config.sta.password, 
-            sizeof(sta_config.sta.ssid), 
-            sizeof(sta_config.sta.password));
-#endif
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
-    //ESP_ERROR_CHECK(esp_wifi_connect());
+    /* Instantiate Drivers */
+    {
+        esp_err_t err;
+        wifi_mode_t mode;
+        err = esp_wifi_get_mode( &mode );
+        if( ESP_ERR_WIFI_NOT_INIT ) {
+            wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+            ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
+            ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
+            ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
+            ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
+        }
+    }
+
+    esp_wifi_start();
+
+    return ESP_OK;
+}
+
+esp_err_t jolt_wifi_stop() {
+    esp_err_t err = ESP_OK;
+
+    err = esp_wifi_disconnect();
+    switch(err){
+        /* These fall through are on purpose */
+        case ESP_OK:
+            esp_wifi_stop();
+        case ESP_ERR_WIFI_NOT_STARTED:
+            esp_wifi_set_mode(WIFI_MODE_NULL);
+            esp_wifi_deinit();
+        case ESP_ERR_WIFI_NOT_INIT:
+            /* to do */
+            err = ESP_OK;
+            break;
+        case ESP_FAIL:
+            /* Do Nothing */
+            break;
+        default:
+            /* Do Nothing */
+            break;
+    }
+    return err;
 }
 
 void get_ap_info(char * ssid_info, size_t size){

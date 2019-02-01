@@ -173,7 +173,7 @@ void app_main() {
         uint8_t wifi_en;
         storage_get_u8(&wifi_en, "user", "wifi_en", 0 );
         if( wifi_en ) {
-            wifi_connect();
+            jolt_wifi_start();
         }
     }
 

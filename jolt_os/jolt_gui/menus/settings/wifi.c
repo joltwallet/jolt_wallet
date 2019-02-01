@@ -26,14 +26,11 @@ static lv_res_t sw_en_cb(lv_obj_t *btn) {
 
     if( state ) {
         create_list();
-        wifi_connect();
+        jolt_wifi_start();
     }
     else {
         destroy_list();
-        esp_wifi_disconnect();
-        esp_wifi_stop();
-        esp_wifi_set_mode(WIFI_MODE_NULL);
-        esp_wifi_deinit();
+        jolt_wifi_stop();
     }
     return LV_RES_OK;
 }
