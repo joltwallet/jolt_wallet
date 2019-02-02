@@ -16,38 +16,95 @@
 #include "lwip/err.h"
 #include "nvs_flash.h"
 #include "nvs.h"
+#include "esp_timer.h"
 
 #include "wifi.h"
 #include "vault.h"
 #include "jolt_helpers.h"
 #include "hal/storage/storage.h"
 
+#if CONFIG_POWER_SAVE_MIN_MODEM
+#define DEFAULT_PS_MODE WIFI_PS_MIN_MODEM
+#elif CONFIG_POWER_SAVE_MAX_MODEM
+#define DEFAULT_PS_MODE WIFI_PS_MAX_MODEM
+#elif CONFIG_POWER_SAVE_NONE
+#define DEFAULT_PS_MODE WIFI_PS_NONE
+#else
+#define DEFAULT_PS_MODE WIFI_PS_NONE
+#endif /*CONFIG_POWER_SAVE_MODEM*/
+
 
 #if !CONFIG_NO_BLOBS
 static const char TAG[] = "wifi_task";
+
+static esp_timer_handle_t disconnect_timer = NULL;
+static uint8_t disconnect_ctr = 0;
+
+static void disconnect_timer_cb( void *arg ) {
+    if( disconnect_ctr < 15 ){
+        disconnect_ctr++;
+    }
+    else{
+        disconnect_ctr = 15;
+    }
+    esp_wifi_connect();
+}
 
 esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
 {
     uint8_t primary;
     wifi_second_chan_t second;
     esp_err_t err;
-    
+
+    if ( NULL == disconnect_timer ) {
+        /* Instantiate the battery-saving disconnect timer */
+        esp_timer_create_args_t cfg = {
+            .callback        = disconnect_timer_cb,
+            .arg             = NULL,
+            .dispatch_method = ESP_TIMER_TASK,
+            .name            = "wifi_disconn",
+        };
+        ESP_ERROR_CHECK( esp_timer_create(&cfg, &disconnect_timer) );
+    }
+
     switch(event->event_id) {
         case SYSTEM_EVENT_STA_START:
-            ESP_LOGI(TAG, "SYSTEM_EVENT_STA_START");
+            ESP_LOGD(TAG, "SYSTEM_EVENT_STA_START");
+            disconnect_ctr = 0;
             ESP_ERROR_CHECK(esp_wifi_connect());
+            break;
+        case SYSTEM_EVENT_STA_STOP:
+            /* application event callback generally does not need to do anything */
             break;
         case SYSTEM_EVENT_STA_GOT_IP:
             err = esp_wifi_get_channel(&primary, &second);
-            ESP_LOGI(TAG, "channel=%d err=%d\n", primary, err);
-            ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
-            ESP_LOGI(TAG, "got ip:%s\n",
-                     ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
+            ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP; channel=%d, err=%d, ip: %s\n",
+                    primary, err, ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
             break;
-        case SYSTEM_EVENT_STA_DISCONNECTED:
-            ESP_LOGD(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
-            //ESP_ERROR_CHECK(esp_wifi_connect());
+        case SYSTEM_EVENT_STA_CONNECTED:
+            /* Do nothing, generally need to wait for SYSTEM_EVENT_STA_GOT_IP */
+            disconnect_ctr = 0;
             break;
+        case SYSTEM_EVENT_STA_DISCONNECTED: {
+            /* Gets triggered on disconnect, or when esp_wifi_connect() fails to 
+             * connect */
+            ESP_LOGI(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
+            if( 0 == disconnect_ctr ){
+                /* Try to connect immediately */
+                ESP_ERROR_CHECK(esp_wifi_connect());
+                disconnect_ctr = 1;
+            }
+            else{
+                /* Scanning period gradually increases every scan up to 20 seconds.
+                 * Idea: Faster, battery hungry scans are more important near the 
+                 * first disconnect, but after a while the device is just sitting
+                 * idle and doesn't require immediate user feedback. */
+                uint64_t timeout;
+                timeout = 1000000*disconnect_ctr + 5000000;
+                esp_timer_start_once(disconnect_timer, timeout);
+            }
+            break;
+        }
         default:
             break;
     }
@@ -58,9 +115,13 @@ esp_err_t jolt_wifi_start(){
     static bool initiate_tcpip_adapter = true;
     wifi_config_t sta_config = {
         .sta = {
-            .ssid      = CONFIG_AP_TARGET_SSID,
-            .password  = CONFIG_AP_TARGET_PASSWORD,
-            .bssid_set = 0
+            .ssid            = CONFIG_AP_TARGET_SSID,
+            .password        = CONFIG_AP_TARGET_PASSWORD,
+            .scan_method     = WIFI_FAST_SCAN,
+            .bssid_set       = 0,
+            .channel         = 0,
+            .listen_interval = 3,
+            .sort_method     = WIFI_CONNECT_AP_BY_SECURITY,
         }
     };
     
@@ -98,7 +159,7 @@ esp_err_t jolt_wifi_start(){
         esp_err_t err;
         wifi_mode_t mode;
         err = esp_wifi_get_mode( &mode );
-        if( ESP_ERR_WIFI_NOT_INIT ) {
+        if( ESP_ERR_WIFI_NOT_INIT == err ) {
             wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
             ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
             ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
@@ -108,6 +169,7 @@ esp_err_t jolt_wifi_start(){
     }
 
     esp_wifi_start();
+    esp_wifi_set_ps(DEFAULT_PS_MODE);
 
     return ESP_OK;
 }
@@ -124,7 +186,7 @@ esp_err_t jolt_wifi_stop() {
             esp_wifi_set_mode(WIFI_MODE_NULL);
             esp_wifi_deinit();
         case ESP_ERR_WIFI_NOT_INIT:
-            /* to do */
+            /* Do Nothing */
             err = ESP_OK;
             break;
         case ESP_FAIL:
