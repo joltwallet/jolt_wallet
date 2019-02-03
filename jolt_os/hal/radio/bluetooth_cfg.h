@@ -23,9 +23,7 @@
 extern uint16_t spp_mtu_size;
 
 extern const uint8_t spp_adv_data[23];
-extern const esp_ble_adv_params_t spp_adv_params;
-
-extern const esp_ble_scan_params_t ble_scan_params;
+extern const esp_ble_adv_params_t spp_adv_pair_params; // used for when pairing
 
 enum{
     SPP_IDX_SVC = 0,              /* Serial Port Profile Service Index */

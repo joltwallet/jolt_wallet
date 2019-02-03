@@ -446,7 +446,8 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
             /* Advertising data set is configured */
             adv_config_done &= (~ADV_CONFIG_FLAG);
             if (adv_config_done == 0){
-                esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_params );
+                // todo; make jolt_blutooth_start_pair_advertising()
+                esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_pair_params );
             }
             break;
 
@@ -467,7 +468,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
             /* scan response data set complete */
             adv_config_done &= (~SCAN_RSP_CONFIG_FLAG);
             if (adv_config_done == 0) {
-                esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_params );
+                esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_pair_params );
             }
             break;
         /* Triggered by: esp_ble_gap_config_scan_rsp_data_raw( raw_data, raw_data_len ) */
@@ -677,12 +678,13 @@ static void gatts_event_handler(esp_gatts_cb_event_t event,
     }
 }
 
-static void jolt_bluetooth_config_security() {
+static void jolt_bluetooth_config_security(bool bond) {
     /* This section sets the security parameters in the enumerated order */
     /* ESP_BLE_SM_PASSKEY seems to be undocumented*/
     {
         /* Secure Connections with MITM Protection and Bonding */
-        esp_ble_auth_req_t auth_req = ESP_LE_AUTH_REQ_SC_MITM_BOND;
+        esp_ble_auth_req_t auth_req;
+        auth_req = bond ? ESP_LE_AUTH_REQ_SC_MITM_BOND : ESP_LE_AUTH_REQ_SC_MITM;
         ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, sizeof(uint8_t)));
     }
 
@@ -807,7 +809,7 @@ esp_err_t jolt_bluetooth_start() {
     }
 
     /* Configure Bluetooth Security Parameters */
-    jolt_bluetooth_config_security();
+    jolt_bluetooth_config_security( true );
 
     if ( NULL == ble_in_queue ) {
         ble_in_queue = xQueueCreate(10, sizeof(char *));

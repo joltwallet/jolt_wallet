@@ -43,7 +43,7 @@ const uint8_t spp_adv_data[23] = { /* Max Advertising Payload 31 bytes */
 };
 
 /* Advertising Parameters */
-const esp_ble_adv_params_t spp_adv_params = {
+const esp_ble_adv_params_t spp_adv_pair_params = {
     .adv_int_min        = 0x200, /* Minimum advertising interval for undirected and low duty cycle directed advertising. N * 0.625 mS */
     .adv_int_max        = 0x400,
     .adv_type           = ADV_TYPE_IND,
