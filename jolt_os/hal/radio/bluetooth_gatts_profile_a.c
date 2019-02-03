@@ -30,7 +30,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
     esp_ble_gatts_cb_param_t *p_data = (esp_ble_gatts_cb_param_t *) param;
     uint8_t res = 0xff;
 
-    ESP_LOGD(GATTS_TABLE_TAG, "event = %x\n",event);
+    ESP_LOGE(GATTS_TABLE_TAG, "GATTS event %d", event);
     switch (event) {
     	case ESP_GATTS_REG_EVT:
         	esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
@@ -128,7 +128,6 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
     	case ESP_GATTS_STOP_EVT:
         	break;
     	case ESP_GATTS_CONNECT_EVT:
-    	    //spp_conn_id = p_data->connect.conn_id;
     	    is_connected = true;
     	    memcpy(&spp_remote_bda,&p_data->connect.remote_bda,sizeof(esp_bd_addr_t));
         	break;

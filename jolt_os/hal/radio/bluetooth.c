@@ -425,29 +425,26 @@ static void spp_cmd_task(void * arg) {
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
     esp_err_t err;
-    ESP_LOGE(GATTS_TABLE_TAG, "GAP_EVT, event %d\n", event);
-
+    ESP_LOGE(GATTS_TABLE_TAG, "GAP event %d", event);
     switch (event) {
-    case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
-        esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_params );
-        break;
-    case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
-        /* advertising start complete event to indicate advertising 
-         * start successfully or failed. */
-        if((err = param->adv_start_cmpl.status) != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed: %s\n", 
-                    esp_err_to_name(err));
-        }
-        break;
-    default:
-        break;
+        case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
+            esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_params );
+            break;
+        case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
+            /* advertising start complete event to indicate advertising 
+             * start successfully or failed. */
+            if((err = param->adv_start_cmpl.status) != ESP_BT_STATUS_SUCCESS) {
+                ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed: %s\n", 
+                        esp_err_to_name(err));
+            }
+            break;
+        default:
+            break;
     }
 }
 
 static void gatts_event_handler(esp_gatts_cb_event_t event, 
         esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) {
-
-    ESP_LOGI(GATTS_TABLE_TAG, "EVT %d, gatts if %d\n", event, gatts_if);
 
     /* If event is register event, store the gatts_if for each profile */
     if (event == ESP_GATTS_REG_EVT) {

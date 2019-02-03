@@ -23,17 +23,6 @@
 #include "jolt_helpers.h"
 #include "hal/storage/storage.h"
 
-#if CONFIG_POWER_SAVE_MIN_MODEM
-#define DEFAULT_PS_MODE WIFI_PS_MIN_MODEM
-#elif CONFIG_POWER_SAVE_MAX_MODEM
-#define DEFAULT_PS_MODE WIFI_PS_MAX_MODEM
-#elif CONFIG_POWER_SAVE_NONE
-#define DEFAULT_PS_MODE WIFI_PS_NONE
-#else
-#define DEFAULT_PS_MODE WIFI_PS_NONE
-#endif /*CONFIG_POWER_SAVE_MODEM*/
-
-
 #if !CONFIG_NO_BLOBS
 static const char TAG[] = "wifi_task";
 
@@ -71,7 +60,7 @@ esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
         case SYSTEM_EVENT_STA_START:
             ESP_LOGD(TAG, "SYSTEM_EVENT_STA_START");
             disconnect_ctr = 0;
-            ESP_ERROR_CHECK(esp_wifi_connect());
+            esp_wifi_connect();
             break;
         case SYSTEM_EVENT_STA_STOP:
             /* application event callback generally does not need to do anything */
@@ -91,7 +80,7 @@ esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
             ESP_LOGI(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
             if( 0 == disconnect_ctr ){
                 /* Try to connect immediately */
-                ESP_ERROR_CHECK(esp_wifi_connect());
+                esp_wifi_connect();
                 disconnect_ctr = 1;
             }
             else{
@@ -169,7 +158,7 @@ esp_err_t jolt_wifi_start(){
     }
 
     esp_wifi_start();
-    esp_wifi_set_ps(DEFAULT_PS_MODE);
+    ESP_ERROR_CHECK( esp_wifi_set_ps(WIFI_PS_MAX_MODEM) );
 
     return ESP_OK;
 }
