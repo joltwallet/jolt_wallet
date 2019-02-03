@@ -39,7 +39,7 @@ static CONFIDENTIAL char user_words[24][11];
 static lv_obj_t *jolt_gui_scr_mnemonic_restore_num_create(int n) {
     assert( n <= 24 );
     assert( n >= 1 );
-    return jolt_gui_scr_bignum_create(gettext(JOLT_TEXT_RESTORE), gettext(JOLT_TEXT_ENTER_MNEMONIC_WORD), n);
+    return jolt_gui_scr_bignum_create(gettext(JOLT_TEXT_RESTORE), gettext(JOLT_TEXT_ENTER_MNEMONIC_WORD), n, -1);
 }
 
 static lv_res_t jolt_cmd_mnemonic_restore_back( lv_obj_t *btn ) {

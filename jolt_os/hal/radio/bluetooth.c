@@ -560,7 +560,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                     param->ble_security.key_notif.passkey);
             // todo: internationalization
             passkey_scr = jolt_gui_scr_bignum_create("Bluetooth Pair",
-                    "Pairing Key", param->ble_security.key_notif.passkey);
+                    "Pairing Key", param->ble_security.key_notif.passkey, 6);
             break;
         /* Triggered by: esp_ble_gap_update_whitelist() */
         case ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT:

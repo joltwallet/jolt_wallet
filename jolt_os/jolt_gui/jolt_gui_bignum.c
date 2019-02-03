@@ -4,7 +4,13 @@
 static bool first = true;
 static lv_style_t bignum_style;
 
-lv_obj_t *jolt_gui_scr_bignum_create(const char *title, const char *subtitle, uint32_t n) {
+#define BUF_LEN 11
+
+lv_obj_t *jolt_gui_scr_bignum_create(const char *title, const char *subtitle, uint32_t n, int8_t n_digits) {
+    if(n_digits > BUF_LEN-1){
+        /* Insufficient Buffer */
+        return NULL;
+    }
     JOLT_GUI_SCR_CTX(title){
         /* Create text for above the big number */
         if( NULL != subtitle ){
@@ -14,8 +20,13 @@ lv_obj_t *jolt_gui_scr_bignum_create(const char *title, const char *subtitle, ui
         }
 
         /* Create text for big number */
-        char number_str[11] = { 0 }; 
-        itoa( n, number_str, 10 );
+        char number_str[BUF_LEN] = { 0 };
+        if( n_digits > 0 ) {
+            sprintf(number_str, "%0*d", n_digits, n);
+        }
+        else{
+            itoa( n, number_str, 10 );
+        }
         lv_obj_t *number_label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
         lv_label_set_text(number_label, number_str);
 
