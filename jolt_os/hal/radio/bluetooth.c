@@ -550,6 +550,9 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
             /* Display the passkey */
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_PASSKEY_NOTIF_EVT, the passkey Notify number:%d",
                     param->ble_security.key_notif.passkey);
+            // todo: internationalization
+            passkey_scr = jolt_gui_scr_bignum_create("Bluetooth Pair",
+                    "Pairing Key", param->ble_security.key_notif.passkey, 6);
             break;
         case ESP_GAP_BLE_NC_REQ_EVT:
             /* The app will receive this evt when the IO has DisplayYesNO 
@@ -559,9 +562,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
             /* Not used in Jolt */
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_NC_REQ_EVT, the passkey Notify number:%d",
                     param->ble_security.key_notif.passkey);
-            // todo: internationalization
-            passkey_scr = jolt_gui_scr_bignum_create("Bluetooth Pair",
-                    "Pairing Key", param->ble_security.key_notif.passkey, 6);
+            /* This shouldn't trigger due to the IO_CAP config */
             break;
         /* Triggered by: esp_ble_gap_update_whitelist() */
         case ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT:
@@ -574,7 +575,8 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
          * Security - Bonding *
          **********************/
         case ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT:
-            ESP_LOGD(GATTS_TABLE_TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d",
+            ESP_LOGD(GATTS_TABLE_TAG,
+                    "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d",
                     param->remove_bond_dev_cmpl.status);
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV");
             ESP_LOGI(GATTS_TABLE_TAG, "-----ESP_GAP_BLE_REMOVE_BOND_DEV----");
@@ -690,7 +692,8 @@ static void jolt_bluetooth_config_security(bool bond) {
 
     {
         /* Register Jolt's IO capability */
-        esp_ble_io_cap_t iocap = ESP_IO_CAP_IO; /* Jolt has a basic display and user can easily input yes or no */
+        /* Set as CAP_OUT so that you MUST enter code on computer/smartphone */
+        esp_ble_io_cap_t iocap = ESP_IO_CAP_OUT;
         ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE, &iocap, sizeof(uint8_t)));
     }
 

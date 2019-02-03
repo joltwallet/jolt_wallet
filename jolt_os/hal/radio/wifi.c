@@ -199,7 +199,7 @@ void get_ap_info(char * ssid_info, size_t size){
     if (tcpip_adapter_get_ip_info(ESP_IF_WIFI_STA, &ip) == 0) {
         char ip_address[16];
         snprintf(ip_address, 16, IPSTR, IP2STR(&ip.ip));
-        snprintf(ssid_info, size, "SSID: %s RSSI:%d IP:%s", new_ap_info.ssid, new_ap_info.rssi, ip_address  );
+        snprintf(ssid_info, size, "SSID: %s\nRSSI: %d\nIP: %s", new_ap_info.ssid, new_ap_info.rssi, ip_address  );
     }
     else{
         snprintf(ssid_info, 20, "Error Not Connected");
