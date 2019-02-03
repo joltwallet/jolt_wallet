@@ -47,6 +47,8 @@ typedef enum jolt_text_id_t {
     /* Bluetooth Options */
     JOLT_TEXT_BLUETOOTH_ENABLE,
     JOLT_TEXT_PAIR,
+    JOLT_TEXT_TEMP_PAIR,
+    JOLT_TEXT_UNBONDS,
 
     /* WiFi Options */
     JOLT_TEXT_WIFI_ENABLE,

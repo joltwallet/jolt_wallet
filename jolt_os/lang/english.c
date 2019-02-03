@@ -38,6 +38,8 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     /* Bluetooth Options */
     "Bluetooth Enable",
     "Pair",
+    "Temporary Pair",
+    "Forget Devices",
 
     /* WiFi Options */
     "WiFi Enable",

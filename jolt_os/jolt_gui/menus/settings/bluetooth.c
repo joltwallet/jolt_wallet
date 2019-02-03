@@ -12,11 +12,23 @@
 static lv_obj_t *scr = NULL;
 static lv_obj_t *sw_en = NULL;
 
-static void create_list() {
+static void create_enable_list();
+static void create_disable_list();
+
+static void create_enable_list() {
+    /* Elements to show while bluetooth is enabled */
     jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_PAIR), menu_bluetooth_pair_create);
+    jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_TEMP_PAIR), menu_bluetooth_temp_pair_create);
+    create_disable_list();
+}
+
+static void create_disable_list() {
+    /* Elements to show while bluetooth is disabled */
+    jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_UNBONDS), menu_bluetooth_unbond_create);
 }
 
 static void destroy_list() {
+    /* Delete everything after the enable/disable element */
      jolt_gui_scr_menu_remove(scr, 1, 0);
 }
 
@@ -25,7 +37,7 @@ static lv_res_t sw_en_cb(lv_obj_t *btn) {
     state = lv_sw_toggle_anim(sw_en);
 
     if( state ) {
-        create_list();
+        create_enable_list();
         if( ESP_OK != jolt_bluetooth_start() ) {
             lv_sw_toggle(sw_en);
             return LV_RES_OK;
@@ -33,6 +45,7 @@ static lv_res_t sw_en_cb(lv_obj_t *btn) {
     }
     else {
         destroy_list();
+        create_disable_list();
         if( ESP_OK != jolt_bluetooth_stop() ) {
             /* Bluetooth wasn't successfully stopped */
             lv_sw_toggle(sw_en);
@@ -55,7 +68,7 @@ lv_res_t menu_bluetooth_create(lv_obj_t *btn) {
 
     if( bluetooth_en ) {
         lv_sw_on( sw_en );
-        create_list();
+        create_enable_list();
     }
     else{
         lv_sw_off( sw_en );
