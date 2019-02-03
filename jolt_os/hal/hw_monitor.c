@@ -13,6 +13,8 @@
 #include "hal/radio/bluetooth_gatts_profile_a.h"
 #include "esp_bt.h"
 
+hardware_monitor_t statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_NUM];
+
 /**********************
  *  STATIC PROTOTYPES
  **********************/
@@ -128,21 +130,20 @@ void jolt_hw_monitor_get_lock_status(hardware_monitor_t *monitor) {
 
 /* Creates all the hardware_monitor mutex's and sets their updater functions */
 static void jolt_hw_monitor_init() {
-    jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_BATTERY].update = 
+    statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_BATTERY].update = 
             &jolt_hw_monitor_get_battery_level;
-    jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_WIFI].update = 
+    statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_WIFI].update = 
             &jolt_hw_monitor_get_wifi_level;
-    jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_BLUETOOTH].update = 
+    statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_BLUETOOTH].update = 
             &jolt_hw_monitor_get_bluetooth_level;
-    jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_LOCK].update = 
+    statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_LOCK].update = 
             &jolt_hw_monitor_get_lock_status;
 }
 
 /* Iterates through all hardware_monitor's and call's their updater function */
 void jolt_hw_monitor_update() {
     for(uint8_t i=0; i < JOLT_GUI_STATUSBAR_INDEX_NUM; i++) {
-        jolt_gui_store.statusbar.indicators[i].update(
-                &jolt_gui_store.statusbar.indicators[i]);
+        statusbar_indicators[i].update(&statusbar_indicators[i]);
     }
 }
 

@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "sdkconfig.h"
+#include "jolt_gui/jolt_gui_statusbar.h"
 
 typedef struct hardware_monitor_t {
     int8_t val;
@@ -20,6 +21,9 @@ typedef enum jolt_bluetooth_level_t {
     JOLT_BLUETOOTH_LEVEL_ON,
     JOLT_BLUETOOTH_LEVEL_CONN,
 } jolt_bluetooth_level_t;
+
+/* Holds HW Status */
+extern hardware_monitor_t statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_NUM];
 
 #ifndef CONFIG_JOLT_HW_MONITOR_UPDATE_PERIOD_MS
     #define CONFIG_JOLT_HW_MONITOR_UPDATE_PERIOD_MS 2000

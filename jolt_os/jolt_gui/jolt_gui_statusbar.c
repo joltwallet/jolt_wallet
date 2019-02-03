@@ -1,6 +1,35 @@
+#include "esp_log.h"
 #include "jolt_gui.h"
 #include "jolt_gui_symbols.h"
 #include "jolt_gui_statusbar.h"
+
+static const char TAG[] = "statusbar";
+static lv_style_t header_style;
+static lv_obj_t *statusbar_cont;
+static lv_obj_t *statusbar_label;
+
+static lv_coord_t get_symbol_width( char *sym ) {
+    const lv_font_t *font = header_style.text.font;
+    uint32_t i = 0;
+    uint32_t letter;
+    letter = lv_txt_encoded_next(sym, &i);
+    return lv_font_get_width(font, letter);
+}
+
+static lv_coord_t statusbar_icons_get_max_width() {
+    static lv_coord_t w = 0;
+
+    /* Add up all the widest symbols that could be displayed at once */
+    /* Only have to compute this once */
+    if( 0==w ) {
+        w += get_symbol_width(JOLT_GUI_SYMBOL_LOCK);
+        w += get_symbol_width(JOLT_GUI_SYMBOL_BLUETOOTH_CONN);
+        w += get_symbol_width(JOLT_GUI_SYMBOL_WIFI_DISCONN);
+        w += get_symbol_width(JOLT_GUI_SYMBOL_BATTERY_CHARGING);
+    }
+
+    return w;
+}
 
 static void statusbar_update() {
     /* Gets called from a lv_task to update the graphics according to 
@@ -10,7 +39,7 @@ static void statusbar_update() {
     char *ptr = statusbar_symbols;
 
     int8_t lock_status;
-    lock_status = jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_LOCK].val;
+    lock_status = statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_LOCK].val;
     if( lock_status == 0 ) {
     }
     else {
@@ -19,7 +48,7 @@ static void statusbar_update() {
     }
 
     int8_t bluetooth_level;
-    bluetooth_level = jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_BLUETOOTH].val;
+    bluetooth_level = statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_BLUETOOTH].val;
     switch( bluetooth_level ) {
         case JOLT_BLUETOOTH_LEVEL_OFF:
             /* Don't Display Anything */
@@ -38,7 +67,7 @@ static void statusbar_update() {
     }
 
     int8_t wifi_level;
-    wifi_level = jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_WIFI].val;
+    wifi_level = statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_WIFI].val;
     if( wifi_level == -1 ) {
         /* Display Nothing */
     }
@@ -59,7 +88,7 @@ static void statusbar_update() {
         ptr += 3;
     }
 
-    int8_t battery_level = jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_BATTERY].val; 
+    int8_t battery_level = statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_BATTERY].val; 
     if( battery_level > 100 ) {
         strcpy(ptr, JOLT_GUI_SYMBOL_BATTERY_CHARGING);
     }
@@ -78,8 +107,8 @@ static void statusbar_update() {
     ptr += 3;
 
     // Dont need a semaphore around here because this is called in an lv_task
-    lv_label_set_text(jolt_gui_store.statusbar.label, statusbar_symbols);
-    lv_obj_align(jolt_gui_store.statusbar.label, jolt_gui_store.statusbar.container,
+    lv_label_set_text(statusbar_label, statusbar_symbols);
+    lv_obj_align(statusbar_label, statusbar_cont,
             LV_ALIGN_IN_RIGHT_MID, -1, 0);
 }
 
@@ -87,30 +116,21 @@ static void statusbar_update() {
  * hardware_monitor task is running */
 void statusbar_create() {
     /* Create StatusBar Container */
-    static lv_style_t header_style;
-    jolt_gui_store.statusbar.container = lv_cont_create(lv_scr_act(), NULL);
-    lv_style_copy(&header_style, 
-            lv_cont_get_style(jolt_gui_store.statusbar.container) );
+    statusbar_cont = lv_cont_create(lv_scr_act(), NULL);
+    lv_style_copy(&header_style, lv_cont_get_style(statusbar_cont) );
     header_style.body.border.width = 1;
     header_style.body.border.part = LV_BORDER_BOTTOM;
     header_style.body.border.color = LV_COLOR_BLACK;
-    lv_cont_set_style(jolt_gui_store.statusbar.container, &header_style);
-    lv_obj_set_size(jolt_gui_store.statusbar.container,
-            LV_HOR_RES, CONFIG_JOLT_GUI_STATUSBAR_H);
-
-    /* Select Jolt GUI Symbol Font for indicators */
-    static lv_style_t indicator_style;
-    lv_style_copy(&indicator_style, &header_style);
-    indicator_style.text.font = &jolt_gui_symbols;
-    indicator_style.body.padding.hor = 1;
+    lv_cont_set_style(statusbar_cont, &header_style);
+    lv_obj_set_size(statusbar_cont, LV_HOR_RES, CONFIG_JOLT_GUI_STATUSBAR_H);
 
     /* Create Indicator Label*/
-    jolt_gui_store.statusbar.label = lv_label_create(jolt_gui_store.statusbar.container,
-            NULL);
-    lv_label_set_style(jolt_gui_store.statusbar.label, &indicator_style);
-    lv_obj_set_size(jolt_gui_store.statusbar.label,
-            LV_HOR_RES - CONFIG_JOLT_GUI_TITLE_W, 
-            indicator_style.text.font->h_px);
+    statusbar_label = lv_label_create(statusbar_cont, NULL);
+    lv_label_set_long_mode(statusbar_label, LV_LABEL_LONG_CROP);
+    lv_label_set_align(statusbar_label, LV_LABEL_ALIGN_RIGHT);
+    lv_obj_set_size(statusbar_label,
+            statusbar_icons_get_max_width(), 
+            header_style.text.font->h_px);
 
     /* Periodically update the statusbar symbols */
     statusbar_update();
@@ -118,3 +138,6 @@ void statusbar_create() {
             LV_TASK_PRIO_LOW, NULL);
 }
 
+lv_obj_t *statusbar_get_label() {
+    return statusbar_label;
+}

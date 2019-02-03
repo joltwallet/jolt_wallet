@@ -73,12 +73,14 @@ lv_obj_t *jolt_gui_obj_parent_create() {
 lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
     lv_obj_t *label = NULL;
     JOLT_GUI_CTX{
+        lv_obj_t *statusbar_label = statusbar_get_label();
         /* Create a non-transparent background to block out old titles */
         lv_obj_t *title_cont = BREAK_IF_NULL(lv_cont_create(parent, NULL));
         lv_obj_set_free_num(title_cont, JOLT_GUI_OBJ_ID_CONT_TITLE);
-        lv_obj_align(title_cont, NULL, LV_ALIGN_IN_TOP_LEFT, 2, 0);
-        lv_obj_set_size(title_cont,
-                CONFIG_JOLT_GUI_TITLE_W, CONFIG_JOLT_GUI_STATUSBAR_H-1);
+        lv_obj_align(title_cont, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
+        lv_obj_set_size( title_cont,
+                lv_obj_get_x(statusbar_label) - 1, // todo: use style padding
+                CONFIG_JOLT_GUI_STATUSBAR_H-1);
 
         label = BREAK_IF_NULL(lv_label_create(title_cont, NULL));
         lv_obj_set_free_num(label, JOLT_GUI_OBJ_ID_LABEL_0);
@@ -92,7 +94,7 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
         else{
             lv_label_set_text(label, title);
         }
-        lv_obj_set_size(label, CONFIG_JOLT_GUI_TITLE_W, label_style->text.font->h_px);
+        lv_obj_set_size(label, lv_obj_get_width(title_cont), label_style->text.font->h_px);
     }
     return label;
 }

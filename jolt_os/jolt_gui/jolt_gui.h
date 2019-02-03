@@ -51,11 +51,6 @@ struct {
         lv_group_t *enter;
     } group;
     struct {
-        lv_obj_t *container;
-        lv_obj_t *label;
-        hardware_monitor_t indicators[JOLT_GUI_STATUSBAR_INDEX_NUM];
-    } statusbar;
-    struct {
         CONFIDENTIAL char passphrase[BM_PASSPHRASE_BUF_LEN]; //currently not active
         CONFIDENTIAL uint256_t pin;
         CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
