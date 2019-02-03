@@ -38,6 +38,7 @@
 #include "bluetooth.h"
 #include "bluetooth_state.h"
 
+#include "jolt_gui/jolt_gui.h"
 
 #define GATTS_SEND_REQUIRE_CONFIRM false
 
@@ -46,8 +47,8 @@ FILE *ble_stdout;
 FILE *ble_stderr;
 
 static void gap_event_handler(esp_gap_ble_cb_event_t, esp_ble_gap_cb_param_t *);
-static void gatts_event_handler(esp_gatts_cb_event_t , 
-        esp_gatt_if_t, esp_ble_gatts_cb_param_t *);
+static void gatts_event_handler(esp_gatts_cb_event_t event, 
+        esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
 #define GATTS_TABLE_TAG  "GATTS_SPP_DEMO"
 #define TAG  "GATTS_SPP_DEMO"
@@ -110,7 +111,7 @@ static int ble_open(const char * path, int flags, int mode) {
 }
 
 static ssize_t ble_write(int fd, const void *data, size_t size) {
-	const char *data_c = (const char *)data;
+    const char *data_c = (const char *)data;
     _lock_acquire_recursive(&s_ble_write_lock);
 
     int idx = 0;
@@ -162,12 +163,12 @@ static int ble_read_char(int fd) {
 }
 
 /* When we peek ahead to handle \r\n */
-static void ble_return_char(int fd, int c){
+static void ble_return_char(int fd, int c) {
     peek_c = c;
 }
 
 static ssize_t ble_read(int fd, void* data, size_t size) {
-	char *data_c = (char *)data;
+    char *data_c = (char *)data;
 
     _lock_acquire_recursive(&s_ble_read_lock);
 
@@ -287,7 +288,7 @@ static void select_notif_callback(uart_port_t uart_num, uart_select_notif_t uart
 }
 
 static esp_err_t ble_start_select(int nfds, fd_set *readfds, fd_set *writefds,
-        fd_set *exceptfds, SemaphoreHandle_t *signal_sem){
+        fd_set *exceptfds, SemaphoreHandle_t *signal_sem) {
     /* Setting up the environment for detection of read/write/error conditions 
      * on file descriptors belonging to BLE VFS.
      */
@@ -335,7 +336,7 @@ static esp_err_t ble_start_select(int nfds, fd_set *readfds, fd_set *writefds,
     *_writefds_orig = *writefds;
     *_errorfds_orig = *exceptfds;
 
-	FD_ZERO(readfds);
+    FD_ZERO(readfds);
     FD_ZERO(writefds);
     FD_ZERO(exceptfds);
 
@@ -422,14 +423,34 @@ static void spp_cmd_task(void * arg) {
     vTaskDelete(NULL);
 }
 
-static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
-{
+static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
+
+    /* Pointer to the passkey screen */
+    static lv_obj_t *passkey_scr = NULL;
+
+    /* Bitmask */
+    #define ADV_CONFIG_FLAG                           (1 << 0)
+    #define SCAN_RSP_CONFIG_FLAG                      (1 << 1)
+    static uint8_t adv_config_done = 0;
+
     esp_err_t err;
     ESP_LOGE(GATTS_TABLE_TAG, "GAP event %d", event);
     switch (event) {
-        case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
-            esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_params );
+        /***************
+         * Advertising *
+         ***************/
+        /* Triggered by: esp_ble_gap_config_adv_data_raw( raw_data, raw_data_len ) */
+        case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT: /* fall through */
+        /* Triggered by: esp_ble_gap_config_adv_data( &adv_data ) */
+        case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
+            /* Advertising data set is configured */
+            adv_config_done &= (~ADV_CONFIG_FLAG);
+            if (adv_config_done == 0){
+                esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_params );
+            }
             break;
+
+        /* esp_ble_gap_start_advertising */
         case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
             /* advertising start complete event to indicate advertising 
              * start successfully or failed. */
@@ -438,9 +459,193 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                         esp_err_to_name(err));
             }
             break;
+
+        /*********
+         * Scans *
+         *********/
+        case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT:
+            /* scan response data set complete */
+            adv_config_done &= (~SCAN_RSP_CONFIG_FLAG);
+            if (adv_config_done == 0) {
+                esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_params );
+            }
+            break;
+        /* Triggered by: esp_ble_gap_config_scan_rsp_data_raw( raw_data, raw_data_len ) */
+        case ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT:
+            break;
+
+        /* Triggered by: esp_ble_gap_set_scan_params( &scan_params ) */
+        case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT:
+            /* scan parameters set complete */
+            break;
+        case ESP_GAP_BLE_SCAN_RESULT_EVT:
+            /* one scan result ready */
+			/* todo: add debug logging here */
+            break;
+        /* Triggered by: esp_ble_gap_start_scanning( duration ) */
+        case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT:
+            /* Not used by Jolt*/
+            break;
+        /* Triggered by: esp_ble_gap_stop_scanning( ) */
+        case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
+			if (param->scan_stop_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+				ESP_LOGE(GATTS_TABLE_TAG, "Scan stop failed, error status = %x", param->scan_stop_cmpl.status);
+			}
+            else {
+                ESP_LOGI(GATTS_TABLE_TAG, "Stop scan successfully");
+            }
+            break;
+
+        /************
+         * Security *
+         ************/
+        case ESP_GAP_BLE_AUTH_CMPL_EVT: {
+            /* Keys have been exchanged successfully between devices,
+             * the pairing process is completed and encryption of payload data can be started.
+             */
+            /* Print Connection Data */
+            esp_bd_addr_t bd_addr;
+            memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr, sizeof(esp_bd_addr_t));
+            ESP_LOGI(GATTS_TABLE_TAG, "remote BD_ADDR: %08x%04x",
+                    (bd_addr[0] << 24) + (bd_addr[1] << 16)
+                    + (bd_addr[2] << 8) + bd_addr[3], (bd_addr[4] << 8)
+                    + bd_addr[5]);
+            ESP_LOGI(GATTS_TABLE_TAG, "address type = %d", 
+                    param->ble_security.auth_cmpl.addr_type);
+            ESP_LOGI(GATTS_TABLE_TAG, "pair status = %s", 
+                    param->ble_security.auth_cmpl.success ? "success" : "fail");
+			if (!param->ble_security.auth_cmpl.success) {
+				ESP_LOGI(GATTS_TABLE_TAG, "fail reason = 0x%x", 
+                        param->ble_security.auth_cmpl.fail_reason);
+			}
+            else {
+				ESP_LOGI(GATTS_TABLE_TAG, "auth mode = 0x%x", 
+                        param->ble_security.auth_cmpl.auth_mode);    
+			}
+            break;
+        }
+        case ESP_GAP_BLE_KEY_EVT:
+            /* Triggered for every key exchange message */
+            ESP_LOGI(GATTS_TABLE_TAG, "key type = 0x%x", param->ble_security.ble_key.key_type);
+            break;
+        case ESP_GAP_BLE_SEC_REQ_EVT:
+            /* Slave requests to start encryption.
+             * Send the [true] security response to the peer device to accept the security request.
+             * To reject the security request, send the security response with [false] value*/
+            esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
+            break;
+        case ESP_GAP_BLE_PASSKEY_REQ_EVT:
+            /* If this device has digit input capabilities, and the remote device has
+             * display capabilities, this is triggered to input the digits shown on
+             * the remote display using esp_ble_passkey_reply() */
+            /* Not used in Jolt */
+            break;
+        case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:
+            /* The app will receive this evt when the IO has Output capability 
+             * and the peer device IO has Input capability.
+             * Show the passkey integer param->ble_security.key_notif.passkey 
+             * to the user to input it in the peer device. */
+
+            /* Display the passkey */
+            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_PASSKEY_NOTIF_EVT, the passkey Notify number:%d",
+                    param->ble_security.key_notif.passkey);
+            break;
+        case ESP_GAP_BLE_NC_REQ_EVT:
+            /* The app will receive this evt when the IO has DisplayYesNO 
+             * capability and the peer device IO also has DisplayYesNo capability.
+             * Show the passkey integer param->ble_security.key_notif.passkey
+             * to the user to confirm it with the number displayed by peer deivce. */
+            /* Not used in Jolt */
+            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_NC_REQ_EVT, the passkey Notify number:%d",
+                    param->ble_security.key_notif.passkey);
+            // todo: internationalization
+            passkey_scr = jolt_gui_scr_bignum_create("Bluetooth Pair",
+                    "Pairing Key", param->ble_security.key_notif.passkey);
+            break;
+        /* Triggered by: esp_ble_gap_update_whitelist() */
+        case ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT:
+            break;
+        case ESP_GAP_BLE_OOB_REQ_EVT:
+            /* Out of Band is currently not supported */
+            break;
+
+        /**********************
+         * Security - Bonding *
+         **********************/
+        case ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT:
+            ESP_LOGD(GATTS_TABLE_TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d",
+                    param->remove_bond_dev_cmpl.status);
+            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV");
+            ESP_LOGI(GATTS_TABLE_TAG, "-----ESP_GAP_BLE_REMOVE_BOND_DEV----");
+            esp_log_buffer_hex(GATTS_TABLE_TAG, (void *)param->remove_bond_dev_cmpl.bd_addr,
+                    sizeof(esp_bd_addr_t));
+            ESP_LOGI(GATTS_TABLE_TAG, "------------------------------------");
+            break;
+        case ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT:
+            break;
+        case ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT:
+            break;
+
+        /************************************
+         * General Parameter Configurations *
+         ************************************/
+        /* Triggered by: esp_ble_gap_update_conn_params( &params ) */
+        case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
+            break;
+        /* Triggered by: esp_ble_gap_set_pkt_data_len() */
+        case ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT:
+            break;
+        /* Triggered by: esp_ble_gap_config_local_privacy() */
+        case ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT: {
+            if (param->local_privacy_cmpl.status != ESP_BT_STATUS_SUCCESS){
+                ESP_LOGE(GATTS_TABLE_TAG, "config local privacy failed, error status = %x",
+                        param->local_privacy_cmpl.status);
+                break;
+            }
+
+            esp_err_t ret;
+        	ret = esp_ble_gap_config_adv_data_raw((uint8_t *)spp_adv_data, sizeof(spp_adv_data));
+            if ( ret ) {
+                ESP_LOGE(GATTS_TABLE_TAG, "config adv data failed, error code = %x", ret);
+            }
+            else {
+                adv_config_done |= ADV_CONFIG_FLAG;
+            }
+
+            #if 0
+            ret = esp_ble_gap_config_adv_data(&spp_scan_rsp_data);
+            if ( ret ) {
+                ESP_LOGE(GATTS_TABLE_TAG, "config adv rsp data failed, error code = %x", ret);
+            }
+            else {
+                adv_config_done |= SCAN_RSP_CONFIG_FLAG;
+            }
+            #endif
+        }
+
+        /****************
+         * Meta Queries *
+         ****************/
+        case ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT:
+            break;
+
+        /********
+         * Misc *
+         ********/
+        /* Triggered by: sp_ble_gap_add_duplicate_scan_exceptional_device() */
+        case ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT:
+            break;
+
+        /* The following events were used for internal esp-idf development; deprecated:
+         *     ESP_GAP_BLE_LOCAL_IR_EVT
+         *     ESP_GAP_BLE_LOCAL_ER_EVT
+         */
+
         default:
             break;
     }
+    #undef ADV_CONFIG_FLAG
+    #undef SCAN_RSP_CONFIG_FLAG
 }
 
 static void gatts_event_handler(esp_gatts_cb_event_t event, 
@@ -469,6 +674,52 @@ static void gatts_event_handler(esp_gatts_cb_event_t event,
                 spp_profile_tab[idx].gatts_cb(event, gatts_if, param);
             }
         }
+    }
+}
+
+static void jolt_bluetooth_config_security() {
+    /* This section sets the security parameters in the enumerated order */
+    /* ESP_BLE_SM_PASSKEY seems to be undocumented*/
+    {
+        /* Secure Connections with MITM Protection and Bonding */
+        esp_ble_auth_req_t auth_req = ESP_LE_AUTH_REQ_SC_MITM_BOND;
+        ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, sizeof(uint8_t)));
+    }
+
+    {
+        /* Register Jolt's IO capability */
+        esp_ble_io_cap_t iocap = ESP_IO_CAP_IO; /* Jolt has a basic display and user can easily input yes or no */
+        ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE, &iocap, sizeof(uint8_t)));
+    }
+
+    {
+        /* Initiator Key Distribution/Generation */
+        /* Type of key the smartphone/computer should distribute to Jolt */
+        uint8_t init_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
+        ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t)));
+
+        /* Type of key Jolt can distribute to smartphone/computer */
+        uint8_t rsp_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
+        ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t)));
+    }
+
+    {
+        /* Set Bluetooth Encryption Keysize */
+        uint8_t key_size = 16;      /* 128-bit key */
+        ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(uint8_t)));
+    }
+
+    /* ESP_BLE_SM_SET_STATIC_PASSKEY and ESP_BLE_SM_CLEAR_STATIC_PASSKEY are not used */
+
+    {
+        uint8_t auth_option = ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_DISABLE; // todo: maybe set this to ENABLE
+        ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH, &auth_option, sizeof(uint8_t)));
+    }
+
+    {
+        /* ESP_BLE_SM_OOB_SUPPORT is not fully fleshed out in ESP32 */
+        uint8_t oob_support = ESP_BLE_OOB_DISABLE;
+        ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_OOB_SUPPORT, &oob_support, sizeof(uint8_t)));
     }
 }
 
@@ -554,6 +805,9 @@ esp_err_t jolt_bluetooth_start() {
                 __func__, esp_err_to_name(err) );
         goto exit;
     }
+
+    /* Configure Bluetooth Security Parameters */
+    jolt_bluetooth_config_security();
 
     if ( NULL == ble_in_queue ) {
         ble_in_queue = xQueueCreate(10, sizeof(char *));

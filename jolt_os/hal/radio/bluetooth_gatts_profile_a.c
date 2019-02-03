@@ -7,6 +7,7 @@
 #include "freertos/queue.h"
 #include "esp_log.h"
 
+
 #define GATTS_TABLE_TAG  "GATTS_SPP_DEMO"
 static bool is_connected = false;
 
@@ -34,6 +35,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
     switch (event) {
     	case ESP_GATTS_REG_EVT:
         	esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
+            esp_ble_gap_config_local_privacy(true);
         	esp_ble_gap_config_adv_data_raw((uint8_t *)spp_adv_data,
                     sizeof(spp_adv_data));
         	esp_ble_gatts_create_attr_tab(spp_gatt_db, gatts_if, 
@@ -129,7 +131,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
         	break;
     	case ESP_GATTS_CONNECT_EVT:
     	    is_connected = true;
-    	    memcpy(&spp_remote_bda,&p_data->connect.remote_bda,sizeof(esp_bd_addr_t));
+            esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_MITM);
         	break;
     	case ESP_GATTS_DISCONNECT_EVT:
     	    is_connected = false;

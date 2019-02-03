@@ -32,13 +32,11 @@ static const uint16_t spp_status_uuid              = ESP_GATT_UUID_SPP_COMMAND_N
 static const uint8_t  spp_status_val[10]           = { 0x00 };
 static const uint8_t  spp_status_ccc[2]            = { 0x00, 0x00 };
 
-esp_bd_addr_t spp_remote_bda = {0x0,};
-
 uint16_t spp_mtu_size = 23;
 
 // Serial Port Profile Advertising Data
-// esp_ble_adv_data_t
-const uint8_t spp_adv_data[23] = {
+// todo: refine and document
+const uint8_t spp_adv_data[23] = { /* Max Advertising Payload 31 bytes */
     0x02,0x01,0x06, // Flags
     0x03,0x03,0xE0,0xFF,
     0x0F,0x04,'J','o','l','t'
@@ -53,8 +51,6 @@ const esp_ble_adv_params_t spp_adv_params = {
     .channel_map        = ADV_CHNL_ALL,
     .adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY, /* todo: maybe tighten this */
 };
-
-
 
 const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
     /* SPP -  Service Declaration */

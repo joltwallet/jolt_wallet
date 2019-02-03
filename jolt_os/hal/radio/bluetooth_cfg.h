@@ -22,10 +22,10 @@
 
 extern uint16_t spp_mtu_size;
 
-extern esp_bd_addr_t spp_remote_bda;
-
 extern const uint8_t spp_adv_data[23];
 extern const esp_ble_adv_params_t spp_adv_params;
+
+extern const esp_ble_scan_params_t ble_scan_params;
 
 enum{
     SPP_IDX_SVC = 0,              /* Serial Port Profile Service Index */
