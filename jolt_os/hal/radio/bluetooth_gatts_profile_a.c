@@ -135,7 +135,8 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
         	break;
     	case ESP_GATTS_DISCONNECT_EVT:
     	    is_connected = false;
-            esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_pair_params );
+            /* Start looking for whitelisted devices again */
+            esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_wht_params );
     	    break;
     	case ESP_GATTS_OPEN_EVT:
     	    break;

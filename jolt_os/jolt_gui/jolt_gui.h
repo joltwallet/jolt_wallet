@@ -138,6 +138,13 @@ lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb);
 lv_res_t jolt_gui_send_enter_main(lv_obj_t *dummy);
 lv_res_t jolt_gui_send_left_main(lv_obj_t *dummy);
 
+/*****************
+ * System Events *
+ *****************/
+#include "esp_gap_ble_api.h"
+void jolt_gui_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
+
+
 /********
  * MISC *
  ********/

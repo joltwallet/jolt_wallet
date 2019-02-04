@@ -40,6 +40,7 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Pair",
     "Temporary Pair",
     "Forget Devices",
+    "Broadcasting",
 
     /* WiFi Options */
     "WiFi Enable",

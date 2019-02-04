@@ -21,11 +21,18 @@ static lv_coord_t statusbar_icons_get_max_width() {
 
     /* Add up all the widest symbols that could be displayed at once */
     /* Only have to compute this once */
-    if( 0==w ) {
+    if( 0 == w ) {
         w += get_symbol_width(JOLT_GUI_SYMBOL_LOCK);
+        w += header_style.text.letter_space;
+
         w += get_symbol_width(JOLT_GUI_SYMBOL_BLUETOOTH_CONN);
+        w += header_style.text.letter_space;
+
         w += get_symbol_width(JOLT_GUI_SYMBOL_WIFI_DISCONN);
+        w += header_style.text.letter_space;
+
         w += get_symbol_width(JOLT_GUI_SYMBOL_BATTERY_CHARGING);
+        w += header_style.text.letter_space;
     }
 
     return w;

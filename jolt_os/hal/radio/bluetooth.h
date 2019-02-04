@@ -10,7 +10,13 @@ extern FILE *ble_stderr;
 
 #endif
 
+/* General start/stop */
 esp_err_t jolt_bluetooth_start();
 esp_err_t jolt_bluetooth_stop();
+
+/* Advertising */
+esp_err_t jolt_bluetooth_adv_all_start();
+esp_err_t jolt_bluetooth_adv_wht_start();
+esp_err_t jolt_bluetooth_adv_stop();
 
 #endif

@@ -43,13 +43,25 @@ const uint8_t spp_adv_data[23] = { /* Max Advertising Payload 31 bytes */
 };
 
 /* Advertising Parameters */
+/* For pairing with new devices */
 const esp_ble_adv_params_t spp_adv_pair_params = {
     .adv_int_min        = 0x200, /* Minimum advertising interval for undirected and low duty cycle directed advertising. N * 0.625 mS */
     .adv_int_max        = 0x400,
     .adv_type           = ADV_TYPE_IND,
-    .own_addr_type      = BLE_ADDR_TYPE_PUBLIC,
+    .own_addr_type      = BLE_ADDR_TYPE_RANDOM,
     .channel_map        = ADV_CHNL_ALL,
-    .adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY, /* todo: maybe tighten this */
+    .adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
+};
+
+/* For pairing with whitelisted devices */
+const esp_ble_adv_params_t spp_adv_wht_params = {
+    .adv_int_min        = 0x200, /* Minimum advertising interval for undirected and low duty cycle directed advertising. N * 0.625 mS */
+    .adv_int_max        = 0x400,
+    .adv_type           = ADV_TYPE_IND,
+    .own_addr_type      = BLE_ADDR_TYPE_RANDOM,
+    .channel_map        = ADV_CHNL_ALL,
+    .adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
+    //.adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST, // esp-idf issue
 };
 
 const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {

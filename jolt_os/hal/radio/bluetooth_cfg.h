@@ -24,6 +24,7 @@ extern uint16_t spp_mtu_size;
 
 extern const uint8_t spp_adv_data[23];
 extern const esp_ble_adv_params_t spp_adv_pair_params; // used for when pairing
+extern const esp_ble_adv_params_t spp_adv_wht_params; // adv to whitelisted devices
 
 enum{
     SPP_IDX_SVC = 0,              /* Serial Port Profile Service Index */

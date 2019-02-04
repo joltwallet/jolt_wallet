@@ -41,6 +41,8 @@
 #include "jolt_gui/jolt_gui.h"
 
 #define GATTS_SEND_REQUIRE_CONFIRM false
+#define WHITELIST_ADD    true
+#define WHITELIST_REMOVE false
 
 FILE *ble_stdin;
 FILE *ble_stdout;
@@ -155,6 +157,7 @@ static int ble_read_char(int fd) {
         if( '\0' == c ) {
             /* pop the element from the queue */
             xQueueReceive(ble_in_queue, &line, portMAX_DELAY);
+            free(line);
             line_off = 0;
         }
     }while('\0' == c);
@@ -423,15 +426,18 @@ static void spp_cmd_task(void * arg) {
     vTaskDelete(NULL);
 }
 
+static void add_all_bonded_to_whitelist() {
+    int dev_num = esp_ble_get_bond_device_num();
+    esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
+    esp_ble_get_bond_device_list(&dev_num, dev_list);
+    for (int i = 0; i < dev_num; i++) {
+        esp_ble_gap_update_whitelist(true, dev_list[i].bd_addr);
+    }
+
+    free(dev_list);
+}
+
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
-
-    /* Pointer to the passkey screen */
-    static lv_obj_t *passkey_scr = NULL;
-
-    /* Bitmask */
-    #define ADV_CONFIG_FLAG                           (1 << 0)
-    #define SCAN_RSP_CONFIG_FLAG                      (1 << 1)
-    static uint8_t adv_config_done = 0;
 
     esp_err_t err;
     ESP_LOGE(GATTS_TABLE_TAG, "GAP event %d", event);
@@ -443,12 +449,9 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT: /* fall through */
         /* Triggered by: esp_ble_gap_config_adv_data( &adv_data ) */
         case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
-            /* Advertising data set is configured */
-            adv_config_done &= (~ADV_CONFIG_FLAG);
-            if (adv_config_done == 0){
-                // todo; make jolt_blutooth_start_pair_advertising()
-                esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_pair_params );
-            }
+            /* Start Advertising To Whitelisted Devices */
+            ESP_ERROR_CHECK(esp_ble_gap_start_advertising( 
+                    (esp_ble_adv_params_t *)&spp_adv_wht_params ));
             break;
 
         /* esp_ble_gap_start_advertising */
@@ -459,6 +462,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                 ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed: %s\n", 
                         esp_err_to_name(err));
             }
+            
             break;
 
         /*********
@@ -466,10 +470,6 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
          *********/
         case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT:
             /* scan response data set complete */
-            adv_config_done &= (~SCAN_RSP_CONFIG_FLAG);
-            if (adv_config_done == 0) {
-                esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_pair_params );
-            }
             break;
         /* Triggered by: esp_ble_gap_config_scan_rsp_data_raw( raw_data, raw_data_len ) */
         case ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT:
@@ -504,24 +504,37 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
             /* Keys have been exchanged successfully between devices,
              * the pairing process is completed and encryption of payload data can be started.
              */
-            /* Print Connection Data */
-            esp_bd_addr_t bd_addr;
-            memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr, sizeof(esp_bd_addr_t));
-            ESP_LOGI(GATTS_TABLE_TAG, "remote BD_ADDR: %08x%04x",
-                    (bd_addr[0] << 24) + (bd_addr[1] << 16)
-                    + (bd_addr[2] << 8) + bd_addr[3], (bd_addr[4] << 8)
-                    + bd_addr[5]);
+
+            /* [logging] Print Connection Data */
+            {
+                esp_bd_addr_t bd_addr;
+                memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr,
+                        sizeof(esp_bd_addr_t));
+                ESP_LOGI(GATTS_TABLE_TAG, "remote BD_ADDR: %08x%04x",
+                        (bd_addr[0] << 24) + (bd_addr[1] << 16)
+                        + (bd_addr[2] << 8) + bd_addr[3], (bd_addr[4] << 8)
+                        + bd_addr[5]);
+            }
             ESP_LOGI(GATTS_TABLE_TAG, "address type = %d", 
                     param->ble_security.auth_cmpl.addr_type);
             ESP_LOGI(GATTS_TABLE_TAG, "pair status = %s", 
                     param->ble_security.auth_cmpl.success ? "success" : "fail");
-			if (!param->ble_security.auth_cmpl.success) {
-				ESP_LOGI(GATTS_TABLE_TAG, "fail reason = 0x%x", 
-                        param->ble_security.auth_cmpl.fail_reason);
-			}
-            else {
+			if (param->ble_security.auth_cmpl.success) {
 				ESP_LOGI(GATTS_TABLE_TAG, "auth mode = 0x%x", 
                         param->ble_security.auth_cmpl.auth_mode);    
+                /* Add the address to the whitelist */
+                esp_err_t err;
+                esp_bd_addr_t bd_addr;
+                memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr,
+                        sizeof(esp_bd_addr_t));
+                err = esp_ble_gap_update_whitelist(WHITELIST_ADD, bd_addr);
+                if( ESP_OK != err ){
+                    ESP_LOGE(GATTS_TABLE_TAG, "Failed to add bd_addr to whitelist");
+                }
+			}
+            else {
+				ESP_LOGI(GATTS_TABLE_TAG, "fail reason = 0x%x", 
+                        param->ble_security.auth_cmpl.fail_reason);
 			}
             break;
         }
@@ -546,13 +559,9 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
              * and the peer device IO has Input capability.
              * Show the passkey integer param->ble_security.key_notif.passkey 
              * to the user to input it in the peer device. */
-
-            /* Display the passkey */
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_PASSKEY_NOTIF_EVT, the passkey Notify number:%d",
                     param->ble_security.key_notif.passkey);
-            // todo: internationalization
-            passkey_scr = jolt_gui_scr_bignum_create("Bluetooth Pair",
-                    "Pairing Key", param->ble_security.key_notif.passkey, 6);
+            /* See bluetooth_pair.c for gui handling */
             break;
         case ESP_GAP_BLE_NC_REQ_EVT:
             /* The app will receive this evt when the IO has DisplayYesNO 
@@ -605,25 +614,6 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                         param->local_privacy_cmpl.status);
                 break;
             }
-
-            esp_err_t ret;
-        	ret = esp_ble_gap_config_adv_data_raw((uint8_t *)spp_adv_data, sizeof(spp_adv_data));
-            if ( ret ) {
-                ESP_LOGE(GATTS_TABLE_TAG, "config adv data failed, error code = %x", ret);
-            }
-            else {
-                adv_config_done |= ADV_CONFIG_FLAG;
-            }
-
-            #if 0
-            ret = esp_ble_gap_config_adv_data(&spp_scan_rsp_data);
-            if ( ret ) {
-                ESP_LOGE(GATTS_TABLE_TAG, "config adv rsp data failed, error code = %x", ret);
-            }
-            else {
-                adv_config_done |= SCAN_RSP_CONFIG_FLAG;
-            }
-            #endif
         }
 
         /****************
@@ -647,8 +637,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         default:
             break;
     }
-    #undef ADV_CONFIG_FLAG
-    #undef SCAN_RSP_CONFIG_FLAG
+    jolt_gui_gap_cb(event, param);
 }
 
 static void gatts_event_handler(esp_gatts_cb_event_t event, 
@@ -790,6 +779,8 @@ esp_err_t jolt_bluetooth_start() {
         }
     }
 
+    add_all_bonded_to_whitelist();
+
     err = esp_ble_gap_register_callback(gap_event_handler);
     if ( err ){
         ESP_LOGE(GATTS_TABLE_TAG, "%s gap register failed, error code = %s\n",
@@ -887,6 +878,39 @@ esp_err_t jolt_bluetooth_stop() {
     }
 exit:
     return err;
+}
+
+/* Start Advertising to ALL devices; useful for pairing */
+esp_err_t jolt_bluetooth_adv_all_start() {
+    esp_err_t err;
+    jolt_bluetooth_adv_stop();
+    
+    err = esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_pair_params );
+    if( ESP_OK != err ){
+        ESP_LOGE(GATTS_TABLE_TAG, "Failed to start BT advertising: %d", err);
+        return err;
+    }
+
+    return ESP_OK;
+}
+
+/* Start Advertising to whitelisted devices */
+esp_err_t jolt_bluetooth_adv_wht_start() {
+    esp_err_t err;
+    jolt_bluetooth_adv_stop();
+    
+    err = esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_wht_params );
+    if( ESP_OK != err ){
+        ESP_LOGE(GATTS_TABLE_TAG, "Failed to start BT advertising: %d", err);
+        return err;
+    }
+
+    return ESP_OK;
+}
+
+/* Stop advertising */
+esp_err_t jolt_bluetooth_adv_stop() {
+    return esp_ble_gap_stop_advertising();
 }
 
 #else
