@@ -34,6 +34,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
     ESP_LOGE(GATTS_TABLE_TAG, "GATTS event %d", event);
     switch (event) {
     	case ESP_GATTS_REG_EVT:
+            /* Triggers when an application is registered */
         	esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
             esp_ble_gap_config_local_privacy(true);
         	esp_ble_gap_config_adv_data_raw((uint8_t *)spp_adv_data,
@@ -42,13 +43,12 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                     SPP_IDX_NB, SPP_SVC_INST_ID);
        	    break;
     	case ESP_GATTS_READ_EVT:
+            /* gatt client request read operation */
             res = find_char_and_desr_index(p_data->read.handle);
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_READ_EVT : handle = %d\n", res);
-            if(res == SPP_IDX_SPP_STATUS_VAL){
-                //TODO: client read the status characteristic
-            }
        	    break;
     	case ESP_GATTS_WRITE_EVT: {
+            /*  gatt client request write operation */
     	    res = find_char_and_desr_index(p_data->write.handle);
             if(p_data->write.is_prep == false){
                 ESP_LOGD(GATTS_TABLE_TAG, "ESP_GATTS_WRITE_EVT : handle = %d\n", res);
@@ -84,14 +84,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                     #ifdef SPP_DEBUG_MODE
                     esp_log_buffer_char(GATTS_TABLE_TAG,
                             (char *)(p_data->write.value),p_data->write.len);
-                    #else
-                    /*
-                    uart_write_bytes(UART_NUM_0, 
-                            (char *)(p_data->write.value), p_data->write.len);
-                    uart_write_bytes(UART_NUM_0, "\n", 1);
-                    */
                     #endif
-
                 }
                 else{
                     ESP_LOGI(GATTS_TABLE_TAG, "Unknown state machine attribute %d.",
@@ -107,6 +100,9 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
       	 	break;
     	}
     	case ESP_GATTS_EXEC_WRITE_EVT:{
+            /* gatt client request execute write.
+             * Performs the full atmoic write that has been queued up
+             * by multiple "prepare write". */
     	    ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_EXEC_WRITE_EVT\n");
     	    if(p_data->exec_write.exec_write_flag){
     	        print_write_buffer();
@@ -115,6 +111,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
     	    break;
     	}
     	case ESP_GATTS_MTU_EVT:
+            /* set mtu complete */
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_MTU_EVENT;"
                     "Setting MTU size to %d bytes.", p_data->mtu.mtu);
     	    spp_mtu_size = p_data->mtu.mtu;
@@ -130,10 +127,13 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
     	case ESP_GATTS_STOP_EVT:
         	break;
     	case ESP_GATTS_CONNECT_EVT:
+            /* When gatt client connects */
     	    is_connected = true;
+            /* todo: only do this if you want to start communication with remote */
             esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_MITM);
         	break;
     	case ESP_GATTS_DISCONNECT_EVT:
+            /* When gatt client disconnect */
     	    is_connected = false;
             /* Start looking for whitelisted devices again */
             esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_wht_params );

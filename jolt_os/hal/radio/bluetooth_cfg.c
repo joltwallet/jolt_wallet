@@ -2,6 +2,11 @@
 
 #include "bluetooth_cfg.h"
 
+/* General Notes
+ *    * Characteristic *declarations* should always be read only
+ *
+ */
+
 /// SPP Service
 static const uint16_t spp_service_uuid = 0xFFE0;
 
@@ -10,9 +15,8 @@ static const uint16_t primary_service_uuid         = ESP_GATT_UUID_PRI_SERVICE;
 static const uint16_t character_declaration_uuid   = ESP_GATT_UUID_CHAR_DECLARE;
 static const uint16_t character_client_config_uuid = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
 
-static const uint8_t char_prop_read_notify         = ESP_GATT_CHAR_PROP_BIT_READ|ESP_GATT_CHAR_PROP_BIT_NOTIFY;
-static const uint8_t char_prop_read_write          = ESP_GATT_CHAR_PROP_BIT_WRITE_NR|ESP_GATT_CHAR_PROP_BIT_READ;
-
+static const uint8_t char_prop_read                = ESP_GATT_CHAR_PROP_BIT_READ;
+static const uint8_t char_prop_read_write          = ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_READ;
 
 /* SPP Service - data receive characteristic, read&write without response */
 static const uint16_t spp_data_receive_uuid        = ESP_GATT_UUID_SPP_DATA_RECEIVE;
@@ -27,19 +31,19 @@ static const uint8_t  spp_data_notify_ccc[2]       = { 0x00, 0x00 };
 static const uint16_t spp_command_uuid             = ESP_GATT_UUID_SPP_COMMAND_RECEIVE;
 static const uint8_t  spp_command_val[10]          = { 0x00 };
 
-/* SPP Service - status characteristic, notify&read */
-static const uint16_t spp_status_uuid              = ESP_GATT_UUID_SPP_COMMAND_NOTIFY;
-static const uint8_t  spp_status_val[10]           = { 0x00 };
-static const uint8_t  spp_status_ccc[2]            = { 0x00, 0x00 };
-
 uint16_t spp_mtu_size = 23;
 
 // Serial Port Profile Advertising Data
 // todo: refine and document
 const uint8_t spp_adv_data[23] = { /* Max Advertising Payload 31 bytes */
-    0x02,0x01,0x06, // Flags
-    0x03,0x03,0xE0,0xFF,
-    0x0F,0x04,'J','o','l','t'
+    0x02,0x01,0x06,             /* 2 bytes long; Flags Type; 
+                                 *     * LE_GENERAL_DISC_MODE
+                                 *     * BR_EDR_NOT_SUPPORTED
+                                 */
+    0x03,0x03,0xE0,0xFF,        /* 3 byte long; 16-bit Service Class UUIDs;
+                                 *     * 0xFFE0
+                                 */
+    0x05,0x09,'J','o','l','t'   /* 5 bytes long; Complete Local Name */
 };
 
 /* Advertising Parameters */
@@ -49,6 +53,7 @@ const esp_ble_adv_params_t spp_adv_pair_params = {
     .adv_int_max        = 0x400,
     .adv_type           = ADV_TYPE_IND,
     .own_addr_type      = BLE_ADDR_TYPE_RANDOM,
+    //.own_addr_type      = BLE_ADDR_TYPE_PUBLIC, // todo; double check
     .channel_map        = ADV_CHNL_ALL,
     .adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
@@ -59,6 +64,7 @@ const esp_ble_adv_params_t spp_adv_wht_params = {
     .adv_int_max        = 0x400,
     .adv_type           = ADV_TYPE_IND,
     .own_addr_type      = BLE_ADDR_TYPE_RANDOM,
+    //.own_addr_type      = BLE_ADDR_TYPE_PUBLIC, // todo; double check
     .channel_map        = ADV_CHNL_ALL,
     .adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
     //.adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST, // esp-idf issue
@@ -82,7 +88,7 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
     },
 
     //SPP -  data receive characteristic Declaration
-    [SPP_IDX_SPP_DATA_RECV_CHAR] = {
+    [SPP_IDX_SPP_DATA_RECV_DECL] = {
         {
             ESP_GATT_AUTO_RSP
         },
@@ -92,7 +98,7 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
             .perm        = ESP_GATT_PERM_READ,
             .max_length  = CHAR_DECLARATION_SIZE,
             .length      = CHAR_DECLARATION_SIZE, 
-            .value       = (uint8_t *)&char_prop_read_write
+            .value       = (uint8_t *)&char_prop_read
         }
     },
 
@@ -102,7 +108,8 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
         {
             .uuid_length = ESP_UUID_LEN_16,
             .uuid_p      = (uint8_t *)&spp_data_receive_uuid,
-            .perm        = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+            .perm        = ESP_GATT_PERM_READ ,
+            //.perm        = ESP_GATT_PERM_READ_ENC_MITM | ESP_GATT_PERM_WRITE_SIGNED_MITM,
             .max_length  = SPP_DATA_MAX_LEN,
             .length      = sizeof(spp_data_receive_val),
             .value       = (uint8_t *)spp_data_receive_val
@@ -110,15 +117,15 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
     },
 
     //SPP -  data notify characteristic Declaration
-    [SPP_IDX_SPP_DATA_NOTIFY_CHAR]  = {
+    [SPP_IDX_SPP_DATA_NOTIFY_DECL]  = {
         {ESP_GATT_AUTO_RSP},
         {
             .uuid_length = ESP_UUID_LEN_16,
             .uuid_p      = (uint8_t *)&character_declaration_uuid,
-            .perm        = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+            .perm        = ESP_GATT_PERM_READ,
             .max_length  = CHAR_DECLARATION_SIZE,
             .length      = CHAR_DECLARATION_SIZE,
-            .value       = (uint8_t *)&char_prop_read_notify
+            .value       = (uint8_t *)&char_prop_read
         }
     },
 
@@ -128,7 +135,8 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
         {
             .uuid_length = ESP_UUID_LEN_16,
             .uuid_p      = (uint8_t *)&spp_data_notify_uuid,
-            .perm        = ESP_GATT_PERM_READ,
+            .perm        = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+            //.perm        = ESP_GATT_PERM_READ_ENC_MITM | ESP_GATT_PERM_WRITE_SIGNED_MITM,
             .max_length  = SPP_DATA_MAX_LEN,
             .length      = sizeof(spp_data_notify_val),
             .value       = (uint8_t *)spp_data_notify_val
@@ -141,7 +149,8 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
         {
             .uuid_length = ESP_UUID_LEN_16,
             .uuid_p      = (uint8_t *)&character_client_config_uuid,
-            .perm        = ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE,
+            .perm        = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+            //.perm        = ESP_GATT_PERM_READ_ENC_MITM | ESP_GATT_PERM_WRITE_SIGNED_MITM,
             .max_length  = sizeof(uint16_t),
             .length      = sizeof(spp_data_notify_ccc),
             .value       = (uint8_t *)spp_data_notify_ccc
@@ -149,7 +158,7 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
     },
 
     //SPP -  command characteristic Declaration
-    [SPP_IDX_SPP_COMMAND_CHAR] = {
+    [SPP_IDX_SPP_COMMAND_DECL] = {
         {ESP_GATT_AUTO_RSP},
         {
             .uuid_length = ESP_UUID_LEN_16,
@@ -157,7 +166,7 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
             .perm        = ESP_GATT_PERM_READ,
             .max_length  = CHAR_DECLARATION_SIZE,
             .length      = CHAR_DECLARATION_SIZE,
-            .value       = (uint8_t *)&char_prop_read_write
+            .value       = (uint8_t *)&char_prop_read
         }
     },
 
@@ -167,49 +176,11 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
         {
            .uuid_length =  ESP_UUID_LEN_16,
            .uuid_p      =  (uint8_t *)&spp_command_uuid, 
-           .perm        =  ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE, 
+            .perm        = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+            //.perm        = ESP_GATT_PERM_READ_ENC_MITM | ESP_GATT_PERM_WRITE_SIGNED_MITM,
            .max_length  =  SPP_CMD_MAX_LEN,
            .length      =  sizeof(spp_command_val),
            .value       =  (uint8_t *)spp_command_val
-        }
-    },
-
-    //SPP -  status characteristic Declaration
-    [SPP_IDX_SPP_STATUS_CHAR] = {
-        {ESP_GATT_AUTO_RSP},
-        {
-            .uuid_length = ESP_UUID_LEN_16,
-            .uuid_p      = (uint8_t *)&character_declaration_uuid,
-            .perm        = ESP_GATT_PERM_READ,
-            .max_length  = CHAR_DECLARATION_SIZE,
-            .length      = CHAR_DECLARATION_SIZE, 
-            .value       = (uint8_t *)&char_prop_read_notify
-        }
-    },
-
-    //SPP -  status characteristic Value
-    [SPP_IDX_SPP_STATUS_VAL] = {
-        {ESP_GATT_AUTO_RSP},
-        {
-            .uuid_length = ESP_UUID_LEN_16,
-            .uuid_p      = (uint8_t *)&spp_status_uuid,
-            .perm        = ESP_GATT_PERM_READ,
-            .max_length  = SPP_STATUS_MAX_LEN,
-            .length      = sizeof(spp_status_val),
-            .value       = (uint8_t *)spp_status_val
-        }
-    },
-
-    //SPP -  status characteristic - Client Characteristic Configuration Descriptor
-    [SPP_IDX_SPP_STATUS_CFG] = {
-        {ESP_GATT_AUTO_RSP},
-        {
-            .uuid_length = ESP_UUID_LEN_16,
-            .uuid_p      = (uint8_t *)&character_client_config_uuid,
-            .perm        = ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE,
-            .max_length  = sizeof(uint16_t),
-            .length      = sizeof(spp_status_ccc),
-            .value       = (uint8_t *)spp_status_ccc
         }
     },
 };

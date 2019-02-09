@@ -577,7 +577,8 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         case ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT:
             break;
         case ESP_GAP_BLE_OOB_REQ_EVT:
-            /* Out of Band is currently not supported */
+            /* Out of Band is currently not supported by Jolt.
+             * Support was recently added to ESP-IDF*/
             break;
 
         /**********************

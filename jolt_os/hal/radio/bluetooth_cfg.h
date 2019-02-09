@@ -6,7 +6,7 @@
 #include "esp_gap_ble_api.h"
 #include "esp_gatts_api.h"
 
-/// Characteristic UUID
+
 #define ESP_GATT_UUID_SPP_DATA_RECEIVE      0xFFE1 // smartphone->jolt
 #define ESP_GATT_UUID_SPP_DATA_NOTIFY       0xFFE2
 #define ESP_GATT_UUID_SPP_COMMAND_RECEIVE   0xABF3 // smartphone->jolt
@@ -26,22 +26,23 @@ extern const uint8_t spp_adv_data[23];
 extern const esp_ble_adv_params_t spp_adv_pair_params; // used for when pairing
 extern const esp_ble_adv_params_t spp_adv_wht_params; // adv to whitelisted devices
 
+/*
+ * For most types of data in the GATT hierarchy, it is important to differentiate between their definition (the whole group of attributes that make it up) and the declaration. The declaration is a single attribute that is always placed first (in increasing handle order) within the definition and that introduces most of the metadata about the data that follows. All declarations have read-only permissions with no security required, because they cannot contain sensitive data. They
+ * are only structural attributes that allow the client to find out and discover the layout and nature of the attributes on the server. i
+ *
+ * Source: https://www.oreilly.com/library/view/getting-started-with/9781491900550/ch04.html*/
 enum{
     SPP_IDX_SVC = 0,              /* Serial Port Profile Service Index */
 
-    SPP_IDX_SPP_DATA_RECV_CHAR,   /* SPP Data Receive Characteristic Index */
+    SPP_IDX_SPP_DATA_RECV_DECL,   /* SPP Data Receive Characteristic Index */
     SPP_IDX_SPP_DATA_RECV_VAL,    /* SPP Data Receive Characteristic Value Index */
 
-    SPP_IDX_SPP_DATA_NOTIFY_CHAR, /* SPP Data Notify Characteristic Index*/
+    SPP_IDX_SPP_DATA_NOTIFY_DECL, /* SPP Data Notify Characteristic Index*/
     SPP_IDX_SPP_DATA_NOTIFY_VAL,  /* SPP Data Notify Chatacteristic Value Index */
     SPP_IDX_SPP_DATA_NOTIFY_CFG,  /* SPP Data Notify Characteristic Config Index */
 
-    SPP_IDX_SPP_COMMAND_CHAR,     /* SPP Command Characteristic Value Index */
+    SPP_IDX_SPP_COMMAND_DECL,     /* SPP Command Characteristic Value Index */
     SPP_IDX_SPP_COMMAND_VAL,      /* */
-
-    SPP_IDX_SPP_STATUS_CHAR,      /* */
-    SPP_IDX_SPP_STATUS_VAL,       /* */
-    SPP_IDX_SPP_STATUS_CFG,       /* */
 
     SPP_IDX_NB,                   /* Number of Table Elements */
 };
