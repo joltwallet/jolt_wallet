@@ -49,7 +49,6 @@ const esp_ble_adv_params_t spp_adv_pair_params = {
     .adv_int_max        = 0x400,
     .adv_type           = ADV_TYPE_IND,
     .own_addr_type      = BLE_ADDR_TYPE_RANDOM,
-    //.own_addr_type      = BLE_ADDR_TYPE_PUBLIC, // todo; double check
     .channel_map        = ADV_CHNL_ALL,
     .adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
@@ -60,10 +59,8 @@ const esp_ble_adv_params_t spp_adv_wht_params = {
     .adv_int_max        = 0x400,
     .adv_type           = ADV_TYPE_IND,
     .own_addr_type      = BLE_ADDR_TYPE_RANDOM,
-    //.own_addr_type      = BLE_ADDR_TYPE_PUBLIC, // todo; double check
     .channel_map        = ADV_CHNL_ALL,
-    .adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
-    //.adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_WLST_CON_WLST, // esp-idf issue
+    .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_WLST_CON_ANY,
 };
 
 const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {

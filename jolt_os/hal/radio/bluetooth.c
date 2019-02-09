@@ -569,8 +569,6 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
              * Show the passkey integer param->ble_security.key_notif.passkey
              * to the user to confirm it with the number displayed by peer deivce. */
             /* Not used in Jolt */
-            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_NC_REQ_EVT, the passkey Notify number:%d",
-                    param->ble_security.key_notif.passkey);
             /* This shouldn't trigger due to the IO_CAP config */
             break;
         /* Triggered by: esp_ble_gap_update_whitelist() */
