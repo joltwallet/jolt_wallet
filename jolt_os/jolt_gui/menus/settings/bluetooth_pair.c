@@ -1,11 +1,13 @@
 #include "jolt_gui/jolt_gui.h"
 #include "hal/radio/bluetooth.h"
+#include "hal/radio/bluetooth_state.h"
 
 static const char TAG[] = "bluetooth_pair";
 static lv_obj_t *passkey_scr  = NULL;
 static lv_obj_t *scanning_scr = NULL;
 
 static lv_res_t scanning_scr_back_cb(lv_obj_t *btn) {
+    jolt_bluetooth_pair_mode = false;
     jolt_bluetooth_adv_wht_start();
     jolt_gui_scr_del();
     scanning_scr = NULL;
@@ -14,12 +16,14 @@ static lv_res_t scanning_scr_back_cb(lv_obj_t *btn) {
 
 static lv_res_t passkey_scr_back_cb(lv_obj_t *btn) {
     /* todo: This is not the correct action to take */
+    jolt_bluetooth_pair_mode = false;
     jolt_bluetooth_adv_stop();
     jolt_gui_scr_del();
-    return LV_RES_OK;
+    return LV_RES_INV;
 }
 
 static lv_res_t menu_bluetooth_pair_common_create( lv_obj_t *btn ) {
+    jolt_bluetooth_pair_mode = true;
     jolt_bluetooth_adv_all_start();
     scanning_scr = jolt_gui_scr_preloading_create(gettext(JOLT_TEXT_PAIR), gettext(JOLT_TEXT_BROADCASTING));
     jolt_gui_scr_set_back_action(scanning_scr, scanning_scr_back_cb);
@@ -58,6 +62,7 @@ void jolt_gui_bluetooth_pair_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb
             jolt_gui_scr_set_back_action(passkey_scr, passkey_scr_back_cb);
             break;
         case ESP_GAP_BLE_AUTH_CMPL_EVT:
+            jolt_bluetooth_pair_mode = false;
             if( NULL != passkey_scr){
                 JOLT_GUI_CTX{
                     lv_obj_del( passkey_scr );

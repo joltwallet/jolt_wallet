@@ -29,4 +29,6 @@ extern uint16_t spp_handle_table[SPP_IDX_NB];
 extern xQueueHandle ble_in_queue;
 extern xTaskHandle ble_in_task;
 
+extern bool jolt_bluetooth_pair_mode;
+
 #endif

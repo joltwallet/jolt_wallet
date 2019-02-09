@@ -118,12 +118,39 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
         	break;
     	case ESP_GATTS_STOP_EVT:
         	break;
-    	case ESP_GATTS_CONNECT_EVT:
+    	case ESP_GATTS_CONNECT_EVT: {
             /* When gatt client connects */
     	    is_connected = true;
-            /* todo: only do this if you want to start communication with remote */
-            esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_MITM);
+            if(jolt_bluetooth_pair_mode) {
+                /* Allow connections from non-bonded devices */
+                esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_MITM);
+            }
+            else {
+                /* Reject Connection if it's not a bonded addr */
+                int dev_num = esp_ble_get_bond_device_num();
+
+                esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
+                esp_ble_get_bond_device_list(&dev_num, dev_list);
+
+                bool found = false; 
+                for(uint8_t i=0 ; i < dev_num; i++) {
+                    if( 0==memcmp( param->connect.remote_bda, dev_list[i].bd_addr, sizeof(esp_bd_addr_t )) ) {
+                        found = true;
+                        break;
+                    }
+                }
+                free(dev_list);
+                if(!found) {
+                    /* Disconnect from the device */
+                    esp_ble_gap_disconnect(param->connect.remote_bda);
+                    ESP_LOGI(GATTS_TABLE_TAG, "Unknown device attempted to connect while not in pairing mode.");
+                }
+                else {
+                    esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_MITM);
+                }
+            }
         	break;
+        }
     	case ESP_GATTS_DISCONNECT_EVT:
             /* When gatt client disconnect */
     	    is_connected = false;

@@ -706,7 +706,7 @@ void jolt_bluetooth_config_security(bool bond) {
     /* ESP_BLE_SM_SET_STATIC_PASSKEY and ESP_BLE_SM_CLEAR_STATIC_PASSKEY are not used */
 
     {
-        uint8_t auth_option = ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_DISABLE; // todo: maybe set this to ENABLE
+        uint8_t auth_option = ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_ENABLE; // todo: maybe set this to ENABLE
         ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH, &auth_option, sizeof(uint8_t)));
     }
 

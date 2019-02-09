@@ -14,3 +14,5 @@ uint16_t spp_handle_table[SPP_IDX_NB];
 
 xQueueHandle ble_in_queue = NULL;
 xTaskHandle ble_in_task = NULL;
+
+bool jolt_bluetooth_pair_mode = false;
