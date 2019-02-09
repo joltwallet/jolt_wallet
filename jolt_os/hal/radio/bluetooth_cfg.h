@@ -7,10 +7,8 @@
 #include "esp_gatts_api.h"
 
 
-#define ESP_GATT_UUID_SPP_DATA_RECEIVE      0xFFE1 // smartphone->jolt
-#define ESP_GATT_UUID_SPP_DATA_NOTIFY       0xFFE2
+#define ESP_GATT_UUID_SPP_DATA_NOTIFY       0xFFE2 // jolt->smartphone
 #define ESP_GATT_UUID_SPP_COMMAND_RECEIVE   0xABF3 // smartphone->jolt
-#define ESP_GATT_UUID_SPP_COMMAND_NOTIFY    0xABF4
 
 /* todo: make this larger, will have to modify partial headers */
 #define SPP_DATA_MAX_LEN           (512)
@@ -33,9 +31,6 @@ extern const esp_ble_adv_params_t spp_adv_wht_params; // adv to whitelisted devi
  * Source: https://www.oreilly.com/library/view/getting-started-with/9781491900550/ch04.html*/
 enum{
     SPP_IDX_SVC = 0,              /* Serial Port Profile Service Index */
-
-    SPP_IDX_SPP_DATA_RECV_DECL,   /* SPP Data Receive Characteristic Index */
-    SPP_IDX_SPP_DATA_RECV_VAL,    /* SPP Data Receive Characteristic Value Index */
 
     SPP_IDX_SPP_DATA_NOTIFY_DECL, /* SPP Data Notify Characteristic Index*/
     SPP_IDX_SPP_DATA_NOTIFY_VAL,  /* SPP Data Notify Chatacteristic Value Index */

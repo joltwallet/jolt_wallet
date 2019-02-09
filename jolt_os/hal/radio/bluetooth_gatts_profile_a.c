@@ -51,11 +51,11 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
             /*  gatt client request write operation */
     	    res = find_char_and_desr_index(p_data->write.handle);
             if(p_data->write.is_prep == false){
-                ESP_LOGD(GATTS_TABLE_TAG, "ESP_GATTS_WRITE_EVT : handle = %d\n", res);
+                ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_WRITE_EVT : handle = %d\n", res);
                 if(res == SPP_IDX_SPP_COMMAND_VAL){
                     /* Allocate memory for 1 MTU;
                      * send it off to the ble_in_queue */
-                    ESP_LOGD(GATTS_TABLE_TAG, "SPP_IDX_SPP_COMMAND_VAL;"
+                    ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_COMMAND_VAL;"
                             " Allocating %d bytes.", spp_mtu_size-3);
                     uint8_t * spp_cmd_buff = NULL;
                     spp_cmd_buff = (uint8_t *)malloc((spp_mtu_size - 3) * sizeof(uint8_t));
@@ -68,7 +68,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                     xQueueSend(ble_in_queue, &spp_cmd_buff, 10/portTICK_PERIOD_MS);
                 }
                 else if(res == SPP_IDX_SPP_DATA_NOTIFY_CFG){
-                    ESP_LOGD(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_NOTIFY_CFG");
+                    ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_NOTIFY_CFG");
                     if( (p_data->write.len == 2)
                             &&(p_data->write.value[0] == 0x01)
                             &&(p_data->write.value[1] == 0x00) ) {
@@ -78,14 +78,6 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                             &&(p_data->write.value[1] == 0x00) ) {
                     }
                 }
-                else if( res == SPP_IDX_SPP_DATA_RECV_VAL ) {
-                    /* Phone/Computer sent string to Jolt */
-                    ESP_LOGD(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_RECV_VAL");
-                    #ifdef SPP_DEBUG_MODE
-                    esp_log_buffer_char(GATTS_TABLE_TAG,
-                            (char *)(p_data->write.value),p_data->write.len);
-                    #endif
-                }
                 else{
                     ESP_LOGI(GATTS_TABLE_TAG, "Unknown state machine attribute %d.",
                             res);
@@ -93,7 +85,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                 }
             }
             else if( (p_data->write.is_prep == true)
-                    && (res == SPP_IDX_SPP_DATA_RECV_VAL) ) {
+                    && (res == SPP_IDX_SPP_COMMAND_VAL) ) {
                 ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_PREP_WRITE_EVT : handle = %d\n", res);
                 store_wr_buffer(p_data);
             }

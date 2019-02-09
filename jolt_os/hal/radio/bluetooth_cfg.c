@@ -18,10 +18,6 @@ static const uint16_t character_client_config_uuid = ESP_GATT_UUID_CHAR_CLIENT_C
 static const uint8_t char_prop_read                = ESP_GATT_CHAR_PROP_BIT_READ;
 static const uint8_t char_prop_read_write          = ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_READ;
 
-/* SPP Service - data receive characteristic, read&write without response */
-static const uint16_t spp_data_receive_uuid        = ESP_GATT_UUID_SPP_DATA_RECEIVE;
-static const uint8_t  spp_data_receive_val[20]     = {0x00};
-
 /* SPP Service - data notify characteristic, notify&read */
 static const uint16_t spp_data_notify_uuid         = ESP_GATT_UUID_SPP_DATA_NOTIFY;
 static const uint8_t  spp_data_notify_val[20]      = { 0x00 };
@@ -87,35 +83,6 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
         }
     },
 
-    //SPP -  data receive characteristic Declaration
-    [SPP_IDX_SPP_DATA_RECV_DECL] = {
-        {
-            ESP_GATT_AUTO_RSP
-        },
-        {
-            .uuid_length = ESP_UUID_LEN_16,
-            .uuid_p      = (uint8_t *)&character_declaration_uuid,
-            .perm        = ESP_GATT_PERM_READ,
-            .max_length  = CHAR_DECLARATION_SIZE,
-            .length      = CHAR_DECLARATION_SIZE, 
-            .value       = (uint8_t *)&char_prop_read
-        }
-    },
-
-    //SPP -  data receive characteristic Value
-    [SPP_IDX_SPP_DATA_RECV_VAL] = {
-        {ESP_GATT_AUTO_RSP},
-        {
-            .uuid_length = ESP_UUID_LEN_16,
-            .uuid_p      = (uint8_t *)&spp_data_receive_uuid,
-            .perm        = ESP_GATT_PERM_READ ,
-            //.perm        = ESP_GATT_PERM_READ_ENC_MITM | ESP_GATT_PERM_WRITE_SIGNED_MITM,
-            .max_length  = SPP_DATA_MAX_LEN,
-            .length      = sizeof(spp_data_receive_val),
-            .value       = (uint8_t *)spp_data_receive_val
-        }
-    },
-
     //SPP -  data notify characteristic Declaration
     [SPP_IDX_SPP_DATA_NOTIFY_DECL]  = {
         {ESP_GATT_AUTO_RSP},
@@ -125,7 +92,7 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
             .perm        = ESP_GATT_PERM_READ,
             .max_length  = CHAR_DECLARATION_SIZE,
             .length      = CHAR_DECLARATION_SIZE,
-            .value       = (uint8_t *)&char_prop_read
+            .value       = (uint8_t *)&char_prop_read_write
         }
     },
 
@@ -166,7 +133,7 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
             .perm        = ESP_GATT_PERM_READ,
             .max_length  = CHAR_DECLARATION_SIZE,
             .length      = CHAR_DECLARATION_SIZE,
-            .value       = (uint8_t *)&char_prop_read
+            .value       = (uint8_t *)&char_prop_read_write
         }
     },
 
