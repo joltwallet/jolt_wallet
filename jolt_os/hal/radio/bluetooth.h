@@ -19,4 +19,7 @@ esp_err_t jolt_bluetooth_adv_all_start();
 esp_err_t jolt_bluetooth_adv_wht_start();
 esp_err_t jolt_bluetooth_adv_stop();
 
+/* Security Config */
+void jolt_bluetooth_config_security(bool bond);
+
 #endif

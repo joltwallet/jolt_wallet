@@ -546,6 +546,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
             /* Slave requests to start encryption.
              * Send the [true] security response to the peer device to accept the security request.
              * To reject the security request, send the security response with [false] value*/
+            ESP_LOGI(GATTS_TABLE_TAG, "Slave requesting security.");
             esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
             break;
         case ESP_GAP_BLE_PASSKEY_REQ_EVT:
@@ -668,7 +669,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event,
     }
 }
 
-static void jolt_bluetooth_config_security(bool bond) {
+void jolt_bluetooth_config_security(bool bond) {
     /* This section sets the security parameters in the enumerated order */
     /* ESP_BLE_SM_PASSKEY seems to be undocumented*/
     {

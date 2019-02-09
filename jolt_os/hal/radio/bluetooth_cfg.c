@@ -22,6 +22,7 @@ static const uint8_t char_prop_read_write          = ESP_GATT_CHAR_PROP_BIT_WRIT
 static const uint16_t spp_data_notify_uuid         = ESP_GATT_UUID_SPP_DATA_NOTIFY;
 static const uint8_t  spp_data_notify_val[20]      = { 0x00 };
 static const uint8_t  spp_data_notify_ccc[2]       = { 0x00, 0x00 };
+/* See https://www.oreilly.com/library/view/getting-started-with/9781491900550/ch04.html#gatt_cccd */
 
 /* SPP Service - command characteristic, read&write without response */
 static const uint16_t spp_command_uuid             = ESP_GATT_UUID_SPP_COMMAND_RECEIVE;
@@ -89,7 +90,7 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
             .perm        = ESP_GATT_PERM_READ,
             .max_length  = CHAR_DECLARATION_SIZE,
             .length      = CHAR_DECLARATION_SIZE,
-            .value       = (uint8_t *)&char_prop_read_write
+            .value       = (uint8_t *)&char_prop_read
         }
     },
 
@@ -99,7 +100,7 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
         {
             .uuid_length = ESP_UUID_LEN_16,
             .uuid_p      = (uint8_t *)&spp_data_notify_uuid,
-            .perm        = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+            .perm        = ESP_GATT_PERM_READ,
             //.perm        = ESP_GATT_PERM_READ_ENC_MITM | ESP_GATT_PERM_WRITE_SIGNED_MITM,
             .max_length  = SPP_DATA_MAX_LEN,
             .length      = sizeof(spp_data_notify_val),

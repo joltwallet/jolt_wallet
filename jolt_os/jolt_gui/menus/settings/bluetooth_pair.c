@@ -19,11 +19,21 @@ static lv_res_t passkey_scr_back_cb(lv_obj_t *btn) {
     return LV_RES_OK;
 }
 
-lv_res_t menu_bluetooth_pair_create(lv_obj_t *btn) {
+static lv_res_t menu_bluetooth_pair_common_create( lv_obj_t *btn ) {
     jolt_bluetooth_adv_all_start();
     scanning_scr = jolt_gui_scr_preloading_create(gettext(JOLT_TEXT_PAIR), gettext(JOLT_TEXT_BROADCASTING));
     jolt_gui_scr_set_back_action(scanning_scr, scanning_scr_back_cb);
     return LV_RES_OK;
+}
+
+lv_res_t menu_bluetooth_pair_create( lv_obj_t *btn ) {
+    jolt_bluetooth_config_security( true ); /* enable bonding */
+    return menu_bluetooth_pair_common_create( btn );
+}
+
+lv_res_t menu_bluetooth_temp_pair_create(lv_obj_t *btn) {
+    jolt_bluetooth_config_security( false ); /* disable bonding */
+    return menu_bluetooth_pair_common_create( btn );
 }
 
 void jolt_gui_bluetooth_pair_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {

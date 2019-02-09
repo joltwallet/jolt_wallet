@@ -6,7 +6,6 @@
 #include "esp_gap_ble_api.h"
 #include "esp_gatts_api.h"
 
-
 #define ESP_GATT_UUID_SPP_DATA_NOTIFY       0xFFE2 // jolt->smartphone
 #define ESP_GATT_UUID_SPP_COMMAND_RECEIVE   0xABF3 // smartphone->jolt
 
