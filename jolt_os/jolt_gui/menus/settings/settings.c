@@ -20,6 +20,7 @@ lv_res_t menu_settings_create(lv_obj_t *btn) {
 #endif
 
     jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_LANGUAGE), menu_language_create);
+    jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_STORAGE), menu_storage_create);
     jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_FACTORY_RESET), menu_factory_reset_create);
     return LV_RES_OK;
 }

@@ -27,6 +27,7 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Touch Brightness",
     "Brightness",
     "Factory Reset",
+    "Storage",
 
     /* Language Names */
     "Language",
@@ -52,6 +53,10 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Restore",
     "Begin mnemonic restore?",
     "Enter Mnemonic Word",
+
+    /* Error */
+    "Error",
+    "Error Code",
 };
 
 

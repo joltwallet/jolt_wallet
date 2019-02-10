@@ -18,6 +18,7 @@
 #include "jolt_gui_debug.h"
 #include "jolt_gui_theme.h"
 #include "jolt_gui_bignum.h"
+#include "jolt_gui_err.h"
 
 #include "menus/home.h"
 

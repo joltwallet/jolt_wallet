@@ -36,6 +36,7 @@ typedef enum jolt_text_id_t {
     JOLT_TEXT_LED_BRIGHTNESS,
     JOLT_TEXT_BRIGHTNESS,
     JOLT_TEXT_FACTORY_RESET,
+    JOLT_TEXT_STORAGE,
 
     /* Language Names */
     JOLT_TEXT_LANGUAGE,
@@ -61,6 +62,10 @@ typedef enum jolt_text_id_t {
     JOLT_TEXT_RESTORE,
     JOLT_TEXT_BEGIN_MNEMONIC_RESTORE,
     JOLT_TEXT_ENTER_MNEMONIC_WORD,
+
+    /* Error */
+    JOLT_TEXT_ERROR,
+    JOLT_TEXT_ERROR_CODE,
 
     /* Used for allocating resources. Not actually a string */
     JOLT_TEXT_LAST_STR,

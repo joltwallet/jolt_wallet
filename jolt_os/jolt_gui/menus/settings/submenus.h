@@ -16,4 +16,6 @@ lv_res_t menu_bluetooth_pair_create(lv_obj_t *btn);
 lv_res_t menu_bluetooth_temp_pair_create(lv_obj_t *btn);
 lv_res_t menu_bluetooth_unbond_create(lv_obj_t *btn);
 
+lv_res_t menu_storage_create( lv_obj_t *btn );
+
 #endif
