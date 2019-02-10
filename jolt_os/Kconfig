@@ -1,4 +1,28 @@
 menu "JoltOS"
+    menu "Touch"
+        config JOLT_TOUCH_LED_PIN
+            int
+            prompt "Pin for controlling Touch LEDs"
+            default 26
+            help
+                Help Text Here
+
+        config JOLT_TOUCH_LED_DEFAULT_DUTY
+            int
+            range 0 255
+            default 100
+            prompt "Default touch led brightness"
+            help
+                0 = 0%; 255 = 100%
+
+        config JOLT_TOUCH_LED_INVERT
+            bool
+            prompt "Invert the PWM signal"
+            default y
+            help
+                Help Text Here
+    endmenu
+
     menu "I2C"
         config JOLT_I2C_MASTER_NUM
             int

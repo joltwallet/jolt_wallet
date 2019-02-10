@@ -3,10 +3,15 @@
 #include "hal/storage/storage.h"
 #include "hal/lv_drivers/display/ssd1306.h"
 #include "hal/led.h"
+#include "sdkconfig.h"
 
 
 static const char TAG[] = "menus/settings/screen_brightness";
-static const uint8_t brightness_levels[] = {1, 10, 30, 70, 150, 255};
+#if CONFIG_JOLT_TOUCH_LED_INVERT
+static const uint8_t brightness_levels[] = {255, 150, 70, 30, 10, 0};
+#else
+static const uint8_t brightness_levels[] = {0, 10, 30, 70, 150, 255};
+#endif
 
 static uint8_t led_brightness_get() {
     uint8_t val;

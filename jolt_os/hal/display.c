@@ -10,13 +10,11 @@ void display_init() {
     /* Set reset pin as output */
     gpio_config_t io_config;
     io_config.pin_bit_mask = (1 << CONFIG_JOLT_DISPLAY_PIN_RST);
-    //io_config.pin_bit_mask |= (1 << 26);
     io_config.mode         = GPIO_MODE_OUTPUT;
     io_config.pull_up_en   = GPIO_PULLUP_DISABLE;
     io_config.pull_down_en = GPIO_PULLDOWN_ENABLE;
     io_config.intr_type    = GPIO_INTR_DISABLE;
     ESP_ERROR_CHECK(gpio_config(&io_config));
-    //gpio_set_level(26, 1);
 
     disp_hal.protocol  = SSD1306_PROTO_I2C;
     disp_hal.screen    = SSD1306_SCREEN;

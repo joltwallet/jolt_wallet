@@ -2,28 +2,34 @@
 #include "led.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "hal/storage/storage.h"
 
 /* Setup timers and all that stuff */
 void jolt_led_setup() {
-#if 1
-    ledc_timer_config_t ledc_timer = {
-        .duty_resolution = JOLT_TOUCH_LED_RESOLUTION, // resolution of PWM duty
-        .freq_hz = 1000,                      // frequency of PWM signal
-        .speed_mode = JOLT_TOUCH_LED_MODE,           // timer mode
-        .timer_num = JOLT_TOUCH_LED_CHANNEL            // timer index
-    };
-    ESP_ERROR_CHECK( ledc_timer_config(&ledc_timer) );
+    {
+        ledc_timer_config_t ledc_timer = {
+            .duty_resolution = JOLT_TOUCH_LED_RESOLUTION,
+            .freq_hz         = JOLT_TOUCH_LED_FREQ_HZ,
+            .speed_mode      = JOLT_TOUCH_LED_MODE,
+            .timer_num       = JOLT_TOUCH_LED_CHANNEL,
+        };
+        ESP_ERROR_CHECK( ledc_timer_config(&ledc_timer) );
+    }
 
-    ledc_channel_config_t ledc_channel = {
-        .channel    = JOLT_TOUCH_LED_CHANNEL,
-        .duty       = 100,
-        .gpio_num   = JOLT_HAL_LED_PIN,
-        .speed_mode = JOLT_TOUCH_LED_MODE,
-        .timer_sel  = JOLT_TOUCH_LED_TIMER,
-        .intr_type  = LEDC_INTR_DISABLE,
-    };
-    ESP_ERROR_CHECK( ledc_channel_config(&ledc_channel) );
-#endif
+    {
+        uint8_t val;
+        storage_get_u8(&val, "user", "led_val", CONFIG_JOLT_TOUCH_LED_DEFAULT_DUTY );
+
+        ledc_channel_config_t ledc_channel = {
+            .channel    = JOLT_TOUCH_LED_CHANNEL,
+            .duty       = val,
+            .gpio_num   = CONFIG_JOLT_TOUCH_LED_PIN,
+            .speed_mode = JOLT_TOUCH_LED_MODE,
+            .timer_sel  = JOLT_TOUCH_LED_TIMER,
+            .intr_type  = LEDC_INTR_DISABLE,
+        };
+        ESP_ERROR_CHECK( ledc_channel_config(&ledc_channel) );
+    }
 }
 
 /* Set current setting 0~100 % */
