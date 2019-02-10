@@ -32,9 +32,6 @@
 
 static const char* TAG = "mnemonic_restore";
 
-static const char title[] = "Restore";
-static const char prompt[] = "Enter Mnemonic Word ";
-
 static QueueHandle_t cmd_q;
 static CONFIDENTIAL uint8_t idx[24];
 static CONFIDENTIAL char user_words[24][11];
@@ -42,31 +39,7 @@ static CONFIDENTIAL char user_words[24][11];
 static lv_obj_t *jolt_gui_scr_mnemonic_restore_num_create(int n) {
     assert( n <= 24 );
     assert( n >= 1 );
-
-    JOLT_GUI_SCR_CTX(title){
-        /* Create text for above the big number */
-        lv_obj_t *header_label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
-        lv_label_set_text(header_label, "Enter Word");
-        lv_obj_align(header_label, NULL, LV_ALIGN_IN_TOP_MID, 0, 6);
-
-        /* Create text for big number */
-        char number_str[3] = { 0 }; 
-        itoa( n, number_str, 10 );
-        lv_obj_t *number_label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
-        lv_label_set_text(number_label, number_str);
-
-        /* Set a Big Font Style for number*/
-        static lv_style_t number_style;
-        lv_style_t *old_style = lv_label_get_style(number_label);
-        lv_style_copy(&number_style, old_style);
-        number_style.text.font = &lv_font_dejavu_40_numeric;
-        lv_label_set_style(number_label, &number_style);
-
-        /* Align Big Number to Center bottom of screen */
-        lv_obj_align(number_label, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
-    }
-
-    return parent;
+    return jolt_gui_scr_bignum_create(gettext(JOLT_TEXT_RESTORE), gettext(JOLT_TEXT_ENTER_MNEMONIC_WORD), n, -1);
 }
 
 static lv_res_t jolt_cmd_mnemonic_restore_back( lv_obj_t *btn ) {
@@ -102,13 +75,14 @@ static void linenoise_task( void *h ) {
                 printf("Invalid word\n");
             }
 
-            printf(prompt);
+            printf(gettext(JOLT_TEXT_ENTER_MNEMONIC_WORD));
             jolt_cmd_t cmd_obj;
             jolt_cmd_t *cmd = &cmd_obj;
             xQueueReceive(jolt_cmd_queue, cmd, portMAX_DELAY);
             
             if (strcmp(cmd->data, "exit_restore") == 0){
-                printf("Aborting mnemonic restore\n");
+                printf("Aborting mnemonic restore");
+                printf("\n");
                 jolt_cmd_del(cmd);
                 goto exit;
             }
@@ -140,7 +114,7 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
     printf("To begin mnemonic restore, approve prompt on device.\n");
     lv_obj_t *scr = NULL, *btn = NULL;
     JOLT_GUI_CTX{
-        scr = BREAK_IF_NULL(jolt_gui_scr_text_create(title, "Begin mnemonic restore?"));
+        scr = BREAK_IF_NULL(jolt_gui_scr_text_create(gettext(JOLT_TEXT_RESTORE), gettext(JOLT_TEXT_BEGIN_MNEMONIC_RESTORE)));
         btn = BREAK_IF_NULL(jolt_gui_scr_set_back_action(scr,  jolt_cmd_mnemonic_restore_back));
         btn = BREAK_IF_NULL(jolt_gui_scr_set_enter_action(scr, jolt_cmd_mnemonic_restore_enter));
     }

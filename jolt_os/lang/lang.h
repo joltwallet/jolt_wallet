@@ -45,6 +45,23 @@ typedef enum jolt_text_id_t {
     /* App Launcher */
     JOLT_TEXT_PRELOAD_LAUNCHING,
 
+    /* Bluetooth Options */
+    JOLT_TEXT_BLUETOOTH_ENABLE,
+    JOLT_TEXT_PAIR,
+    JOLT_TEXT_TEMP_PAIR,
+    JOLT_TEXT_UNBONDS,
+    JOLT_TEXT_BROADCASTING,
+
+    /* WiFi Options */
+    JOLT_TEXT_WIFI_ENABLE,
+    JOLT_TEXT_WIFI_DETAILS,
+
+    /* Mnemonic Restore */
+    JOLT_TEXT_MNEMONIC_RESTORE,
+    JOLT_TEXT_RESTORE,
+    JOLT_TEXT_BEGIN_MNEMONIC_RESTORE,
+    JOLT_TEXT_ENTER_MNEMONIC_WORD,
+
     /* Used for allocating resources. Not actually a string */
     JOLT_TEXT_LAST_STR,
 } jolt_text_id_t;

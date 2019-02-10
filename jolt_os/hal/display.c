@@ -4,18 +4,19 @@
 #include "hal/storage/storage.h"
 
 static const char TAG[] = "display.c";
-ssd1306_t disp_hal = { 0 };
+static ssd1306_t disp_hal = { 0 };
 
 void display_init() {
     /* Set reset pin as output */
     gpio_config_t io_config;
     io_config.pin_bit_mask = (1 << CONFIG_JOLT_DISPLAY_PIN_RST);
+    //io_config.pin_bit_mask |= (1 << 26);
     io_config.mode         = GPIO_MODE_OUTPUT;
     io_config.pull_up_en   = GPIO_PULLUP_DISABLE;
     io_config.pull_down_en = GPIO_PULLDOWN_ENABLE;
     io_config.intr_type    = GPIO_INTR_DISABLE;
     ESP_ERROR_CHECK(gpio_config(&io_config));
-
+    //gpio_set_level(26, 1);
 
     disp_hal.protocol  = SSD1306_PROTO_I2C;
     disp_hal.screen    = SSD1306_SCREEN;
@@ -43,18 +44,25 @@ void display_init() {
 
     ssd1306_set_whole_display_lighting(&disp_hal, false);
     ssd1306_set_inversion(&disp_hal, true);
-    ssd1306_set_contrast(&disp_hal, get_display_brightness());
+    set_display_brightness(get_display_brightness());
 }
 
+static const uint8_t brightness_levels[] = { 0, 1, 2, 50, 120, 255};
+static const uint8_t precharge_levels[]  = {10, 10, 10, 90, 130, 255};
+
 uint8_t get_display_brightness() {
-    /* Returns saved brightness or default */
+    /* Returns saved brightness level or default */
     uint8_t brightness;
     storage_get_u8(&brightness, "user", "disp_bright", CONFIG_JOLT_DISPLAY_BRIGHTNESS);
     ESP_LOGI(TAG,"brightness %d", brightness);
     return brightness;
 }
 
-void save_display_brightness(uint8_t brightness) {
-    storage_set_u8(brightness, "user", "disp_bright");
+void save_display_brightness(uint8_t level) {
+    storage_set_u8(level, "user", "disp_bright");
 }
 
+void set_display_brightness(uint8_t level) {
+    ssd1306_set_contrast(&disp_hal, brightness_levels[level]);
+    ssd1306_set_precharge_period(&disp_hal, brightness_levels[level]);
+}

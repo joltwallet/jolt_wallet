@@ -1,9 +1,7 @@
-/*
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
+/* What works:
+ *    *streams: ble_stdin, ble_stdout, ble_stderr
+ * What doesn't work:
+ *    *select
 */
 #include "sdkconfig.h"
 #include "esp_spiffs.h"
@@ -38,302 +36,28 @@
 #include "hal/radio/spp_recv_buf.h"
 #include "linenoise/linenoise.h"
 #include "bluetooth.h"
+#include "bluetooth_state.h"
 
-
-#define spp_sprintf(s,...)         sprintf((char*)(s), ##__VA_ARGS__)
-#define SPP_DATA_MAX_LEN           (512)
-#define SPP_CMD_MAX_LEN            (20)
-#define SPP_STATUS_MAX_LEN         (20)
-#define SPP_DATA_BUFF_MAX_LEN      (2*1024)
+#include "jolt_gui/jolt_gui.h"
 
 #define GATTS_SEND_REQUIRE_CONFIRM false
+#define WHITELIST_ADD    true
+#define WHITELIST_REMOVE false
 
 FILE *ble_stdin;
 FILE *ble_stdout;
 FILE *ble_stderr;
 
-static uint8_t find_char_and_desr_index(uint16_t);
 static void gap_event_handler(esp_gap_ble_cb_event_t, esp_ble_gap_cb_param_t *);
-static void gatts_profile_event_handler(esp_gatts_cb_event_t, 
-        esp_gatt_if_t, esp_ble_gatts_cb_param_t *);
-static void gatts_event_handler(esp_gatts_cb_event_t , 
-        esp_gatt_if_t, esp_ble_gatts_cb_param_t *);
-
-///Attributes State Machine
-enum{
-    SPP_IDX_SVC = 0,
-
-    SPP_IDX_SPP_DATA_RECV_CHAR,
-    SPP_IDX_SPP_DATA_RECV_VAL,
-
-    SPP_IDX_SPP_DATA_NOTIFY_CHAR,
-    SPP_IDX_SPP_DATA_NTY_VAL,
-    SPP_IDX_SPP_DATA_NTF_CFG,
-
-    SPP_IDX_SPP_COMMAND_CHAR,
-    SPP_IDX_SPP_COMMAND_VAL,
-
-    SPP_IDX_SPP_STATUS_CHAR,
-    SPP_IDX_SPP_STATUS_VAL,
-    SPP_IDX_SPP_STATUS_CFG,
-
-    SPP_IDX_NB,
-};
+static void gatts_event_handler(esp_gatts_cb_event_t event, 
+        esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
 #define GATTS_TABLE_TAG  "GATTS_SPP_DEMO"
 #define TAG  "GATTS_SPP_DEMO"
 
-#define SPP_PROFILE_NUM             1
-#define SPP_PROFILE_APP_IDX         0
-#define ESP_SPP_APP_ID              0x56
-#define SAMPLE_DEVICE_NAME          "Jolt"
-#define SPP_SVC_INST_ID	            0
-
-/// SPP Service
-static const uint16_t spp_service_uuid = 0xFFE0;
-/// Characteristic UUID
-#define ESP_GATT_UUID_SPP_DATA_RECEIVE      0xFFE1 // smartphone->jolt
-#define ESP_GATT_UUID_SPP_DATA_NOTIFY       0xFFE2
-#define ESP_GATT_UUID_SPP_COMMAND_RECEIVE   0xABF3 // smartphone->jolt
-#define ESP_GATT_UUID_SPP_COMMAND_NOTIFY    0xABF4
-
-// Serial Port Profile Advertising Data
-// esp_ble_adv_data_t
-static const uint8_t spp_adv_data[23] = {
-    0x02,0x01,0x06, // Flags
-    0x03,0x03,0xE0,0xFF,
-    0x0F,0x04,'J','o','l','t'
-};
-
-static uint16_t spp_mtu_size = 23;
-static uint16_t spp_conn_id = 0xffff;
-static esp_gatt_if_t spp_gatts_if = 0xff;
-static xQueueHandle ble_in_queue = NULL;
-
-static bool enable_data_ntf = false;
-static bool is_connected = false;
-static esp_bd_addr_t spp_remote_bda = {0x0,};
-
-static uint16_t spp_handle_table[SPP_IDX_NB];
-
-/* Advertising Parameters */
-static esp_ble_adv_params_t spp_adv_params = {
-    .adv_int_min        = 0x20,
-    .adv_int_max        = 0x40,
-    .adv_type           = ADV_TYPE_IND,
-    .own_addr_type      = BLE_ADDR_TYPE_PUBLIC,
-    .channel_map        = ADV_CHNL_ALL,
-    .adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
-};
-
-struct gatts_profile_inst {
-    esp_gatts_cb_t gatts_cb;
-    uint16_t gatts_if;
-    uint16_t app_id;
-    uint16_t conn_id;
-    uint16_t service_handle;
-    esp_gatt_srvc_id_t service_id;
-    uint16_t char_handle;
-    esp_bt_uuid_t char_uuid;
-    esp_gatt_perm_t perm;
-    esp_gatt_char_prop_t property;
-    uint16_t descr_handle;
-    esp_bt_uuid_t descr_uuid;
-};
-
-/* Forward Declare Static Functions */
-static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
-        esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
-
-/* Array to store each application profile; will store the gatts_if returned by ESP_GATTS_REG_EVT */
-static struct gatts_profile_inst spp_profile_tab[SPP_PROFILE_NUM] = {
-    [SPP_PROFILE_APP_IDX] = {
-        .gatts_cb = gatts_profile_event_handler,
-        .gatts_if = ESP_GATT_IF_NONE,       /* Not get the gatt_if, so initial is ESP_GATT_IF_NONE */
-    },
-};
-
 /***************************
  *  SPP PROFILE ATTRIBUTES *
  ***************************/
-
-#define CHAR_DECLARATION_SIZE   (sizeof(uint8_t))
-static const uint16_t primary_service_uuid = ESP_GATT_UUID_PRI_SERVICE;
-static const uint16_t character_declaration_uuid = ESP_GATT_UUID_CHAR_DECLARE;
-static const uint16_t character_client_config_uuid = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
-
-static const uint8_t char_prop_read_notify = ESP_GATT_CHAR_PROP_BIT_READ|ESP_GATT_CHAR_PROP_BIT_NOTIFY;
-static const uint8_t char_prop_read_write = ESP_GATT_CHAR_PROP_BIT_WRITE_NR|ESP_GATT_CHAR_PROP_BIT_READ;
-
-/* SPP Service - data receive characteristic, read&write without response */
-static const uint16_t spp_data_receive_uuid = ESP_GATT_UUID_SPP_DATA_RECEIVE;
-static const uint8_t  spp_data_receive_val[20] = {0x00};
-
-/* SPP Service - data notify characteristic, notify&read */
-static const uint16_t spp_data_notify_uuid = ESP_GATT_UUID_SPP_DATA_NOTIFY;
-static const uint8_t  spp_data_notify_val[20] = {0x00};
-static const uint8_t  spp_data_notify_ccc[2] = {0x00, 0x00};
-
-/* SPP Service - command characteristic, read&write without response */
-static const uint16_t spp_command_uuid = ESP_GATT_UUID_SPP_COMMAND_RECEIVE;
-static const uint8_t  spp_command_val[10] = {0x00};
-
-/* SPP Service - status characteristic, notify&read */
-static const uint16_t spp_status_uuid = ESP_GATT_UUID_SPP_COMMAND_NOTIFY;
-static const uint8_t  spp_status_val[10] = {0x00};
-static const uint8_t  spp_status_ccc[2] = {0x00, 0x00};
-
-/* Full HRS Database Description - Used to add attributes into the database */
-static const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
-    /* SPP -  Service Declaration */
-    [SPP_IDX_SVC] = {
-        .attr_control = {
-            // response of R/W operation will be replied by GATT stack automatically
-            .auto_rsp = ESP_GATT_AUTO_RSP
-        },
-        .att_desc = {
-            .uuid_length = ESP_UUID_LEN_16,
-            .uuid_p      = (uint8_t *)&primary_service_uuid, // UUID value
-            .perm        = ESP_GATT_PERM_READ,
-            .max_length  = sizeof(spp_service_uuid),
-            .length      = sizeof(spp_service_uuid),
-            .value       = (uint8_t *)&spp_service_uuid
-        }
-    },
-
-    //SPP -  data receive characteristic Declaration
-    [SPP_IDX_SPP_DATA_RECV_CHAR] = {
-        {
-            ESP_GATT_AUTO_RSP
-        },
-        {
-            .uuid_length = ESP_UUID_LEN_16,
-            .uuid_p      = (uint8_t *)&character_declaration_uuid,
-            .perm        = ESP_GATT_PERM_READ,
-            .max_length  = CHAR_DECLARATION_SIZE,
-            .length      = CHAR_DECLARATION_SIZE, 
-            .value       = (uint8_t *)&char_prop_read_write
-        }
-    },
-
-    //SPP -  data receive characteristic Value
-    [SPP_IDX_SPP_DATA_RECV_VAL] = {
-        {ESP_GATT_AUTO_RSP},
-        {
-            .uuid_length = ESP_UUID_LEN_16,
-            .uuid_p      = (uint8_t *)&spp_data_receive_uuid,
-            .perm        = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
-            .max_length  = SPP_DATA_MAX_LEN,
-            .length      = sizeof(spp_data_receive_val),
-            .value       = (uint8_t *)spp_data_receive_val
-        }
-    },
-
-    //SPP -  data notify characteristic Declaration
-    [SPP_IDX_SPP_DATA_NOTIFY_CHAR]  = {
-        {ESP_GATT_AUTO_RSP},
-        {
-            .uuid_length = ESP_UUID_LEN_16,
-            .uuid_p      = (uint8_t *)&character_declaration_uuid,
-            .perm        = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
-            .max_length  = CHAR_DECLARATION_SIZE,
-            .length      = CHAR_DECLARATION_SIZE,
-            .value       = (uint8_t *)&char_prop_read_notify
-        }
-    },
-
-    //SPP -  data notify characteristic Value
-    [SPP_IDX_SPP_DATA_NTY_VAL] = {
-        {ESP_GATT_AUTO_RSP},
-        {
-            .uuid_length = ESP_UUID_LEN_16,
-            .uuid_p      = (uint8_t *)&spp_data_notify_uuid,
-            .perm        = ESP_GATT_PERM_READ,
-            .max_length  = SPP_DATA_MAX_LEN,
-            .length      = sizeof(spp_data_notify_val),
-            .value       = (uint8_t *)spp_data_notify_val
-        }
-    },
-
-    //SPP -  data notify characteristic - Client Characteristic Configuration Descriptor
-    [SPP_IDX_SPP_DATA_NTF_CFG] = {
-        {ESP_GATT_AUTO_RSP},
-        {
-            .uuid_length = ESP_UUID_LEN_16,
-            .uuid_p      = (uint8_t *)&character_client_config_uuid,
-            .perm        = ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE,
-            .max_length  = sizeof(uint16_t),
-            .length      = sizeof(spp_data_notify_ccc),
-            .value       = (uint8_t *)spp_data_notify_ccc
-        }
-    },
-
-    //SPP -  command characteristic Declaration
-    [SPP_IDX_SPP_COMMAND_CHAR] = {
-        {ESP_GATT_AUTO_RSP},
-        {
-            .uuid_length = ESP_UUID_LEN_16,
-            .uuid_p      = (uint8_t *)&character_declaration_uuid,
-            .perm        = ESP_GATT_PERM_READ,
-            .max_length  = CHAR_DECLARATION_SIZE,
-            .length      = CHAR_DECLARATION_SIZE,
-            .value       = (uint8_t *)&char_prop_read_write
-        }
-    },
-
-    //SPP -  command characteristic Value
-    [SPP_IDX_SPP_COMMAND_VAL] = {
-        {ESP_GATT_AUTO_RSP},
-        {
-           .uuid_length =  ESP_UUID_LEN_16,
-           .uuid_p      =  (uint8_t *)&spp_command_uuid, 
-           .perm        =  ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE, 
-           .max_length  =  SPP_CMD_MAX_LEN,
-           .length      =  sizeof(spp_command_val),
-           .value       =  (uint8_t *)spp_command_val
-        }
-    },
-
-    //SPP -  status characteristic Declaration
-    [SPP_IDX_SPP_STATUS_CHAR] = {
-        {ESP_GATT_AUTO_RSP},
-        {
-            .uuid_length = ESP_UUID_LEN_16,
-            .uuid_p      = (uint8_t *)&character_declaration_uuid,
-            .perm        = ESP_GATT_PERM_READ,
-            .max_length  = CHAR_DECLARATION_SIZE,
-            .length      = CHAR_DECLARATION_SIZE, 
-            .value       = (uint8_t *)&char_prop_read_notify
-        }
-    },
-
-    //SPP -  status characteristic Value
-    [SPP_IDX_SPP_STATUS_VAL] = {
-        {ESP_GATT_AUTO_RSP},
-        {
-            .uuid_length = ESP_UUID_LEN_16,
-            .uuid_p      = (uint8_t *)&spp_status_uuid,
-            .perm        = ESP_GATT_PERM_READ,
-            .max_length  = SPP_STATUS_MAX_LEN,
-            .length      = sizeof(spp_status_val),
-            .value       = (uint8_t *)spp_status_val
-        }
-    },
-
-    //SPP -  status characteristic - Client Characteristic Configuration Descriptor
-    [SPP_IDX_SPP_STATUS_CFG] = {
-        {ESP_GATT_AUTO_RSP},
-        {
-            .uuid_length = ESP_UUID_LEN_16,
-            .uuid_p      = (uint8_t *)&character_client_config_uuid,
-            .perm        = ESP_GATT_PERM_READ|ESP_GATT_PERM_WRITE,
-            .max_length  = sizeof(uint16_t),
-            .length      = sizeof(spp_status_ccc),
-            .value       = (uint8_t *)spp_status_ccc
-        }
-    },
-};
-
 
 
 /* DRIVER STUFF */
@@ -342,8 +66,6 @@ static int     ble_fstat( int fd, struct stat * st );
 static int     ble_close( int fd );
 static ssize_t ble_write( int fd, const void * data, size_t size );
 static ssize_t ble_read(  int fd, void* data, size_t size );
-
-
 // Token signifying that no character is available
 #define NONE -1
 
@@ -391,7 +113,7 @@ static int ble_open(const char * path, int flags, int mode) {
 }
 
 static ssize_t ble_write(int fd, const void *data, size_t size) {
-	const char *data_c = (const char *)data;
+    const char *data_c = (const char *)data;
     _lock_acquire_recursive(&s_ble_write_lock);
 
     int idx = 0;
@@ -402,9 +124,9 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
         }
         esp_err_t res;
         res = esp_ble_gatts_send_indicate(
-                spp_gatts_if,
-                spp_conn_id,
-                spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL],
+                spp_profile_tab[SPP_PROFILE_A_APP_ID].gatts_if,
+                spp_profile_tab[SPP_PROFILE_A_APP_ID].conn_id,
+                spp_handle_table[SPP_IDX_SPP_DATA_NOTIFY_VAL],
                 print_len, (uint8_t*) &data_c[idx], GATTS_SEND_REQUIRE_CONFIRM);
         if( ESP_OK != res ){
             // todo: res error handling
@@ -435,6 +157,7 @@ static int ble_read_char(int fd) {
         if( '\0' == c ) {
             /* pop the element from the queue */
             xQueueReceive(ble_in_queue, &line, portMAX_DELAY);
+            free(line);
             line_off = 0;
         }
     }while('\0' == c);
@@ -443,12 +166,12 @@ static int ble_read_char(int fd) {
 }
 
 /* When we peek ahead to handle \r\n */
-static void ble_return_char(int fd, int c){
+static void ble_return_char(int fd, int c) {
     peek_c = c;
 }
 
 static ssize_t ble_read(int fd, void* data, size_t size) {
-	char *data_c = (char *)data;
+    char *data_c = (char *)data;
 
     _lock_acquire_recursive(&s_ble_read_lock);
 
@@ -568,7 +291,7 @@ static void select_notif_callback(uart_port_t uart_num, uart_select_notif_t uart
 }
 
 static esp_err_t ble_start_select(int nfds, fd_set *readfds, fd_set *writefds,
-        fd_set *exceptfds, SemaphoreHandle_t *signal_sem){
+        fd_set *exceptfds, SemaphoreHandle_t *signal_sem) {
     /* Setting up the environment for detection of read/write/error conditions 
      * on file descriptors belonging to BLE VFS.
      */
@@ -616,12 +339,11 @@ static esp_err_t ble_start_select(int nfds, fd_set *readfds, fd_set *writefds,
     *_writefds_orig = *writefds;
     *_errorfds_orig = *exceptfds;
 
-	FD_ZERO(readfds);
+    FD_ZERO(readfds);
     FD_ZERO(writefds);
     FD_ZERO(exceptfds);
 
     // todo; more stuff here
-
 
     return ESP_OK;
 }
@@ -674,15 +396,6 @@ static void esp_vfs_dev_ble_spp_register() {
 }
 /* END DRIVER STUFF */
 
-static uint8_t find_char_and_desr_index(uint16_t handle) {
-    for(int i = 0; i < SPP_IDX_NB ; i++) {
-        if( handle == spp_handle_table[i]) {
-            return i;
-        }
-    }
-    return 0xff; // error
-}
-
 static void spp_cmd_task(void * arg) {
     esp_vfs_dev_ble_spp_register();
     ble_stdin  = fopen("/dev/ble/0", "r");
@@ -713,187 +426,228 @@ static void spp_cmd_task(void * arg) {
     vTaskDelete(NULL);
 }
 
-static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
-{
-    esp_err_t err;
-    ESP_LOGE(GATTS_TABLE_TAG, "GAP_EVT, event %d\n", event);
-
-    switch (event) {
-    case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
-        esp_ble_gap_start_advertising(&spp_adv_params);
-        break;
-    case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
-        /* advertising start complete event to indicate advertising 
-         * start successfully or failed. */
-        if((err = param->adv_start_cmpl.status) != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed: %s\n", 
-                    esp_err_to_name(err));
-        }
-        break;
-    default:
-        break;
+static void add_all_bonded_to_whitelist() {
+    int dev_num = esp_ble_get_bond_device_num();
+    esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
+    esp_ble_get_bond_device_list(&dev_num, dev_list);
+    for (int i = 0; i < dev_num; i++) {
+        esp_ble_gap_update_whitelist(true, dev_list[i].bd_addr);
     }
+
+    free(dev_list);
 }
 
-/* Only used to handle events for SPP_PROFILE_APP_IDX */
-static void gatts_profile_event_handler(esp_gatts_cb_event_t event, 
-        esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) {
+static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
 
-    esp_ble_gatts_cb_param_t *p_data = (esp_ble_gatts_cb_param_t *) param;
-    uint8_t res = 0xff;
-
-    ESP_LOGD(GATTS_TABLE_TAG, "event = %x\n",event);
+    esp_err_t err;
+    ESP_LOGE(GATTS_TABLE_TAG, "GAP event %d", event);
     switch (event) {
-    	case ESP_GATTS_REG_EVT:
-        	esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
-        	esp_ble_gap_config_adv_data_raw((uint8_t *)spp_adv_data,
-                    sizeof(spp_adv_data));
-        	esp_ble_gatts_create_attr_tab(spp_gatt_db, gatts_if, 
-                    SPP_IDX_NB, SPP_SVC_INST_ID);
-       	    break;
-    	case ESP_GATTS_READ_EVT:
-            res = find_char_and_desr_index(p_data->read.handle);
-            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_READ_EVT : handle = %d\n", res);
-            if(res == SPP_IDX_SPP_STATUS_VAL){
-                //TODO: client read the status characteristic
-            }
-       	    break;
-    	case ESP_GATTS_WRITE_EVT: {
-    	    res = find_char_and_desr_index(p_data->write.handle);
-            if(p_data->write.is_prep == false){
-                ESP_LOGD(GATTS_TABLE_TAG, "ESP_GATTS_WRITE_EVT : handle = %d\n", res);
-                if(res == SPP_IDX_SPP_COMMAND_VAL){
-                    /* Allocate memory for 1 MTU;
-                     * send it off to the ble_in_queue */
-                    ESP_LOGD(GATTS_TABLE_TAG, "SPP_IDX_SPP_COMMAND_VAL;"
-                            " Allocating %d bytes.", spp_mtu_size-3);
-                    uint8_t * spp_cmd_buff = NULL;
-                    spp_cmd_buff = (uint8_t *)malloc((spp_mtu_size - 3) * sizeof(uint8_t));
-                    if(spp_cmd_buff == NULL){
-                        ESP_LOGE(GATTS_TABLE_TAG, "%s malloc failed\n", __func__);
-                        break;
-                    }
-                    memset(spp_cmd_buff, 0, (spp_mtu_size - 3));
-                    memcpy(spp_cmd_buff, p_data->write.value, p_data->write.len);
-                    xQueueSend(ble_in_queue, &spp_cmd_buff, 10/portTICK_PERIOD_MS);
-                }
-                else if(res == SPP_IDX_SPP_DATA_NTF_CFG){
-                    ESP_LOGD(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_NTF_CFG");
-                    if( (p_data->write.len == 2)
-                            &&(p_data->write.value[0] == 0x01)
-                            &&(p_data->write.value[1] == 0x00) ) {
-                        enable_data_ntf = true;
-                    }
-                    else if( (p_data->write.len == 2)
-                            &&(p_data->write.value[0] == 0x00)
-                            &&(p_data->write.value[1] == 0x00) ) {
-                        enable_data_ntf = false;
-                    }
-                }
-                else if( res == SPP_IDX_SPP_DATA_RECV_VAL ) {
-                    /* Phone/Computer sent string to Jolt */
-                    ESP_LOGD(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_RECV_VAL");
-                    #ifdef SPP_DEBUG_MODE
-                    esp_log_buffer_char(GATTS_TABLE_TAG,
-                            (char *)(p_data->write.value),p_data->write.len);
-                    #else
-                    uart_write_bytes(UART_NUM_0, 
-                            (char *)(p_data->write.value), p_data->write.len);
-                    uart_write_bytes(UART_NUM_0, "\n", 1);
-                    #endif
+        /***************
+         * Advertising *
+         ***************/
+        /* Triggered by: esp_ble_gap_config_adv_data_raw( raw_data, raw_data_len ) */
+        case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT: /* fall through */
+        /* Triggered by: esp_ble_gap_config_adv_data( &adv_data ) */
+        case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
+            /* Start Advertising To Whitelisted Devices */
+            ESP_ERROR_CHECK(esp_ble_gap_start_advertising( 
+                    (esp_ble_adv_params_t *)&spp_adv_wht_params ));
+            break;
 
-                }
-                else{
-                    ESP_LOGI(GATTS_TABLE_TAG, "Unknown state machine attribute %d.",
-                            res);
-                    //TODO:
-                }
+        /* esp_ble_gap_start_advertising */
+        case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
+            /* advertising start complete event to indicate advertising 
+             * start successfully or failed. */
+            if((err = param->adv_start_cmpl.status) != ESP_BT_STATUS_SUCCESS) {
+                ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed: %s\n", 
+                        esp_err_to_name(err));
             }
-            else if( (p_data->write.is_prep == true)
-                    && (res == SPP_IDX_SPP_DATA_RECV_VAL) ) {
-                ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_PREP_WRITE_EVT : handle = %d\n", res);
-                store_wr_buffer(p_data);
+            
+            break;
+
+        /*********
+         * Scans *
+         *********/
+        case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT:
+            /* scan response data set complete */
+            break;
+        /* Triggered by: esp_ble_gap_config_scan_rsp_data_raw( raw_data, raw_data_len ) */
+        case ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT:
+            break;
+
+        /* Triggered by: esp_ble_gap_set_scan_params( &scan_params ) */
+        case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT:
+            /* scan parameters set complete */
+            break;
+        case ESP_GAP_BLE_SCAN_RESULT_EVT:
+            /* one scan result ready */
+			/* todo: add debug logging here */
+            break;
+        /* Triggered by: esp_ble_gap_start_scanning( duration ) */
+        case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT:
+            /* Not used by Jolt*/
+            break;
+        /* Triggered by: esp_ble_gap_stop_scanning( ) */
+        case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
+			if (param->scan_stop_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+				ESP_LOGE(GATTS_TABLE_TAG, "Scan stop failed, error status = %x", param->scan_stop_cmpl.status);
+			}
+            else {
+                ESP_LOGI(GATTS_TABLE_TAG, "Stop scan successfully");
             }
-      	 	break;
-    	}
-    	case ESP_GATTS_EXEC_WRITE_EVT:{
-    	    ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_EXEC_WRITE_EVT\n");
-    	    if(p_data->exec_write.exec_write_flag){
-    	        print_write_buffer();
-    	        free_write_buffer();
-    	    }
-    	    break;
-    	}
-    	case ESP_GATTS_MTU_EVT:
-            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_MTU_EVENT;"
-                    "Setting MTU size to %d bytes.", p_data->mtu.mtu);
-    	    spp_mtu_size = p_data->mtu.mtu;
-    	    break;
-    	case ESP_GATTS_CONF_EVT:
-    	    break;
-    	case ESP_GATTS_UNREG_EVT:
-        	break;
-    	case ESP_GATTS_DELETE_EVT:
-        	break;
-    	case ESP_GATTS_START_EVT:
-        	break;
-    	case ESP_GATTS_STOP_EVT:
-        	break;
-    	case ESP_GATTS_CONNECT_EVT:
-    	    spp_conn_id = p_data->connect.conn_id;
-    	    spp_gatts_if = gatts_if;
-    	    is_connected = true;
-    	    memcpy(&spp_remote_bda,&p_data->connect.remote_bda,sizeof(esp_bd_addr_t));
-        	break;
-    	case ESP_GATTS_DISCONNECT_EVT:
-    	    is_connected = false;
-    	    enable_data_ntf = false;
-    	    esp_ble_gap_start_advertising(&spp_adv_params);
-    	    break;
-    	case ESP_GATTS_OPEN_EVT:
-    	    break;
-    	case ESP_GATTS_CANCEL_OPEN_EVT:
-    	    break;
-    	case ESP_GATTS_CLOSE_EVT:
-    	    break;
-    	case ESP_GATTS_LISTEN_EVT:
-    	    break;
-    	case ESP_GATTS_CONGEST_EVT:
-    	    break;
-    	case ESP_GATTS_CREAT_ATTR_TAB_EVT:{
-    	    ESP_LOGI( GATTS_TABLE_TAG, "The number handle =%x\n",
-                    param->add_attr_tab.num_handle );
-    	    if ( param->add_attr_tab.status != ESP_GATT_OK ) {
-    	        ESP_LOGE(GATTS_TABLE_TAG, 
-                        "Create attribute table failed, error code=0x%x",
-                        param->add_attr_tab.status);
-    	    }
-    	    else if (param->add_attr_tab.num_handle != SPP_IDX_NB){
-                ESP_LOGE(GATTS_TABLE_TAG, "Create attribute table abnormally, "
-                        "num_handle (%d) doesn't equal to HRS_IDX_NB(%d)",
-                        param->add_attr_tab.num_handle, SPP_IDX_NB);
-    	    }
-    	    else {
-    	        memcpy(spp_handle_table, param->add_attr_tab.handles,
-                        sizeof(spp_handle_table));
-    	        esp_ble_gatts_start_service(spp_handle_table[SPP_IDX_SVC]);
-    	    }
-    	    break;
-    	}
-    	default:
-    	    break;
+            break;
+
+        /************
+         * Security *
+         ************/
+        case ESP_GAP_BLE_AUTH_CMPL_EVT: {
+            /* Keys have been exchanged successfully between devices,
+             * the pairing process is completed and encryption of payload data can be started.
+             */
+
+            /* [logging] Print Connection Data */
+            {
+                esp_bd_addr_t bd_addr;
+                memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr,
+                        sizeof(esp_bd_addr_t));
+                ESP_LOGI(GATTS_TABLE_TAG, "remote BD_ADDR: %08x%04x",
+                        (bd_addr[0] << 24) + (bd_addr[1] << 16)
+                        + (bd_addr[2] << 8) + bd_addr[3], (bd_addr[4] << 8)
+                        + bd_addr[5]);
+            }
+            ESP_LOGI(GATTS_TABLE_TAG, "address type = %d", 
+                    param->ble_security.auth_cmpl.addr_type);
+            ESP_LOGI(GATTS_TABLE_TAG, "pair status = %s", 
+                    param->ble_security.auth_cmpl.success ? "success" : "fail");
+			if (param->ble_security.auth_cmpl.success) {
+				ESP_LOGI(GATTS_TABLE_TAG, "auth mode = 0x%x", 
+                        param->ble_security.auth_cmpl.auth_mode);    
+                /* Add the address to the whitelist */
+                esp_err_t err;
+                esp_bd_addr_t bd_addr;
+                memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr,
+                        sizeof(esp_bd_addr_t));
+                err = esp_ble_gap_update_whitelist(WHITELIST_ADD, bd_addr);
+                if( ESP_OK != err ){
+                    ESP_LOGE(GATTS_TABLE_TAG, "Failed to add bd_addr to whitelist");
+                }
+			}
+            else {
+				ESP_LOGI(GATTS_TABLE_TAG, "fail reason = 0x%x", 
+                        param->ble_security.auth_cmpl.fail_reason);
+			}
+            break;
+        }
+        case ESP_GAP_BLE_KEY_EVT:
+            /* Triggered for every key exchange message */
+            ESP_LOGI(GATTS_TABLE_TAG, "key type = 0x%x", param->ble_security.ble_key.key_type);
+            break;
+        case ESP_GAP_BLE_SEC_REQ_EVT:
+            /* Slave requests to start encryption.
+             * Send the [true] security response to the peer device to accept the security request.
+             * To reject the security request, send the security response with [false] value*/
+            ESP_LOGI(GATTS_TABLE_TAG, "Slave requesting security.");
+            esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
+            break;
+        case ESP_GAP_BLE_PASSKEY_REQ_EVT:
+            /* If this device has digit input capabilities, and the remote device has
+             * display capabilities, this is triggered to input the digits shown on
+             * the remote display using esp_ble_passkey_reply() */
+            /* Not used in Jolt */
+            break;
+        case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:
+            /* The app will receive this evt when the IO has Output capability 
+             * and the peer device IO has Input capability.
+             * Show the passkey integer param->ble_security.key_notif.passkey 
+             * to the user to input it in the peer device. */
+            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_PASSKEY_NOTIF_EVT, the passkey Notify number:%d",
+                    param->ble_security.key_notif.passkey);
+            /* See bluetooth_pair.c for gui handling */
+            break;
+        case ESP_GAP_BLE_NC_REQ_EVT:
+            /* The app will receive this evt when the IO has DisplayYesNO 
+             * capability and the peer device IO also has DisplayYesNo capability.
+             * Show the passkey integer param->ble_security.key_notif.passkey
+             * to the user to confirm it with the number displayed by peer deivce. */
+            /* Not used in Jolt */
+            /* This shouldn't trigger due to the IO_CAP config */
+            break;
+        /* Triggered by: esp_ble_gap_update_whitelist() */
+        case ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT:
+            break;
+        case ESP_GAP_BLE_OOB_REQ_EVT:
+            /* Out of Band is currently not supported by Jolt.
+             * Support was recently added to ESP-IDF*/
+            break;
+
+        /**********************
+         * Security - Bonding *
+         **********************/
+        case ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT:
+            ESP_LOGD(GATTS_TABLE_TAG,
+                    "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d",
+                    param->remove_bond_dev_cmpl.status);
+            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV");
+            ESP_LOGI(GATTS_TABLE_TAG, "-----ESP_GAP_BLE_REMOVE_BOND_DEV----");
+            esp_log_buffer_hex(GATTS_TABLE_TAG, (void *)param->remove_bond_dev_cmpl.bd_addr,
+                    sizeof(esp_bd_addr_t));
+            ESP_LOGI(GATTS_TABLE_TAG, "------------------------------------");
+            break;
+        case ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT:
+            break;
+        case ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT:
+            break;
+
+        /************************************
+         * General Parameter Configurations *
+         ************************************/
+        /* Triggered by: esp_ble_gap_update_conn_params( &params ) */
+        case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
+            break;
+        /* Triggered by: esp_ble_gap_set_pkt_data_len() */
+        case ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT:
+            break;
+        /* Triggered by: esp_ble_gap_config_local_privacy() */
+        case ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT: {
+            if (param->local_privacy_cmpl.status != ESP_BT_STATUS_SUCCESS){
+                ESP_LOGE(GATTS_TABLE_TAG, "config local privacy failed, error status = %x",
+                        param->local_privacy_cmpl.status);
+                break;
+            }
+        }
+
+        /****************
+         * Meta Queries *
+         ****************/
+        case ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT:
+            break;
+
+        /********
+         * Misc *
+         ********/
+        /* Triggered by: sp_ble_gap_add_duplicate_scan_exceptional_device() */
+        case ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT:
+            break;
+
+        /* The following events were used for internal esp-idf development; deprecated:
+         *     ESP_GAP_BLE_LOCAL_IR_EVT
+         *     ESP_GAP_BLE_LOCAL_ER_EVT
+         */
+
+        default:
+            break;
     }
+    jolt_gui_gap_cb(event, param);
 }
 
 static void gatts_event_handler(esp_gatts_cb_event_t event, 
         esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) {
 
-    ESP_LOGI(GATTS_TABLE_TAG, "EVT %d, gatts if %d\n", event, gatts_if);
-
     /* If event is register event, store the gatts_if for each profile */
     if (event == ESP_GATTS_REG_EVT) {
+        /* param contains status and application id to register */
         if (param->reg.status == ESP_GATT_OK) {
-            spp_profile_tab[SPP_PROFILE_APP_IDX].gatts_if = gatts_if;
+            spp_profile_tab[SPP_PROFILE_A_APP_ID].gatts_if = gatts_if;
         } 
         else {
             ESP_LOGI(GATTS_TABLE_TAG, 
@@ -904,13 +658,10 @@ static void gatts_event_handler(esp_gatts_cb_event_t event,
     }
 
     /* Call the gatts_cb for the speicified gatts_if */
-    int idx;
-    /* Iterate through the profiles */
-    for (idx = 0; idx < SPP_PROFILE_NUM; idx++) {
+    for (uint16_t idx = 0; idx < SPP_PROFILE_NUM; idx++) {
         /* ESP_GATT_IF_NONE, not specify a certain gatt_if,
          * need to call every profile cb function */
-        if (gatts_if == ESP_GATT_IF_NONE || 
-                gatts_if == spp_profile_tab[idx].gatts_if) {
+        if (gatts_if == ESP_GATT_IF_NONE || gatts_if == spp_profile_tab[idx].gatts_if) {
             if ( NULL != spp_profile_tab[idx].gatts_cb) {
                 spp_profile_tab[idx].gatts_cb(event, gatts_if, param);
             }
@@ -918,94 +669,259 @@ static void gatts_event_handler(esp_gatts_cb_event_t event,
     }
 }
 
-/* To be called during Jolt startup
- * Initialized/Registers all bluetooth related hardware/software */
-void jolt_bluetooth_setup() {
-    esp_err_t ret;
-
-    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    ret = esp_bt_controller_init(&bt_cfg);
-    if (ret) {
-        ESP_LOGE(TAG, "%s initialize controller failed, error code = %x\n",
-                __func__, ret);
-        return;
-    }
-    else {
-        ESP_LOGI(TAG, "[bt] Initialized Controller");
+void jolt_bluetooth_config_security(bool bond) {
+    /* This section sets the security parameters in the enumerated order */
+    /* ESP_BLE_SM_PASSKEY seems to be undocumented*/
+    {
+        /* Secure Connections with MITM Protection and Bonding */
+        esp_ble_auth_req_t auth_req;
+        auth_req = bond ? ESP_LE_AUTH_REQ_SC_MITM_BOND : ESP_LE_AUTH_REQ_SC_MITM;
+        ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, sizeof(uint8_t)));
     }
 
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-    if (ret) {
-        ESP_LOGE(TAG, "%s enable controller failed, error code = %x\n",
-                __func__, ret);
-        return;
-    }
-    else {
-        ESP_LOGI(TAG, "[bt] Enabled Controller");
+    {
+        /* Register Jolt's IO capability */
+        /* Set as CAP_OUT so that you MUST enter code on computer/smartphone */
+        esp_ble_io_cap_t iocap = ESP_IO_CAP_OUT;
+        ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE, &iocap, sizeof(uint8_t)));
     }
 
-    ret = esp_bluedroid_init();
-    if (ret) {
-        ESP_LOGE(TAG, "%s init bluetooth failed, error code = %x\n",
-                __func__, ret);
-        return;
-    }
-    else {
-        ESP_LOGI(TAG, "[bt] Initialized Bluedroid");
+    {
+        /* Initiator Key Distribution/Generation */
+        /* Type of key the smartphone/computer should distribute to Jolt */
+        uint8_t init_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
+        ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t)));
+
+        /* Type of key Jolt can distribute to smartphone/computer */
+        uint8_t rsp_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
+        ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t)));
     }
 
-    ret = esp_bluedroid_enable();
-    if (ret) {
-        ESP_LOGE(GATTS_TABLE_TAG, "%s enable bluetooth failed: %s\n",
-                __func__, esp_err_to_name(ret));
-        return;
-    }
-    else {
-        ESP_LOGI(TAG, "[bt] Enabled Bluedroid");
+    {
+        /* Set Bluetooth Encryption Keysize */
+        uint8_t key_size = 16;      /* 128-bit key */
+        ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(uint8_t)));
     }
 
-    //register the  callback function to the gap module
-    ret = esp_ble_gap_register_callback(gap_event_handler);
-    if (ret){
-        ESP_LOGE(GATTS_TABLE_TAG, "%s gap register failed, error code = %x\n",
-                __func__, ret);
-        return;
-    }
-    else {
-        ESP_LOGI(TAG, "[bt] Registered GAP callback");
+    /* ESP_BLE_SM_SET_STATIC_PASSKEY and ESP_BLE_SM_CLEAR_STATIC_PASSKEY are not used */
+
+    {
+        uint8_t auth_option = ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_ENABLE; // todo: maybe set this to ENABLE
+        ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH, &auth_option, sizeof(uint8_t)));
     }
 
-
-    ret = esp_ble_gatts_register_callback(gatts_event_handler);
-    if(ret){
-        ESP_LOGE(GATTS_TABLE_TAG, "%s gatts register failed, error code = %x\n",
-                __func__, ret);
-        return;
+    {
+        /* ESP_BLE_SM_OOB_SUPPORT is not fully fleshed out in ESP32 */
+        uint8_t oob_support = ESP_BLE_OOB_DISABLE;
+        ESP_ERROR_CHECK(esp_ble_gap_set_security_param(ESP_BLE_SM_OOB_SUPPORT, &oob_support, sizeof(uint8_t)));
     }
-    else {
-        ESP_LOGI(TAG, "[bt] Registered GATTS callback");
-    }
-
-    ret = esp_ble_gatts_app_register(ESP_SPP_APP_ID);
-    if (ret){
-        ESP_LOGE(GATTS_TABLE_TAG, "%s gatts app register failed, error code = %x\n",
-                __func__, ret);
-    }
-    else {
-        ESP_LOGI(TAG, "[bt] Registered GATTS App");
-    }
-
-    ble_in_queue = xQueueCreate(10, sizeof(char *));
-    xTaskCreate(spp_cmd_task, "spp_cmd_task", 4096, NULL, 10, NULL);
-
-    ESP_LOGI(TAG, "Done setting up bluetooth.");
-
 }
+
+esp_err_t jolt_bluetooth_start() {
+    esp_err_t err = ESP_OK;
+
+    /* Create BT Controller */
+    {
+        esp_bt_controller_config_t cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+        esp_bt_controller_status_t status;
+        status = esp_bt_controller_get_status();
+        switch(status) {
+            /* These fall through are on purpose */
+            case ESP_BT_CONTROLLER_STATUS_IDLE:
+                err = esp_bt_controller_init( &cfg );
+                if( err ) {
+                    ESP_LOGE(TAG, "%s bt_controller_init failed, "
+                            "error code = %s\n", __func__, esp_err_to_name(err));
+                    goto exit;
+                }
+            case ESP_BT_CONTROLLER_STATUS_INITED:
+                err = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+                if( err ) {
+                    ESP_LOGE(TAG, "%s bt_controller_enable failed, "
+                            "error code = %s\n", __func__, esp_err_to_name(err));
+                    goto exit;
+                }
+            /* These fall through are on purpose */
+            case ESP_BT_CONTROLLER_STATUS_ENABLED:
+                /* do nothing */
+            default:
+                /* do nothing */
+                break;
+        }
+    }
+
+    /* Create Bluedroid */
+    {
+        esp_bluedroid_status_t status;
+        status = esp_bluedroid_get_status();
+        switch(status){
+            /* These fall through are on purpose */
+            case ESP_BLUEDROID_STATUS_UNINITIALIZED:
+                err = esp_bluedroid_init();
+                if ( err ) {
+                    ESP_LOGE(TAG, "%s init bluedroid failed, error code = %s\n",
+                            __func__, esp_err_to_name(err));
+                    goto exit;
+                }
+            case ESP_BLUEDROID_STATUS_INITIALIZED:
+                err = esp_bluedroid_enable();
+                if ( err ) {
+                    ESP_LOGE(GATTS_TABLE_TAG, "%s enable bluedroid failed: %s\n",
+                            __func__, esp_err_to_name(err));
+                    goto exit;
+                }
+
+            case ESP_BLUEDROID_STATUS_ENABLED:
+                /* do nothing */
+            default:
+                /* do nothing */
+                break;
+        }
+    }
+
+    add_all_bonded_to_whitelist();
+
+    err = esp_ble_gap_register_callback(gap_event_handler);
+    if ( err ){
+        ESP_LOGE(GATTS_TABLE_TAG, "%s gap register failed, error code = %s\n",
+                __func__, esp_err_to_name(err));
+        goto exit;
+    }
+
+    err = esp_ble_gatts_register_callback(gatts_event_handler);
+    if( err ){
+        ESP_LOGE(GATTS_TABLE_TAG, "%s gatts register failed, error code = %s\n",
+                __func__, esp_err_to_name(err) );
+        goto exit;
+    }
+
+    err = esp_ble_gatts_app_register(SPP_PROFILE_A_APP_ID);
+    if ( err ){
+        ESP_LOGE(GATTS_TABLE_TAG, "%s gatts app register failed, error code = %s\n",
+                __func__, esp_err_to_name(err) );
+        goto exit;
+    }
+
+    /* Configure Bluetooth Security Parameters */
+    jolt_bluetooth_config_security( true );
+
+    if ( NULL == ble_in_queue ) {
+        ble_in_queue = xQueueCreate(10, sizeof(char *));
+    }
+    if ( NULL == ble_in_task) {
+        xTaskCreate(&spp_cmd_task, "spp_cmd_task", 4096, NULL, 10, &ble_in_task);
+    }
+
+exit:
+    return ESP_OK;
+}
+
+esp_err_t jolt_bluetooth_stop() {
+    esp_err_t err = ESP_OK;
+
+    /* Destroy Bluedroid */
+    {
+        esp_bluedroid_status_t status;
+        status = esp_bluedroid_get_status();
+        switch(status){
+            /* These fall through are on purpose */
+            case ESP_BLUEDROID_STATUS_ENABLED:
+                err = esp_bluedroid_disable();
+                if ( ESP_OK != err ){
+                    ESP_LOGE(GATTS_TABLE_TAG, "%s bluedroid disable failed, "
+                            "error code = %s\n", __func__, esp_err_to_name(err) );
+                    goto exit;
+                }
+            case ESP_BLUEDROID_STATUS_INITIALIZED:
+                err = esp_bluedroid_deinit();
+                if ( ESP_OK != err ){
+                    ESP_LOGE(GATTS_TABLE_TAG, "%s bluedroid deinit failed, "
+                            "error code = %s\n",
+                            __func__, esp_err_to_name(err) );
+                    goto exit;
+                }
+            case ESP_BLUEDROID_STATUS_UNINITIALIZED:
+                /* do nothing */
+            default:
+                /* do nothing */
+                break;
+        }
+    }
+
+    /* Destroy BT Controller */
+    {
+        esp_bt_controller_status_t status;
+        status = esp_bt_controller_get_status();
+        switch(status) {
+            /* These fall through are on purpose */
+            case ESP_BT_CONTROLLER_STATUS_ENABLED:
+                err = esp_bt_controller_disable();
+                if ( ESP_OK != err ){
+                    ESP_LOGE(GATTS_TABLE_TAG, "%s bt controller disable failed, "
+                            "error code = %s\n", __func__, esp_err_to_name(err) );
+                    goto exit;
+                }
+            case ESP_BT_CONTROLLER_STATUS_INITED:
+                err = esp_bt_controller_deinit();
+                if ( ESP_OK != err ) {
+                    ESP_LOGE(GATTS_TABLE_TAG, "%s bt controller deinit failed, "
+                            "error code = %s\n", __func__, esp_err_to_name(err) );
+                    goto exit;
+                }
+
+            case ESP_BT_CONTROLLER_STATUS_IDLE:
+                /* do nothing */
+            default:
+                /* do nothing */
+                break;
+        }
+    }
+exit:
+    return err;
+}
+
+/* Start Advertising to ALL devices; useful for pairing */
+esp_err_t jolt_bluetooth_adv_all_start() {
+    esp_err_t err;
+    jolt_bluetooth_adv_stop();
+    
+    err = esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_pair_params );
+    if( ESP_OK != err ){
+        ESP_LOGE(GATTS_TABLE_TAG, "Failed to start BT advertising: %d", err);
+        return err;
+    }
+
+    return ESP_OK;
+}
+
+/* Start Advertising to whitelisted devices */
+esp_err_t jolt_bluetooth_adv_wht_start() {
+    esp_err_t err;
+    jolt_bluetooth_adv_stop();
+    
+    err = esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_wht_params );
+    if( ESP_OK != err ){
+        ESP_LOGE(GATTS_TABLE_TAG, "Failed to start BT advertising: %d", err);
+        return err;
+    }
+
+    return ESP_OK;
+}
+
+/* Stop advertising */
+esp_err_t jolt_bluetooth_adv_stop() {
+    return esp_ble_gap_stop_advertising();
+}
+
 #else
 
 /* Stubs */
-void jolt_bluetooth_setup(){
-    return;
+esp_err_t jolt_bluetooth_start(){
+    return ESP_OK;
+}
+
+esp_err_t jolt_bluetooth_stop(){
+    return ESP_OK;
 }
 
 #endif

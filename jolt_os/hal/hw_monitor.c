@@ -3,11 +3,17 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "sdkconfig.h"
 #include "hw_monitor.h"
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_helpers.h"
 #include "vault.h"
 #include <driver/adc.h>
+#include "hal/storage/storage.h"
+#include "hal/radio/bluetooth_gatts_profile_a.h"
+#include "esp_bt.h"
+
+hardware_monitor_t statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_NUM];
 
 /**********************
  *  STATIC PROTOTYPES
@@ -45,11 +51,6 @@ void jolt_hw_monitor_task() {
 static void jolt_hw_monitor_get_battery_level(hardware_monitor_t *monitor) {
     static uint16_t vals[CONFIG_JOLT_VBATT_AVG_WINDOW] = { 0 }; // store moving average
     static uint8_t index = 0;
-#if 0
-    MONITOR_UPDATE(75);
-    return;
-#endif
-
     // todo: check charging gpio
 
     // Get a new reading
@@ -81,11 +82,19 @@ static void jolt_hw_monitor_get_battery_level(hardware_monitor_t *monitor) {
 
 static void jolt_hw_monitor_get_bluetooth_level(hardware_monitor_t *monitor) {
     /* Returns with the bluetooth strength level. 0 if no connected. */
-    static uint8_t level;
+    uint8_t level = JOLT_BLUETOOTH_LEVEL_OFF;
+
 #if CONFIG_BT_ENABLED
-    level = 1; // Todo; real code to check number of connected clients
-#else
-    level = 0;
+    esp_bt_controller_status_t status;
+    status = esp_bt_controller_get_status();
+    if( ESP_BT_CONTROLLER_STATUS_ENABLED == status ) {
+        if( gatts_profile_a_is_connected() ) {
+            level = JOLT_BLUETOOTH_LEVEL_CONN;
+        }
+        else {
+            level = JOLT_BLUETOOTH_LEVEL_ON;
+        }
+    }
 #endif
     MONITOR_UPDATE(level);
 }
@@ -94,15 +103,22 @@ static void jolt_hw_monitor_get_wifi_level(hardware_monitor_t *monitor) {
     /* Returns with the wifi strength level */
     uint8_t wifi_strength;
 #if !CONFIG_NO_BLOBS
-    wifi_ap_record_t ap_info;
-    if(esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK){
-        wifi_strength = 0;
+    wifi_mode_t mode;
+    esp_err_t err = esp_wifi_get_mode(&mode);
+    if( ESP_OK == err ) {
+        wifi_ap_record_t ap_info;
+        if(esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
+            wifi_strength = 0;
+        }
+        else {
+            wifi_strength = -ap_info.rssi;
+        }
     }
     else {
-        wifi_strength = -ap_info.rssi;
+        wifi_strength = -1;
     }
 #else
-    wifi_strength = 0;
+    wifi_strength = -1;
 #endif
 
     MONITOR_UPDATE(wifi_strength);
@@ -114,21 +130,20 @@ void jolt_hw_monitor_get_lock_status(hardware_monitor_t *monitor) {
 
 /* Creates all the hardware_monitor mutex's and sets their updater functions */
 static void jolt_hw_monitor_init() {
-    jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_BATTERY].update = 
+    statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_BATTERY].update = 
             &jolt_hw_monitor_get_battery_level;
-    jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_WIFI].update = 
+    statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_WIFI].update = 
             &jolt_hw_monitor_get_wifi_level;
-    jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_BLUETOOTH].update = 
+    statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_BLUETOOTH].update = 
             &jolt_hw_monitor_get_bluetooth_level;
-    jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_LOCK].update = 
+    statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_LOCK].update = 
             &jolt_hw_monitor_get_lock_status;
 }
 
 /* Iterates through all hardware_monitor's and call's their updater function */
 void jolt_hw_monitor_update() {
     for(uint8_t i=0; i < JOLT_GUI_STATUSBAR_INDEX_NUM; i++) {
-        jolt_gui_store.statusbar.indicators[i].update(
-                &jolt_gui_store.statusbar.indicators[i]);
+        statusbar_indicators[i].update(&statusbar_indicators[i]);
     }
 }
 

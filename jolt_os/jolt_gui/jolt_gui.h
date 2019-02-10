@@ -17,6 +17,7 @@
 #include "jolt_gui_text.h"
 #include "jolt_gui_debug.h"
 #include "jolt_gui_theme.h"
+#include "jolt_gui_bignum.h"
 
 #include "menus/home.h"
 
@@ -49,11 +50,6 @@ struct {
         lv_group_t *back; // Group used to handle back button
         lv_group_t *enter;
     } group;
-    struct {
-        lv_obj_t *container;
-        lv_obj_t *label;
-        hardware_monitor_t indicators[JOLT_GUI_STATUSBAR_INDEX_NUM];
-    } statusbar;
     struct {
         CONFIDENTIAL char passphrase[BM_PASSPHRASE_BUF_LEN]; //currently not active
         CONFIDENTIAL uint256_t pin;
@@ -141,6 +137,13 @@ lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb);
 
 lv_res_t jolt_gui_send_enter_main(lv_obj_t *dummy);
 lv_res_t jolt_gui_send_left_main(lv_obj_t *dummy);
+
+/*****************
+ * System Events *
+ *****************/
+#include "esp_gap_ble_api.h"
+void jolt_gui_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
+
 
 /********
  * MISC *

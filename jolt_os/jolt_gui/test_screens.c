@@ -72,7 +72,7 @@ void jolt_gui_test_battery_task(void *param) {
     int val = adc1_get_raw(JOLT_ADC1_VBATT);
     char buf[40];
     snprintf(buf, sizeof(buf), "Raw Value: %d\nPercentage: %d", val,
-            jolt_gui_store.statusbar.indicators[JOLT_GUI_STATUSBAR_INDEX_BATTERY].val);
+            statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_BATTERY].val);
     test_battery_scr = jolt_gui_scr_text_create("Battery", buf);
     jolt_gui_scr_set_back_action(test_battery_scr, jolt_gui_test_battery_del);
 }

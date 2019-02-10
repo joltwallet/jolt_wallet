@@ -451,4 +451,21 @@ static void console_syscore_register() {
         .func = &jolt_cmd_run,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "pmtop",
+        .help = "print power management statistics",
+        .hint = NULL,
+        .func = &jolt_cmd_pmtop,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "bt_whitelist",
+        .help = "Print BLE GAP White List",
+        .hint = NULL,
+        .func = &jolt_cmd_bt_whitelist,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
 }

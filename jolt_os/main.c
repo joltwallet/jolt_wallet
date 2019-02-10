@@ -14,6 +14,8 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "esp_freertos_hooks.h"
+#include "esp_event_loop.h"
+#include "esp_pm.h"
 
 #include <driver/adc.h>
 #include "esp_adc_cal.h"
@@ -38,6 +40,9 @@
 #include "esp_ota_ops.h"
 
 #include "jolt_lib.h"
+
+/* Dbg to test muzzle */
+#include "hal/radio/radio.h"
 
 #if CONFIG_HEAP_TRACING
 #include "esp_heap_trace.h"
@@ -157,13 +162,18 @@ void app_main() {
     /* Run Key/Value Storage Initialization */
     storage_startup();
 
-    // Initialize Wireless
-    /* todo: this must be before first_boot_setup otherwise attempting
-     * to get ap_info before initializing wifi causes a boot loop. investigate
-     * more robust solutions */
+    /* Initialize Wireless */
+    ESP_ERROR_CHECK(esp_event_loop_init(wifi_event_handler, NULL));
     esp_log_level_set("wifi", ESP_LOG_NONE);
     set_jolt_cast();
-    wifi_connect();
+    /* todo; double check the quality of RNG sources with wifi off */
+    {
+        uint8_t wifi_en;
+        storage_get_u8(&wifi_en, "user", "wifi_en", 0 );
+        if( wifi_en ) {
+            jolt_wifi_start();
+        }
+    }
 
     // Allocate space for the vault and see if a copy exists in NVS
     jolt_gui_store.first_boot = ( false == vault_setup() );
@@ -203,7 +213,15 @@ void app_main() {
     jolt_led_setup();
 
     // Initiate Console
-    jolt_bluetooth_setup(); // starts a task adding bluetooth commands to the command queue
+    {
+        uint8_t bluetooth_en;
+        storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 0 );
+        if( bluetooth_en ) {
+            //vTaskDelay(pdMS_TO_TICKS(1000));// todo; something better than a delay
+            jolt_bluetooth_start();
+        }
+    }
+
     console_init();
     console_start(); // starts a task adding uart commands to the command queue. Also starts the task to process the command queue.
 
@@ -222,5 +240,28 @@ void app_main() {
                     __func__, ret);
         }
     }
+
+    /* Setup Power Management */
+#if CONFIG_PM_ENABLE
+    {
+        esp_pm_config_esp32_t cfg = {
+            .max_freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ,
+            .min_freq_mhz = 40,
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+            .light_sleep_enable = true
+#endif
+        };
+        ESP_ERROR_CHECK(esp_pm_configure(&cfg));
+    }
+#endif
+
+#if 0
+    /* radio muzzling debugging */
+    vTaskDelay(pdMS_TO_TICKS(10000));
+    JOLT_RADIO_OFF_CTX{
+        vTaskDelay(pdMS_TO_TICKS(700));
+    }
+#endif
+
 }
 #endif

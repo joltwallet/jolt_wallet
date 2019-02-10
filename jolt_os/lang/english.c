@@ -35,6 +35,23 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
 
     /* App Launcher */
     "Launching", /* Label for spinning preloader */
+
+    /* Bluetooth Options */
+    "Bluetooth Enable",
+    "Pair",
+    "Temporary Pair",
+    "Forget Devices",
+    "Broadcasting",
+
+    /* WiFi Options */
+    "WiFi Enable",
+    "WiFi Details",
+
+    /* Mnemonic Restore */
+    "Mnemonic Restore",
+    "Restore",
+    "Begin mnemonic restore?",
+    "Enter Mnemonic Word",
 };
 
 
