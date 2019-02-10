@@ -67,6 +67,7 @@ void jolt_gui_menu_home_create() {
     jolt_gui_scr_menu_add(main_menu, NULL, "Number", jolt_gui_test_number_create);
     jolt_gui_scr_menu_add(main_menu, NULL, "Battery", jolt_gui_test_battery_create);
     jolt_gui_scr_menu_add(main_menu, NULL, "Alphabet", jolt_gui_test_alphabet_create);
+    jolt_gui_scr_menu_add(main_menu, NULL, "Https", jolt_gui_test_https_create);
 #endif
 }
 
