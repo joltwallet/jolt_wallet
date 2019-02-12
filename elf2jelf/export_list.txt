@@ -82,6 +82,7 @@ jolt_gui_sem_give
 jolt_gui_sem_take
 jolt_gui_send_enter_main
 jolt_gui_send_left_main
+jolt_network_post
 linenoise
 lv_btn_create
 lv_btn_get_action
@@ -209,7 +210,6 @@ memcmp
 memcpy
 memmove
 memset
-network_get_data
 printf
 puts
 qrcode_getBufferSize

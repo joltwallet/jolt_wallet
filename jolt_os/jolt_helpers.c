@@ -9,7 +9,8 @@
 #include <esp_system.h>
 #include "esp_log.h"
 #include "sodium.h"
-#include "nano_rest.h"
+#include "esp_err.h"
+#include "sdkconfig.h"
 
 #include "esp_vfs_dev.h"
 #include "esp_spiffs.h"
@@ -21,45 +22,27 @@
 #include "jolt_helpers.h"
 #include "hal/storage/storage.h"
 #include "jolt_gui/jolt_gui.h"
+#include "syscore/https.h"
 
 
 static const char* TAG = "helpers";
 
+/* Sets */
 void set_jolt_cast() {
-    /* Sets Jolt Cast Server Params from NVS*/
     size_t required_size;
-    char *buf = NULL;
-    uint16_t port;
+    char *uri = NULL;
 
-    if( !storage_get_str(NULL, &required_size, "user", "jc_domain", CONFIG_JOLT_CAST_DOMAIN) ) {
-        ESP_LOGE(TAG, "Failed to get jc_domain");
-        goto reset;
+    /* Sets Jolt Cast Server Params from NVS*/
+    storage_get_str(NULL, &required_size, "user", "jc_uri", CONFIG_JOLT_CAST_URI);
+    uri = malloc(required_size);
+    if( NULL == uri ) {
+        ESP_ERROR_CHECK( jolt_network_client_init( CONFIG_JOLT_CAST_URI ) );
     }
-    buf = malloc(required_size);
-    storage_get_str(buf, &required_size, "user", "jc_domain", CONFIG_JOLT_CAST_DOMAIN);
-    nano_rest_set_remote_domain(buf);
-    free(buf);
-
-    if( !storage_get_str(NULL, &required_size, "user", "jc_path", CONFIG_JOLT_CAST_PATH) ) {
-        ESP_LOGE(TAG, "Failed to get jc_path");
-        goto reset;
+    else {
+        storage_get_str(uri, &required_size, "user", "jc_uri", CONFIG_JOLT_CAST_URI);
+        ESP_ERROR_CHECK( jolt_network_client_init( uri ) );
+        free(uri);
     }
-    buf = malloc(required_size);
-    storage_get_str(buf, &required_size, "user", "jc_path", CONFIG_JOLT_CAST_PATH);
-    nano_rest_set_remote_path(buf);
-    free(buf);
-
-    if( !storage_get_u16(&port, "user", "jc_port", CONFIG_JOLT_CAST_PORT) ) {
-        ESP_LOGE(TAG, "Failed to get jc_port");
-        goto reset;
-    }
-    nano_rest_set_remote_path(buf);
-    return;
-
-reset:
-    nano_rest_set_remote_domain(CONFIG_JOLT_CAST_DOMAIN);
-    nano_rest_set_remote_path(CONFIG_JOLT_CAST_PATH);
-    nano_rest_set_remote_port(CONFIG_JOLT_CAST_PORT);
     return;
 }
 

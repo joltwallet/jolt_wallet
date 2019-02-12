@@ -60,22 +60,10 @@ menu "JoltOS"
                 Help Text Here
     endmenu
     menu "Jolt Cast"
-        config JOLT_CAST_DOMAIN
+        config JOLT_CAST_URI
             string
-            prompt "Jolt Cast Default Domain"
-            default "yapraiwallet.space"
-            help
-                Help Text Here
-        config JOLT_CAST_PORT
-            int
-            prompt "Jolt Cast Default Port"
-            default 5523
-            help
-                Help Text Here
-        config JOLT_CAST_PATH
-            string
-            prompt "Jolt Cast Default Path"
-            default "/api"
+            prompt "Jolt Cast Default URI"
+            default "https://yapraiwallet.space/quake/api";
             help
                 Help Text Here
     endmenu

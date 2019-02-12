@@ -66,9 +66,32 @@ exit:
     }
 }
 
-/* Initializes all networking objects (if necessary) 
+/* Initializes all networking objects (if necessary). Will copy uri to a local
+ * buffer.
  * Returns ESP_OK on success. */
-static esp_err_t jolt_network_client_init() {
+esp_err_t jolt_network_client_init( char *uri ) {
+    static char *local_uri = NULL;
+
+    if( NULL == uri ){
+        ESP_LOGE(TAG, "Must specify URI!");
+        return ESP_FAIL;
+    }
+
+    /* Allocate a static copy of the uri */
+    {
+        char *tmp = NULL;
+        tmp = malloc( strlen(uri) + 1 );
+        if( NULL == tmp ){
+            ESP_LOGE(TAG, "Failed to allocate space for URI");
+            return ESP_FAIL;
+        }
+        strcpy(tmp, uri);
+        if( NULL != local_uri ) {
+            free(local_uri);
+        }
+        local_uri = tmp;
+    }
+
     /* Create the Job Queue if it doesn't exist */
     if( NULL == job_queue ) {
         job_queue = xQueueCreate( 5, sizeof(https_job_t) );
@@ -122,9 +145,9 @@ esp_err_t jolt_network_post( const char *post_data, jolt_network_client_cb_t cb 
         goto exit;
     }
 
-    /* Initiate all https network objects */
-    err = jolt_network_client_init();
-    if( ESP_OK != err ) {
+    /* Check to make sure https network objects are initialized */
+    if( NULL == job_queue || NULL == task_handle || NULL == client ) {
+        ESP_LOGE(TAG, "You must first call jolt_network_client_init");
         goto exit;
     }
 

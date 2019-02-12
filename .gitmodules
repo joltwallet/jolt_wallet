@@ -16,9 +16,6 @@
 [submodule "components/jolt-types"]
 	path = components/jolt-types
 	url = https://github.com/joltwallet/jolt-types.git
-[submodule "components/nano_rest"]
-	path = components/nano_rest
-	url = https://github.com/joltwallet/nano_rest.git
 [submodule "jolt_wallet/hal/lv_drivers"]
 	path = jolt_os/hal/lv_drivers
 	url = https://github.com/joltwallet/lv_drivers.git

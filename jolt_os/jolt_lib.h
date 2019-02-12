@@ -20,7 +20,6 @@
 #include "linenoise/linenoise.h"
 #include "math.h"
 #include "mbedtls/bignum.h"
-#include "nano_rest.h"
 #include "qrcode.h"
 #include "sodium.h"
 #include "sodium/crypto_verify_32.h"
@@ -34,6 +33,7 @@
 #include "syscore/filesystem.h"
 #include "vault.h"
 #include "syscore/console_helpers.h"
+#include "syscore/https.h"
 
 #include "esp_http_client.h" // todo: replace with less open functions
 
