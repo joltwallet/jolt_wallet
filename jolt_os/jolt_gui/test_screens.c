@@ -4,7 +4,7 @@
 #include "jolt_helpers.h"
 #include <driver/adc.h>
 
-#include "esp_http_client.h" 
+#include "syscore/https.h"
 
 static const char TAG[] = "test_screens";
 
@@ -102,43 +102,20 @@ lv_res_t jolt_gui_test_alphabet_create(lv_obj_t * list_btn) {
     return LV_RES_OK;
 }
 
-lv_res_t jolt_gui_test_https_create( lv_obj_t *btn ) {
-    esp_http_client_handle_t client;
-    esp_http_client_config_t config = {
-        .url    = "https://yapraiwallet.space/quake/api",
-        /* todo: provide certificate in PEM format */ 
-        //.cert_pem = howsmyssl_com_root_cert_pem_start,
-        /*todo: allow async configuration*/
-        //.is_async
-        //.timeout_ms = 5000,
-    };
-    client = esp_http_client_init( &config );
-    const char post_data[]  = "{ \"action\" : \"block_count\"}";
-    esp_http_client_set_method(client, HTTP_METHOD_POST);
-    esp_http_client_set_post_field(client, post_data, strlen(post_data));
-
-    esp_err_t err = esp_http_client_perform( client );
-
-    if (err == ESP_OK) {
-        int status_code    = esp_http_client_get_status_code( client );
-        int content_length = esp_http_client_get_content_length( client );
-        switch( status_code ) {
-            case 200:{
-                char *buf = malloc( content_length + 1 );
-                int read_len = esp_http_client_read(client, buf, content_length);
-                buf[read_len] = '\0';
-                printf("Response:\n");
-                printf(buf);
-                printf("\n");
-                free(buf);
-                break;
-            }
-            default:
-                ESP_LOGE(TAG, "HTTP Error Code %d", status_code);
-                break;
-        }
+static void https_cb(int16_t status_code, char *post_response) {
+    if( 200 == status_code ){
+        printf("Response:\n");
+        printf(post_response);
+        printf("\n");
     }
-    esp_http_client_cleanup( client );
+    if( NULL != post_response ) {
+        free(post_response);
+    }
+}
+
+lv_res_t jolt_gui_test_https_create( lv_obj_t *btn ) {
+    const char post_data[]  = "{ \"action\" : \"block_count\"}";
+    jolt_network_post( post_data, https_cb );
     return LV_RES_OK;
 }
 
