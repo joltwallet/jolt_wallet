@@ -374,6 +374,7 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
 
     jelf_symtab_header = [] # holds non-zero st_values
 
+    fail = False;
     for i in range(symtab_nent):
         begin = i * elf32_sym_size
         end = begin + elf32_sym_size
@@ -396,9 +397,13 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
                     "and matched to exported function index %d.") % \
                         (i, sym_name, jelf_name_index) )
             except ValueError:
-                # The function is internal to the app
-                # st_shndx is the thing that matters in this case
-                pass
+                if elf32_symbol.st_shndx == 0:
+                    log.error( "Unlinked symbol: %s" % sym_name )
+                    fail = True
+                else:
+                    # The function is internal to the app
+                    # st_shndx is the thing that matters in this case
+                    pass
 
         if elf32_symbol.st_shndx > 2**16:
             raise("Overflow Detected")
@@ -424,6 +429,9 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
         del(begin, end)
         if sym_name == "app_main":
             jelf_entrypoint_sym_idx = i
+
+    if fail:
+        exit(1);
 
     # Prepend jelf_symtab with the auxilary st_value table
     assert(len(jelf_symtab_header) <= 127)
