@@ -159,6 +159,8 @@ static inline int lv_i2c_write(lv_i2c_handle_t i2c_dev, const uint8_t* reg, cons
 {
     //Do the dependant port here
     const char TAG[]="lv_drv_conf/i2c_write";
+    i2c_cmd_handle_t cmd = NULL;
+    esp_err_t err;
 
 #if !CONFIG_JOLT_I2C_ERROR_RESET
     /* Upon a single fail, stop trying */
@@ -168,8 +170,7 @@ static inline int lv_i2c_write(lv_i2c_handle_t i2c_dev, const uint8_t* reg, cons
     }
 #endif
 
-    esp_err_t err;
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    cmd = i2c_cmd_link_create();
     err = i2c_master_start(cmd);
     if( ESP_OK != err ) {
         ESP_LOGE(TAG, "Failed i2c_maser_start");
@@ -215,10 +216,13 @@ static inline int lv_i2c_write(lv_i2c_handle_t i2c_dev, const uint8_t* reg, cons
     return 0;
 err:
 #if CONFIG_JOLT_I2C_ERROR_RESET
-        abort();
+    abort();
 #else
     prev_error = true;
 #endif
+    if( NULL != cmd ) {
+        i2c_cmd_link_delete( cmd );
+    }
     return -1;
 }
 

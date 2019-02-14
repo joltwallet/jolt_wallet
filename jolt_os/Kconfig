@@ -272,14 +272,14 @@ menu "JoltOS"
         config JOLT_TASK_STACK_SIZE_LVGL
             int
             prompt "LittleVGL Task Stack Size"
-            default 4096
+            default 3072
             help
                 help text here
 
         config JOLT_TASK_STACK_SIZE_HW_MONITORS
             int
             prompt "Hardware Monitors Task Stack Size"
-            default 2048
+            default 1024
             help
                 help text here
 
@@ -293,14 +293,14 @@ menu "JoltOS"
         config JOLT_TASK_STACK_SIZE_VAULT_WATCHDOG
             int
             prompt "Vault Watchdog Task Stack Size"
-            default 3072
+            default 2048
             help
                 help text here.
 
         config JOLT_TASK_STACK_SIZE_UART_CONSOLE
             int
             prompt "UART Linenoise Console Task Stack Size"
-            default 3520
+            default 3072
             help
                 help text here.
 
@@ -321,14 +321,14 @@ menu "JoltOS"
         config JOLT_TASK_STACK_SIZE_APP_LAUNCHER
             int
             prompt "Application Launcher Stack Size"
-            default 4096
+            default 5120
             help
                 help text here.
 
         config JOLT_TASK_STACK_SIZE_HTTPS
             int
             prompt "HTTPS Stack Size"
-            default 4096
+            default 3584
             help
                 help text here.
 

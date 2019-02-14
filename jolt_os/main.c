@@ -229,13 +229,13 @@ void app_main() {
     console_start(); // starts a task adding uart commands to the command queue. Also starts the task to process the command queue.
 
     BaseType_t ret;
-    ESP_LOGI(TAG, "Creating Screen Draw Task");
+    ESP_LOGI(TAG, "Creating LVGL Draw Task");
     ret = xTaskCreate(littlevgl_task,
-                "DrawTask", CONFIG_JOLT_TASK_STACK_SIZE_LVGL,
+                "LVGL_Draw", CONFIG_JOLT_TASK_STACK_SIZE_LVGL,
                 NULL, CONFIG_JOLT_TASK_PRIORITY_LVGL, NULL);
     if( pdPASS != ret ){
         if( errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY == ret ) {
-            ESP_LOGE(TAG, "%s Couldn't allocate memory for Screen Drawing Task",
+            ESP_LOGE(TAG, "%s Couldn't allocate memory for LVGL Drawing Task",
                     __func__);
         }
         else {
