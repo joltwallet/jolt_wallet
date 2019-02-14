@@ -182,7 +182,7 @@ static lv_res_t pin_success_cb() {
 
     jolt_gui_progress_task_create(&status);
     xTaskCreate( (TaskFunction_t)derivation_master_seed_task,
-            "MasterDeriv", CONFIG_JOLT_TASK_STACK_SIZE_DERIVATION,
+            "Derivation", CONFIG_JOLT_TASK_STACK_SIZE_DERIVATION,
             (void *)&status,
             CONFIG_JOLT_TASK_PRIORITY_DERIVATION, &(status.derivation_task));
 

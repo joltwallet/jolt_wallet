@@ -188,14 +188,14 @@ volatile TaskHandle_t *console_start(){
 
     /* Start the Task that processes commands */
     xTaskCreate(jolt_process_cmd_task,
-                "ConsoleCmdTask", CONFIG_JOLT_TASK_CMD_STACK_SIZE_CONSOLE,
+                "ConsoleCmdTask", CONFIG_JOLT_TASK_STACK_SIZE_CMD_CONSOLE,
                 NULL, CONFIG_JOLT_TASK_PRIORITY_CMD_CONSOLE,
                 NULL);
 
     /* Start the Task that handles the UART Console IO */
     xTaskCreate(console_task,
-                "ConsoleTask", CONFIG_JOLT_TASK_STACK_SIZE_CONSOLE,
-                NULL, CONFIG_JOLT_TASK_PRIORITY_CONSOLE,
+                "ConsoleTask", CONFIG_JOLT_TASK_STACK_SIZE_UART_CONSOLE,
+                NULL, CONFIG_JOLT_TASK_PRIORITY_UART_CONSOLE,
                 (TaskHandle_t *) &console_h);
     return  &console_h;
 }
