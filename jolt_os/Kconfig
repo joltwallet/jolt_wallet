@@ -63,7 +63,7 @@ menu "JoltOS"
         config JOLT_CAST_URI
             string
             prompt "Jolt Cast Default URI"
-            default "https://yapraiwallet.space/quake/api";
+            default "https://yapraiwallet.space/quake/api"
             help
                 Help Text Here
     endmenu

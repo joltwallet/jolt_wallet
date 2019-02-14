@@ -2,6 +2,8 @@
 
 #include "bluetooth_cfg.h"
 
+#if CONFIG_BT_ENABLED
+
 /* General Notes
  *    * Characteristic *declarations* should always be read only
  *
@@ -148,4 +150,4 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
     },
 };
 
-
+#endif

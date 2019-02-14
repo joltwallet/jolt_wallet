@@ -21,4 +21,10 @@ void jolt_gui_scr_loading_update(lv_obj_t *parent,
 
 lv_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text);
 
+inline void jolt_gui_scr_preloading_update(lv_obj_t *parent,
+        const char *title, const char *text,
+        uint8_t percentage) {
+    jolt_gui_scr_loading_update(parent, title, text, percentage);
+}
+
 #endif

@@ -142,8 +142,12 @@ lv_res_t jolt_gui_send_left_main(lv_obj_t *dummy);
 /*****************
  * System Events *
  *****************/
+#if CONFIG_BT_ENABLED
+
 #include "esp_gap_ble_api.h"
 void jolt_gui_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
+
+#endif
 
 
 /********

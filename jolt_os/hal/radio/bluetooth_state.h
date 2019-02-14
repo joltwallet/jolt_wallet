@@ -1,6 +1,10 @@
 #ifndef JOLT_HAL_BLUETOOTH_STATE_H__
 #define JOLT_HAL_BLUETOOTH_STATE_H__
 
+#include "sdkconfig.h"
+
+#if CONFIG_BT_ENABLED
+
 #include "stdint.h"
 #include "bluetooth_cfg.h"
 #include "freertos/FreeRTOS.h"
@@ -30,5 +34,7 @@ extern xQueueHandle ble_in_queue;
 extern xTaskHandle ble_in_task;
 
 extern bool jolt_bluetooth_pair_mode;
+
+#endif
 
 #endif

@@ -1,5 +1,9 @@
 #include "esp_log.h"
 #include "jolt_gui/jolt_gui.h"
+
+
+#if CONFIG_BT_ENABLED
+
 #include "esp_gap_ble_api.h"
 
 static const char TAG[] = "bt_unbond";
@@ -26,3 +30,5 @@ lv_res_t menu_bluetooth_unbond_create(lv_obj_t *btn) {
     remove_all_bonded_devices();
     return LV_RES_OK;
 }
+
+#endif

@@ -1,10 +1,19 @@
 #include "stdio.h"
 #include "esp_system.h"
+#include "sdkconfig.h"
+
+
+#if CONFIG_BT_ENABLED
+
 #include "esp_bt_defs.h"
 #include "esp_gap_ble_api.h"
 
+#endif
+
 int jolt_cmd_bt_whitelist(int argc, char **argv){
     /* Bonded Devices */
+
+#if CONFIG_BT_ENABLED
     {
         int dev_num = esp_ble_get_bond_device_num();
         printf("There are %d bonded BLE devices.\n", dev_num);
@@ -31,6 +40,11 @@ int jolt_cmd_bt_whitelist(int argc, char **argv){
         }
         printf("There are %d slots free in the whitelist.\n", len);
     }
-
     return 0;
+#else
+    printf("JoltOS was compiled without bluetooth support.\n");
+    return -1;
+#endif
+
 }
+

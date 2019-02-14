@@ -17,6 +17,7 @@ typedef struct {
     jolt_network_client_cb_t cb;
     char *post_data;
     esp_http_client_method_t method;
+    void *param;                     // Additional parameters to be fed to the user cb 
 } https_job_t;
 
 static void network_task() {
@@ -56,7 +57,7 @@ static void network_task() {
 
             /* Call user callback */
 exit:
-            job.cb(status_code, response);
+            job.cb(status_code, response, job.param);
 
             /* Clean Up */
             /* Currently, there is nothing to clean up;
@@ -135,7 +136,7 @@ esp_err_t jolt_network_client_init( char *uri ) {
  * after calling. 
  *
  * The user is responsible for freeing the response buffer.*/
-esp_err_t jolt_network_post( const char *post_data, jolt_network_client_cb_t cb ) {
+esp_err_t jolt_network_post( const char *post_data, jolt_network_client_cb_t cb, void *param ) {
     esp_err_t err;
     char *cmd = NULL; // for allocated copy of post_data
     https_job_t job;
@@ -163,6 +164,7 @@ esp_err_t jolt_network_post( const char *post_data, jolt_network_client_cb_t cb 
     job.cb = cb;
     job.post_data = cmd;
     job.method = HTTP_METHOD_POST;
+    job.param = param;
 
     /* Send the job to the job_queue. Do NOT block to put it on the queue */
     if(!xQueueSend(job_queue, &job, 0)) {

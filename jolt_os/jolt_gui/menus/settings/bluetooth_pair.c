@@ -2,6 +2,7 @@
 #include "hal/radio/bluetooth.h"
 #include "hal/radio/bluetooth_state.h"
 
+#if CONFIG_BT_ENABLED
 static const char TAG[] = "bluetooth_pair";
 static lv_obj_t *passkey_scr  = NULL;
 static lv_obj_t *scanning_scr = NULL;
@@ -80,3 +81,4 @@ void jolt_gui_bluetooth_pair_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb
             break;
     }
 }
+#endif

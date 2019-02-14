@@ -55,6 +55,7 @@ hd_node_copy
 hd_node_iterate
 heap_caps_calloc
 jolt_gui_debug_obj_print
+jolt_gui_obj_del
 jolt_gui_obj_title_create
 jolt_gui_obj_parent_create
 jolt_gui_scr_del
@@ -69,6 +70,8 @@ jolt_gui_scr_menu_add
 jolt_gui_scr_menu_create
 jolt_gui_scr_menu_get_list
 jolt_gui_scr_menu_set_btn_selected
+jolt_gui_scr_preloading_create
+jolt_gui_scr_preloading_create
 jolt_gui_scr_qr_create
 jolt_gui_scr_set_back_action
 jolt_gui_scr_set_enter_action

@@ -2,6 +2,9 @@
 #define JOLT_HAL_BLUETOOTH_CFG_H__
 /* bluetooth_cfg holds constants that configure various bluetooth components */
 
+#include "sdkconfig.h"
+
+#if CONFIG_BT_ENABLED
 #include "stdint.h"
 #include "esp_gap_ble_api.h"
 #include "esp_gatts_api.h"
@@ -52,6 +55,6 @@ enum {
 };
 
 extern const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB];
-
+#endif
 
 #endif

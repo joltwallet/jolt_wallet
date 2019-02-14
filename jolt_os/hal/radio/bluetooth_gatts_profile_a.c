@@ -1,3 +1,7 @@
+#include "sdkconfig.h"
+
+#if CONFIG_BT_ENABLED
+
 #include "bluetooth_cfg.h"
 #include "bluetooth_state.h"
 #include "bluetooth_gatts_profile_a.h"
@@ -191,4 +195,5 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
     	    break;
     }
 }
+#endif
 

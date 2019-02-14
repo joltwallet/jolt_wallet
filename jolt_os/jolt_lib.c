@@ -78,6 +78,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( hd_node_iterate ),
     EXPORT_SYMBOL( heap_caps_calloc ),
     EXPORT_SYMBOL( jolt_gui_debug_obj_print ),
+    EXPORT_SYMBOL( jolt_gui_obj_del ),
     EXPORT_SYMBOL( jolt_gui_obj_title_create ),
     EXPORT_SYMBOL( jolt_gui_obj_parent_create ),
     EXPORT_SYMBOL( jolt_gui_scr_del ),
@@ -92,6 +93,8 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_scr_menu_create ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_get_list ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_set_btn_selected ),
+    EXPORT_SYMBOL( jolt_gui_scr_preloading_create ),
+    EXPORT_SYMBOL( jolt_gui_scr_preloading_create ),
     EXPORT_SYMBOL( jolt_gui_scr_qr_create ),
     EXPORT_SYMBOL( jolt_gui_scr_set_back_action ),
     EXPORT_SYMBOL( jolt_gui_scr_set_enter_action ),
@@ -310,7 +313,7 @@ static const void *exports[] = {
 #else
 
 /* Dummy place holder */
-static const void *exports[282] = { 0 };
+static const void *exports[285] = { 0 };
 
 #endif
 
