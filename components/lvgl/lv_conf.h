@@ -29,6 +29,16 @@
 #define LV_MEM_CUSTOM_FREE    free         /*Wrapper to free*/
 #endif     /*LV_MEM_CUSTOM*/
 
+/* Garbage Collector settings
+ * Used if lvgl is binded to higher language and the memory is managed by that language */
+#define LV_ENABLE_GC 0
+#if LV_ENABLE_GC != 0
+#  define LV_MEM_CUSTOM_REALLOC   your_realloc           /*Wrapper to realloc*/
+#  define LV_MEM_CUSTOM_GET_SIZE  your_mem_get_size      /*Wrapper to lv_mem_get_size*/
+#  define LV_GC_INCLUDE "gc.h"                           /*Include Garbage Collector related things*/
+#endif /* LV_ENABLE_GC */
+
+/* ESP32 Heap Tracing Utilities */
 #if CONFIG_HEAP_TRACING
 #include "esp_heap_trace.h"
 #include "esp_heap_caps.h"
@@ -42,27 +52,55 @@
 /* Horizontal and vertical resolution of the library.*/
 #define LV_HOR_RES          (128)
 #define LV_VER_RES          (64)
+
+/* Dot Per Inch: used to initialize default sizes. E.g. a button with width = LV_DPI / 2 -> half inch wide
+ * (Not so important, you can adjust it to modify default sizes and spaces)*/
 #define LV_DPI              147
-
-/* Size of VDB (Virtual Display Buffer: the internal graphics buffer).
- * Required for buffered drawing, opacity and anti-aliasing
- * VDB makes the double buffering, you don't need to deal with it!
- * Typical size: ~1/10 screen */
-#define LV_VDB_SIZE         (8 * LV_HOR_RES)  /*Size of VDB in pixel count (1/10 screen size is good for first)*/
-#define LV_VDB_PX_BPP       1      /*Bit-per-pixel of VDB. Useful for monochrome or non-standard color format displays. (Special formats are handled with `disp_drv->vdb_wr`)*/
-#define LV_VDB_ADR          0                  /*Place VDB to a specific address (e.g. in external RAM) (0: allocate automatically into RAM; LV_VDB_ADR_INV: to replace it later with `lv_vdb_set_adr()`)*/
-
-/* Use two Virtual Display buffers (VDB) parallelize rendering and flushing (optional)
- * The flushing should use DMA to write the frame buffer in the background*/
-#define LV_VDB_DOUBLE       0       /*1: Enable the use of 2 VDBs*/
-#define LV_VDB2_ADR         0       /*Place VDB2 to a specific address (e.g. in external RAM) (0: allocate automatically into RAM; LV_VDB_ADR_INV: to replace it later with `lv_vdb_set_adr()`)*/
 
 /* Enable anti-aliasing (lines, and radiuses will be smoothed) */
 #define LV_ANTIALIAS        0       /*1: Enable anti-aliasing*/
 
 /*Screen refresh settings*/
 #define LV_REFR_PERIOD      20    /*Screen refresh period in milliseconds*/
+
 #define LV_INV_FIFO_SIZE    32    /*The average count of objects on a screen */
+
+
+/*-----------------
+ *  VDB settings
+ *----------------*/
+
+/* VDB (Virtual Display Buffer) is an internal graphics buffer.
+ * The GUI will be drawn into this buffer first and then
+ * the buffer will be passed to your `disp_drv.disp_flush` function to
+ * copy it to your frame buffer.
+ * VDB is required for: buffered drawing, opacity, anti-aliasing and shadows
+ * Learn more: https://docs.littlevgl.com/#Drawing*/
+
+/* Size of VDB (Virtual Display Buffer: the internal graphics buffer).
+ * Required for buffered drawing, opacity and anti-aliasing
+ * VDB makes the double buffering, you don't need to deal with it!
+ * Typical size: ~1/10 screen */
+#define LV_VDB_SIZE         (8 * LV_HOR_RES)  /*Size of VDB in pixel count (1/10 screen size is good for first)*/
+
+#define LV_VDB_PX_BPP       1       /*LV_COLOR_SIZE comes from LV_COLOR_DEPTH below to set 8, 16 or 32 bit pixel size automatically */
+
+#define LV_VDB_ADR          0                  /*Place VDB to a specific address (e.g. in external RAM) (0: allocate automatically into RAM; LV_VDB_ADR_INV: to replace it later with `lv_vdb_set_adr()`)*/
+
+/* Use two Virtual Display buffers (VDB) parallelize rendering and flushing (optional)
+ * The flushing should use DMA to write the frame buffer in the background*/
+#define LV_VDB_DOUBLE       0       /*1: Enable the use of 2 VDBs*/
+
+#define LV_VDB2_ADR         0       /*Place VDB2 to a specific address (e.g. in external RAM) (0: allocate automatically into RAM; LV_VDB_ADR_INV: to replace it later with `lv_vdb_set_adr()`)*/
+
+/* Using true double buffering in `disp_drv.disp_flush` you will always get the image of the whole screen.
+ * Your only task is to set the rendered image (`color_p` parameter) as frame buffer address or send it to your display.
+ * The best if you do in the blank period of you display to avoid tearing effect.
+ * Requires:
+ * - LV_VDB_SIZE = LV_HOR_RES * LV_VER_RES
+ * - LV_VDB_DOUBLE = 1
+ */
+#define LV_VDB_TRUE_DOUBLE_BUFFERED 0
 
 /*=================
    Misc. setting
@@ -270,6 +308,12 @@
 /*Chart (dependencies: -)*/
 #define USE_LV_CHART    0
 
+/*Table (dependencies: lv_label)*/
+#define USE_LV_TABLE    0
+#if USE_LV_TABLE
+#  define LV_TABLE_COL_MAX    12
+#endif
+
 /*LED (dependencies: -)*/
 #define USE_LV_LED      0
 
@@ -277,7 +321,7 @@
 #define USE_LV_MBOX     0
 
 /*Text area (dependencies: lv_label, lv_page)*/
-#define USE_LV_TA       0
+#define USE_LV_TA       1
 #if USE_LV_TA != 0
 #define LV_TA_CURSOR_BLINK_TIME 400     /*ms*/
 #define LV_TA_PWD_SHOW_TIME     1500    /*ms*/
@@ -350,10 +394,13 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+/*Be sure every define has a default value*/
+#include "lvgl/lv_conf_checker.h"
+
 #endif /*LV_CONF_H*/
 
 #else
 
 #include "lv_conf_pc_sim.h"
 
-#endif /*End of "Content enable"*/
+#endif /*End of ESP32 Platform*/
