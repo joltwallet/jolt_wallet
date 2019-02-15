@@ -136,6 +136,9 @@ void jolt_gui_group_add( lv_obj_t *obj );
 lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_action_t cb);
 lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb);
 
+void jolt_gui_scr_set_back_param(lv_obj_t *parent, void *param);
+void jolt_gui_scr_set_enter_param(lv_obj_t *parent, void *param);
+
 lv_res_t jolt_gui_send_enter_main(lv_obj_t *dummy);
 lv_res_t jolt_gui_send_left_main(lv_obj_t *dummy);
 

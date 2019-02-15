@@ -225,6 +225,22 @@ lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb) {
     return btn;
 }
 
+void jolt_gui_scr_set_back_param(lv_obj_t *parent, void *param) {
+    lv_obj_t *btn = NULL;
+    JOLT_GUI_CTX{
+        btn = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_BACK);
+        lv_obj_set_free_ptr(btn, param);
+    }
+}
+
+void jolt_gui_scr_set_enter_param(lv_obj_t *parent, void *param) {
+    lv_obj_t *btn = NULL;
+    JOLT_GUI_CTX{
+        btn = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_ENTER);
+        lv_obj_set_free_ptr(btn, param);
+    }
+}
+
 /* Send LV_GROUP_KEY_ENTER to main group */
 lv_res_t jolt_gui_send_enter_main(lv_obj_t *dummy) {
     return lv_group_send_data(jolt_gui_store.group.main, LV_GROUP_KEY_ENTER);

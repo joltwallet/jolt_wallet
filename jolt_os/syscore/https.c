@@ -8,9 +8,9 @@
 
 static const char TAG[] = "jolt_https";
 
-TaskHandle_t task_handle = NULL;
-QueueHandle_t job_queue = NULL;
-esp_http_client_handle_t client = NULL;
+static TaskHandle_t task_handle = NULL;
+static QueueHandle_t job_queue = NULL;
+static esp_http_client_handle_t client = NULL;
 
 /* todo: job queue */
 typedef struct {
