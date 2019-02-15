@@ -325,13 +325,6 @@ menu "JoltOS"
             help
                 help text here.
 
-        config JOLT_TASK_STACK_SIZE_HTTPS
-            int
-            prompt "HTTPS Stack Size"
-            default 3584
-            help
-                help text here.
-
         config JOLT_TASK_STACK_SIZE_BACKGROUND
             int
             prompt "Background Stack Size"
@@ -410,14 +403,6 @@ menu "JoltOS"
             int
             prompt "Application Launcher Priority"
             default 2
-            range 1 20
-            help
-                help text here.
-
-        config JOLT_TASK_PRIORITY_HTTPS
-            int
-            prompt "HTTPS Client Task Priority"
-            default 3
             range 1 20
             help
                 help text here.

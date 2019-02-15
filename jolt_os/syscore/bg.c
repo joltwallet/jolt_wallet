@@ -19,6 +19,7 @@ static void bg_task( void *param ) {
         xQueueReceive(job_queue, &job, portMAX_DELAY);
 
         /* Call the task */
+        ESP_LOGI(TAG, "Calling job func");
         (job.task)( &job );
 
         /* Delete the screen */
@@ -117,3 +118,18 @@ exit:
     }
     return ESP_FAIL;
 }
+
+jolt_bg_signal_t jolt_bg_get_signal( jolt_bg_job_t *job ) {
+    jolt_bg_signal_t res = JOLT_BG_NO_SIGNAL;
+    xQueueReceive(job->input, &res, 0);
+    return res;
+}
+
+void *jolt_bg_get_param(jolt_bg_job_t *job) {
+    return job->param;
+}
+
+lv_obj_t *jolt_bg_get_scr(jolt_bg_job_t *job) {
+    return job->scr;
+}
+

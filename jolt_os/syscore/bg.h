@@ -27,7 +27,6 @@ typedef uint8_t jolt_bg_signal_t;
  * Returns ESP_OK on success */
 esp_err_t jolt_bg_create( jolt_bg_task_t task, void *param, lv_obj_t *scr);
 
-
 /******************************************************************************
  * The following functions are intended to be used from within the user's
  * jolt_bg_task_t.

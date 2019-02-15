@@ -102,7 +102,7 @@ lv_res_t jolt_gui_test_alphabet_create(lv_obj_t * list_btn) {
     return LV_RES_OK;
 }
 
-static void https_cb(int16_t status_code, char *post_response, void *params) {
+static void https_cb(int16_t status_code, char *post_response, void *params, lv_obj_t *scr) {
     if( 200 == status_code ){
         printf("Response:\n");
         printf(post_response);
@@ -115,7 +115,7 @@ static void https_cb(int16_t status_code, char *post_response, void *params) {
 
 lv_res_t jolt_gui_test_https_create( lv_obj_t *btn ) {
     const char post_data[]  = "{ \"action\" : \"block_count\"}";
-    jolt_network_post( post_data, https_cb, NULL );
+    jolt_network_post( post_data, https_cb, NULL, NULL );
     return LV_RES_OK;
 }
 
