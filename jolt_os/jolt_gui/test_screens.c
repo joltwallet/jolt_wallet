@@ -114,8 +114,9 @@ static void https_cb(int16_t status_code, char *post_response, void *params, lv_
 }
 
 lv_res_t jolt_gui_test_https_create( lv_obj_t *btn ) {
+    lv_obj_t *scr = jolt_gui_scr_preloading_create("Test", "HTTPS Test");
     const char post_data[]  = "{ \"action\" : \"block_count\"}";
-    jolt_network_post( post_data, https_cb, NULL, NULL );
+    jolt_network_post( post_data, https_cb, NULL, scr );
     return LV_RES_OK;
 }
 

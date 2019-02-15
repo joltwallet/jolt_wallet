@@ -177,6 +177,13 @@ lv_obj_t *jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb,
         lv_group_remove_obj(btn);
         lv_group_add_obj(g, btn);
         lv_group_focus_obj(btn);
+
+        if( g == jolt_gui_store.group.enter ) {
+            lv_obj_set_free_num(btn, JOLT_GUI_OBJ_ID_ENTER);
+        }
+        else if ( g == jolt_gui_store.group.back) {
+            lv_obj_set_free_num(btn, JOLT_GUI_OBJ_ID_BACK);
+        }
     }
     return btn;
 }
