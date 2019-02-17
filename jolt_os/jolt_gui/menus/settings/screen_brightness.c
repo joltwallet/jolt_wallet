@@ -1,7 +1,6 @@
 #include "esp_log.h"
 #include "jolt_gui/jolt_gui.h"
 #include "hal/storage/storage.h"
-#include "hal/lv_drivers/display/ssd1306.h"
 #include "hal/display.h"
 
 static const char TAG[] = "menus/settings/screen_brightness";
