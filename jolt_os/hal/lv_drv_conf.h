@@ -209,7 +209,7 @@ static inline int lv_i2c_write(lv_i2c_handle_t i2c_dev, const uint8_t* reg, cons
             CONFIG_JOLT_I2C_TIMEOUT_MS / portTICK_RATE_MS);
     I2C_SEM_GIVE;
     if( ESP_OK != err ) {
-        ESP_LOGE(TAG, "Failed i2c_master_cmd_begin");
+        ESP_LOGE(TAG, "Failed i2c_master_cmd_begin. This is likely due to misconfigured i2c pins.");
         goto err;
     }
     i2c_cmd_link_delete(cmd);

@@ -42,6 +42,6 @@ bool storage_set_str(char *str, char *namespace, char *key);
 
 bool storage_erase_key(char *namespace, char *key);
 
-void storage_factory_reset( bool reset, lv_action_t callback );
+void storage_factory_reset();
 
 #endif

@@ -261,33 +261,14 @@ bool storage_set_str(char *str, char *namespace, char *key) {
     return res;
 }
 
-static bool factory_reset_reset_on_completion;
-static void factory_reset_task( lv_action_t callback ){
+/* Performs the factory reset in a blocking manner */
+void storage_factory_reset( ) {
 #if CONFIG_JOLT_STORE_INTERNAL
     storage_internal_factory_reset();
 #elif CONFIG_JOLT_STORE_ATAES132A
     storage_ataes132a_factory_reset(); 
 #endif
-
-    if( callback ){
-        callback(NULL);
-    }
-    else if ( factory_reset_reset_on_completion ){
-        esp_restart();
-    }
-
-    vTaskDelete(NULL);
-}
-
-void storage_factory_reset( bool reset, lv_action_t callback ) {
-    jolt_gui_scr_preloading_create("Factory Reset", "Erasing...");
-    factory_reset_reset_on_completion = reset;
-    if( reset ) {
-        callback = NULL;
-    }
-    xTaskCreate((TaskFunction_t)factory_reset_task, "factory_rst",
-                CONFIG_JOLT_TASK_STACK_SIZE_FACTORY_RESET,
-                callback, CONFIG_JOLT_TASK_PRIORITY_FACTORY_RESET, NULL);
+    esp_restart();
 }
 
 bool storage_erase_key(char *namespace, char *key) {
