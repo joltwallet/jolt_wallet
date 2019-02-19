@@ -283,13 +283,6 @@ menu "JoltOS"
             help
                 help text here
 
-        config JOLT_TASK_STACK_SIZE_DERIVATION
-            int
-            prompt "PIN Stretch and Master Seed Derivation Task Stack Size"
-            default 4096
-            help
-                help text here.
-
         config JOLT_TASK_STACK_SIZE_VAULT_WATCHDOG
             int
             prompt "Vault Watchdog Task Stack Size"
@@ -364,14 +357,6 @@ menu "JoltOS"
             int
             prompt "App Launcher Task Priority"
             default 10
-            range 1 20
-            help
-                help text here.
-
-        config JOLT_TASK_PRIORITY_DERIVATION
-            int
-            prompt "PIN Stretch and Master Seed Derivation Task Priority"
-            default 2
             range 1 20
             help
                 help text here.
