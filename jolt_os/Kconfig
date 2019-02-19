@@ -304,17 +304,10 @@ menu "JoltOS"
             help
                 help text here.
 
-        config JOLT_TASK_STACK_SIZE_APP_LAUNCHER
-            int
-            prompt "Application Launcher Stack Size"
-            default 5120
-            help
-                help text here.
-
         config JOLT_TASK_STACK_SIZE_BACKGROUND
             int
             prompt "Background Stack Size"
-            default 4096
+            default 5120
             help
                 help text here.
 
@@ -365,14 +358,6 @@ menu "JoltOS"
             int
             prompt "Vault Watchdog Task Priority"
             default 16
-            range 1 20
-            help
-                help text here.
-
-        config JOLT_TASK_PRIORITY_APP_LAUNCHER
-            int
-            prompt "Application Launcher Priority"
-            default 2
             range 1 20
             help
                 help text here.

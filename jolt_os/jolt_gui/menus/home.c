@@ -1,6 +1,7 @@
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_gui/test_screens.h"
 #include "jolt_gui/menus/settings/settings.h"
+#include "syscore/bg.h"
 #include "syscore/filesystem.h"
 #include "syscore/launcher.h"
 #include "jolt_helpers.h"
@@ -21,22 +22,19 @@
 static const char TAG[] = "menu_home";
 static lv_obj_t *main_menu = NULL;
 
-static void launch_app_task(void *fn){
-    char *fn_c = fn;
+static void launch_app_task(jolt_bg_job_t *job){
+    char *fn_c = jolt_bg_get_param(job);
     launch_file(fn_c, 0, NULL, ""); // puts the app back into the gui task
-    vTaskDelete(NULL);
 }
 
-/* App launching is spawned in a different task because it's a bit intense.
+/* App launching is spawned in the background task because it's a bit intense.
  * Also launch_file is a blocking function*/
 static lv_res_t launch_file_proxy(lv_obj_t *btn) {
+    esp_err_t err;
     const char *fn = lv_list_get_btn_text( btn );
     ESP_LOGI(TAG, "Launching %s", fn);
-    // todo, move this into the bg task
 
-    xTaskCreate(launch_app_task,
-            "app_launcher", CONFIG_JOLT_TASK_STACK_SIZE_APP_LAUNCHER,
-            (void *)fn, CONFIG_JOLT_TASK_PRIORITY_APP_LAUNCHER, NULL);
+    err = jolt_bg_create( launch_app_task, (void *)fn, NULL);
 
     return LV_RES_OK;
 }
