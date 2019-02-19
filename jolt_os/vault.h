@@ -23,16 +23,22 @@ typedef struct vault_t {
     uint32_t purpose;
     uint32_t coin_type;
     char bip32_key[32];
+    char passphrase[128];
     bool valid; // If key is valid (hasn't been wiped)
 } vault_t;
 
+typedef void (*vault_cb_t)( void *param );
+
 void vault_sem_take();
 void vault_sem_give();
+
 bool vault_setup();
 void vault_clear();
-void vault_set(uint32_t purpose, uint32_t coin_type, const char *bip32_key,
-        lv_action_t failure_cb, lv_action_t success_cb);
-void vault_refresh(lv_action_t failure_cb, lv_action_t success_cb);
+esp_err_t vault_set(uint32_t purpose, uint32_t coin_type,
+        const char *bip32_key, const char *passphrase,
+        vault_cb_t failure_cb, vault_cb_t success_cb, void *param);
+
+void vault_refresh(vault_cb_t failure_cb, vault_cb_t success_cb, void *param);
 
 bool vault_kick();
 uint32_t vault_get_coin_type();

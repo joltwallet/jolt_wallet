@@ -26,6 +26,9 @@ lv_obj_t *jolt_gui_scr_scroll_get_page(lv_obj_t *scr){
  * */
 lv_obj_t *jolt_gui_scr_scroll_create(const char *title) {
     JOLT_GUI_SCR_CTX(title){
+        /* Set screen ID */
+        lv_obj_set_free_num(parent, JOLT_GUI_SCR_ID_SCROLL);
+
         /* Create Scrollable Page */
         lv_obj_t *page = BREAK_IF_NULL(lv_page_create(cont_body, NULL));
         lv_obj_set_free_num(page, JOLT_GUI_OBJ_ID_PAGE);

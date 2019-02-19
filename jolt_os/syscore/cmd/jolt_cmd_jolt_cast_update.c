@@ -1,4 +1,6 @@
 #include "stdio.h"
+#include "string.h"
+#include "esp_system.h"
 #include "syscore/console_helpers.h"
 #include "hal/storage/storage.h"
 

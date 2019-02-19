@@ -7,6 +7,7 @@
 
 #include "sodium.h"
 #include "hal/storage/storage.h"
+#include "syscore/bg.h"
 
 #if CONFIG_JOLT_STORE_ATAES132A
 #include "aes132_cmd.h"
@@ -14,12 +15,14 @@
 
 #define MNEMONIC_STRENGTH 256
 
+/* Static Variables */
 static const char TAG[] = "first_boot";
 static CONFIDENTIAL uint256_t mnemonic_bin;
 static CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
+static CONFIDENTIAL uint256_t pin_hash;
 
+/* Static Functions */
 static void generate_mnemonic();
-static lv_res_t stretch_cb(lv_obj_t *dummy);
 static lv_res_t screen_pin_verify_create(lv_obj_t *num);
 static lv_res_t screen_mnemonic_create(lv_obj_t *btn);
 
@@ -87,20 +90,32 @@ static void generate_mnemonic() {
     ESP_LOGI(TAG, "mnemonic %s", mnemonic);
 }
 
-/* Saves setup information to storage */
-static lv_res_t stretch_cb(lv_obj_t *dummy) {
-    storage_set_mnemonic(mnemonic_bin, jolt_gui_store.derivation.pin);
-    storage_set_pin_count(0); // Only does something if pin_count is setable
+/* BG Task for stretching */
+static void bg_stretch_task(jolt_bg_job_t *job) {
+    int8_t progress = 0;
+    lv_obj_t *loading_scr;
+
+    /* Create Loading Bar */
+    loading_scr = jolt_gui_scr_loading_create("Saving");
+    jolt_gui_scr_loading_autoupdate( loading_scr, &progress );
+
+    /* Perform the lengthy stretching */
+    storage_stretch( pin_hash, &progress );
+
+    /* Delete the loading bar screen */
+    jolt_gui_obj_del( loading_scr );
+
+    /* Saves setup information to storage */
+    storage_set_mnemonic(mnemonic_bin, pin_hash);
+    storage_set_pin_count(0); /* Only does something if pin_count is setable */
     uint32_t pin_count = storage_get_pin_count();
     storage_set_pin_last(pin_count);
 
-    sodium_memzero(jolt_gui_store.derivation.pin, sizeof(jolt_gui_store.derivation.pin));
+    sodium_memzero(pin_hash, sizeof(pin_hash));
     sodium_memzero(mnemonic_bin, sizeof(mnemonic_bin));
     sodium_memzero(mnemonic, sizeof(mnemonic));
 
     esp_restart();
-
-    return LV_RES_INV; // Should never reach here
 }
 
 static lv_res_t mismatch_cb(lv_obj_t *btn) {
@@ -111,22 +126,28 @@ static lv_res_t mismatch_cb(lv_obj_t *btn) {
     return LV_RES_INV;
 }
 
+/* Verifies the re-entered pin-hash 
+ *     Success: Creates the stretching screen.
+ *     Failure: Creates the mismatch screen, sends user back to pin entry.*/
 static lv_res_t screen_finish_create(lv_obj_t *verify_scr) {
+    int res;
     CONFIDENTIAL static uint256_t pin_hash_verify;
+
+    /* Compute Verify Pin Hash */
     jolt_gui_scr_digit_entry_get_hash(verify_scr, pin_hash_verify);
 
     // Delete verify pin entry screen
     jolt_gui_obj_del(verify_scr);
 
-    int res = memcmp(jolt_gui_store.derivation.pin, pin_hash_verify, sizeof(pin_hash_verify));
+    res = memcmp(pin_hash, pin_hash_verify, sizeof(pin_hash_verify));
     sodium_memzero(pin_hash_verify, sizeof(pin_hash_verify));
 
-    // Verify the pins match
+    /* Verify the pins match */
     if( 0 ==  res ){
-        jolt_gui_stretch("Setup", "Saving PIN", jolt_gui_store.derivation.pin, stretch_cb);
+        ESP_ERROR_CHECK( jolt_bg_create( bg_stretch_task, NULL, NULL) );
     }
     else{
-        sodium_memzero(jolt_gui_store.derivation.pin, sizeof(jolt_gui_store.derivation.pin));
+        sodium_memzero( pin_hash, sizeof(pin_hash) );
         lv_obj_t *scr = jolt_gui_scr_text_create("Pin Setup", "Pin Mismatch! Please try again.");
         jolt_gui_scr_set_back_action(scr, mismatch_cb);
     }
@@ -134,11 +155,16 @@ static lv_res_t screen_finish_create(lv_obj_t *verify_scr) {
     return LV_RES_INV;
 }
 
+/* Saves the entered pinhash. Creates the pin verify screen.
+ * Creates StartupScreen 4 
+ * */
 static lv_res_t screen_pin_verify_create(lv_obj_t *pin_scr) {
-    jolt_gui_scr_digit_entry_get_hash(pin_scr, jolt_gui_store.derivation.pin); // compute hash for first pin entry screen
-    // Delete original PIN entry screen
+    /* Get the has for the first screen */
+    jolt_gui_scr_digit_entry_get_hash(pin_scr, pin_hash);
+    /* Delete first PIN entry screen */
     jolt_gui_obj_del(pin_scr);
-    // Create Verify PIN screen
+
+    /* Create Verify PIN screen */
     lv_obj_t *verify_scr = jolt_gui_scr_digit_entry_create( "PIN Verify",
             CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL); 
     if( NULL == verify_scr ){
@@ -148,6 +174,9 @@ static lv_res_t screen_pin_verify_create(lv_obj_t *pin_scr) {
     return LV_RES_INV;
 }
 
+/* Prompts user for pin (first time).
+ * Creates StartupScreen3
+ */
 static lv_res_t screen_pin_entry_create(lv_obj_t *btn) {
     lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "PIN",
             CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL);
@@ -158,6 +187,9 @@ static lv_res_t screen_pin_entry_create(lv_obj_t *btn) {
     return LV_RES_OK;
 }
 
+/* Displays 24-word mnemonic.
+ * Creates StartupScreen2
+ */
 static lv_res_t screen_mnemonic_create(lv_obj_t *btn) {
     const char title[] = "Write Down Mnemonic!";
     lv_obj_t *scr = jolt_gui_scr_menu_create(title);
@@ -176,7 +208,9 @@ static lv_res_t screen_mnemonic_create(lv_obj_t *btn) {
     return LV_RES_OK;
 }
 
-/* Called externally to begin the first-boot GUI */
+/* Called externally to begin the first-boot GUIi.
+ * Creates StartupScreen1
+ */
 void jolt_gui_first_boot_create() {
     generate_mnemonic();
 

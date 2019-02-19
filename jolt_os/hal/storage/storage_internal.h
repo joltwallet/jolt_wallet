@@ -11,7 +11,7 @@
 
 bool storage_internal_startup();
 
-void storage_internal_stretch_task(jolt_derivation_t *stretch);
+void storage_internal_stretch( uint256_t hash, int8_t *progress );
 
 bool storage_internal_exists_mnemonic();
 

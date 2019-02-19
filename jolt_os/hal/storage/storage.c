@@ -38,13 +38,12 @@ bool storage_startup() {
    return res;
 }
 
-void storage_stretch_task(jolt_derivation_t *stretch) {
+void storage_stretch( uint256_t hash, int8_t *progress ) {
 #if CONFIG_JOLT_STORE_INTERNAL
-    storage_internal_stretch_task(stretch);
+    storage_internal_stretch( hash, progress);
 #elif CONFIG_JOLT_STORE_ATAES132A
     // todo
 #endif
-    vTaskDelete(NULL);
 }
 
 bool storage_exists_mnemonic() {

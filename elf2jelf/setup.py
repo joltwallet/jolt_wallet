@@ -5,7 +5,8 @@ import os
 
 import ipdb as pdb
 # Unmangle env variables if part of ESP-IDF build
-if 'CFLAGS' in os.environ and ('-DJOLT_OS' in os.environ['CFLAGS'] or '-DJOLT_APP' in os.environ['CFLAGS']):
+if 'CFLAGS' in os.environ and ('-DJOLT_OS' in os.environ['CFLAGS'] \
+                            or '-DJOLT_APP' in os.environ['CFLAGS']):
     if 'HOSTAR' in os.environ:
         os.environ['AR'] = os.environ['HOSTAR']
     if 'HOSTCC' in os.environ:
@@ -29,7 +30,6 @@ extensions = [
         language="c",
         define_macros = [],
         extra_compile_args=[],
-        extra_linker_args=[],
     ),
 ]
 

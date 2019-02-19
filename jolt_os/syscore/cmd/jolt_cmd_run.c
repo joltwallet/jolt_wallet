@@ -17,7 +17,7 @@ int jolt_cmd_run(int argc, char** argv) {
         app_argv = argv + 2;
     }
 
-    return_code = launch_file(argv[1], app_argc, app_argv);
+    return_code = launch_file(argv[1], app_argc, app_argv, "");
 
     return return_code;
 }

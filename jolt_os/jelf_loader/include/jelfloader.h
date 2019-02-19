@@ -20,7 +20,8 @@
 #endif
 
 #ifndef CONFIG_JOLT_APP_KEY_DEFAULT
-#define CONFIG_JOLT_APP_KEY_DEFAULT "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8"
+#define CONFIG_JOLT_APP_KEY_DEFAULT \
+        "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8"
 #endif
 
 
@@ -108,12 +109,10 @@ void jelfLoaderFree( jelfLoaderContext_t *ctx );
 bool jelfLoaderSigCheck(jelfLoaderContext_t *ctx); // can only be called after relocating
 uint8_t *jelfLoaderGetHash(jelfLoaderContext_t *ctx); // return hash (in bytes, 64 long)
 
-#if CONFIG_JELFLOADER_PROFILER_EN
 /* Sets all profiler variables to 0 */
 void jelfLoaderProfilerReset(void);
 
 /* Prints the profiler results to uart console */
 void jelfLoaderProfilerPrint(void);
-#endif // CONFIG_ELFLOADER_PROFILER_EN
 
 #endif

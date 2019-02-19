@@ -11,6 +11,7 @@
 #include "esp_err.h"
 #include "bipmnemonic.h"
 #include "lvgl/lvgl.h"
+#include "vault.h"
 
 /* Macros so that the battery adc pin can be specified in Kconfig */
 #define XJOLT_ADC1(x) ADC1_GPIO ## x ## _CHANNEL
@@ -32,6 +33,6 @@ void jolt_h_free_char_array(char **arr, int n);
 bool jolt_h_strcmp_suffix( char *str, char *suffix);
 void jolt_h_fn_home_refresh(char *str);
 
-void jolt_h_settings_vault_set(lv_action_t fail_cb, lv_action_t success_cb);
+void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb);
 
 #endif

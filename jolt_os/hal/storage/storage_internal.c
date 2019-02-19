@@ -21,7 +21,7 @@
 #include "joltcrypto.h"
 #include "esp_spiffs.h"
 
-static const char* TAG = "storage_internal";
+static const char TAG[] = "storage_internal";
 
 static jolt_err_t init_nvs_namespace(nvs_handle *nvs_h, const char *namespace) {
     // Initialize NVS
@@ -50,21 +50,19 @@ bool storage_internal_startup() {
     return true;
 }
 
-/* To be called via xTaskCreate() */
-void storage_internal_stretch_task(jolt_derivation_t *stretch) {
+/* Blocking */
+void storage_internal_stretch( uint256_t hash, int8_t *progress) {
     CONFIDENTIAL uint512_t buf;
     pbkdf2_hmac_sha512_progress((uint8_t *)"joltstretch", 11, 
-            stretch->data, 32,
-            buf, sizeof(buf), 2048, &(stretch->progress));
+            hash, 32, buf, sizeof(buf), 2048, progress);
     // fold buf in half via xor to make it 256 bit
     for(uint8_t i=0; i < 32; i++) {
         buf[i] ^= buf[i+32];
     }
-    memcpy(stretch->data, buf, 32);
+    memcpy(hash, buf, 32);
 
-    /* Clean up all stretching activities */
+    /* Cleanup stretching activities */
     sodium_memzero(buf, sizeof(buf));
-    stretch->progress = JOLT_DERIVATION_PROGRESS_DONE;
 }
 
 bool storage_internal_exists_mnemonic() {

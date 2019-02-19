@@ -23,7 +23,7 @@ static lv_obj_t *main_menu = NULL;
 
 static void launch_app_task(void *fn){
     char *fn_c = fn;
-    launch_file(fn_c, 0, NULL); // puts the app back into the gui task
+    launch_file(fn_c, 0, NULL, ""); // puts the app back into the gui task
     vTaskDelete(NULL);
 }
 
@@ -32,6 +32,7 @@ static void launch_app_task(void *fn){
 static lv_res_t launch_file_proxy(lv_obj_t *btn) {
     const char *fn = lv_list_get_btn_text( btn );
     ESP_LOGI(TAG, "Launching %s", fn);
+    // todo, move this into the bg task
 
     xTaskCreate(launch_app_task,
             "app_launcher", CONFIG_JOLT_TASK_STACK_SIZE_APP_LAUNCHER,

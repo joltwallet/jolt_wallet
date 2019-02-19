@@ -7,12 +7,10 @@
 #include "jolt_gui_first_boot.h"
 #include "jolt_gui_loading.h"
 #include "jolt_gui_menu.h"
-#include "jolt_gui_pin.h"
 #include "jolt_gui_qr.h"
 #include "jolt_gui_scroll.h"
 #include "jolt_gui_slider.h"
 #include "jolt_gui_statusbar.h"
-#include "jolt_gui_stretch.h"
 #include "jolt_gui_symbols.h"
 #include "jolt_gui_text.h"
 #include "jolt_gui_debug.h"
@@ -39,6 +37,7 @@
 #ifndef CONFIG_JOLT_GUI_LOADING_BUF_SIZE
     #define CONFIG_JOLT_GUI_LOADING_BUF_SIZE 30
 #endif
+
 /**********************
  *   GLOBAL VARIABLES
  **********************/
@@ -51,19 +50,12 @@ struct {
         lv_group_t *back; // Group used to handle back button
         lv_group_t *enter;
     } group;
-    struct {
-        CONFIDENTIAL char passphrase[BM_PASSPHRASE_BUF_LEN]; //currently not active
-        CONFIDENTIAL uint256_t pin;
-        CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
-        CONFIDENTIAL uint256_t mnemonic_bin;
-        CONFIDENTIAL uint512_t master_seed;
-    } derivation; // used for message passing; do not keep data here for long.
 } jolt_gui_store;
 
 extern lv_theme_t *jolt_gui_theme;
 
 /* If you add more values here, also add them to jolt_gui_obj_id_str */
-typedef enum {
+enum {
     JOLT_GUI_OBJ_ID_UNINITIALIZED = 0,    // If you don't set a free_num, then it's 0
     JOLT_GUI_OBJ_ID_CONT_TITLE,       // container or page holding title
     JOLT_GUI_OBJ_ID_CONT_BODY,        // container or page holding body
@@ -83,15 +75,18 @@ typedef enum {
     JOLT_GUI_OBJ_ID_LIST,
     JOLT_GUI_OBJ_ID_ROLLER,
     JOLT_GUI_OBJ_ID_DECIMAL_POINT,
-} jolt_gui_obj_id_t;
+};
+typedef uint8_t jolt_gui_obj_id_t;
 
-typedef enum {
+enum {
     JOLT_GUI_SCR_ID_UNINITIALIZED = 0,
-    JOLT_GUI_SCR_ID_MENU = 0x80000000, /* To avoid collisions with jolt_gui_obj_id_t */
+    JOLT_GUI_SCR_ID_MENU,
     JOLT_GUI_SCR_ID_SCROLL,
     JOLT_GUI_SCR_ID_DIGIT_ENTRY,
     JOLT_GUI_SCR_ID_LOADING,
-} jolt_gui_scr_id_t;
+    JOLT_GUI_SCR_ID_PRELOADING,
+};
+typedef uint8_t jolt_gui_scr_id_t;
 
 /*********************
  * Screen Management *

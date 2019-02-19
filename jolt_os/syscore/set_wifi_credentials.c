@@ -42,18 +42,18 @@ static void clear_vars() {
     }
 }
 
-static lv_res_t vault_fail_cb(lv_obj_t *dummy) {
+static void vault_fail_cb(void *dummy) {
+    ESP_LOGI(TAG, "vault_fail_cb");
     clear_vars();
     jolt_gui_scr_del();
     report_fail();
-    return LV_RES_INV;
 }
 
-static lv_res_t vault_success_cb(lv_obj_t *dummy) {
+static void vault_success_cb(void *dummy) {
+    ESP_LOGI(TAG, "vault_success_cb");
     storage_set_str(target_ssid, "user", "wifi_ssid");
     storage_set_str(target_pass, "user", "wifi_pass");
     report_success();
-    return LV_RES_OK;
 }
 
 static lv_res_t prompt_1_back_cb(lv_obj_t *btn){
@@ -65,7 +65,6 @@ static lv_res_t prompt_1_back_cb(lv_obj_t *btn){
 
 static lv_res_t prompt_1_enter_cb(lv_obj_t *btn){
     jolt_gui_scr_del( );
-    ESP_LOGI(TAG, "Screen deleted, setting vault");
     jolt_h_settings_vault_set(vault_fail_cb, vault_success_cb);
     return LV_RES_INV;
 }
@@ -81,26 +80,27 @@ bool set_wifi_credentials(char *ssid, char *pass) {
     else if( strlen(ssid) > JOLT_WIFI_SSID_LEN_MAX ) {
         goto exit_error;
     }
-    else{
-        target_ssid = malloc(JOLT_WIFI_SSID_LEN_MAX+1);
-        if( NULL == target_ssid ) {
-            goto exit_error;
-        }
-        strcpy(target_ssid, ssid);
+    if( NULL != pass && strlen(pass) > JOLT_WIFI_PASS_LEN_MAX ){
+        goto exit_error;
     }
 
-    if( NULL != pass ){
-        if( strlen(pass) > JOLT_WIFI_PASS_LEN_MAX ){
-            goto exit_error;
-        }
-        target_pass = malloc(JOLT_WIFI_PASS_LEN_MAX+1);
-        if( NULL == target_pass ) {
-            goto exit_error;
-        }
-        strcpy(target_pass, pass);
+    /* allocate and copy the user's SSID */
+    target_ssid = malloc(JOLT_WIFI_SSID_LEN_MAX+1);
+    if( NULL == target_ssid ) {
+        goto exit_error;
+    }
+    strcpy(target_ssid, ssid);
+
+    /* allocate and copy the user's password */
+    target_pass = malloc(JOLT_WIFI_PASS_LEN_MAX+1);
+    if( NULL == target_pass ) {
+        goto exit_error;
+    }
+    if( NULL == pass ){
+        *target_pass = '\0';
     }
     else{
-        *target_pass = '\0';
+        strcpy(target_pass, pass);
     }
 
     /* Create queue for end result */

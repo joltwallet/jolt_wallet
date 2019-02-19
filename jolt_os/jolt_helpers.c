@@ -95,9 +95,8 @@ void jolt_h_fn_home_refresh(char *str) {
 
 
 /* Set vault for JoltOS settings stuff like bluetooth and wifi */
-void jolt_h_settings_vault_set(lv_action_t fail_cb, lv_action_t success_cb) {
+void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb) {
     vault_set( JOLT_OS_DERIVATION_PURPOSE,
-            JOLT_OS_DERIVATION_PATH,
-            JOLT_OS_DERIVATION_BIP32_KEY,
-            fail_cb, success_cb);
+            JOLT_OS_DERIVATION_PATH, JOLT_OS_DERIVATION_BIP32_KEY, "",
+            fail_cb, success_cb, NULL);
 }

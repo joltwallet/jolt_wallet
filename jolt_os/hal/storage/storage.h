@@ -7,17 +7,25 @@
 #define __JOLT_HAL_STORAGE_H__
 
 #include "jolttypes.h"
-#include "jolt_gui/jolt_gui_stretch.h"
 
 bool storage_startup();
 
-/* Stretches and stores the value in jolt_gui_store.derivation.pin.
- * Creates and updates the loading screen as stretching progresses.*/ 
-void storage_stretch_task(jolt_derivation_t *stretch);
+void storage_stretch( uint256_t hash, int8_t *progress );
 
 bool storage_exists_mnemonic();
 
+/* Stores the 256-bit binary representing the mnemonic. Before saving, it is
+ * internally uses the stretched pin_hash for some form on encryption, making 
+ * the pin_hash required for decryption. 
+ * */
 void storage_set_mnemonic(const uint256_t bin, const uint256_t pin_hash);
+
+/* Populates the 256-bit binary mnemonic field; Uses the provided stretched
+ * pin_hash as a part of decryption. Internally, this increments the attempt 
+ * counter.
+ *
+ * Returns True on successful decryption.
+ */
 bool storage_get_mnemonic(uint256_t bin, const uint256_t pin_hash);
 
 uint32_t storage_get_pin_count();

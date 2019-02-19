@@ -19,7 +19,7 @@ static void bg_task( void *param ) {
         xQueueReceive(job_queue, &job, portMAX_DELAY);
 
         /* Call the task */
-        ESP_LOGI(TAG, "Calling job func");
+        ESP_LOGE(TAG, "Calling job func");
         (job.task)( &job );
 
         /* Delete the screen */

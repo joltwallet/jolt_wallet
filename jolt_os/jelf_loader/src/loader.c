@@ -61,6 +61,7 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s);
 
 #if ESP_PLATFORM
 
+/* ESP-IDF mallocs */
 #include "esp_heap_caps.h"
 #define LOADER_ALLOC_EXEC(size) heap_caps_malloc(size, MALLOC_CAP_EXEC | MALLOC_CAP_32BIT)
 #define LOADER_ALLOC_DATA(size) heap_caps_malloc(size, MALLOC_CAP_8BIT)
@@ -68,11 +69,12 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s);
 
 #else
 
+/* General purpose mallocs */
 #define LOADER_ALLOC_EXEC(size) malloc(size)
 #define LOADER_ALLOC_DATA(size) malloc(size)
 #define LOADER_FREE(size) free(size)
 
-#endif
+#endif /* ESP_PLATFORM */
 
 #if CONFIG_JELFLOADER_PROFILER_EN
 
@@ -92,7 +94,7 @@ uint64_t get_time() {
     gettimeofday(&tv,NULL);
     return tv.tv_sec*(uint64_t)1000000+tv.tv_usec;
 }
-#endif
+#endif /* ESP_PLATFORM */
 
 typedef struct profiler_timer_t{
     int32_t t;       // time in uS spent
@@ -180,8 +182,8 @@ void jelfLoaderProfilerPrint() {
             profiler_max_r_offset, profiler_max_r_offset);
 }
 
-#else
-// dummy macros
+#else /* CONFIG_JELFLOADER_PROFILER_EN */
+/* Stubs */
 
 #define PROFILER_START_READSECTION
 #define PROFILER_START_READSYMBOL
@@ -207,7 +209,15 @@ void jelfLoaderProfilerPrint() {
 #define PROFILER_MAX_R_OFFSET(x)
 #define PROFILER_REL_COUNT(x)
 
-#endif
+void jelfLoaderProfilerReset() {
+    /* Stub */
+}
+
+void jelfLoaderProfilerPrint() {
+    /* Stub */
+}
+
+#endif /* CONFIG_JELFLOADER_PROFILER_EN */
 
 #define LOADER_GETDATA_RAW(ctx, buffer, size) \
         fread(buffer, 1, size, ctx->fd)
@@ -912,7 +922,10 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     ctx->entry_index = header.e_entry_index;
     ctx->coin_purpose = header.e_coin_purpose;
     ctx->coin_path = header.e_coin_path;
-    strlcpy(ctx->bip32_key, header.e_bip32key, sizeof(ctx->bip32_key));
+    if( strlen(header.e_bip32key) >= sizeof(ctx->bip32_key) ) {
+        goto err;
+    }
+    strcpy(ctx->bip32_key, header.e_bip32key);
 
     return ctx;
 

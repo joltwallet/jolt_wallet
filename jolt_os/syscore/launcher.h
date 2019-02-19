@@ -15,7 +15,7 @@
  * use the last cached instance (unless vault has been invalidated and 
  * matches derivation path)
  */
-int launch_file(const char *fn_basename, int app_argc, char** app_argv);
+int launch_file(const char *fn_basename, int app_argc, char** app_argv, const char *passphrase);
 
 /* Returns True if User is in an app (screen is non NULL) */
 bool launch_in_app();

@@ -196,7 +196,6 @@ lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
 
         lv_obj_set_free_num(parent, JOLT_GUI_SCR_ID_DIGIT_ENTRY);
 
-
         /* Initialize remaining ext params */
         ext->sel = 0;
         ext->decimal_point = NULL;

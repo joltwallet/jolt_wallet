@@ -74,7 +74,8 @@ static void jolt_process_cmd_task(void *param){
             // split_argv modifies line with NULL-terminators
             size_t argc = esp_console_split_argv(cmd->data, argv, sizeof(argv));
             ESP_LOGD(TAG, "Not an internal command; looking for app of name %s", argv[0]);
-            if( launch_file(argv[0], argc-1, argv+1) ) {
+            // todo, parse passphrase argument
+            if( launch_file(argv[0], argc-1, argv+1, "") ) {
                 printf("Unsuccessful command\n");
             }
         } else if (err == ESP_ERR_INVALID_ARG) {

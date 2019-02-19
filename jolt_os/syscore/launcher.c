@@ -36,7 +36,7 @@ static struct {
 } app_cache = { 0 };
 
 static lv_res_t launch_app_exit(lv_obj_t *btn);
-static lv_res_t launch_app_from_store(lv_obj_t *btn);
+static void launch_app_from_store(void *dummy);
 
 static void launch_app_cache_clear(){
     if( NULL != app_cache.scr) {
@@ -60,7 +60,7 @@ static void launch_app_cache_clear(){
  * use the last cached instance (unless vault has been invalidated and 
  * matches derivation path)
  */
-int launch_file(const char *fn_basename, int app_argc, char** app_argv){
+int launch_file(const char *fn_basename, int app_argc, char** app_argv, const char *passphrase){
     int return_code = -1;
     lv_obj_t *preloading_scr = NULL;
     LOADER_FD_T program = NULL;
@@ -117,9 +117,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
 
     program = fopen(exec_fn, "rb");
 
-    #if CONFIG_JELFLOADER_PROFILER_EN
     jelfLoaderProfilerReset();
-    #endif
     uint32_t jelfLoader_time = esp_timer_get_time();
 
     ESP_LOGI(TAG, "jelfLoader; Initializing");
@@ -143,9 +141,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv){
 
     jelfLoader_time = esp_timer_get_time() - jelfLoader_time;
     ESP_LOGI(TAG, "Application Loaded in %d uS.", jelfLoader_time);
-    #if CONFIG_JELFLOADER_PROFILER_EN
     jelfLoaderProfilerPrint();
-    #endif
 
     fclose(program);
 
@@ -173,7 +169,8 @@ exec:
     vault_set(app_cache.ctx->coin_purpose, 
             app_cache.ctx->coin_path,
             app_cache.ctx->bip32_key, 
-            NULL, launch_app_from_store);
+            "",
+            NULL, launch_app_from_store, NULL);
 
     app_cache.loading = false;
     return 0;
@@ -191,13 +188,12 @@ exit:
     return return_code;
 }
 
-static lv_res_t launch_app_from_store(lv_obj_t *dummy) {
+static void launch_app_from_store(void *dummy) {
     ESP_LOGI(TAG, "Launching App");
     app_cache.scr = (lv_obj_t *)jelfLoaderRun(app_cache.ctx,
             app_cache.argc, app_cache.argv);
     app_cache.loading = false;
     jolt_gui_scr_set_back_action(app_cache.scr, launch_app_exit);
-    return LV_RES_OK;
 }
 
 static lv_res_t launch_app_exit(lv_obj_t *btn) {

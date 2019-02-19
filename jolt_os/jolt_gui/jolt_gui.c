@@ -45,7 +45,7 @@ lv_res_t jolt_gui_scr_del() {
                 parent = tmp;
             }
         }
-        lv_obj_del(parent);
+        jolt_gui_obj_del(parent);
         res = LV_RES_INV;
     }
     return res;
@@ -115,6 +115,17 @@ lv_obj_t *jolt_gui_obj_cont_body_create( lv_obj_t *parent ) {
 
 void jolt_gui_obj_del(lv_obj_t *obj){
     JOLT_GUI_CTX{
+        /* Some objects may require special actions before deleting */
+        jolt_gui_scr_id_t id = lv_obj_get_free_num(obj);
+        switch( id ) {
+            case JOLT_GUI_SCR_ID_LOADING:
+                /* Check and Delete the auto updater task */
+                ESP_LOGI(TAG, "meow");
+                jolt_gui_scr_loading_autoupdate_del( obj );
+                break;
+            default:
+                break;
+        }
         lv_obj_del(obj);
     }
 }
