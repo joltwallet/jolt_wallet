@@ -32,8 +32,6 @@ typedef struct subconsole_t {
     struct subconsole_t *next;
 } subconsole_t;
 
-extern QueueHandle_t jolt_cmd_queue;
-
 subconsole_t *subconsole_cmd_init();
 int subconsole_cmd_register(subconsole_t *subconsole, esp_console_cmd_t *cmd);
 int subconsole_cmd_run(subconsole_t *subconsole, uint8_t argc, char **argv);

@@ -76,19 +76,22 @@ static void linenoise_task( void *h ) {
             }
 
             printf(gettext(JOLT_TEXT_ENTER_MNEMONIC_WORD));
-            jolt_cmd_t cmd_obj;
-            jolt_cmd_t *cmd = &cmd_obj;
-            xQueueReceive(jolt_cmd_queue, cmd, portMAX_DELAY);
-            
-            if (strcmp(cmd->data, "exit_restore") == 0){
+            char *line = linenoise(" > ");
+
+            if (line == NULL) { /* Ignore empty lines */
+                continue;
+            }
+
+            if (strcmp(line, "exit_restore") == 0){
                 printf("Aborting mnemonic restore");
                 printf("\n");
-                jolt_cmd_del(cmd);
+                free(line);
                 goto exit;
             }
 
-            strlcpy(user_words[j], cmd->data, sizeof(user_words[j]));
-            jolt_cmd_del(cmd);
+            strlcpy(user_words[j], line, sizeof(user_words[j]));
+            free(line);
+
             in_wordlist = bm_search_wordlist(user_words[j], strlen(user_words[j]));
         }while( -1 == in_wordlist );
     }

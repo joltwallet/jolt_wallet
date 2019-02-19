@@ -20,87 +20,87 @@
 
 #include "jolt_gui/jolt_gui.h"
 
+#include "syscore/bg.h"
 #include "syscore/ota.h"
 #include "syscore/launcher.h"
 #include "syscore/cmd/jolt_cmds.h"
 
-static const char* TAG = "console";
+static const char TAG[] = "console";
 
 TaskHandle_t console_h = NULL;
-QueueHandle_t jolt_cmd_queue = NULL;
 
 /* Static Function Declaration */
 static void console_syscore_register();
 
 
 /* Executes the command string */
-static void jolt_process_cmd_task(void *param){
+static void jolt_process_cmd_task(jolt_bg_job_t *bg_job){
+    jolt_cmd_t *cmd = jolt_bg_get_param(bg_job); 
+
     FILE *orig_stdin = stdin;
     FILE *orig_stdout = stdout;
     FILE *orig_stderr = stderr;
 
-    for(;;){
-        int ret = 0;
-        jolt_cmd_t cmd_obj;
-        jolt_cmd_t *cmd = &cmd_obj;
-        xQueueReceive(jolt_cmd_queue, cmd, portMAX_DELAY);
-        if(NULL == cmd->data){
-            goto exit;
-        }
-        if( NULL == cmd->fd_in ) {
-            stdin = orig_stdin;
-        }
-        else {
-            stdin = cmd->fd_in;
-        }
-        if( NULL == cmd->fd_out ) {
-            stdout = orig_stdout;
-        }
-        else {
-            stdout = cmd->fd_out;
-        }
-        if( NULL == cmd->fd_err ) {
-            stderr = orig_stderr;
-        }
-        else {
-            stderr = cmd->fd_err;
-        }
-
-        /* Try to run the command */
-        esp_err_t err = esp_console_run(cmd->data, &ret);
-        if (err == ESP_ERR_NOT_FOUND) {
-            // The command could be an app to run console commands from
-            char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
-            // split_argv modifies line with NULL-terminators
-            size_t argc = esp_console_split_argv(cmd->data, argv, sizeof(argv));
-            ESP_LOGD(TAG, "Not an internal command; looking for app of name %s", argv[0]);
-            // todo, parse passphrase argument
-            if( launch_file(argv[0], argc-1, argv+1, "") ) {
-                printf("Unsuccessful command\n");
-            }
-        } else if (err == ESP_ERR_INVALID_ARG) {
-            // command was empty
-        } else if (err == ESP_OK && ret != ESP_OK) {
-            printf("Command returned non-zero error code: %d\n", ret);
-        } else if (err != ESP_OK) {
-            printf("Internal error: 0x%x\n", err);
-        }
-        cmd->return_value = ret;
-
-        exit:
-            jolt_cmd_del(cmd);
+    int ret = 0;
+    if(NULL == cmd->data){
+        goto exit;
+    }
+    if( NULL == cmd->fd_in ) {
+        stdin = orig_stdin;
+    }
+    else {
+        stdin = cmd->fd_in;
+    }
+    if( NULL == cmd->fd_out ) {
+        stdout = orig_stdout;
+    }
+    else {
+        stdout = cmd->fd_out;
+    }
+    if( NULL == cmd->fd_err ) {
+        stderr = orig_stderr;
+    }
+    else {
+        stderr = cmd->fd_err;
     }
 
-    vTaskDelete(NULL);
+    /* Try to run the command */
+    esp_err_t err = esp_console_run(cmd->data, &ret);
+    if (err == ESP_ERR_NOT_FOUND) {
+        // The command could be an app to run console commands from
+        char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
+        // split_argv modifies line with NULL-terminators
+        size_t argc = esp_console_split_argv(cmd->data, argv, sizeof(argv));
+        ESP_LOGD(TAG, "Not an internal command; looking for app of name %s", argv[0]);
+        // todo, parse passphrase argument
+        if( launch_file(argv[0], argc-1, argv+1, "") ) {
+            printf("Unsuccessful command\n");
+        }
+    } else if (err == ESP_ERR_INVALID_ARG) {
+        // command was empty
+    } else if (err == ESP_OK && ret != ESP_OK) {
+        printf("Command returned non-zero error code: %d\n", ret);
+    } else if (err != ESP_OK) {
+        printf("Internal error: 0x%x\n", err);
+    }
+    cmd->return_value = ret;
+
+exit:
+    jolt_cmd_del(cmd);
 }
 
 void jolt_cmd_del(jolt_cmd_t *cmd){
+    if( NULL == cmd ){
+        return;
+    }
     if( NULL != cmd->data ){
         free(cmd->data);
     }
     if( NULL != cmd->complete ){
         xSemaphoreGive(cmd->complete);
+        taskYIELD();
     }
+    free(cmd);
 }
 
 static void console_task() {
@@ -143,7 +143,8 @@ static void console_task() {
         /* Send the command to the command queue */
         bool block = false;
         const char blocking_prefix[] = "upload";
-        if( 0 == strncmp(line, blocking_prefix, strlen(blocking_prefix)) ) {
+        if( 0 == strncmp(line, blocking_prefix, strlen(blocking_prefix))
+                || 0 == strcmp(line, "mnemonic_restore") ) {
             block = true;
         }
         jolt_cmd_process(line, stdin, stdout, stderr, block);
@@ -159,40 +160,52 @@ static void console_task() {
 }
 
 int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err, bool block) {
-    jolt_cmd_t cmd_obj = {0};
-    jolt_cmd_t *cmd = &cmd_obj;
+    int return_code = -1;
+    jolt_cmd_t *cmd = NULL;
+    cmd = malloc(sizeof(jolt_cmd_t));
+    if(NULL == cmd) {
+        printf("Failed to allocate memory for job parameters.\n");
+        return_code = -1;
+        goto exit;
+    }
     if(block){
         cmd->complete = xSemaphoreCreateBinary();
         if(NULL == cmd->complete){
-            return -1;
+            printf("Failed to allocate memory for job finish semaphore.\n");
+            return_code = -2;
+            goto exit;
         }
     }
+    else {
+        cmd->complete = NULL;
+    }
+
     cmd->data = line;
     cmd->return_value = -1;
     cmd->fd_in = in;
     cmd->fd_out = out;
     cmd->fd_err = err;
-    xQueueSend(jolt_cmd_queue, cmd, portMAX_DELAY);
+
+    /* Send the job now */
+    jolt_bg_create(jolt_process_cmd_task, cmd, NULL);
+
     /* Wait until the process signals completion */
     if(block){
         xSemaphoreTake(cmd->complete, portMAX_DELAY);
         vSemaphoreDelete(cmd->complete);
         return cmd->return_value;
     }
-    return 0;
+    return_code = 0;
+    return return_code;
+
+exit:
+    if( NULL != cmd ) {
+        free(cmd);
+    }
+    return return_code;
 }
 
 volatile TaskHandle_t *console_start(){
-    if( NULL == jolt_cmd_queue ){
-        jolt_cmd_queue = xQueueCreate(10, sizeof(jolt_cmd_t));
-    }
-
-    /* Start the Task that processes commands */
-    xTaskCreate(jolt_process_cmd_task,
-                "CMD_Console", CONFIG_JOLT_TASK_STACK_SIZE_CMD_CONSOLE,
-                NULL, CONFIG_JOLT_TASK_PRIORITY_CMD_CONSOLE,
-                NULL);
-
     /* Start the Task that handles the UART Console IO */
     xTaskCreate(console_task,
                 "UART_Console", CONFIG_JOLT_TASK_STACK_SIZE_UART_CONSOLE,

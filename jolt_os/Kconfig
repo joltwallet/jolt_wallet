@@ -297,13 +297,6 @@ menu "JoltOS"
             help
                 help text here.
 
-        config JOLT_TASK_STACK_SIZE_CMD_CONSOLE
-            int
-            prompt "Task that processes CLI cmds Stack Size"
-            default 4096
-            help
-                help text here.
-
         config JOLT_TASK_STACK_SIZE_BACKGROUND
             int
             prompt "Background Stack Size"
@@ -338,14 +331,6 @@ menu "JoltOS"
             help
                 help text here.
 
-        config JOLT_TASK_PRIORITY_CMD_CONSOLE
-            int
-            prompt "Cmd processing Console Task Priority"
-            default 16
-            range 1 20
-            help
-                Must be higher than JOLT_TASK_PRIORITY_CONSOLE
-
         config JOLT_TASK_PRIORITY_LAUNCHER
             int
             prompt "App Launcher Task Priority"
@@ -365,7 +350,7 @@ menu "JoltOS"
         config JOLT_TASK_PRIORITY_BACKGROUND
             int
             prompt "Background Task Priority"
-            default 11
+            default 16
             range 1 20
             help
                 help text here.
