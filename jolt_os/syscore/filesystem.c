@@ -108,7 +108,7 @@ uint32_t jolt_fs_get_all_fns(char **fns, uint32_t fns_len, const char *ext, bool
 }
 
 // todo change this to jelf_fns
-uint16_t jolt_fs_get_all_elf_fns(char ***fns) {
+uint16_t jolt_fs_get_all_jelf_fns(char ***fns) {
     uint16_t n;
 
     n = jolt_fs_get_all_fns(NULL, 0, ".jelf", true);

@@ -42,7 +42,7 @@ static lv_res_t launch_file_proxy(lv_obj_t *btn) {
 void jolt_gui_menu_home_create() {
     // Find and Register all user apps
     char **fns = NULL;
-    uint16_t n_fns = jolt_fs_get_all_elf_fns( &fns );
+    uint16_t n_fns = jolt_fs_get_all_jelf_fns( &fns );
 
     main_menu = jolt_gui_scr_menu_create(gettext(JOLT_TEXT_MAIN_MENU_TITLE));
     if( NULL == main_menu ){
