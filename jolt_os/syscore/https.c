@@ -12,7 +12,6 @@ static const char TAG[] = "jolt_https";
 
 static esp_http_client_handle_t client = NULL;
 
-/* todo: job queue */
 typedef struct {
     jolt_network_client_cb_t cb;
     char *post_data;
@@ -114,8 +113,7 @@ esp_err_t jolt_network_client_init( char *uri ) {
             .timeout_ms = JOLT_NETWORK_TIMEOUT_MS,
             .is_async   = true,
         };
-        /* todo: use NVS params and update current references */
-        config.url = "https://yapraiwallet.space/quake/api";
+        config.url = local_uri;
         client = esp_http_client_init( &config );
         if( NULL == client ) {
             ESP_LOGE(TAG, "Failed to create https client");

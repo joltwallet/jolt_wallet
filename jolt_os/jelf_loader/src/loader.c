@@ -856,7 +856,7 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
 
     /* Initialize Inflator */
     tinfl_init(&(ctx->inf_stream.inf));
-    ctx->inf_stream.in_buf = malloc(CONFIG_JELFLOADER_INPUTBUF_LEN); // todo macro
+    ctx->inf_stream.in_buf = malloc(CONFIG_JELFLOADER_INPUTBUF_LEN);
     if(NULL == ctx->inf_stream.in_buf) {
         ERR( "Insufficient memory for miniz input buffer" );
         goto err;
