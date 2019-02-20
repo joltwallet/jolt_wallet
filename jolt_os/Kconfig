@@ -1,5 +1,5 @@
 menu "JoltOS"
-    menu "Touch"
+    menu "Touch Pads"
         config JOLT_TOUCH_LED_PIN
             int
             prompt "Pin for controlling Touch LEDs"
@@ -20,7 +20,7 @@ menu "JoltOS"
             prompt "Invert the PWM signal"
             default y
             help
-                Help Text Here
+                If the LED's are active-low, set this to yes. Otherwise, set as no.
     endmenu
 
     menu "I2C"
@@ -33,17 +33,17 @@ menu "JoltOS"
 
         config JOLT_I2C_PIN_SDA
             int
-            prompt "Display SDA GPIO PIN"
+            prompt "SDA GPIO PIN"
             default 23
             help
-                I2C Display's SDA
+                I2C SDA GPIO pin number.
 
         config JOLT_I2C_PIN_SCL
             int
-            prompt "Display SCL GPIO PIN"
+            prompt "SCL GPIO PIN"
             default 22
             help
-                I2C Display's SCL
+                I2C SCL GPIO pin number.
 
         config JOLT_I2C_MASTER_FREQ_HZ
             int
@@ -59,22 +59,15 @@ menu "JoltOS"
             help
                 Help Text Here
     endmenu
-    menu "Jolt Cast"
-        config JOLT_CAST_URI
-            string
-            prompt "Jolt Cast Default URI"
-            default "https://yapraiwallet.space/quake/api"
-            help
-                Help Text Here
-    endmenu
+
     menu "Display"
         config JOLT_DISPLAY_BRIGHTNESS
             int
             prompt "Default display brightness"
             default 5
-            range 1 6
+            range 0 5
             help
-                Brightness index indicating screen brightness level;
+                Brightness index indicating screen brightness level; 0 is dimmest, 6 is brightest
 
         config JOLT_DISPLAY_FLIP
             bool
@@ -97,13 +90,6 @@ menu "JoltOS"
            default 16
            help
               GPIO thats connected to the display's RST pin.
-
-        config JOLT_HW_MONITOR_UPDATE_PERIOD_MS
-            int
-            prompt "Number of milliseconds between hardware measurements like battery voltage, wifi strenght, etc."
-            default 100
-            help
-                help text here.
 
         config JOLT_I2C_ERROR_RESET
             bool
@@ -130,33 +116,31 @@ menu "JoltOS"
             help
                 help text here
 
+        config JOLT_HW_MONITOR_UPDATE_PERIOD_MS
+            int
+            prompt "Number of milliseconds between hardware measurements like battery voltage, wifi strenght, etc."
+            default 100
+            help
+                help text here.
+
+
     endmenu
 
     menu "Compression"
 
-        config JOLT_COMPRESSION_ENABLE
-            bool
-            prompt "Use miniz (zlib) to decompress data"
-            default y
-            help
-                help text here
-
         config JOLT_COMPRESSION_OUTPUT_BUFFER
             int
-            depends on JOLT_COMPRESSION_ENABLE
             prompt "Output Decompression Buffer Size. Must be at least as big as dictionary"
             default 4096
             help
-                help text here
+                Default zlib requires 32KB of decompression buffer. Reducing the dictionary window to 4KB reduces compression efficiency by a percent or two, but erquires 8x less RAM.
 
         config JOLT_COMPRESSION_AUTO
             bool
-            depends on JOLT_COMPRESSION_ENABLE
             prompt "Automatically decompress .hs files"
             default y
             help
-                help text here
-
+                Automatically decompress ".hs" files when received.
     endmenu
 
     menu "Vault"
@@ -216,12 +200,12 @@ menu "JoltOS"
             prompt "Clear serial monitor upon startup/console launch."
             default y
             help
-                help text here
+                Clears the serial monitor view.
 
         config JOLT_CONSOLE_UART_RX_BUF_LEN
             int
             prompt "Buffer length for receiving console commands"
-            default 4096
+            default 2048
             help
                 help text here
 
@@ -249,7 +233,7 @@ menu "JoltOS"
         config JOLT_CONSOLE_HISTORY
             int
             prompt "Number of previous commands to keep in history"
-            default 20
+            default 12
             help
                 help text here
 
@@ -281,28 +265,28 @@ menu "JoltOS"
             prompt "Hardware Monitors Task Stack Size"
             default 1024
             help
-                help text here
+                HW Monitors periodically read and store the state of various systems.
 
         config JOLT_TASK_STACK_SIZE_VAULT_WATCHDOG
             int
             prompt "Vault Watchdog Task Stack Size"
             default 2048
             help
-                help text here.
+                Stack size of the task responsibility for vault timeout.
 
         config JOLT_TASK_STACK_SIZE_UART_CONSOLE
             int
             prompt "UART Linenoise Console Task Stack Size"
             default 3072
             help
-                help text here.
+                Task that receives UART CLI commands and sends them to BG as a job.
 
         config JOLT_TASK_STACK_SIZE_BACKGROUND
             int
             prompt "Background Stack Size"
             default 5120
             help
-                help text here.
+                Primary task of executing any lengthy function to not block the GUI loop.
 
     endmenu
 
@@ -350,19 +334,12 @@ menu "JoltOS"
         config JOLT_TASK_PRIORITY_BACKGROUND
             int
             prompt "Background Task Priority"
-            default 16
+            default 12
             range 1 20
             help
                 help text here.
 
     endmenu
-
-    config JOLT_VAULT_RPC_QUEUE_LEN
-        int
-        prompt "Vault RPC queue length"
-        default 8
-        help
-            Length of queue for Vault RPC commands
 
     menu "WiFi"
         config AP_TARGET_SSID
@@ -378,6 +355,14 @@ menu "JoltOS"
             default "Password"
             help
                 Factory reset WiFi pass
+        menu "Jolt Cast"
+            config JOLT_CAST_URI
+                string
+                prompt "Jolt Cast Default URI"
+                default "https://yapraiwallet.space/quake/api"
+                help
+                    Help Text Here
+        endmenu
     endmenu
 
     menu "Battery"
@@ -388,18 +373,21 @@ menu "JoltOS"
             range 32 39
             help
                 ADC1 GPIO pin that reads VBATT via a 1/2 voltage divider.
+
         config JOLT_VBATT_MIN
             int
             prompt "Raw ADC value to be considered 0 percent"
             default 2000
             help
                 help text here
+
         config JOLT_VBATT_MAX
             int
             prompt "Raw ADC value to be considered 100 percent"
             default 2470
             help
                 help text here
+
         config JOLT_VBATT_AVG_WINDOW
             int
             prompt "Number of battery readings to average over"
@@ -411,7 +399,7 @@ menu "JoltOS"
 
     endmenu
 
-    menu "JELF Loader"
+    menu "Application Loader"
         config JELFLOADER_PROFILER_EN
             bool
             prompt "Enable ELF Loader Profiling"
@@ -431,8 +419,9 @@ menu "JoltOS"
             prompt "Amount in bytes to read from disk at a time while loading an app"
             default 256
             help
-                Increasing this buffer directly increases memory usage. In this 
-                use case, SPIFFS performance seems to plateu at 256 bytes.
+                Increasing this buffer directly increases memory usage and load
+                performance. In this use case, SPIFFS performance seems to 
+                plateu at 256 bytes.
 
         config JOLT_APP_KEY_DEFAULT
             depends on JOLT_APP_SIG_CHECK_EN
@@ -458,7 +447,6 @@ menu "JoltOS"
                 bool "Derivation Path in Title"
                 help
                    help text here
-
         endchoice
 
         config JOLT_PIN_DEFAULT_MAX_ATTEMPT
@@ -467,7 +455,6 @@ menu "JoltOS"
             default 10
             help
                 help text here
-
     endmenu
 
     menu "Language"

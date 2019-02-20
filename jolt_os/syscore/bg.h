@@ -8,7 +8,7 @@
 #include "jolt_gui/jolt_gui.h"
 
 #define CONFIG_JOLT_BG_SIGNAL_QUEUE_LEN 3
-#define CONFIG_JOLT_BG_TASK_QUEUE_LEN 5
+#define CONFIG_JOLT_BG_TASK_QUEUE_LEN 10
 
 typedef struct jolt_bg_job_t jolt_bg_job_t;
 typedef void (*jolt_bg_task_t)( jolt_bg_job_t *job );
