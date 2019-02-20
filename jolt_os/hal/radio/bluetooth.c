@@ -407,7 +407,6 @@ static void spp_cmd_task(void * arg) {
         if ( NULL == buf ) {
             buf = calloc(1, CONFIG_JOLT_CONSOLE_MAX_CMD_LEN);
         }
-        //ESP_LOGI(TAG, "spp_cmd_task buf pointer: %p", buf);
         char *ptr = buf;
         uint16_t i;
         for(i=0; i<CONFIG_JOLT_CONSOLE_MAX_CMD_LEN; i++, ptr++){
@@ -809,7 +808,9 @@ esp_err_t jolt_bluetooth_start() {
         ble_in_queue = xQueueCreate(10, sizeof(char *));
     }
     if ( NULL == ble_in_task) {
-        xTaskCreate(&spp_cmd_task, "spp_cmd_task", 4096, NULL, 10, &ble_in_task);
+        xTaskCreate(&spp_cmd_task, "spp_cmd_task", 
+                CONFIG_JOLT_TASK_STACK_SIZE_BLE_CONSOLE, NULL,
+                CONFIG_JOLT_TASK_PRIORITY_BLE_CONSOLE, &ble_in_task);
     }
 
 exit:

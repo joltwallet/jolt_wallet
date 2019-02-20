@@ -214,16 +214,13 @@ void app_main() {
     jolt_led_setup();
 
     // Initiate Console
-#if CONFIG_BT_ENABLED
     {
         uint8_t bluetooth_en;
         storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 0 );
         if( bluetooth_en ) {
-            //vTaskDelay(pdMS_TO_TICKS(1000));// todo; something better than a delay
             jolt_bluetooth_start();
         }
     }
-#endif
 
     console_init();
     console_start(); // starts a task adding uart commands to the command queue. Also starts the task to process the command queue.

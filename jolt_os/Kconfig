@@ -281,6 +281,13 @@ menu "JoltOS"
             help
                 Task that receives UART CLI commands and sends them to BG as a job.
 
+        config JOLT_TASK_STACK_SIZE_BLE_CONSOLE
+            int
+            prompt "BLE Linenoise Console Task Stack Size"
+            default 3072
+            help
+                Task that receives UART CLI commands and sends them to BG as a job.
+
         config JOLT_TASK_STACK_SIZE_BACKGROUND
             int
             prompt "Background Stack Size"
@@ -309,7 +316,15 @@ menu "JoltOS"
 
         config JOLT_TASK_PRIORITY_UART_CONSOLE
             int
-            prompt "Console Task Priority"
+            prompt "UART Console Task Priority"
+            default 15
+            range 1 20
+            help
+                help text here.
+
+        config JOLT_TASK_PRIORITY_BLE_CONSOLE
+            int
+            prompt "BLE Console Task Priority"
             default 15
             range 1 20
             help
