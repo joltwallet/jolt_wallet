@@ -107,7 +107,6 @@ uint32_t jolt_fs_get_all_fns(char **fns, uint32_t fns_len, const char *ext, bool
     return tot;
 }
 
-// todo change this to jelf_fns
 uint16_t jolt_fs_get_all_jelf_fns(char ***fns) {
     uint16_t n;
 
@@ -123,7 +122,7 @@ uint16_t jolt_fs_get_all_jelf_fns(char ***fns) {
 uint32_t jolt_fs_free() {
     uint32_t tot, used;
     esp_spiffs_info(NULL, &tot, &used);
-    return (tot-used-16384); // todo; is this correct?
+    return (tot-used-FS_MIN_FREE);
 }
 
 size_t jolt_fs_size(char *fname) {

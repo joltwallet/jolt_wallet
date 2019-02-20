@@ -20,18 +20,14 @@
 
 #include "ota.h"
 
+/* Static Variables */
 static const char TAG[] = "jolt_ota";
-
 static esp_ota_handle_t jolt_ota_handle = 0; // underlying uint32_t
 static const esp_partition_t *update_partition = NULL;
 
 /* Static Function Declaration */
 static int ota_ymodem_write_wrapper(const void *data, 
         unsigned int size, unsigned int nmemb, void *cookie);
-
-#if 0
-static void jolt_ota_clear_globals();
-#endif
 
 
 void jolt_ota_get_partition_table_hash( uint256_t hash ) {
@@ -55,28 +51,15 @@ void jolt_ota_get_bootloader_hash( uint256_t hash ) {
 
 static int ota_ymodem_write_wrapper(const void *data, 
         unsigned int size, unsigned int nmemb, void *cookie) {
-    // todo: error handling
+    esp_err_t err;
     size *= nmemb;
-    esp_ota_write( (esp_ota_handle_t)cookie, data, size );
+    err = esp_ota_write( (esp_ota_handle_t)cookie, data, size );
+    if( ESP_OK != err) {
+        ESP_LOGE(TAG, "%s: %s", __func__, esp_err_to_name(err));
+        return -1;
+    }
     return nmemb;
 }
-
-#if 0
-/* Clears global variables */
-static void jolt_ota_clear_globals() {
-    if( 0 != jolt_ota_handle ) {
-        if (esp_ota_end(jolt_ota_handle) != ESP_OK) {
-            ESP_LOGE(TAG, "esp_ota_end failed!");
-        }
-        else {
-            jolt_ota_handle = 0;
-        }
-    }
-    if( NULL != update_partition){
-        update_partition = NULL;
-    }
-}
-#endif
 
 esp_err_t jolt_ota_ymodem(int8_t *progress) {
     /* Performs OTA update over Ymodem */
@@ -87,6 +70,7 @@ esp_err_t jolt_ota_ymodem(int8_t *progress) {
      **********************************/
     err = jolt_ota_init_handle();
     if( ESP_OK != err ){
+        ESP_LOGE(TAG, "Failed to get OTA Handle");
         goto exit;
     }
 

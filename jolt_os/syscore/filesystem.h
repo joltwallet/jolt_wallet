@@ -6,7 +6,9 @@
 #ifndef __JOLT_SYSCORE_FS_CONSOLE_H__
 #define __JOLT_SYSCORE_FS_CONSOLE_H__
 
-#define MAX_FILE_SIZE (1048576 - 0x2000)
+/* Don't let the filesystem fill up 100% */
+#define FS_MIN_FREE 0x2000
+#define MAX_FILE_SIZE (1048576 - FS_MIN_FREE)
 #define SPIFFS_BASE_PATH "/spiffs"
 
 uint16_t jolt_fs_get_all_jelf_fns(char ***fns);
