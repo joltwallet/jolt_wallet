@@ -216,13 +216,14 @@ static ssize_t ble_read(int fd, void* data, size_t size) {
 
     _lock_release_recursive(&s_ble_read_lock);
 
-#if 0
+#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
     {
         char buf[100];
         sprintf(buf, "ble_read returning %d\n", received);
         uart_write_bytes(UART_NUM_0, buf, strlen(buf));
     }
 #endif
+
     if(received > 0){
         return received;
     }
