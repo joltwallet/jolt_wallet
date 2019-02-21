@@ -250,6 +250,7 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
         # index for the header in which the rela information applies to
         jelf_shdr_d['sh_info'] = elf32_shdr.sh_info
 
+        # Separate the sections into the 3 groups (alloc, rela, other)
         log.debug(jelf_shdr_d)
         if jelf_shdr_d['sh_flags'] != 0:
             jelf_shdrs_alloc.append(jelf_shdr_d)
@@ -340,19 +341,26 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
             other_rela_index.append(jelf_shdrs_rela_index[rela_index])
             other_rela_names.append('.rela'+name)
 
-    mapping = jelf_shdrs_index[0:2] \
+    # First is the null section, then the symtab
+    null_index   = jelf_shdrs_names.index('')
+    symtab_index = jelf_shdrs_names.index('.symtab')
+
+    mapping = [jelf_shdrs_index[null_index]] \
+            + [jelf_shdrs_index[symtab_index]] \
             + list(reversed(other_alloc_index + text_alloc_index+ literal_alloc_index)) \
             + other_rela_index \
             + text_rela_index \
             + literal_rela_index
 
-    jelf_shdrs = jelf_shdrs[0:2] \
+    jelf_shdrs = [jelf_shdrs[null_index]] \
+            + [jelf_shdrs[symtab_index]] \
             + list(reversed(other_alloc + text_alloc + literal_alloc)) \
             + other_rela \
             + text_rela \
             + literal_rela
 
-    names = jelf_shdrs_names[0:2] \
+    names = [jelf_shdrs_names[null_index]] \
+            + [jelf_shdrs_names[symtab_index]] \
             + list(reversed(other_alloc_names + text_alloc_names + literal_alloc_names)) \
             + other_rela_names \
             + text_rela_names \

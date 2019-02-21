@@ -646,12 +646,12 @@ static const char __pyx_k_test[] = "__test__";
 static const char __pyx_k_name_to_sign[] = "name_to_sign";
 static const char __pyx_k_jelf_loader_hash[] = "jelf_loader_hash";
 static const char __pyx_k_elf2jelf_jelf_loader[] = "elf2jelf.jelf_loader";
-static const char __pyx_k_home_bpugh_esp_nano_app_jolt_wa[] = "/home/bpugh/esp/nano_app/jolt_wallet/elf2jelf/jelf_loader.pyx";
+static const char __pyx_k_Users_brianpugh_esp_nano_app_jo[] = "/Users/brianpugh/esp/nano_app/jolt_wallet/elf2jelf/jelf_loader.pyx";
+static PyObject *__pyx_kp_s_Users_brianpugh_esp_nano_app_jo;
 static PyObject *__pyx_n_s_ctx;
 static PyObject *__pyx_n_s_elf2jelf_jelf_loader;
 static PyObject *__pyx_n_s_fd;
 static PyObject *__pyx_n_s_fn;
-static PyObject *__pyx_kp_s_home_bpugh_esp_nano_app_jolt_wa;
 static PyObject *__pyx_n_s_jelf_loader_hash;
 static PyObject *__pyx_n_s_main;
 static PyObject *__pyx_n_s_name_to_sign;
@@ -877,11 +877,11 @@ static struct PyModuleDef __pyx_moduledef = {
 #endif
 
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
+  {&__pyx_kp_s_Users_brianpugh_esp_nano_app_jo, __pyx_k_Users_brianpugh_esp_nano_app_jo, sizeof(__pyx_k_Users_brianpugh_esp_nano_app_jo), 0, 0, 1, 0},
   {&__pyx_n_s_ctx, __pyx_k_ctx, sizeof(__pyx_k_ctx), 0, 0, 1, 1},
   {&__pyx_n_s_elf2jelf_jelf_loader, __pyx_k_elf2jelf_jelf_loader, sizeof(__pyx_k_elf2jelf_jelf_loader), 0, 0, 1, 1},
   {&__pyx_n_s_fd, __pyx_k_fd, sizeof(__pyx_k_fd), 0, 0, 1, 1},
   {&__pyx_n_s_fn, __pyx_k_fn, sizeof(__pyx_k_fn), 0, 0, 1, 1},
-  {&__pyx_kp_s_home_bpugh_esp_nano_app_jolt_wa, __pyx_k_home_bpugh_esp_nano_app_jolt_wa, sizeof(__pyx_k_home_bpugh_esp_nano_app_jolt_wa), 0, 0, 1, 0},
   {&__pyx_n_s_jelf_loader_hash, __pyx_k_jelf_loader_hash, sizeof(__pyx_k_jelf_loader_hash), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
   {&__pyx_n_s_name_to_sign, __pyx_k_name_to_sign, sizeof(__pyx_k_name_to_sign), 0, 0, 1, 1},
@@ -906,7 +906,7 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_tuple_ = PyTuple_Pack(4, __pyx_n_s_fn, __pyx_n_s_name_to_sign, __pyx_n_s_ctx, __pyx_n_s_fd); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
-  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple_, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_home_bpugh_esp_nano_app_jolt_wa, __pyx_n_s_jelf_loader_hash, 36, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 36, __pyx_L1_error)
+  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple_, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_brianpugh_esp_nano_app_jo, __pyx_n_s_jelf_loader_hash, 36, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
