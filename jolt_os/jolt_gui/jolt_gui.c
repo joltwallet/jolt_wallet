@@ -133,10 +133,6 @@ void jolt_gui_obj_del(lv_obj_t *obj){
 /***************
  * Group Stuff *
  ***************/
-static void group_mod_cb(lv_style_t *style) {
-    /* Intentionally Empty */
-}
-
 void jolt_gui_group_create() {
     /* Create Groups for user input */
     bool success = false;
@@ -147,7 +143,6 @@ void jolt_gui_group_create() {
         lv_group_set_refocus_policy(jolt_gui_store.group.back, LV_GROUP_REFOCUS_POLICY_PREV);
         jolt_gui_store.group.enter = BREAK_IF_NULL(lv_group_create());
         lv_group_set_refocus_policy(jolt_gui_store.group.enter, LV_GROUP_REFOCUS_POLICY_PREV);
-        lv_group_set_style_mod_cb(jolt_gui_store.group.main, group_mod_cb);
         success = true;
     }
     if( !success ){

@@ -124,25 +124,34 @@ static void basic_init(void)
     scrollbar_style.body.padding.hor = -2; // Scrollbar distance from the Right 
     scrollbar_style.body.padding.inner = 3; // Scrollbar's Width 
 
-    theme.bg = &def;
-    theme.panel = &def;
+    theme.style.bg = &def;
+    theme.style.panel = &def;
 }
+
+#if USE_LV_GROUP
+static void style_mod(lv_style_t * style) {
+    /* Do Nothing */
+}
+static void style_mod_edit(lv_style_t * style) {
+    /* Do Nothing */
+}
+#endif
 
 static void cont_init(void)
 {
 #if USE_LV_CONT != 0
-    theme.cont = &def;
+    theme.style.cont = &def;
 #endif
 }
 
 static void btn_init(void)
 {
 #if USE_LV_BTN != 0
-    theme.btn.rel = &def;
-    theme.btn.pr = &dark_plain;
-    theme.btn.tgl_rel = &dark_plain;
-    theme.btn.tgl_pr =  &def;
-    theme.btn.ina =  &def;
+    theme.style.btn.rel = &def;
+    theme.style.btn.pr = &dark_plain;
+    theme.style.btn.tgl_rel = &dark_plain;
+    theme.style.btn.tgl_pr =  &def;
+    theme.style.btn.ina =  &def;
 #endif
 }
 
@@ -150,31 +159,31 @@ static void btn_init(void)
 static void label_init(void)
 {
 #if USE_LV_LABEL != 0
-    theme.label.prim = NULL;
-    theme.label.sec = NULL;
-    theme.label.hint = NULL;
+    theme.style.label.prim = NULL;
+    theme.style.label.sec = NULL;
+    theme.style.label.hint = NULL;
 #endif
 }
 
 static void img_init(void)
 {
 #if USE_LV_IMG != 0
-    theme.img.light = &def;
-    theme.img.dark = &dark_plain;
+    theme.style.img.light = &def;
+    theme.style.img.dark = &dark_plain;
 #endif
 }
 
 static void line_init(void)
 {
 #if USE_LV_LINE != 0
-    theme.line.decor = NULL;
+    theme.style.line.decor = NULL;
 #endif
 }
 
 static void led_init(void)
 {
 #if USE_LV_LED != 0
-    theme.led = &dark_plain_round;
+    theme.style.led = &dark_plain_round;
 #endif
 }
 
@@ -193,17 +202,17 @@ static void bar_init(void)
     indic.body.padding.ver  = 2;
     indic.body.border.width = 0;
 
-    theme.bar.bg = &bg;
-    theme.bar.indic = &indic;
+    theme.style.bar.bg = &bg;
+    theme.style.bar.indic = &indic;
 #endif
 }
 
 static void slider_init(void)
 {
 #if USE_LV_SLIDER != 0
-    theme.slider.bg    = theme.bar.bg;
-    theme.slider.indic = theme.bar.indic;
-    theme.slider.knob  = &light_frame_round;
+    theme.style.slider.bg    = theme.style.bar.bg;
+    theme.style.slider.indic = theme.style.bar.indic;
+    theme.style.slider.knob  = &light_frame_round;
 #endif
 }
 
@@ -211,14 +220,14 @@ static void sw_init(void)
 {
 #if USE_LV_SW != 0
     lv_style_t indic;
-    lv_style_copy(&indic, theme.slider.indic);
+    lv_style_copy(&indic, theme.style.slider.indic);
     indic.body.padding.hor = 0;
     indic.body.padding.ver = 0;
 
-    theme.sw.bg = theme.slider.bg;
-    theme.sw.indic = &indic;
-    theme.sw.knob_off = &light_frame_round;
-    theme.sw.knob_on = &dark_plain_round;
+    theme.style.sw.bg = theme.style.slider.bg;
+    theme.style.sw.indic = &indic;
+    theme.style.sw.knob_off = &light_frame_round;
+    theme.style.sw.knob_on = &dark_plain_round;
 #endif
 }
 
@@ -236,7 +245,7 @@ static void lmeter_init(void)
     lmeter_bg.line.color = LV_COLOR_WHITE;
     lmeter_bg.line.width = 1;
 
-    theme.lmeter = &lmeter_bg;
+    theme.style.lmeter = &lmeter_bg;
 #endif
 }
 
@@ -244,18 +253,18 @@ static void gauge_init(void)
 {
 #if USE_LV_GAUGE != 0
     static lv_style_t gauge_bg;
-    lv_style_copy(&gauge_bg, theme.lmeter);
+    lv_style_copy(&gauge_bg, theme.style.lmeter);
     gauge_bg.line.color = LV_COLOR_BLACK;
     gauge_bg.line.width = 1;
 
-    theme.gauge = &gauge_bg;
+    theme.style.gauge = &gauge_bg;
 #endif
 }
 
 static void chart_init(void)
 {
 #if USE_LV_CHART
-    theme.chart = &def;
+    theme.style.chart = &def;
 #endif
 }
 
@@ -267,96 +276,96 @@ static void calendar_init(void)
     box.body.padding.ver = LV_DPI / 20;
 
     /*Can't handle highlighted dates in this theme*/
-    theme.calendar.week_box = &box;
-    theme.calendar.today_box = &box;
+    theme.style.calendar.week_box = &box;
+    theme.style.calendar.today_box = &box;
 #endif
 }
 
 static void cb_init(void)
 {
 #if USE_LV_CB != 0
-    theme.cb.bg = &lv_style_transp;
-    theme.cb.box.rel = &def;
-    theme.cb.box.pr = &dark_plain;
-    theme.cb.box.tgl_rel = &dark_plain;
-    theme.cb.box.tgl_pr = &def;
-    theme.cb.box.ina = &def;
+    theme.style.cb.bg = &lv_style_transp;
+    theme.style.cb.box.rel = &def;
+    theme.style.cb.box.pr = &dark_plain;
+    theme.style.cb.box.tgl_rel = &dark_plain;
+    theme.style.cb.box.tgl_pr = &def;
+    theme.style.cb.box.ina = &def;
 #endif
 }
 
 static void btnm_init(void)
 {
 #if USE_LV_BTNM
-    theme.btnm.bg = &def;
-    theme.btnm.btn.rel = &def;
-    theme.btnm.btn.pr = &dark_plain;
-    theme.btnm.btn.tgl_rel = &dark_plain;
-    theme.btnm.btn.tgl_pr = &def;
-    theme.btnm.btn.ina = &def;
+    theme.style.btnm.bg = &def;
+    theme.style.btnm.btn.rel = &def;
+    theme.style.btnm.btn.pr = &dark_plain;
+    theme.style.btnm.btn.tgl_rel = &dark_plain;
+    theme.style.btnm.btn.tgl_pr = &def;
+    theme.style.btnm.btn.ina = &def;
 #endif
 }
 
 static void kb_init(void)
 {
 #if USE_LV_KB
-    theme.kb.bg = &lv_style_transp_fit;
-    theme.kb.btn.rel = &def;
-    theme.kb.btn.pr = &def;
-    theme.kb.btn.tgl_rel = &dark_plain;
-    theme.kb.btn.tgl_pr = &dark_plain;
-    theme.kb.btn.ina = &def;
+    theme.style.kb.bg = &lv_style_transp_fit;
+    theme.style.kb.btn.rel = &def;
+    theme.style.kb.btn.pr = &def;
+    theme.style.kb.btn.tgl_rel = &dark_plain;
+    theme.style.kb.btn.tgl_pr = &dark_plain;
+    theme.style.kb.btn.ina = &def;
 #endif
 }
 
 static void mbox_init(void)
 {
 #if USE_LV_MBOX
-    theme.mbox.bg = &dark_plain;
-    theme.mbox.btn.bg = &lv_style_transp_fit;
-    theme.mbox.btn.rel = &def;
-    theme.mbox.btn.pr = &dark_plain;
+    theme.style.mbox.bg = &dark_plain;
+    theme.style.mbox.btn.bg = &lv_style_transp_fit;
+    theme.style.mbox.btn.rel = &def;
+    theme.style.mbox.btn.pr = &dark_plain;
 #endif
 }
 
 static void page_init(void)
 {
 #if USE_LV_PAGE
-    theme.page.bg = &def;
-    theme.page.scrl = &def;
-    theme.page.sb = &scrollbar_style;
+    theme.style.page.bg = &def;
+    theme.style.page.scrl = &def;
+    theme.style.page.sb = &scrollbar_style;
 #endif
 }
 
 static void ta_init(void)
 {
 #if USE_LV_TA
-    theme.ta.area = &def;
-    theme.ta.oneline = &def;
-    theme.ta.cursor = NULL;     /*Let library to calculate the cursor's style*/
-    theme.ta.sb = &dark_plain;
+    theme.style.ta.area = &def;
+    theme.style.ta.oneline = &def;
+    theme.style.ta.cursor = NULL;     /*Let library to calculate the cursor's style*/
+    theme.style.ta.sb = &dark_plain;
 #endif
 }
 
 static void list_init(void)
 {
 #if USE_LV_LIST != 0
-    theme.list.sb = &scrollbar_style;
-    theme.list.bg = &def;
-    theme.list.scrl = &def;
-    theme.list.btn.rel = &def;
-    theme.list.btn.pr = &dark_plain;
-    theme.list.btn.tgl_rel = &dark_plain;
-    theme.list.btn.tgl_pr = &def;
-    theme.list.btn.ina = &def;
+    theme.style.list.sb = &scrollbar_style;
+    theme.style.list.bg = &def;
+    theme.style.list.scrl = &def;
+    theme.style.list.btn.rel = &def;
+    theme.style.list.btn.pr = &dark_plain;
+    theme.style.list.btn.tgl_rel = &dark_plain;
+    theme.style.list.btn.tgl_pr = &def;
+    theme.style.list.btn.ina = &def;
 #endif
 }
 
 static void ddlist_init(void)
 {
 #if USE_LV_DDLIST != 0
-    theme.ddlist.bg = &def;
-    theme.ddlist.sel = &dark_plain;
-    theme.ddlist.sb = &dark_plain;
+    theme.style.ddlist.bg = &def;
+    theme.style.ddlist.sel = &dark_plain;
+    theme.style.ddlist.sb = &dark_plain;
 #endif
 }
 
@@ -370,21 +379,21 @@ static void roller_init(void)
     bg.text.font = &lv_font_crox3hb_numeric;
     bg.text.line_space = 6; // Distance between options
 
-    theme.roller.bg = &bg;
-    theme.roller.sel = &dark_plain;
+    theme.style.roller.bg = &bg;
+    theme.style.roller.sel = &dark_plain;
 #endif
 }
 
 static void tabview_init(void)
 {
 #if USE_LV_TABVIEW != 0
-    theme.tabview.bg = &def;
-    theme.tabview.indic = &def;
-    theme.tabview.btn.bg = &lv_style_transp_fit;
-    theme.tabview.btn.rel = &def;
-    theme.tabview.btn.pr = &dark_plain;
-    theme.tabview.btn.tgl_rel = &dark_plain;
-    theme.tabview.btn.tgl_pr = &def;
+    theme.style.tabview.bg = &def;
+    theme.style.tabview.indic = &def;
+    theme.style.tabview.btn.bg = &lv_style_transp_fit;
+    theme.style.tabview.btn.rel = &def;
+    theme.style.tabview.btn.pr = &dark_plain;
+    theme.style.tabview.btn.tgl_rel = &dark_plain;
+    theme.style.tabview.btn.tgl_pr = &def;
 #endif
 }
 
@@ -397,13 +406,13 @@ static void win_init(void)
     win_header.body.padding.hor = LV_DPI / 30;
     win_header.body.padding.ver = LV_DPI / 30;
 
-    theme.win.bg = &def;
-    theme.win.sb = &dark_plain;
-    theme.win.header = &win_header;
-    theme.win.content.bg = &lv_style_transp;
-    theme.win.content.scrl = &lv_style_transp;
-    theme.win.btn.rel = &def;
-    theme.win.btn.pr = &dark_plain;
+    theme.style.win.bg = &def;
+    theme.style.win.sb = &dark_plain;
+    theme.style.win.header = &win_header;
+    theme.style.win.content.bg = &lv_style_transp;
+    theme.style.win.content.scrl = &lv_style_transp;
+    theme.style.win.btn.rel = &def;
+    theme.style.win.btn.pr = &dark_plain;
 #endif
 }
 
@@ -417,7 +426,7 @@ static void win_init(void)
  * Initialize the jolt theme
  * @param hue [0..360] hue value from HSV color space to define the theme's base color
  * @param font pointer to a font (NULL to use the default)
- * @return pointer to the initialized theme
+ * @return pointer to the initialized theme.style
  */
 lv_theme_t * jolt_gui_theme_init(uint16_t hue, const lv_font_t * font)
 {
@@ -428,7 +437,7 @@ lv_theme_t * jolt_gui_theme_init(uint16_t hue, const lv_font_t * font)
 
     /*For backward compatibility initialize all theme elements with a default style */
     uint16_t i;
-    lv_style_t ** style_p = (lv_style_t **) &theme;
+    lv_style_t ** style_p = (lv_style_t **) &theme.style;
     for(i = 0; i < sizeof(lv_theme_t) / sizeof(lv_style_t *); i++) {
         *style_p = &def;
         style_p++;
@@ -459,6 +468,11 @@ lv_theme_t * jolt_gui_theme_init(uint16_t hue, const lv_font_t * font)
     roller_init();
     tabview_init();
     win_init();
+
+#if USE_LV_GROUP
+    theme.group.style_mod = style_mod;
+    theme.group.style_mod_edit = style_mod_edit;
+#endif
 
     return &theme;
 }
