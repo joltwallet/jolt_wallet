@@ -110,6 +110,37 @@ void app_main() {
     /* Run Key/Value Storage Initialization */
     storage_startup();
 
+    // ==== Initialize the file system ====
+    jolt_fs_init();
+
+    /* Create GUI */
+    {
+        ESP_LOGI(TAG, "Creating GUI");
+        jolt_lang_t lang;
+        storage_get_u8(&lang, "user", "lang", CONFIG_JOLT_LANG_DEFAULT );
+        jolt_lang_set( lang ); // Internally initializes the theme
+    }
+    {
+        BaseType_t ret;
+        ESP_LOGI(TAG, "Creating LVGL Draw Task");
+        ret = xTaskCreate(littlevgl_task,
+                    "LVGL_Draw", CONFIG_JOLT_TASK_STACK_SIZE_LVGL,
+                    NULL, CONFIG_JOLT_TASK_PRIORITY_LVGL, NULL);
+        if( pdPASS != ret ){
+            if( errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY == ret ) {
+                ESP_LOGE(TAG, "%s Couldn't allocate memory for LVGL Drawing Task",
+                        __func__);
+            }
+            else {
+                ESP_LOGE(TAG, "%s Failed to start drawing task, error_code=%d",
+                        __func__, ret);
+            }
+        }
+    }
+
+    /* Create StatusBar */
+    statusbar_create();
+
     /* Initialize Wireless */
     ESP_ERROR_CHECK(esp_event_loop_init(wifi_event_handler, NULL));
     esp_log_level_set("wifi", ESP_LOG_NONE);
@@ -123,30 +154,16 @@ void app_main() {
         }
     }
 
-    // Allocate space for the vault and see if a copy exists in NVS
-    bool first_boot = ( false == vault_setup() );
-
-    // ==== Initialize the file system ====
-    jolt_fs_init();
-
-    /* Create GUI */
     {
-        ESP_LOGI(TAG, "Creating GUI");
-        jolt_lang_t lang;
-        storage_get_u8(&lang, "user", "lang", CONFIG_JOLT_LANG_DEFAULT );
-        jolt_lang_set( lang ); // Internally initializes the theme
-    }
-
-    /* Create StatusBar */
-    statusbar_create();
-
-    if( first_boot ) {
-        /* Create First Boot Screen */
-        jolt_gui_first_boot_create();
-    }
-    else{
-        /* Create Home Menu */
-        jolt_gui_menu_home_create();
+        bool first_boot = ( false == vault_setup() );
+        if( first_boot ) {
+            /* Create First Boot Screen */
+            jolt_gui_first_boot_create();
+        }
+        else{
+            /* Create Home Menu */
+            jolt_gui_menu_home_create();
+        }
     }
 
     ESP_LOGI(TAG, "Starting Hardware Monitors");
@@ -167,22 +184,6 @@ void app_main() {
 
     console_init();
     console_start(); // starts a task adding uart commands to the command queue. Also starts the task to process the command queue.
-
-    BaseType_t ret;
-    ESP_LOGI(TAG, "Creating LVGL Draw Task");
-    ret = xTaskCreate(littlevgl_task,
-                "LVGL_Draw", CONFIG_JOLT_TASK_STACK_SIZE_LVGL,
-                NULL, CONFIG_JOLT_TASK_PRIORITY_LVGL, NULL);
-    if( pdPASS != ret ){
-        if( errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY == ret ) {
-            ESP_LOGE(TAG, "%s Couldn't allocate memory for LVGL Drawing Task",
-                    __func__);
-        }
-        else {
-            ESP_LOGE(TAG, "%s Failed to start drawing task, error_code=%d",
-                    __func__, ret);
-        }
-    }
 
     /* Setup Power Management */
 #if CONFIG_PM_ENABLE
