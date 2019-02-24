@@ -21,6 +21,7 @@
 #define JOLT_OS_DERIVATION_PURPOSE ((uint32_t) BM_HARDENED | 44)
 #define JOLT_OS_DERIVATION_PATH ((uint32_t) BM_HARDENED | 0x4A4F4C54) /* 'J' 'O' 'L' 'T' */
 static const char JOLT_OS_DERIVATION_BIP32_KEY[] = "JOLT_OS";
+static const char JOLT_OS_DERIVATION_PASSPHRASE[] = "";
 
 void nvs_log_err(esp_err_t err);
 void factory_reset();
@@ -33,6 +34,6 @@ void jolt_h_free_char_array(char **arr, int n);
 bool jolt_h_strcmp_suffix( char *str, char *suffix);
 void jolt_h_fn_home_refresh(char *str);
 
-void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb);
+void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *param);
 
 #endif

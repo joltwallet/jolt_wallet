@@ -88,15 +88,18 @@ bool jolt_h_strcmp_suffix( char *str, char *suffix){
 }
 
 void jolt_h_fn_home_refresh(char *str) {
-    if( jolt_h_strcmp_suffix(str, ".jelf") ) {
-        jolt_gui_menu_home_refresh();
+    if( !jolt_h_strcmp_suffix(str, ".jelf") ) {
+        return;
     }
+    jolt_gui_menu_home_refresh();
 }
 
 
 /* Set vault for JoltOS settings stuff like bluetooth and wifi */
-void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb) {
+void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *param) {
     vault_set( JOLT_OS_DERIVATION_PURPOSE,
-            JOLT_OS_DERIVATION_PATH, JOLT_OS_DERIVATION_BIP32_KEY, "",
-            fail_cb, success_cb, NULL);
+            JOLT_OS_DERIVATION_PATH,
+            JOLT_OS_DERIVATION_BIP32_KEY,
+            JOLT_OS_DERIVATION_PASSPHRASE,
+            fail_cb, success_cb, param);
 }

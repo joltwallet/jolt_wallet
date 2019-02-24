@@ -77,7 +77,7 @@ esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
         case SYSTEM_EVENT_STA_DISCONNECTED: {
             /* Gets triggered on disconnect, or when esp_wifi_connect() fails to 
              * connect */
-            ESP_LOGI(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
+            ESP_LOGD(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
             if( 0 == disconnect_ctr ){
                 /* Try to connect immediately */
                 esp_wifi_connect();
@@ -118,6 +118,8 @@ esp_err_t jolt_wifi_start(){
         tcpip_adapter_init();
         initiate_tcpip_adapter = false;
     }
+
+    esp_wifi_stop();
     
     /* Check for WiFi credentials in NVS */
     {
