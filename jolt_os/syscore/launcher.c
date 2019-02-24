@@ -74,6 +74,13 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
     }
     app_cache.loading = true;
 
+    /* Check filename length */
+    if(strlen(fn_basename) > sizeof(exec_fn)-strlen(exec_fn)-1-5-1 ) {
+        ESP_LOGE(TAG, "Too long of an app name");
+        return_code = -13;
+        goto exit;
+    }
+
     if( NULL != app_cache.ctx ) {
         ESP_LOGI(TAG, "An app is already cached. Checking...");
         if( 0 == strcmp(app_cache.name, fn_basename) ) {
@@ -105,12 +112,13 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
     /* Parse Exec Filename.
      * Takes something like "app" into  "/spiffs/app.jelf" */
 	strcat(exec_fn, "/");
-	strncat(exec_fn, fn_basename, sizeof(exec_fn)-strlen(exec_fn)-1-4);
+    strcat(exec_fn, fn_basename);
     strcat(exec_fn, ".jelf");
 
     if( jolt_fs_exists(exec_fn) != 1 ){
         ESP_LOGE(TAG, "Executable doesn't exist\n");
-        return -2;
+        return_code = -2;
+        goto exit;
     }
 
     preloading_scr = jolt_gui_scr_preloading_create(fn_basename, gettext(JOLT_TEXT_PRELOAD_LAUNCHING));

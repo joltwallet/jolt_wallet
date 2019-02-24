@@ -809,7 +809,7 @@ esp_err_t jolt_bluetooth_start() {
         ble_in_queue = xQueueCreate(10, sizeof(char *));
     }
     if ( NULL == ble_in_task) {
-        xTaskCreate(&spp_cmd_task, "spp_cmd_task", 
+        xTaskCreate(&spp_cmd_task, "ble_spp_cmd_task", 
                 CONFIG_JOLT_TASK_STACK_SIZE_BLE_CONSOLE, NULL,
                 CONFIG_JOLT_TASK_PRIORITY_BLE_CONSOLE, &ble_in_task);
     }
