@@ -23,7 +23,7 @@ typedef struct {
     uint32_t       e_coin_path;
     char           e_bip32key[32];
 } Jelf_Ehdr;
-#define JELF_EHDR_SIZE 84
+#define JELF_EHDR_SIZE 85
 
 typedef struct {
     uint32_t         st_name:13;         /* Index, also Name */
