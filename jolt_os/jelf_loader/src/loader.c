@@ -896,6 +896,7 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
     // todo: make this more advanced as versioning evolves
     assert( header.e_version_major == 0 );
     assert( header.e_version_minor == 1 );
+    assert( header.e_version_patch == 0 );
 
     /* Debug Sanity Checks */
     MSG( "SectionHeaderTableEntries: %d", header.e_shnum );

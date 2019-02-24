@@ -130,13 +130,14 @@ def read_export_list():
         version_header = f.readline().rstrip()
         version_name, version_str = version_header.split(' ')
         assert(version_name == 'VERSION')
-        major, minor = version_str.split('.')
+        major, minor, patch = version_str.split('.')
         major = int(major)
         minor = int(minor)
+        patch = int(patch)
         export_list = [line.rstrip() for line in f]
-    return export_list, major, minor
+    return export_list, major, minor, patch
 
-def write_export_file(export_list, major, minor):
+def write_export_file(export_list, major, minor, patch):
     """
     Writes the export struct used in jolt_lib.c
     """
@@ -589,12 +590,12 @@ def main():
     ##################################
     # Read in the JoltOS Export List #
     ##################################
-    export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR = read_export_list()
+    export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR, _JELF_VERSION_PATCH = read_export_list()
 
     ###################################
     # Generate jolt_lib.c export list #
     ###################################
-    write_export_file(export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR)
+    write_export_file(export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR, _JELF_VERSION_PATCH)
 
     if args.export_only:
         return
@@ -699,6 +700,7 @@ def main():
     jelf_ehdr_d['e_public_key']     = pk
     jelf_ehdr_d['e_version_major']  = _JELF_VERSION_MAJOR
     jelf_ehdr_d['e_version_minor']  = _JELF_VERSION_MINOR
+    jelf_ehdr_d['e_version_patch']  = _JELF_VERSION_PATCH
     jelf_ehdr_d['e_entry_index']    = jelf_entrypoint_sym_idx
     jelf_ehdr_d['e_shnum']          = len(jelf_shdrs)
     jelf_ehdr_d['e_coin_purpose']   = purpose

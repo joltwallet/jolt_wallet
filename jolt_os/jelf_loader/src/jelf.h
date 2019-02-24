@@ -16,6 +16,7 @@ typedef struct {
     uint8_t        e_public_key[32];
     uint8_t        e_version_major;
     uint8_t        e_version_minor;
+    uint8_t        e_version_patch;
     uint16_t       e_entry_index;       /* Entry point function offset */
     uint16_t       e_shnum;             /* Section header table entry count */
     uint32_t       e_coin_purpose;
