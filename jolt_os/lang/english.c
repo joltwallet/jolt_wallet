@@ -54,6 +54,12 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Begin mnemonic restore?",
     "Enter Mnemonic Word",
 
+    /* Vault */
+    "PIN",
+    "Checking PIN",
+    "Incorrect PIN",
+    "Unlocking",
+
     /* Error */
     "Error",
     "Error Code",

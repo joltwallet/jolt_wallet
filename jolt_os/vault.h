@@ -11,6 +11,8 @@
 #include "jolttypes.h"
 #include "lvgl/lvgl.h"
 
+#define CONFIG_JOLT_VAULT_PASSPHRASE_MAX_LEN 127
+#define CONFIG_JOLT_VAULT_BIP32_KEY_MAX_LEN 31
 
 /* Structure to store anything that if modified could perform something
  * malicious
@@ -22,8 +24,8 @@ typedef struct vault_t {
     hd_node_t node; // has fields "key" and "chain_code"
     uint32_t purpose;
     uint32_t coin_type;
-    char bip32_key[32];
-    char passphrase[128];
+    char bip32_key[CONFIG_JOLT_VAULT_BIP32_KEY_MAX_LEN + 1];
+    char passphrase[CONFIG_JOLT_VAULT_PASSPHRASE_MAX_LEN + 1];
     bool valid; // If key is valid (hasn't been wiped)
 } vault_t;
 

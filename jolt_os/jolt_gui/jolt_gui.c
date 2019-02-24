@@ -120,7 +120,6 @@ void jolt_gui_obj_del(lv_obj_t *obj){
         switch( id ) {
             case JOLT_GUI_SCR_ID_LOADING:
                 /* Check and Delete the auto updater task */
-                ESP_LOGI(TAG, "meow");
                 jolt_gui_scr_loading_autoupdate_del( obj );
                 break;
             default:

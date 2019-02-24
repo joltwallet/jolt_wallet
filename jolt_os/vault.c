@@ -74,12 +74,29 @@ static SemaphoreHandle_t vault_watchdog_sem; // Used to kick the dog
 
 
 /* Static Function */
+static void ps_state_cleanup();
 static esp_err_t ps_state_exec();
 static void ps_state_exec_task( jolt_bg_job_t *job );
+
 static lv_res_t pin_fail_cb( lv_obj_t *btn );
 static lv_res_t pin_enter_cb(lv_obj_t *scr);
 static lv_res_t pin_back_cb( lv_obj_t *scr );
+
 static void vault_watchdog_task();
+
+static void ps_state_cleanup() {
+    /* Cleanup */
+    if( NULL != ps.scr ) {
+        jolt_gui_obj_del( ps.scr );
+        ps.scr = NULL;
+    }
+    sodium_memzero(ps.pin_hash, sizeof(uint256_t));
+    ps.failure_cb = NULL;
+    ps.success_cb = NULL;
+    ps.param      = NULL;
+    ps.state      = PIN_STATE_EMPTY;
+    vault_sem_give();
+}
 
 /* Queues a job to execute ps_state_exec_task */
 static esp_err_t ps_state_exec() {
@@ -162,11 +179,16 @@ static void ps_state_exec_task( jolt_bg_job_t *job ) {
             jolt_gui_scr_digit_entry_get_hash(ps.scr, ps.pin_hash);
 
             /* Delete the Pin Entry Screen */
+            jolt_gui_sem_take(); // Prevents flashing screen
             jolt_gui_obj_del( ps.scr );
             ps.scr = NULL;
 
             /* Create Loading Bar */
-            loading_scr = jolt_gui_scr_loading_create("Stretch");
+            loading_scr = jolt_gui_scr_loading_create(NULL);
+            jolt_gui_scr_loading_update(loading_scr,
+                    gettext(JOLT_TEXT_PIN),
+                    gettext(JOLT_TEXT_CHECKING_PIN), 0);
+            jolt_gui_sem_give();
             ESP_LOGI(TAG, "Creating stretch autoupdate lv_task");
             jolt_gui_scr_loading_autoupdate( loading_scr, &progress );
 
@@ -176,6 +198,7 @@ static void ps_state_exec_task( jolt_bg_job_t *job ) {
             ESP_LOGI(TAG, "Finished stretch");
 
             /* Delete Loading Screen */
+            jolt_gui_sem_take();
             jolt_gui_obj_del( loading_scr );
 
             /* storage_get_mnemonic inherently increments and stores the 
@@ -190,9 +213,15 @@ static void ps_state_exec_task( jolt_bg_job_t *job ) {
                     ESP_LOGE(TAG, "Incorrect PIN");
 
                     /* Create a screen telling the user */
-                    lv_obj_t *scr = jolt_gui_scr_text_create("PIN", "Wrong PIN");
+                    lv_obj_t *scr = jolt_gui_scr_text_create(
+                            gettext(JOLT_TEXT_PIN),
+                            gettext(JOLT_TEXT_INCORRECT_PIN));
                     jolt_gui_scr_set_back_action(scr, pin_fail_cb);
                     jolt_gui_scr_set_enter_action(scr, pin_fail_cb);
+
+                    jolt_gui_sem_give();
+                    ps.state = PIN_STATE_EMPTY;
+                    
                     break;
                 }
                 ESP_LOGI(TAG, "Correct PIN");
@@ -209,9 +238,12 @@ static void ps_state_exec_task( jolt_bg_job_t *job ) {
 
             /**** We now have mnemonic at this point ****/
 
-
             /* Create Loading Bar */
-            loading_scr = jolt_gui_scr_loading_create("Derive");
+            loading_scr = jolt_gui_scr_loading_create(NULL);
+            jolt_gui_scr_loading_update(loading_scr,
+                    gettext(JOLT_TEXT_PIN),
+                    gettext(JOLT_TEXT_UNLOCKING), 0);
+            jolt_gui_sem_give();
             jolt_gui_scr_loading_autoupdate( loading_scr, &progress );
 
             /* Do the lengthy master seed derivation */
@@ -243,6 +275,7 @@ static void ps_state_exec_task( jolt_bg_job_t *job ) {
                 ps.success_cb( ps.param );
             }
 
+            ps_state_cleanup();
             break;
         }
         case PIN_STATE_FAIL:
@@ -252,21 +285,13 @@ static void ps_state_exec_task( jolt_bg_job_t *job ) {
             else {
                 ESP_LOGE(TAG, "No Back Callback");
             }
-            /* Fall Through */
+            ps_state_cleanup();
+            break;
         case PIN_STATE_EMPTY:
-            /* Fall Through */
+            ps_state_cleanup();
+            break;
         default:
-            /* Cleanup */
-            if( NULL != ps.scr ) {
-                jolt_gui_obj_del( ps.scr );
-                ps.scr = NULL;
-            }
-            sodium_memzero(ps.pin_hash, sizeof(uint256_t));
-            ps.failure_cb = NULL;
-            ps.success_cb = NULL;
-            ps.param      = NULL;
-            ps.state      = PIN_STATE_EMPTY;
-            vault_sem_give();
+            ps_state_cleanup();
             break;
     }
 }
@@ -304,9 +329,18 @@ static lv_res_t pin_back_cb( lv_obj_t *scr ) {
     return LV_RES_OK;
 }
 
+#if ESP_LOG_LEVEL >= ESP_LOG_INFO
+static int8_t vault_sem_ctr = 0;
+#endif
+
 void vault_sem_take() {
     /* Takes Vault semaphore; restarts device if timesout during take. */
-    if( !xSemaphoreTake(vault_sem, pdMS_TO_TICKS( 
+#if ESP_LOG_LEVEL >= ESP_LOG_INFO
+    vault_sem_ctr--;
+#endif
+    ESP_LOGI(TAG, "%s %d", __func__, vault_sem_ctr);
+
+    if( !xSemaphoreTakeRecursive(vault_sem, pdMS_TO_TICKS( 
                     CONFIG_JOLT_VAULT_TIMEOUT_TIMEOUT_MS) ) ) {
         // Timed out trying to take the semaphore; reset the device
         // And let the bootloader wipe the RAM
@@ -316,6 +350,10 @@ void vault_sem_take() {
 }
 
 void vault_sem_give() {
+#if ESP_LOG_LEVEL >= ESP_LOG_INFO
+    vault_sem_ctr++;
+#endif
+    ESP_LOGI(TAG, "%s %d", __func__, vault_sem_ctr);
     xSemaphoreGive(vault_sem);
 }
 
@@ -411,7 +449,7 @@ esp_err_t vault_set(uint32_t purpose, uint32_t coin_type,
         const char *bip32_key, const char *passphrase,
         vault_cb_t failure_cb, vault_cb_t success_cb, void *param) {
 
-    ESP_LOGE(TAG, "%s", __func__);
+    ESP_LOGI(TAG, "%s", __func__);
 
     if( PIN_STATE_EMPTY != ps.state ) {
         ESP_LOGE(TAG, "PIN Entry in progress; cannot set vault.");
@@ -420,7 +458,7 @@ esp_err_t vault_set(uint32_t purpose, uint32_t coin_type,
 
     if( NULL == passphrase ) {
         /* Populate passphrase here */
-
+        passphrase = "";
     }
 
     vault_sem_take();
@@ -430,7 +468,9 @@ esp_err_t vault_set(uint32_t purpose, uint32_t coin_type,
     if( true == vault->valid
             && vault->purpose   == purpose
             && vault->coin_type == coin_type
+            && 0 == strcmp(vault->passphrase, passphrase)
             && 0 == strcmp(vault->bip32_key, bip32_key) ) {
+        ESP_LOGI(TAG, "%s: identical vault parameters; no PIN required.", __func__);
         vault_kick();
         vault_sem_give();
         success_cb( param );
