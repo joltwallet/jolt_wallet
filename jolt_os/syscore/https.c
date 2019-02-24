@@ -36,6 +36,9 @@ static void https_func( jolt_bg_job_t *bg_job ) {
             ESP_LOGE(TAG, "Failed to set http post field");
             goto exit;
         }
+        else {
+            ESP_LOGI(TAG, "Set POST:\n%s\n", job->post_data);
+        }
     }
 
     /* Poll the http client until complete or user abort */
@@ -58,7 +61,7 @@ static void https_func( jolt_bg_job_t *bg_job ) {
 
     status_code = esp_http_client_get_status_code(client);
     if( 200 != status_code ) {
-        ESP_LOGI(TAG, "Https client returned an unsuccessfully status_code");
+        ESP_LOGW(TAG, "Https client returned an unsuccessfully status_code %d", status_code);
         goto exit;
     }
 
@@ -69,6 +72,7 @@ static void https_func( jolt_bg_job_t *bg_job ) {
             status_code = -2;
             goto exit;
         }
+        ESP_LOGI(TAG, "Server Response:\n%s\n", response);
         int read_len = esp_http_client_read(client, response, content_length);
         response[read_len] = '\0';
     }

@@ -26,7 +26,6 @@
 #if !CONFIG_NO_BLOBS
 static const char TAG[] = "wifi_task";
 
-static esp_timer_handle_t disconnect_timer = NULL;
 static uint8_t disconnect_ctr = 0;
 
 static void disconnect_timer_cb( void *arg ) {
@@ -39,8 +38,8 @@ static void disconnect_timer_cb( void *arg ) {
     esp_wifi_connect();
 }
 
-esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
-{
+esp_err_t wifi_event_handler(void *ctx, system_event_t *event) {
+    static esp_timer_handle_t disconnect_timer = NULL;
     uint8_t primary;
     wifi_second_chan_t second;
     esp_err_t err;
