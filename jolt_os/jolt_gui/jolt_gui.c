@@ -8,6 +8,13 @@
 /**********************
  *      TYPEDEFS
  **********************/
+typedef struct jolt_group_t {
+    lv_group_t *main; // Parent group for user input
+    lv_group_t *back; // Group used to handle back button
+    lv_group_t *enter;
+} jolt_group_t;
+
+jolt_group_t group;
 
 /**********************
  *  STATIC PROTOTYPES
@@ -37,7 +44,7 @@
 lv_res_t jolt_gui_scr_del() {
     lv_res_t res = LV_RES_OK;
     JOLT_GUI_CTX{
-        lv_obj_t *scrn = BREAK_IF_NULL(lv_group_get_focused(jolt_gui_store.group.main));
+        lv_obj_t *scrn = BREAK_IF_NULL(lv_group_get_focused(group.main));
         lv_obj_t *parent = scrn;
         lv_obj_t *tmp = scrn;
         while( (tmp = lv_obj_get_parent(tmp)) ) {
@@ -140,13 +147,13 @@ void jolt_gui_group_create() {
     /* Create Groups for user input */
     bool success = false;
     JOLT_GUI_CTX{
-        jolt_gui_store.group.main = BREAK_IF_NULL(lv_group_create());
-        lv_group_set_refocus_policy(jolt_gui_store.group.main, LV_GROUP_REFOCUS_POLICY_PREV);
-        jolt_gui_store.group.back = BREAK_IF_NULL(lv_group_create());
-        lv_group_set_refocus_policy(jolt_gui_store.group.back, LV_GROUP_REFOCUS_POLICY_PREV);
-        jolt_gui_store.group.enter = BREAK_IF_NULL(lv_group_create());
-        lv_group_set_refocus_policy(jolt_gui_store.group.enter, LV_GROUP_REFOCUS_POLICY_PREV);
-        lv_group_set_style_mod_cb(jolt_gui_store.group.main, group_mod_cb);
+        group.main = BREAK_IF_NULL(lv_group_create());
+        lv_group_set_refocus_policy(group.main, LV_GROUP_REFOCUS_POLICY_PREV);
+        group.back = BREAK_IF_NULL(lv_group_create());
+        lv_group_set_refocus_policy(group.back, LV_GROUP_REFOCUS_POLICY_PREV);
+        group.enter = BREAK_IF_NULL(lv_group_create());
+        lv_group_set_refocus_policy(group.enter, LV_GROUP_REFOCUS_POLICY_PREV);
+        lv_group_set_style_mod_cb(group.main, group_mod_cb);
         success = true;
     }
     if( !success ){
@@ -157,10 +164,23 @@ void jolt_gui_group_create() {
 /* Adds object to main group */
 void jolt_gui_group_add( lv_obj_t *obj ){
     JOLT_GUI_CTX{
-        lv_group_add_obj(jolt_gui_store.group.main, obj);
+        lv_group_add_obj(group.main, obj);
         lv_group_focus_obj( obj );
     }
 }
+
+lv_group_t *jolt_gui_group_main_get() {
+    return group.main;
+}
+
+lv_group_t *jolt_gui_group_back_get() {
+    return group.back;
+}
+
+lv_group_t *jolt_gui_group_enter_get() {
+    return group.enter;
+}
+
 
 /**********
  * Action *
@@ -188,10 +208,10 @@ lv_obj_t *jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb,
         lv_group_add_obj(g, btn);
         lv_group_focus_obj(btn);
 
-        if( g == jolt_gui_store.group.enter ) {
+        if( g == group.enter ) {
             lv_obj_set_free_num(btn, JOLT_GUI_OBJ_ID_ENTER);
         }
-        else if ( g == jolt_gui_store.group.back) {
+        else if ( g == group.back) {
             lv_obj_set_free_num(btn, JOLT_GUI_OBJ_ID_BACK);
         }
     }
@@ -212,7 +232,7 @@ lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_action_t cb) {
             }
             default:{
                 /* Usually, just create a button in the back group as a child of the screen */
-                btn = jolt_gui_scr_set_action(parent, cb, jolt_gui_store.group.back);
+                btn = jolt_gui_scr_set_action(parent, cb, group.back);
                 break;
             }
         }
@@ -234,7 +254,7 @@ lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb) {
             }
             default:{
                 /* Usually, just create a button in the back group as a child of the screen */
-                btn = jolt_gui_scr_set_action(parent, cb, jolt_gui_store.group.enter);
+                btn = jolt_gui_scr_set_action(parent, cb, group.enter);
                 break;
             }
         }
@@ -260,12 +280,20 @@ void jolt_gui_scr_set_enter_param(lv_obj_t *parent, void *param) {
 
 /* Send LV_GROUP_KEY_ENTER to main group */
 lv_res_t jolt_gui_send_enter_main(lv_obj_t *dummy) {
-    return lv_group_send_data(jolt_gui_store.group.main, LV_GROUP_KEY_ENTER);
+    return lv_group_send_data(group.main, LV_GROUP_KEY_ENTER);
 }
 
-/* Send LV_GROUP_KEY_ELEFT to main group */
+/* Send LV_GROUP_KEY_LEFT to main group */
 lv_res_t jolt_gui_send_left_main(lv_obj_t *dummy) {
-    return lv_group_send_data(jolt_gui_store.group.main, LV_GROUP_KEY_LEFT);
+    return lv_group_send_data(group.main, LV_GROUP_KEY_LEFT);
+}
+
+lv_res_t jolt_gui_send_enter_back(lv_obj_t *dummy) {
+    return lv_group_send_data(group.back, LV_GROUP_KEY_ENTER);
+
+}
+lv_res_t jolt_gui_send_enter_enter(lv_obj_t *dummy) {
+    return lv_group_send_data(group.enter, LV_GROUP_KEY_ENTER);
 }
 
 /********

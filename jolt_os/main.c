@@ -21,7 +21,6 @@
 #include <driver/adc.h>
 #include "esp_adc_cal.h"
 
-#include "easy_input.h"
 
 #include "lv_conf.h"
 #include "lvgl/lvgl.h"
@@ -55,62 +54,10 @@ const jolt_version_t JOLT_VERSION = {
     .major = 0,
     .minor = 1,
     .patch = 0,
-    .release = JOLT_VERSION_DEV
+    .release = JOLT_VERSION_DEV,
 };
 
-static QueueHandle_t input_queue;
 static const char TAG[] = "main";
-
-static IRAM_ATTR bool easy_input_read(lv_indev_data_t *data) {
-    data->state = LV_INDEV_STATE_REL;
-
-    uint64_t input_buf;
-    if(xQueueReceive(input_queue, &input_buf, 0)) {
-        data->state = LV_INDEV_STATE_PR;
-        if(input_buf & (1ULL << EASY_INPUT_BACK)){
-            ESP_LOGD(TAG, "back");
-            lv_group_send_data(jolt_gui_store.group.back, LV_GROUP_KEY_ENTER);
-        }
-        else if(input_buf & (1ULL << EASY_INPUT_UP)){
-            ESP_LOGD(TAG, "up");
-            data->key = LV_GROUP_KEY_UP;
-        }
-        else if(input_buf & (1ULL << EASY_INPUT_DOWN)){
-            ESP_LOGD(TAG, "down");
-            data->key = LV_GROUP_KEY_DOWN;
-        }
-        else if(input_buf & (1ULL << EASY_INPUT_ENTER)){
-            ESP_LOGD(TAG, "enter");
-            lv_group_send_data(jolt_gui_store.group.enter, LV_GROUP_KEY_ENTER);
-        }
-        else {
-        }
-        if( xQueuePeek(input_queue, &input_buf, 0) ) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-static void indev_init() {
-    /* Setup Input Button Debouncing Code */
-    easy_input_queue_init(&input_queue);
-    easy_input_run( &input_queue );
-
-    jolt_gui_group_create();
-
-    lv_indev_t *indev;
-    lv_indev_drv_t indev_drv;
-    lv_indev_drv_init(&indev_drv);
-
-    indev_drv.type = LV_INDEV_TYPE_KEYPAD;
-    indev_drv.read = easy_input_read;
-
-    indev = lv_indev_drv_register(&indev_drv);
-    lv_indev_set_group(indev, jolt_gui_store.group.main);
-}
-
 
 void littlevgl_task() {
     ESP_LOGI(TAG, "Starting draw loop");
@@ -153,7 +100,7 @@ void app_main() {
     /* Initialize LVGL graphics system */
     lv_init();
     display_init();
-    indev_init();
+    jolt_gui_indev_init();
 
     /* These lines are for configuring the ADC for sensing battery voltage;
      * refactor these to be somewhere else later */
@@ -177,7 +124,7 @@ void app_main() {
     }
 
     // Allocate space for the vault and see if a copy exists in NVS
-    jolt_gui_store.first_boot = ( false == vault_setup() );
+    bool first_boot = ( false == vault_setup() );
 
     // ==== Initialize the file system ====
     jolt_fs_init();
@@ -190,14 +137,10 @@ void app_main() {
         jolt_lang_set( lang ); // Internally initializes the theme
     }
 
-    lv_obj_t *btn_back = lv_btn_create(lv_scr_act(), NULL);
-    lv_btn_set_action(btn_back, LV_BTN_ACTION_CLICK, jolt_gui_scr_del);
-    lv_group_add_obj(jolt_gui_store.group.back, btn_back);
-
     /* Create StatusBar */
     statusbar_create();
 
-    if( jolt_gui_store.first_boot ) {
+    if( first_boot ) {
         /* Create First Boot Screen */
         jolt_gui_first_boot_create();
     }

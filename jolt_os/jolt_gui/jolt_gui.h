@@ -18,6 +18,8 @@
 #include "jolt_gui_bignum.h"
 #include "jolt_gui_err.h"
 
+#include "jolt_gui_indev.h"
+
 #include "menus/home.h"
 
 #include "freertos/FreeRTOS.h"
@@ -41,16 +43,6 @@
 /**********************
  *   GLOBAL VARIABLES
  **********************/
-
-/* This whole struct should be moved into globals */
-struct {
-    bool first_boot;
-    struct {
-        lv_group_t *main; // Parent group for user input
-        lv_group_t *back; // Group used to handle back button
-        lv_group_t *enter;
-    } group;
-} jolt_gui_store;
 
 extern lv_theme_t *jolt_gui_theme;
 
@@ -123,6 +115,15 @@ void jolt_gui_group_create();
 /* Adds object to main group */
 void jolt_gui_group_add( lv_obj_t *obj );
 
+/* Get the main group handle */
+lv_group_t *jolt_gui_group_main_get();
+
+/* Get the back group handle */
+lv_group_t *jolt_gui_group_back_get();
+
+/* Get the enter group handle */
+lv_group_t *jolt_gui_group_enter_get();
+
 /**********
  * Action *
  **********/
@@ -136,6 +137,8 @@ void jolt_gui_scr_set_enter_param(lv_obj_t *parent, void *param);
 
 lv_res_t jolt_gui_send_enter_main(lv_obj_t *dummy);
 lv_res_t jolt_gui_send_left_main(lv_obj_t *dummy);
+lv_res_t jolt_gui_send_enter_back(lv_obj_t *dummy);
+lv_res_t jolt_gui_send_enter_enter(lv_obj_t *dummy);
 
 /*****************
  * System Events *
