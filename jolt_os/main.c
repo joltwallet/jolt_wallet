@@ -186,8 +186,9 @@ void app_main() {
     console_start(); // starts a task adding uart commands to the command queue. Also starts the task to process the command queue.
 
     /* Setup Power Management */
-#if CONFIG_PM_ENABLE
+#if false && CONFIG_PM_ENABLE
     {
+        vTaskDelay(pdMS_TO_TICKS(5000));
         esp_pm_config_esp32_t cfg = {
             .max_freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ,
             .min_freq_mhz = 40,
