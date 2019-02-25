@@ -229,6 +229,49 @@ void jelfLoaderProfilerPrint() {
 /******************************************************
  * More specific readers to handle proper bitshifting *
  ******************************************************/
+static int loader_ehdr(jelfLoaderContext_t *ctx, Jelf_Ehdr *h) {
+    uint8_t buffer[JELF_EHDR_SIZE];
+    uint8_t *buf = buffer;
+    LOADER_GETDATA(ctx, buf, JELF_EHDR_SIZE);
+
+    memcpy(h->e_ident,          buf, JELF_EI_NIDENT);
+    buf += JELF_EI_NIDENT;
+
+    memcpy(h->e_public_key,     buf, JELF_PUBLIC_KEY_LEN);
+    buf += JELF_PUBLIC_KEY_LEN;
+
+    memcpy(&(h->e_version_major), buf, sizeof(uint8_t));
+    buf += sizeof(uint8_t);
+
+    memcpy(&h->e_version_minor, buf, sizeof(uint8_t));
+    buf += sizeof(uint8_t);
+
+    memcpy(&h->e_version_patch, buf, sizeof(uint8_t));
+    buf += sizeof(uint8_t);
+
+    MSG("Version %d.%d.%d", h->e_version_major, h->e_version_minor, h->e_version_patch);
+
+    memcpy(&h->e_entry_index,   buf, sizeof(uint16_t));
+    buf += sizeof(uint16_t);
+
+    memcpy(&h->e_shnum,         buf, sizeof(uint16_t));
+    h->e_shnum = *(uint16_t *)buf;
+    buf += sizeof(uint16_t);
+
+    memcpy(&h->e_coin_purpose,  buf, sizeof(uint32_t));
+    buf += sizeof(uint32_t);
+
+    memcpy(&h->e_coin_path,     buf, sizeof(uint32_t));
+    buf += sizeof(uint32_t);
+
+    memcpy(h->e_bip32key,       buf, JELF_BIP32KEY_LEN);
+    buf += JELF_BIP32KEY_LEN;
+
+    return 0;
+err:
+    return -1;
+}
+
 static int loader_shdr(jelfLoaderContext_t *ctx, uint16_t n, Jelf_Shdr *h) {
     uint8_t *buf = (uint8_t*)ctx->shdr_cache + n * JELF_SHDR_SIZE;
     if( n > ctx->e_shnum ){
@@ -432,15 +475,21 @@ static bool app_hash_init(jelfLoaderContext_t *ctx,
     /* Hash the app name */
     app_hash_update(ctx, (uint8_t*)name, strlen(name));
 
-    /* Copy over the app signature into the context */
-    LOADER_GETDATA_RAW(ctx, ctx->app_signature, 64);
+    /* Copy over the app signature into the context.
+     * The Signature is always the first raw 64 bytes.
+     * No compression is performed on the signature. */
+    LOADER_GETDATA_RAW(ctx, ctx->app_signature, JELF_SIGNATURE_LEN);
+#if ESP_LOG_LEVEL >= ESP_LOG_INFO
     {
         char sig_hex[129] = { 0 };
         sodium_bin2hex(sig_hex, sizeof(sig_hex),
-                    ctx->app_signature, 64);
+                    ctx->app_signature, JELF_SIGNATURE_LEN);
         INFO("App Signature: %s", sig_hex);
     }
-    LOADER_GETDATA(ctx, header, sizeof(Jelf_Ehdr));
+#endif
+
+    loader_ehdr(ctx, header);
+
     #if CONFIG_JOLT_APP_SIG_CHECK_EN
     {
         /* First check to see if the public key is an accepted app key.
@@ -900,8 +949,8 @@ jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name,
 
     /* Debug Sanity Checks */
     MSG( "SectionHeaderTableEntries: %d", header.e_shnum );
-    MSG( "Derivation Purpose: %08X", header.e_coin_purpose );
-    MSG( "Derivation Path: %08X", header.e_coin_path );
+    MSG( "Derivation Purpose: 0x%08X", header.e_coin_purpose );
+    MSG( "Derivation Path: 0x%08X", header.e_coin_path );
     MSG( "bip32key: %s", header.e_bip32key);
     
     {

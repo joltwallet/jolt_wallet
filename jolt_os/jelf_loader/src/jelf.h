@@ -10,10 +10,13 @@ typedef size_t Jelf_Addr;
 
 /* Unpadded structure sizes are macro'd for indexing into the JELF binary */
 
-#define EI_NIDENT 6
+#define JELF_EI_NIDENT 6
+#define JELF_PUBLIC_KEY_LEN 32
+#define JELF_BIP32KEY_LEN 32
+#define JELF_SIGNATURE_LEN 64
 typedef struct {
-    unsigned char  e_ident[EI_NIDENT];  /* Magic number and other info */
-    uint8_t        e_public_key[32];
+    unsigned char  e_ident[JELF_EI_NIDENT];  /* Magic number and other info */
+    uint8_t        e_public_key[JELF_PUBLIC_KEY_LEN];
     uint8_t        e_version_major;
     uint8_t        e_version_minor;
     uint8_t        e_version_patch;
@@ -21,14 +24,14 @@ typedef struct {
     uint16_t       e_shnum;             /* Section header table entry count */
     uint32_t       e_coin_purpose;
     uint32_t       e_coin_path;
-    char           e_bip32key[32];
+    char           e_bip32key[JELF_BIP32KEY_LEN];
 } Jelf_Ehdr;
 #define JELF_EHDR_SIZE 85
 
 typedef struct {
     uint32_t         st_name:13;         /* Index, also Name */
     uint32_t         st_shndx:12;        /* Section index */
-    uint32_t         st_value:7;        /* Unused most the time, but cant think of a good way of removing */
+    uint32_t         st_value:7;         /* Index into the auxilary table; no index if 0 */
 } Jelf_Sym;
 #define JELF_SYM_SIZE 4
 

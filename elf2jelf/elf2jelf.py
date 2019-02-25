@@ -721,8 +721,12 @@ def main():
     #############################
     # Write JELF binary to file #
     #############################
+    # write the uncompressed unsigned jelf file for debugging purposes
+    with open(output_fn + '.uncompressed', 'wb') as f:
+        f.write(jelf_contents)
+
     # write the compressed unsigned jelf file
-    compressed_jelf = compress_data(jelf_contents);
+    compressed_jelf = compress_data(jelf_contents)
     with open(output_fn, 'wb') as f:
         f.write(bytes(64) + compressed_jelf)
 
