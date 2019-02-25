@@ -35,8 +35,6 @@
 #include "syscore/console_helpers.h"
 #include "syscore/https.h"
 
-#include "esp_http_client.h" // todo: replace with less open functions
-
 #endif // ESP_PLATFORM
 
 enum _jolt_release_type_t {

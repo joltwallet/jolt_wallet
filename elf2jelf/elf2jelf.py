@@ -151,8 +151,18 @@ def write_export_file(export_list, major, minor, patch):
     jolt_lib = template % (export_string, len(export_list))
 
     # Write it to where the hardware firmware expects it
-    with open(os.path.join(this_path, '..', 'jolt_os', 'jolt_lib.c'), 'w') as f:
-        f.write(jolt_lib)
+    write_file = False # only write file if it changes contents
+    jolt_lib_path = os.path.join(this_path, '..', 'jolt_os', 'jolt_lib.c')
+    if os.path.isfile(jolt_lib_path):
+        with open(jolt_lib_path, 'r') as f:
+            data = f.read()
+        if data != jolt_lib:
+            write_file = True
+    else:
+        write_file = True
+    if write_file:
+        with open(jolt_lib_path, 'w') as f:
+            f.write(jolt_lib)
 
 def get_ehdr(elf_contents):
     assert( Elf32_Ehdr.size_bytes() == 52 )
