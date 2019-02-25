@@ -41,7 +41,9 @@ def main(args):
     ser.write(b"upload\n")
     consume(ser)
 
-    print(ymodem.send([filename,]))
+    ymodem.send([filename,])
+
+    print("Upload Complete")
 
 if __name__ == '__main__':
     main(sys.argv)

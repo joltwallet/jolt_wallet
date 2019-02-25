@@ -152,7 +152,6 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
     if(NULL == packet_data){
         goto exit;
     }
-
     
     for (session_done = 0, errors = 0; ;) {
         for (packets_received = 0, file_done = 0; ;) {
