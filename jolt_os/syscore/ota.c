@@ -78,7 +78,7 @@ esp_err_t jolt_ota_ymodem(int8_t *progress) {
      * Receive and Write data to partition *
      ***************************************/
     size_t binary_file_length;
-    binary_file_length = Ymodem_Receive_Write((void *)jolt_ota_handle,
+    binary_file_length = ymodem_receive_write((void *)jolt_ota_handle,
             update_partition->size, NULL, &ota_ymodem_write_wrapper, progress);
     if( binary_file_length <= 0 ) {
         ESP_LOGE(TAG, "Error during firmware transfer.");

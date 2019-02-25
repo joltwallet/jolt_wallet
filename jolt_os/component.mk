@@ -14,7 +14,8 @@ COMPONENT_SRCDIRS := . \
     jolt_gui/menus/settings \
 	lang \
     syscore \
-    syscore/cmd
+    syscore/cmd \
+	syscore/ymodem
 
 COMPONENT_ADD_INCLUDEDIRS := . \
     hal/storage/aes132_library \
