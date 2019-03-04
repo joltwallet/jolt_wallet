@@ -102,9 +102,9 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_scr_digit_entry_get_double ),
     EXPORT_SYMBOL( jolt_gui_scr_digit_entry_get_hash ),
     EXPORT_SYMBOL( jolt_gui_scr_digit_entry_get_int ),
-    EXPORT_SYMBOL( jolt_gui_scr_loading_create ),
-    EXPORT_SYMBOL( jolt_gui_scr_loading_update ),
-    EXPORT_SYMBOL( jolt_gui_scr_loading_autoupdate ),
+    EXPORT_SYMBOL( jolt_gui_scr_loadingbar_create ),
+    EXPORT_SYMBOL( jolt_gui_scr_loadingbar_update ),
+    EXPORT_SYMBOL( jolt_gui_scr_loadingbar_autoupdate ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_add ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_add_sw ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_create ),
@@ -315,7 +315,6 @@ static const void *exports[] = {
     EXPORT_SYMBOL( subconsole_cmd_run ),
     EXPORT_SYMBOL( vault_get_node ),
     EXPORT_SYMBOL( vault_get_valid ),
-    EXPORT_SYMBOL( vault_is_valid ),
     EXPORT_SYMBOL( vault_refresh ),
     EXPORT_SYMBOL( vault_sem_give ),
     EXPORT_SYMBOL( vault_sem_take ),
@@ -325,7 +324,7 @@ static const void *exports[] = {
 #else
 
 /* Dummy place holder */
-static const void *exports[297] = { 0 };
+static const void *exports[296] = { 0 };
 
 #endif
 

@@ -12,7 +12,6 @@
 #include "esp_log.h"
 
 #include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
 #include "freertos/task.h"
 #include "esp_freertos_hooks.h"
 #include "esp_event_loop.h"
@@ -48,7 +47,7 @@
 #include "esp_heap_trace.h"
 #define HEAP_TRACING_NUM_RECORDS 100
 static heap_trace_record_t trace_records[HEAP_TRACING_NUM_RECORDS];
-#endif
+#endif /* CONFIG_HEAP_TRACING */
 
 const jolt_version_t JOLT_VERSION = {
     .major = 0,
@@ -57,7 +56,7 @@ const jolt_version_t JOLT_VERSION = {
     .release = JOLT_VERSION_DEV,
 };
 
-static const char TAG[] = "main";
+static const char TAG[] = __FILE__;
 
 void littlevgl_task() {
     ESP_LOGI(TAG, "Starting draw loop");
@@ -71,8 +70,7 @@ void littlevgl_task() {
     abort();
 }
 
-#ifndef UNIT_TESTING
-// So our app_main() doesn't override the unit test app_main()
+#ifndef UNIT_TESTING /* Don't override the unit test app_main() */
 void app_main() {
     /* Setup Heap Logging */
     #if CONFIG_HEAP_TRACING
@@ -81,6 +79,7 @@ void app_main() {
                     HEAP_TRACING_NUM_RECORDS) );
     }
     #endif
+
     /* Check currently running partition */
     {
         const esp_partition_t *partition = esp_ota_get_running_partition();
@@ -90,36 +89,54 @@ void app_main() {
                 partition->encrypted ? "" : "not ");
     }
 
-    /* Setup and Install I2C Driver and supporting objects */
-    esp_err_t err;
-    err = i2c_driver_setup();
-    if( ESP_OK != err) {
-        ESP_LOGE(TAG, "Failed to install i2c driver");
+    /* Setup and Install I2C Driver */
+    {
+        if( ESP_OK != i2c_driver_setup() ) {
+            ESP_LOGE(TAG, "Failed to install i2c driver");
+            abort();
+        }
     }
 
     /* Initialize LVGL graphics system */
-    lv_init();
-    display_init();
-    jolt_gui_indev_init();
+    {
+        lv_init();
+        display_init();
+        jolt_gui_indev_init();
+    }
 
-    /* These lines are for configuring the ADC for sensing battery voltage;
-     * refactor these to be somewhere else later */
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten(JOLT_ADC1_VBATT, ADC_ATTEN_DB_11);
+    /* Configure VBATT reading ADC */
+    {
+        adc1_config_width( ADC_WIDTH_BIT_12 );
+        adc1_config_channel_atten( JOLT_ADC1_VBATT, ADC_ATTEN_DB_11 );
+    }
 
     /* Run Key/Value Storage Initialization */
-    storage_startup();
+    {
+        storage_startup();
+    }
 
-    // ==== Initialize the file system ====
-    jolt_fs_init();
+    /* Initialize the file system */
+    {
+        jolt_fs_init();
+    }
 
-    /* Create GUI */
+    /* Create Hardware Monitors */
+    {
+        ESP_LOGI(TAG, "Starting Hardware Monitors");
+        xTaskCreate(jolt_hw_monitor_task,
+                "HW_Monitor", CONFIG_JOLT_TASK_STACK_SIZE_HW_MONITORS,
+                NULL, CONFIG_JOLT_TASK_PRIORITY_HW_MONITORS, NULL);
+    }
+
+    /* Set GUI Language */
     {
         ESP_LOGI(TAG, "Creating GUI");
         jolt_lang_t lang;
-        storage_get_u8(&lang, "user", "lang", CONFIG_JOLT_LANG_DEFAULT );
+        storage_get_u8( &lang, "user", "lang", CONFIG_JOLT_LANG_DEFAULT );
         jolt_lang_set( lang ); // Internally initializes the theme
     }
+
+    /* Create GUI Drawing Loop */
     {
         BaseType_t ret;
         ESP_LOGI(TAG, "Creating LVGL Draw Task");
@@ -138,15 +155,18 @@ void app_main() {
         }
     }
 
-    /* Create StatusBar */
-    statusbar_create();
-
-    /* Initialize Wireless */
-    ESP_ERROR_CHECK(esp_event_loop_init(wifi_event_handler, NULL));
-    esp_log_level_set("wifi", ESP_LOG_NONE);
-    set_jolt_cast();
-    /* todo; double check the quality of RNG sources with wifi off */
+    /* Create GUI StatusBar */
     {
+        statusbar_create();
+    }
+
+    /* Initialize WiFi */
+    /*     todo; double check the quality of RNG sources with wifi off */
+    {
+        ESP_ERROR_CHECK(esp_event_loop_init(wifi_event_handler, NULL));
+        esp_log_level_set("wifi", ESP_LOG_NONE);
+        ESP_ERROR_CHECK( jolt_network_client_init_from_nvs() );
+
         uint8_t wifi_en;
         storage_get_u8(&wifi_en, "user", "wifi_en", 0 );
         if( wifi_en ) {
@@ -154,26 +174,25 @@ void app_main() {
         }
     }
 
+    /* Check and run first-boot routine if necessary */
     {
-        bool first_boot = ( false == vault_setup() );
-        if( first_boot ) {
-            /* Create First Boot Screen */
-            jolt_gui_first_boot_create();
-        }
-        else{
+        if( vault_setup() ) {
             /* Create Home Menu */
             jolt_gui_menu_home_create();
         }
+        else {
+            /* Create First Boot Screen */
+            jolt_gui_first_boot_create();
+        }
     }
 
-    ESP_LOGI(TAG, "Starting Hardware Monitors");
-    xTaskCreate(jolt_hw_monitor_task,
-            "HW_Monitor", CONFIG_JOLT_TASK_STACK_SIZE_HW_MONITORS,
-            NULL, CONFIG_JOLT_TASK_PRIORITY_HW_MONITORS, NULL);
 
-    jolt_led_setup();
+    /* Capacitive Touch LED Setup */
+    {
+        jolt_led_setup();
+    }
 
-    // Initiate Console
+    /* Initialize Bluetooth */
     {
         uint8_t bluetooth_en;
         storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 0 );
@@ -182,11 +201,14 @@ void app_main() {
         }
     }
 
-    console_init();
-    console_start(); // starts a task adding uart commands to the command queue. Also starts the task to process the command queue.
+    /* Initialize Console */
+    {
+        console_init();
+        console_start();
+    }
 
     /* Setup Power Management */
-#if false && CONFIG_PM_ENABLE
+#if CONFIG_PM_ENABLE
     {
         vTaskDelay(pdMS_TO_TICKS(5000));
         esp_pm_config_esp32_t cfg = {
@@ -194,11 +216,11 @@ void app_main() {
             .min_freq_mhz = 40,
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
             .light_sleep_enable = true
-#endif
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
         };
-        ESP_ERROR_CHECK(esp_pm_configure(&cfg));
+        ESP_ERROR_CHECK( esp_pm_configure(&cfg) );
     }
-#endif
+#endif /* CONFIG_PM_ENABLE */
 
 #if 0
     /* radio muzzling debugging */
@@ -209,4 +231,5 @@ void app_main() {
 #endif
 
 }
-#endif
+
+#endif /* UNIT_TESTING */

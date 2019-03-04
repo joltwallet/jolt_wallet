@@ -1,3 +1,9 @@
+/**
+ * @file jelfloader.h
+ * @brief Jolt ELF application loading functions.
+ * @author Brian Pugh
+ */
+
 #ifndef JELFLOADER_H__
 #define JELFLOADER_H__
 
@@ -25,94 +31,210 @@
 #endif
 
 
+/**
+ * @brief Functions exported from JoltOS, available to applications.
+ */
 typedef struct {
-    const void **exported;            /*!< Pointer to exported symbols array */
-    unsigned int exported_size; /*!< Elements on exported symbol array */
+    const void **exported;      /**< Exported symbols array. */
+    unsigned int exported_size; /**< Number of exported symbols. */
 } jelfLoaderEnv_t;
 
 
-/* Singly Linked List Used to cache sections needed at runtime */
+/**
+ * @brief Singly Linked List Used to cache ELF sections needed at runtime.
+ */
 typedef struct jelfLoaderSection_t {
-    void *data;
-    uint16_t secIdx;
-    size_t size;
-    off_t relSecIdx;                  
-    struct jelfLoaderSection_t* next; // Next Header in Singly Linked List
+    void *data;                       /**< Contents of the ALLOC section*/
+    size_t size;                      /**< Length of data in bytes */
+    uint16_t secIdx;                  /**< Section's Index */
+    uint16_t relSecIdx;               /**< Accompanying RELA section index */ 
+    struct jelfLoaderSection_t* next; /**< Next section in this SLL */
 } jelfLoaderSection_t;
 
+/**
+ * @brief Inflator (Decompressor) Object
+ *
+ * Holds the state to stream data out of a compressed file.
+ */
 typedef struct inf_stream_t {
-    tinfl_decompressor inf;
+    tinfl_decompressor inf;           /**< miniz inflator object */
 
-    uint8_t *in_buf;                  /* inflator input buffer to hold compressed bytes*/
-    size_t in_buf_len;                /* Size of input buffer */
+    uint8_t *in_buf;                  /**< inflator input buffer to hold compressed bytes*/
+    size_t in_buf_len;                /**< size of input buffer */
 
-    const unsigned char *in_next;     // pointer to next compressed byte to read
-    size_t in_avail;                  // number of compressed bytes available at next_in
+    const unsigned char *in_next;     /**< pointer to next compressed byte to read */
+    size_t in_avail;                  /**< number of compressed bytes available at next_in */
 
-    uint8_t *out_buf;                 /* miniz output buffer to hold uncompressed bytes*/
-    size_t out_buf_len;                /* Size of output buffer. MUST BE A POWER OF 2 */
-    uint8_t *out_next;                /* For internal tinfl state */
+    uint8_t *out_buf;                 /**< miniz output buffer to hold uncompressed bytes */
+    size_t out_buf_len;               /**< Size of output buffer. MUST BE A POWER OF 2 */
+    uint8_t *out_next;                /**< For internal tinfl state */
 
-    uint8_t *out_read;                /* Pointer to available uncompressed data to read from*/ 
-    size_t out_avail;
+    uint8_t *out_read;                /**< Pointer to available uncompressed data to read from*/ 
+    size_t out_avail;                 /**< Number of uncompressed bytes to read from */
 } inf_stream_t;
 
+/**
+ * @brief Current context state/status
+ *
+ * Primarily used for error checking.
+ */
+enum {
+    JELF_CTX_ERROR = -1,        /**< Context is in an irrepairable state */
+    JELF_CTX_UNINITIALIZED = 0, /**< Dummy State */
+    JELF_CTX_INITIALIZED,       /**< Context has been allocated */
+    JELF_CTX_LOADED,            /**< All sections have been loaded */
+    JELF_CTX_READY,             /**< Application is ready to launch */
+};
+typedef int8_t jelfLoaderContext_state_t; 
+
+/**
+ * @brief Application Loader Context
+ *
+ * Holds the entire state for loading, linking, and executing an application.
+ */
 typedef struct jelfLoaderContext_t {
-    LOADER_FD_T fd;
-    void* exec;
-    const jelfLoaderEnv_t *env;
+    LOADER_FD_T fd;               /**< Application's File Descriptor */
+    void* exec;                   /**< Application Entrypoint */
+    const jelfLoaderEnv_t *env;   /**< List of JoltOS exported functions */
+    /* state - moved below for packing reasons */
 
-    /* Section Header Stuff */
-    uint8_t *shdr_cache;
-    uint16_t entry_index;
-    uint16_t e_shnum;
-    off_t e_shoff;
+    /* SectionHeaderTable */
+    uint8_t *sht_cache;           /**< Cached copy of application's SectionHeaderTable */
+    uint16_t entry_index;         /**< Entrypoint index into the SymbolTable */
+    uint16_t e_shnum;             /**< Number of entries into the SectionHeaderTable */
 
-    jelfLoaderSection_t *section; // First element of singly linked list sections.
+    jelfLoaderSection_t *section; /**< First element cached alloc sections */
 
-    /* symtab stuff */
-    size_t symtab_count;
-    uint8_t *symtab_cache;
-    uint32_t *symtab_aux;
-    uint8_t symtab_aux_len;
-    void *symtab_symbols;
-    size_t symtab_cache_size;
+    /* SymbolTable */
+    uint8_t *symtab_cache;        /**< Cached copy of the application's SymTab Section */
+    size_t symtab_count;          /**< Number of Symbols in the SymTab */
+    uint32_t *symtab_aux;         /**< Pointer to beginning of AuxSymTab */
+    uint8_t symtab_aux_len;       /**< Number of st_value entries in the AuxSymTab */
+    void *symtab_symbols;         /**< Pointer to beginning of SymTab*/
+    size_t symtab_cache_size;     /**< */
 
     /* Coin Derivation Data */
-    uint32_t coin_purpose;
-    uint32_t coin_path;
-    char bip32_key[33];
+    uint32_t coin_purpose;        /**< BIP32 Purpose; typically 44' */ 
+    uint32_t coin_path;           /**< BIP32 Coin Type */
+    char bip32_key[33];           /**< BIP32 Seed String; e.g. "bitcoin_seed" */
+    jelfLoaderContext_state_t state;                /**< Current State of the launching procedure */
 
     /* Inflator */
-    inf_stream_t inf_stream;
+    inf_stream_t inf_stream;      /**< Inflator/Decompressor object */
 
-    /* Data Structs For Checking App Signature */
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
-    crypto_hash_sha512_state *hs;
-    uint8_t hash[BIN_512];
-    uint8_t app_public_key[BIN_256];
-    uint8_t app_signature[BIN_512];
+    /* Data Structs For Checking App Signature.
+     * The signature procedure is as follows:
+     *     1. Hash the application name.
+     *     2. Hash application data as we read from disk.
+     *     3. Upon loading completion; verify the signature from the loading hash.
+     * We hash as we load to prevent malicious data being swapped after a signature check.
+     */
+    crypto_hash_sha512_state *hs;     /**< Hash State */
+    uint8_t hash[BIN_512];            /**< Final Hash */
+    uint8_t app_public_key[BIN_256];  /**< Application's Public Key */
+    uint8_t app_signature[BIN_512];   /**< Application's Signature */
 #endif
 } jelfLoaderContext_t;
 
-
+/**
+ * @brief Runs the EntryPoint of the program loaded in the give context.
+ * @param[in,out] ctx Context the application was loaded into
+ * @param[in] argc Argument Count
+ * @param[in] argv Variable Arguments
+ * @return exit code returned by EntryPoint
+ */
 int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv);
-int jelfLoaderRunAppMain(jelfLoaderContext_t *ctx);
-int jelfLoaderRunConsole(jelfLoaderContext_t *ctx, int argc, char **argv);
 
+/**
+ * @brief Run the application without arguments
+ *
+ * Run the application without arguments. Typically this is to invoke the GUI.
+ * @param[in,out] ctx Context the application was loaded into
+ * @return Application loader context
+ */
+inline int jelfLoaderRunAppMain(jelfLoaderContext_t *ctx) {
+    return jelfLoaderRun(ctx, 0, NULL);
+}
+
+/**
+ * @brief Run the application's console entrypoint.
+ * @param[in,out] ctx Context the application was loaded into
+ * @param[in] argc Argument Count
+ * @param[in] argv Variable Arguments
+ * @return exit code returned by command
+ */
+inline int jelfLoaderRunConsole(jelfLoaderContext_t *ctx, int argc, char **argv) {
+    /* Just more explicit way of running app */
+    return jelfLoaderRun(ctx, argc, argv);
+}
+
+/**
+ * @brief Allocates the loader object, hasher, and reads in JELF Header info.
+ *
+ * First Operation in the launching procedure. Performs the following:
+ *     * Allocates space for the returned Context (constant size)
+ *     * Populates Context with:
+ *         * Pointer/FD to the beginning of the ELF file
+ *         * Pointer to env, which is a table to exported host function_names and their pointer in memory. 
+ *         * Number of sections in the ELF file.
+ *         * offset to SectionHeaderTable, which maps an index to a offset in ELF where the section header begins.
+ *         * offset to StringTable, which is a list of null terminated strings.
+
+ * @param[in,out] fd
+ * @param[in,out] name 
+ * @param[in,out] env Exported function environment
+ * @return Initialized launcher context. Returns NULL on error.
+ */
 jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name, const jelfLoaderEnv_t *env);
+
+/**
+ * @brief Loads ALLOC sections into context.
+ * @param[in,out] ctx Context the application was loaded into.
+ * @return Application loader context. Returns NULL on error.
+ */
 jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx);
+/**
+ * @brief Loads RELA sections and performs relocation.
+ * @param[in,out] ctx Context the application was loaded into
+ * @return Application loader context. Returns NULL on error.
+ */
 jelfLoaderContext_t *jelfLoaderRelocate(jelfLoaderContext_t *ctx);
 
+/**
+ * @brief Deallocates the loader context.
+ * @param[in,out] ctx Context the application was loaded into
+ */
 void jelfLoaderFree( jelfLoaderContext_t *ctx );
 
-bool jelfLoaderSigCheck(jelfLoaderContext_t *ctx); // can only be called after relocating
-uint8_t *jelfLoaderGetHash(jelfLoaderContext_t *ctx); // return hash (in bytes, 64 long)
+/**
+ * @brief Verifies the application signature.
+ *
+ * Can only be called after relocating.
+ * @param[in] ctx Context the application was loaded into
+ * @return True on valid signature, false otherwise.
+ */
+bool jelfLoaderSigCheck(const jelfLoaderContext_t *ctx);
 
-/* Sets all profiler variables to 0 */
+/**
+ * @brief Gets the pointer to the 64-byte hash of context.
+ *
+ * Returns the hash pointer of the context struct. Does not trigger the
+ * computation of a hash.
+ * @param[in] ctx Context the application was loaded into
+ * @return Pointer to context's hash.
+ */
+uint8_t *jelfLoaderGetHash(const jelfLoaderContext_t *ctx); // return hash (in bytes, 64 long)
+
+/**
+ * @brief Sets all profiler timers and counters to 0
+ */
+
 void jelfLoaderProfilerReset(void);
 
-/* Prints the profiler results to uart console */
+/**
+ * @brief Prints the profiler results to uart console
+ */
 void jelfLoaderProfilerPrint(void);
 
 #endif

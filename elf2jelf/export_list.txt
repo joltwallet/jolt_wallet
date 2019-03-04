@@ -79,9 +79,9 @@ jolt_gui_scr_digit_entry_get_arr
 jolt_gui_scr_digit_entry_get_double
 jolt_gui_scr_digit_entry_get_hash
 jolt_gui_scr_digit_entry_get_int
-jolt_gui_scr_loading_create
-jolt_gui_scr_loading_update
-jolt_gui_scr_loading_autoupdate
+jolt_gui_scr_loadingbar_create
+jolt_gui_scr_loadingbar_update
+jolt_gui_scr_loadingbar_autoupdate
 jolt_gui_scr_menu_add
 jolt_gui_scr_menu_add_sw
 jolt_gui_scr_menu_create
@@ -292,7 +292,6 @@ subconsole_cmd_register
 subconsole_cmd_run
 vault_get_node
 vault_get_valid
-vault_is_valid
 vault_refresh
 vault_sem_give
 vault_sem_take

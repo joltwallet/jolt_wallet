@@ -4,8 +4,7 @@
 
 /* Entry Screen Structures:
  * * SCREEN
- *   +--CONT_TITLE
- *   |   +--LABEL_0 (title)
+ *   +--LABEL_0 (title)
  *   +--CONT_BODY (extended with metadata)
  *       +--ROLLER[0 ... n]
  *       +--LABEL_0 (decimal point)
@@ -155,8 +154,6 @@ static lv_obj_t *create_dp(lv_obj_t *parent){
     return label;
 }
 
-/* Creates a screen with title, n rollers, decimal place pos from the 
- * right (-1 to disable), and enter_cb. */
 lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
         int8_t n, int8_t pos){
     bool visible_decimal = false;
@@ -226,8 +223,6 @@ lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
     return parent;
 }
 
-/* Copies over the roller entries.
- * Returns number of rollers. Returns -1 on error. */
 int8_t jolt_gui_scr_digit_entry_get_arr(lv_obj_t *parent, uint8_t *arr, uint8_t arr_len) {
     int8_t n_entries = -1;
     digit_entry_cont_ext_t *ext = NULL;
@@ -235,10 +230,12 @@ int8_t jolt_gui_scr_digit_entry_get_arr(lv_obj_t *parent, uint8_t *arr, uint8_t 
         lv_obj_t *cont_body = NULL;
         cont_body = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_CONT_BODY);
         ext = lv_obj_get_ext_attr(cont_body);
-        n_entries = ext->num_rollers;
         if( arr_len < ext->num_rollers ) {
             /* insufficient output buffer */
             break;
+        }
+        else{
+            n_entries = ext->num_rollers;
         }
         for(uint8_t i=0; i < ext->num_rollers; i++) {
             arr[i] = 9 - (lv_roller_get_selected(ext->rollers[i]) % 10);
@@ -256,9 +253,8 @@ int8_t jolt_gui_scr_digit_entry_get_arr(lv_obj_t *parent, uint8_t *arr, uint8_t 
     return n_entries;
 }
 
-/* Computes a 256-bit blake2b hash into *hash 
- * Returns 0 on success; 1 on failure*/
 uint8_t jolt_gui_scr_digit_entry_get_hash(lv_obj_t *parent, uint8_t *hash) {
+    /* todo: error handling */
     uint8_t res = 1;
     JOLT_GUI_CTX{
         uint32_t val = jolt_gui_scr_digit_entry_get_int(parent);
@@ -340,3 +336,15 @@ uint32_t jolt_gui_scr_digit_entry_get_int(lv_obj_t *parent) {
     return res;
 }
 
+void jolt_gui_scr_digit_entry_set_pos(lv_obj_t *parent, int8_t pos) {
+    JOLT_GUI_CTX{
+        lv_obj_t *cont_body = NULL;
+        cont_body = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_CONT_BODY);
+        digit_entry_cont_ext_t *ext = lv_obj_get_ext_attr(cont_body);
+        if( pos < 0 || pos-1 > ext->num_rollers ){
+            break;
+        }
+        ext->sel = ext->num_rollers - 1 - pos; 
+        lv_group_focus_obj(ext->rollers[ext->sel]);
+    }
+}

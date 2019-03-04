@@ -21,12 +21,12 @@ lv_res_t menu_storage_create(lv_obj_t *btn) {
     snprintf(subtitle, sizeof(subtitle), "%dKB Free / %dKB Total", used/1024, tot/1024);
 
     lv_obj_t *scr;
-    scr = jolt_gui_scr_loading_create( gettext(JOLT_TEXT_STORAGE) );
+    scr = jolt_gui_scr_loadingbar_create( gettext(JOLT_TEXT_STORAGE) );
     if( NULL == scr ){
         goto exit;
     }
     jolt_gui_scr_set_back_action(scr, back_cb);
-    jolt_gui_scr_loading_update(scr, NULL, subtitle, percentage);
+    jolt_gui_scr_loadingbar_update(scr, NULL, subtitle, percentage);
 
 exit:
     return LV_RES_OK;

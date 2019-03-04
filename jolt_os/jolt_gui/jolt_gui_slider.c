@@ -67,10 +67,11 @@ lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_act
         lv_obj_set_free_num(slider, JOLT_GUI_OBJ_ID_SLIDER);
         lv_slider_set_range(slider, 0, 10); // Default Slider Range
         lv_obj_set_size(slider,
-                CONFIG_JOLT_GUI_LOADING_BAR_W, CONFIG_JOLT_GUI_LOADING_BAR_H);
+                CONFIG_JOLT_GUI_SLIDER_W, CONFIG_JOLT_GUI_SLIDER_H);
         lv_obj_align(slider, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -10);
         lv_slider_set_action(slider, cb);
         lv_slider_set_value(slider, 0); // Default initial value
+        lv_slider_set_anim_time(slider, CONFIG_JOLT_GUI_SLIDER_ANIM_MS);
 
         jolt_gui_group_add( slider );
 
@@ -89,6 +90,7 @@ lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_act
         lv_obj_set_size(label, lv_obj_get_width(cont_body),
                 label_style->text.font->h_px);
         lv_obj_align(label, NULL, LV_ALIGN_OUT_TOP_MID, 0, -6);
+        /* todo: add upstream functionality to animate on button input */
 
 
         BREAK_IF_NULL(jolt_gui_scr_set_enter_action(parent, NULL));

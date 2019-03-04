@@ -102,7 +102,7 @@ menu "JoltOS"
 
     menu "GUI"
 
-        config JOLT_GUI_LOADING_BAR_ANIM_MS
+        config JOLT_GUI_LOADINGBAR_ANIM_MS
             int
             prompt "Loading bar animation catchup time in ms"
             default 100

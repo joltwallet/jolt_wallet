@@ -18,6 +18,8 @@ static lv_res_t jolt_gui_test_number_enter_cb(lv_obj_t *parent){
 
 lv_res_t jolt_gui_test_number_create(lv_obj_t *btn) {
     lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "Number Test", 7, 2); 
+    /* Set the digit left of the dp */
+    jolt_gui_scr_digit_entry_set_pos(scr, 2);
     jolt_gui_scr_set_enter_action(scr, jolt_gui_test_number_enter_cb);
     return LV_RES_OK;
 }
@@ -32,13 +34,13 @@ void test_loading_task(void *param) {
     lv_obj_t *scr = (lv_obj_t *)param;
     for(uint8_t i=0;i < 101; vTaskDelay(pdMS_TO_TICKS(1000)), i+=10){
         if(i==50){
-            jolt_gui_scr_loading_update(scr, "Almost Done", "woof", i);
+            jolt_gui_scr_loadingbar_update(scr, "Almost Done", "woof", i);
         }
         else if(i>50){
-            jolt_gui_scr_loading_update(scr, NULL, "bark", i);
+            jolt_gui_scr_loadingbar_update(scr, NULL, "bark", i);
         }
         else{
-            jolt_gui_scr_loading_update(scr, NULL, "meow", i);
+            jolt_gui_scr_loadingbar_update(scr, NULL, "meow", i);
         }
     }
     lv_obj_del(scr);
@@ -46,7 +48,7 @@ void test_loading_task(void *param) {
 }
 
 lv_res_t jolt_gui_test_loading_create(lv_obj_t *btn) {
-    lv_obj_t *scr = jolt_gui_scr_loading_create("Loading Test");
+    lv_obj_t *scr = jolt_gui_scr_loadingbar_create("Loading Test");
     if(NULL == scr){
         ESP_LOGE(TAG, "NULL Loading Screen");
         return 1;
@@ -74,7 +76,7 @@ void jolt_gui_test_battery_task(void *param) {
     int val = adc1_get_raw(JOLT_ADC1_VBATT);
     char buf[40];
     snprintf(buf, sizeof(buf), "Raw Value: %d\nPercentage: %d", val,
-            statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_BATTERY].val);
+            statusbar_indicators[JOLT_HW_MONITOR_INDEX_BATTERY].val);
     test_battery_scr = jolt_gui_scr_text_create("Battery", buf);
     jolt_gui_scr_set_back_action(test_battery_scr, jolt_gui_test_battery_del);
 }

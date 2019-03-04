@@ -1,3 +1,12 @@
+/**
+ * @file ymodem_common.h
+ * @brief Common YMODEM functionality for transmits and receives
+ * 
+ * Should only be included in the YMODEM source files.
+ *
+ * @author Brian Pugh, Boris Lovosevic
+ */
+
 #ifndef YMODEM_COMMON_H__
 #define YMODEM_COMMON_H__
 
@@ -20,12 +29,12 @@
 
 #define FILE_SIZE_LENGTH        (16)
 
-#define SOH                     (0x01)  /* start of 128-byte data packet */
+#define SOH                     (0x01)  /* start of 128-byte data packet (Start of Header) */
 #define STX                     (0x02)  /* start of 1024-byte data packet */
-#define EOT                     (0x04)  /* end of transmission */
-#define ACK                     (0x06)  /* acknowledge */
-#define NAK                     (0x15)  /* negative acknowledge */
-#define CA                      (0x18)  /* two of these in succession aborts transfer */
+#define EOT                     (0x04)  /* End of Transmission */
+#define ACK                     (0x06)  /* Acknowledge */
+#define NAK                     (0x15)  /* Negative Acknowledge */
+#define CA                      (0x18)  /* two of these in succession aborts transfer (CAncel)*/
 #define CRC16                   (0x43)  /* 'C' == 0x43, request 16-bit CRC */
 
 #define ABORT1                  (0x41)  /* 'A' == 0x41, abort by user */
@@ -34,53 +43,93 @@
 #define NAK_TIMEOUT             (1000)
 #define MAX_ERRORS              (45)
 
+/**
+ * @brief compute the CRC16 checksum
+ * @param[in] buf Input data buffer
+ * @param[in] count Input data buffer length in bytes
+ * @return CRC16 checksum
+ */
 unsigned short IRAM_ATTR crc16(const unsigned char *buf, unsigned long count);
+
+/**
+ * @brief Wrapper to read bytes from STDIN
+ * @param[out] c Data buffer to store received bytes
+ * @param[in] timeout maximum number of milliseconds to wait before returning an incomplete buffer
+ * @param[in] count Number of bytes to read.
+ * @reutrn Number of bytes read
+ */
 int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n);
 
-inline int32_t IRAM_ATTR receive_byte (unsigned char *c, uint32_t timeout) {
+/**
+ * @brief Wrapper to read a single byte from STDIN
+ * @param[out] c character buffer
+ * @param[in] timeout maximum number of milliseconds to wait before returning without a byte
+ * @return Number of bytes read
+ */
+static inline int32_t IRAM_ATTR receive_byte (unsigned char *c, uint32_t timeout) {
     return receive_bytes(c, timeout, 1);
 }
 
-//------------------------
-inline void IRAM_ATTR rx_consume() {
+/**
+ * @brief Flush STDIN
+ */
+static inline void IRAM_ATTR rx_consume() {
     fflush(stdin);
 }
 
-//--------------------------------
-inline uint32_t IRAM_ATTR send_bytes(char *c, uint32_t n) {
+/**
+ * @brief Wrapper to write bytes to STDOUT
+ * @param[in] c pointer to byte array to send
+ * @param[in] n number of bytes to send
+ */
+static inline uint32_t IRAM_ATTR send_bytes(char *c, uint32_t n) {
     fwrite(c, 1, n, stdout);
     return 0;
 }
 
-inline uint32_t IRAM_ATTR send_byte (char c) {
+/**
+ * @brief Wrapper to send a single byte to STDOUT
+ * @param[in] c byte to send
+ */
+static inline uint32_t IRAM_ATTR send_byte (char c) {
     return send_bytes(&c, 1);
 }
 
-//----------------------------
-inline void IRAM_ATTR send_CA ( void ) {
+/**
+ * @brief Helper to send Cancel bytes
+ */
+static inline void IRAM_ATTR send_CA ( void ) {
     send_byte(CA);
     send_byte(CA);
 }
 
-//-----------------------------
-inline void IRAM_ATTR send_ACK ( void ) {
+/**
+ * @brief Helper to send Acknowledge byte
+ */
+static inline void IRAM_ATTR send_ACK ( void ) {
     send_byte(ACK);
 }
 
-//----------------------------------
-inline void IRAM_ATTR send_ACKCRC16 ( void ) {
-    send_byte(ACK);
-    send_byte(CRC16);
-}
-
-//-----------------------------
-inline void IRAM_ATTR send_NAK ( void ) {
+/**
+ * @brief Helper to send Negative Acknowledge byte
+ */
+static inline void IRAM_ATTR send_NAK ( void ) {
     send_byte(NAK);
 }
 
-//-------------------------------
-inline void IRAM_ATTR send_CRC16 ( void ) {
+/**
+ * @brief Helper to send CRC16 byte
+ */
+static inline void IRAM_ATTR send_CRC16 ( void ) {
     send_byte(CRC16);
+}
+
+/**
+ * @brief Helper to send Acknowledge byte followed by the CRC16 byte.
+ */
+static inline void IRAM_ATTR send_ACKCRC16 ( void ) {
+    send_ACK();
+    send_CRC16();
 }
 
 

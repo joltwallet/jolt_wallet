@@ -1,3 +1,9 @@
+/**
+ * @file unaligned.h
+ * @brief Convenience functions for unaligned load/store
+ * @author Brian Pugh
+ */
+
 #include <stdint.h>
 #include <stddef.h>
 

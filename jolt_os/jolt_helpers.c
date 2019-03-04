@@ -25,31 +25,15 @@
 #include "syscore/https.h"
 
 
-static const char* TAG = "helpers";
+static const char* TAG = __FILE__;
 
-/* Sets */
-void set_jolt_cast() {
-    size_t required_size;
-    char *uri = NULL;
-
-    /* Sets Jolt Cast Server Params from NVS*/
-    storage_get_str(NULL, &required_size, "user", "jc_uri", CONFIG_JOLT_CAST_URI);
-    uri = malloc(required_size);
-    if( NULL == uri ) {
-        ESP_ERROR_CHECK( jolt_network_client_init( CONFIG_JOLT_CAST_URI ) );
-    }
-    else {
-        storage_get_str(uri, &required_size, "user", "jc_uri", CONFIG_JOLT_CAST_URI);
-        ESP_ERROR_CHECK( jolt_network_client_init( uri ) );
-        free(uri);
-    }
-    return;
-}
+/* todo: unified randombytes functions that takes both from libsodium and 
+ * ataes132a */
 
 void shuffle_arr(uint8_t *arr, int arr_len) {
-    /* Fisher Yates random shuffling */
     uint8_t tmp;
     for(int i=arr_len-1; i>0; i--) {
+        /* todo: use unified random bytes here */
         uint32_t idx = randombytes_random() % (i+1);
         tmp = arr[idx];
         arr[idx] = arr[i];
@@ -59,20 +43,17 @@ void shuffle_arr(uint8_t *arr, int arr_len) {
 }
 
 char **jolt_h_malloc_char_array(int n) {
-    /* Allocate the pointers for a string array */
     return (char **) calloc(n, sizeof(char*));
 }
 
 void jolt_h_free_char_array(char **arr, int n) {
-    /* Frees the list created by get_all_fns(); */
     for(uint32_t i=0; i<n; i++) {
         free(arr[i]);
     }
     free(arr);
 }
 
-/* Check if the provided null-terminated string suffix matches */
-bool jolt_h_strcmp_suffix( char *str, char *suffix){
+bool jolt_h_strcmp_suffix( const char *str, const char *suffix){
     uint32_t str_len = strlen(str);
     uint32_t suffix_len = strlen(suffix);
 
@@ -87,15 +68,13 @@ bool jolt_h_strcmp_suffix( char *str, char *suffix){
     return false;
 }
 
-void jolt_h_fn_home_refresh(char *str) {
+void jolt_h_fn_home_refresh(const char *str) {
     if( !jolt_h_strcmp_suffix(str, ".jelf") ) {
         return;
     }
     jolt_gui_menu_home_refresh();
 }
 
-
-/* Set vault for JoltOS settings stuff like bluetooth and wifi */
 void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *param) {
     vault_set( JOLT_OS_DERIVATION_PURPOSE,
             JOLT_OS_DERIVATION_PATH,

@@ -13,7 +13,7 @@
 #include "hal/radio/bluetooth_gatts_profile_a.h"
 #include "esp_bt.h"
 
-hardware_monitor_t statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_NUM];
+hardware_monitor_t statusbar_indicators[JOLT_HW_MONITOR_INDEX_NUM];
 
 /**********************
  *  STATIC PROTOTYPES
@@ -22,6 +22,7 @@ static void jolt_hw_monitor_get_battery_level(hardware_monitor_t *monitor);
 static void jolt_hw_monitor_get_bluetooth_level(hardware_monitor_t *monitor);
 static void jolt_hw_monitor_get_wifi_level(hardware_monitor_t *monitor);
 static void jolt_hw_monitor_init();
+static void jolt_hw_monitor_update();
 
 /**********************
  *  STATIC VARIABLES
@@ -124,25 +125,25 @@ static void jolt_hw_monitor_get_wifi_level(hardware_monitor_t *monitor) {
     MONITOR_UPDATE(wifi_strength);
 }
 
-void jolt_hw_monitor_get_lock_status(hardware_monitor_t *monitor) {
-    MONITOR_UPDATE(!vault_is_valid());
+static void jolt_hw_monitor_get_lock_status(hardware_monitor_t *monitor) {
+    MONITOR_UPDATE(!vault_get_valid());
 }
 
 /* Creates all the hardware_monitor mutex's and sets their updater functions */
 static void jolt_hw_monitor_init() {
-    statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_BATTERY].update = 
+    statusbar_indicators[JOLT_HW_MONITOR_INDEX_BATTERY].update = 
             &jolt_hw_monitor_get_battery_level;
-    statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_WIFI].update = 
+    statusbar_indicators[JOLT_HW_MONITOR_INDEX_WIFI].update = 
             &jolt_hw_monitor_get_wifi_level;
-    statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_BLUETOOTH].update = 
+    statusbar_indicators[JOLT_HW_MONITOR_INDEX_BLUETOOTH].update = 
             &jolt_hw_monitor_get_bluetooth_level;
-    statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_LOCK].update = 
+    statusbar_indicators[JOLT_HW_MONITOR_INDEX_LOCK].update = 
             &jolt_hw_monitor_get_lock_status;
 }
 
 /* Iterates through all hardware_monitor's and call's their updater function */
-void jolt_hw_monitor_update() {
-    for(uint8_t i=0; i < JOLT_GUI_STATUSBAR_INDEX_NUM; i++) {
+static void jolt_hw_monitor_update() {
+    for(uint8_t i=0; i < JOLT_HW_MONITOR_INDEX_NUM; i++) {
         statusbar_indicators[i].update(&statusbar_indicators[i]);
     }
 }

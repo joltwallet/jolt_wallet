@@ -125,9 +125,9 @@ void jolt_gui_obj_del(lv_obj_t *obj){
         /* Some objects may require special actions before deleting */
         jolt_gui_scr_id_t id = lv_obj_get_free_num(obj);
         switch( id ) {
-            case JOLT_GUI_SCR_ID_LOADING:
+            case JOLT_GUI_SCR_ID_LOADINGBAR:
                 /* Check and Delete the auto updater task */
-                jolt_gui_scr_loading_autoupdate_del( obj );
+                jolt_gui_scr_loadingbar_autoupdate_del( obj );
                 break;
             default:
                 break;
@@ -161,7 +161,6 @@ void jolt_gui_group_create() {
     }
 }
 
-/* Adds object to main group */
 void jolt_gui_group_add( lv_obj_t *obj ){
     JOLT_GUI_CTX{
         lv_group_add_obj(group.main, obj);
@@ -218,7 +217,6 @@ lv_obj_t *jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb,
     return btn;
 }
 
-/* Perform callback whenever user presses "back" button */
 lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_action_t cb) {
     lv_obj_t *btn = NULL;
     JOLT_GUI_CTX{
@@ -240,7 +238,6 @@ lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_action_t cb) {
     return btn;
 }
 
-/* Perform callback whenever user presses "enter" button */
 lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb) {
     lv_obj_t *btn = NULL;
     JOLT_GUI_CTX{
@@ -278,12 +275,10 @@ void jolt_gui_scr_set_enter_param(lv_obj_t *parent, void *param) {
     }
 }
 
-/* Send LV_GROUP_KEY_ENTER to main group */
 lv_res_t jolt_gui_send_enter_main(lv_obj_t *dummy) {
     return lv_group_send_data(group.main, LV_GROUP_KEY_ENTER);
 }
 
-/* Send LV_GROUP_KEY_LEFT to main group */
 lv_res_t jolt_gui_send_left_main(lv_obj_t *dummy) {
     return lv_group_send_data(group.main, LV_GROUP_KEY_LEFT);
 }
@@ -335,25 +330,19 @@ lv_obj_t *jolt_gui_find(lv_obj_t *parent, LV_OBJ_FREE_NUM_TYPE id) {
 
 /* Convert the enumerated value to a constant string */
 const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val) {
-#define STRCASE(name) case name: return #name;
-    switch(val){
-        STRCASE(JOLT_GUI_OBJ_ID_UNINITIALIZED)
-        STRCASE(JOLT_GUI_OBJ_ID_CONT_TITLE)   
-        STRCASE(JOLT_GUI_OBJ_ID_CONT_BODY)    
-        STRCASE(JOLT_GUI_OBJ_ID_PAGE)         
-        STRCASE(JOLT_GUI_OBJ_ID_LABEL_0)      
-        STRCASE(JOLT_GUI_OBJ_ID_LABEL_1)      
-        STRCASE(JOLT_GUI_OBJ_ID_LABEL_2)      
-        STRCASE(JOLT_GUI_OBJ_ID_LABEL_3)      
-        STRCASE(JOLT_GUI_OBJ_ID_LABEL_4)      
-        STRCASE(JOLT_GUI_OBJ_ID_BAR_LOADING)  
-        STRCASE(JOLT_GUI_OBJ_ID_PRELOADING)   
-        STRCASE(JOLT_GUI_OBJ_ID_IMG_QR)       
-        STRCASE(JOLT_GUI_OBJ_ID_SLIDER)
-        STRCASE(JOLT_GUI_OBJ_ID_LIST)
-        default:
-            return "<unknown>";
+    const char *names[] = { FOREACH_JOLT_GUI_OBJ_ID(GENERATE_STRING) };
+    if( val >= JOLT_GUI_OBJ_ID_MAX ) {
+        return "<unknown>";
     }
-#undef STRCASE
+    return names[val];
+}
+
+/* Convert the enumerated value to a constant string */
+const char *jolt_gui_scr_id_str(jolt_gui_scr_id_t val) {
+    const char *names[] = { FOREACH_JOLT_GUI_SCR_ID(GENERATE_STRING) };
+    if( val >= JOLT_GUI_SCR_ID_MAX ) {
+        return "<unknown>";
+    }
+    return names[val];
 }
 

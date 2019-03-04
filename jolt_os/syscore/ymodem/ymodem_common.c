@@ -46,7 +46,6 @@
 
 static const char TAG[] = __FILE__;
 
-//------------------------------------------------------------------------
 unsigned short IRAM_ATTR crc16(const unsigned char *buf, unsigned long count) {
     unsigned short crc = 0;
     int i;
@@ -62,7 +61,6 @@ unsigned short IRAM_ATTR crc16(const unsigned char *buf, unsigned long count) {
     return crc;
 }
 
-//--------------------------------------------------------------
 int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n) {
     int amount_read = 0;
     do {

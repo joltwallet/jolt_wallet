@@ -86,6 +86,7 @@ static void jolt_process_cmd_task(jolt_bg_job_t *bg_job){
     cmd->return_value = ret;
 
 exit:
+    /* De-allocate memory */
     jolt_cmd_del(cmd);
 }
 
@@ -205,13 +206,13 @@ exit:
     return return_code;
 }
 
-volatile TaskHandle_t *console_start(){
+TaskHandle_t *console_start(){
     /* Start the Task that handles the UART Console IO */
     xTaskCreate(console_task,
                 "UART_Console", CONFIG_JOLT_TASK_STACK_SIZE_UART_CONSOLE,
                 NULL, CONFIG_JOLT_TASK_PRIORITY_UART_CONSOLE,
                 (TaskHandle_t *) &console_h);
-    return  &console_h;
+    return &console_h;
 }
 
 static void console_register_commands() {
@@ -347,10 +348,98 @@ static void console_syscore_register() {
     esp_console_cmd_t cmd;
 
     cmd = (esp_console_cmd_t) {
+        .command = "app_key",
+        .help = "Sets app public key. WILL ERASE ALL DATA.",
+        .hint = NULL,
+        .func = &jolt_cmd_app_key,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "bt_whitelist",
+        .help = "Print BLE GAP White List",
+        .hint = NULL,
+        .func = &jolt_cmd_bt_whitelist,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "download",
+        .help = "Send specified file from Jolt over UART ymodem",
+        .hint = NULL,
+        .func = &jolt_cmd_download,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
         .command = "free",
         .help = "Get the total size of heap memory available",
         .hint = NULL,
         .func = &jolt_cmd_free,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "jolt_cast_update",
+        .help = "Update jolt_cast URI.",
+        .hint = NULL,
+        .func = &jolt_cmd_jolt_cast_update,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "ls",
+        .help = "List all files in filesystem",
+        .hint = NULL,
+        .func = &jolt_cmd_ls,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "mnemonic_restore",
+        .help = "Restore mnemonic seed.",
+        .hint = NULL,
+        .func = &jolt_cmd_mnemonic_restore,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "mv",
+        .help = "rename file (src, dst)",
+        .hint = NULL,
+        .func = &jolt_cmd_mv,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "pmtop",
+        .help = "print power management statistics",
+        .hint = NULL,
+        .func = &jolt_cmd_pmtop,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "reboot",
+        .help = "Reboot device.",
+        .hint = NULL,
+        .func = &jolt_cmd_reboot,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "rm",
+        .help = "remove file from filesystem",
+        .hint = NULL,
+        .func = &jolt_cmd_rm,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "run",
+        .help = "launch application",
+        .hint = NULL,
+        .func = &jolt_cmd_run,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
@@ -371,42 +460,10 @@ static void console_syscore_register() {
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
     cmd = (esp_console_cmd_t) {
-        .command = "wifi_update",
-        .help = "Update WiFi SSID and Pass.",
+        .command = "upload",
+        .help = "Enters file UART ymodem upload mode",
         .hint = NULL,
-        .func = &jolt_cmd_wifi_update,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "mnemonic_restore",
-        .help = "Restore mnemonic seed.",
-        .hint = NULL,
-        .func = &jolt_cmd_mnemonic_restore,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "jolt_cast_update",
-        .help = "Update jolt_cast (domain, path, port).",
-        .hint = NULL,
-        .func = &jolt_cmd_jolt_cast_update,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "reboot",
-        .help = "Reboot device.",
-        .hint = NULL,
-        .func = &jolt_cmd_reboot,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "app_key",
-        .help = "Sets app public key. WILL ERASE ALL DATA.",
-        .hint = NULL,
-        .func = &jolt_cmd_app_key,
+        .func = &jolt_cmd_upload,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
@@ -419,67 +476,10 @@ static void console_syscore_register() {
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
     cmd = (esp_console_cmd_t) {
-        .command = "upload",
-        .help = "Enters file UART ymodem upload mode",
+        .command = "wifi_update",
+        .help = "Update WiFi SSID and Pass.",
         .hint = NULL,
-        .func = &jolt_cmd_upload,
+        .func = &jolt_cmd_wifi_update,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "download",
-        .help = "Transmit specified file over UART ymodem",
-        .hint = NULL,
-        .func = &jolt_cmd_download,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "ls",
-        .help = "List filesystem",
-        .hint = NULL,
-        .func = &jolt_cmd_ls,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "mv",
-        .help = "rename file (src, dst)",
-        .hint = NULL,
-        .func = &jolt_cmd_mv,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "rm",
-        .help = "remove file from filesystem",
-        .hint = NULL,
-        .func = &jolt_cmd_rm,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "run",
-        .help = "launch elf file",
-        .hint = NULL,
-        .func = &jolt_cmd_run,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "pmtop",
-        .help = "print power management statistics",
-        .hint = NULL,
-        .func = &jolt_cmd_pmtop,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "bt_whitelist",
-        .help = "Print BLE GAP White List",
-        .hint = NULL,
-        .func = &jolt_cmd_bt_whitelist,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
 }

@@ -15,7 +15,7 @@ static const char progress_label_2[] = "Installing...";
 static void cmd_upload_firmware_progress_update_lv_task(void *param) {
     const char *label;
     if( NULL == loading_scr ){
-        loading_scr = jolt_gui_scr_loading_create("JoltOS Update");
+        loading_scr = jolt_gui_scr_loadingbar_create("JoltOS Update");
     }
     if(progress <= 100 && progress >= 0) {
         if(progress == 0)
@@ -24,7 +24,7 @@ static void cmd_upload_firmware_progress_update_lv_task(void *param) {
             label = progress_label_1;
         else
             label = progress_label_2;
-        jolt_gui_scr_loading_update(loading_scr, NULL, label, progress);
+        jolt_gui_scr_loadingbar_update(loading_scr, NULL, label, progress);
     }
     else{
         /* Delete loading screen */

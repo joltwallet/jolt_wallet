@@ -65,7 +65,7 @@ static lv_res_t prompt_1_enter_cb(lv_obj_t *btn){
 }
 
 /* Non-blocking */
-void set_wifi_credentials(char *ssid, char *pass) {
+void set_wifi_credentials(const char *ssid, const char *pass) {
     char buf[strlen(JOLT_TEXT_WIFI_CRED_UPDATE_PROMPT_1) + JOLT_WIFI_SSID_LEN_MAX + JOLT_WIFI_PASS_LEN_MAX + 1];
 
     if( in_progress ) {

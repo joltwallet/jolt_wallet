@@ -3,12 +3,13 @@
 #include "freertos/queue.h"
 #include "string.h"
 #include "esp_log.h"
-#include "https.h"
 
 #include "bg.h"
+#include "hal/storage/storage.h"
+#include "https.h"
 
 
-static const char TAG[] = "jolt_https";
+static const char TAG[] = __FILE__;
 
 static esp_http_client_handle_t client = NULL;
 
@@ -23,7 +24,7 @@ static void https_func( jolt_bg_job_t *bg_job ) {
     https_job_t *job = jolt_bg_get_param( bg_job );
     lv_obj_t *scr = jolt_bg_get_scr( bg_job );
 
-    int16_t status_code = -1;
+    int16_t status_code = JOLT_NETWORK_ERROR;
     char *response = NULL;
     esp_err_t err;
     /* Set HTTP Method */
@@ -69,7 +70,7 @@ static void https_func( jolt_bg_job_t *bg_job ) {
         int content_length = esp_http_client_get_content_length( client );
         response = malloc(content_length + 1);
         if( NULL == response ) {
-            status_code = -2;
+            status_code = JOLT_NETWORK_OOM;
             goto exit;
         }
         ESP_LOGI(TAG, "Server Response:\n%s\n", response);
@@ -84,9 +85,25 @@ exit:
     free( job );
 }
 
-/* Initializes all networking objects (if necessary). Will copy uri to a local
- * buffer.
- * Returns ESP_OK on success. */
+esp_err_t jolt_network_client_init_from_nvs() {
+    size_t required_size;
+    char *uri = NULL;
+    esp_err_t err;
+
+    /* Sets Jolt Cast Server Params from NVS*/
+    storage_get_str(NULL, &required_size, "user", "jc_uri", CONFIG_JOLT_CAST_URI);
+    uri = malloc(required_size);
+    if( NULL == uri ) {
+        err = jolt_network_client_init( CONFIG_JOLT_CAST_URI );
+    }
+    else {
+        storage_get_str(uri, &required_size, "user", "jc_uri", CONFIG_JOLT_CAST_URI);
+        err = jolt_network_client_init( uri );
+        free(uri);
+    }
+    return err;
+}
+
 esp_err_t jolt_network_client_init( char *uri ) {
     static char *local_uri = NULL;
 

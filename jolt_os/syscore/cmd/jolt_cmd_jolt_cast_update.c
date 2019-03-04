@@ -5,16 +5,16 @@
 #include "hal/storage/storage.h"
 
 int jolt_cmd_jolt_cast_update(int argc, char** argv) {
-    /* (url, path, port) */
     int return_code;
     char buf[100];
 
     // Check if number of inputs is correct
-    if( !console_check_equal_argc(argc, 4) ) {
+    if( !console_check_equal_argc(argc, 2) ) {
         return_code = 1;
         goto exit;
     }
-    uint16_t port = atoi(argv[3]);
+
+    storage_set_str(argv[1], "user", "jc_uri");
 
     // Confirm Inputs
     snprintf(buf, sizeof(buf), "Update jolt_cast server domain to:\n%s", argv[1]);
@@ -37,11 +37,6 @@ int jolt_cmd_jolt_cast_update(int argc, char** argv) {
     }
 #endif
 
-    // Store User Values
-    storage_set_str(argv[1], "user", "jc_domain");
-    storage_set_str(argv[2], "user", "jc_path");
-    storage_set_u16(port, "user", "jc_port");
-    
     esp_restart();
 
     exit:

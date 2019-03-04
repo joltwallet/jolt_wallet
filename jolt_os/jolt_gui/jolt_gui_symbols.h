@@ -1,3 +1,9 @@
+/**
+ * @file jolt_gui_symbols.h
+ * @brief Unicode macros for custom Jolt symbols
+ * @author Brian Pugh
+ */
+
 #ifndef __JOLT_GUI_SYMBOLS_H__
 #define __JOLT_GUI_SYMBOLS_H__
 

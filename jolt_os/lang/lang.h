@@ -1,3 +1,9 @@
+/**
+ * @file lang.h
+ * @brief Jolt internationalization
+ * @author Brian Pugh
+ */
+
 #ifndef JOLT_LANG_H__
 #define JOLT_LANG_H__
 
@@ -6,17 +12,26 @@
 #include "stdlib.h"
 #include "sdkconfig.h"
 
-/* Only append languages to this list (aside from JOLT_LANG_LAST_LANG) */
+/**
+ * @brief Langues supported by JoltOS.
+ *
+ * Only append languages to this list (aside from JOLT_LANG_LAST_LANG)
+ */
 enum {
     JOLT_LANG_ENGLISH = 0,
     JOLT_LANG_SPANISH,
-    JOLT_LANG_LAST_LANG,
+    JOLT_LANG_LAST_LANG, /**< Number of Langues */
 };
 typedef uint8_t jolt_lang_t;
 
-/* When listing languages, order to display them */
+/**
+ * @brief Order to display languages
+ */
 extern const jolt_lang_t jolt_lang_order[JOLT_LANG_LAST_LANG];
 
+/**
+ * @brief Human-readable indexs into language pack strings.
+ */
 typedef enum jolt_text_id_t {
     /* Error Handling */
     JOLT_TEXT_MISSING_STRING = 0,
@@ -77,13 +92,33 @@ typedef enum jolt_text_id_t {
     JOLT_TEXT_LAST_STR,
 } jolt_text_id_t;
 
-
+/**
+ * @brief Get the specified character string in the current language
+ * @param[in] id index into language-pack strings
+ * @return NULL-terminated character string.
+ */
 const char *gettext( jolt_text_id_t id );
 
+/**
+ * @brief Get the specified language name in current language 
+ * @param[in] lang a JOLT_LANG_*
+ * @return NULL-terminated character string.
+ */
 const char *getlangname( jolt_lang_t lang);
 
+/**
+ * @brief Sets system language. If language is different than saved; it will save and reset.
+ *
+ * @param[in] lang language to set
+ * @return True on success; false if language was not compiled.
+ */
 bool jolt_lang_set( jolt_lang_t lang );
 
+/**
+ * @brief Checks if specified language was compiled into JoltOS
+ * @param[in] lang Language to check availability.
+ * @return True if language is available; false otherwise
+ */
 bool jolt_lang_available( jolt_lang_t lang );
 
 #if CONFIG_JOLT_LANG_ENGLISH_EN

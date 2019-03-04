@@ -22,7 +22,6 @@
 
 static const char* TAG = "console_syscore_fs";
 
-/* Starts up the SPIFFS Filesystem */
 void jolt_fs_init() {
     esp_err_t ret;
     esp_vfs_spiffs_conf_t conf = {
@@ -52,11 +51,6 @@ void jolt_fs_init() {
 }
 
 uint32_t jolt_fs_get_all_fns(char **fns, uint32_t fns_len, const char *ext, bool remove_ext){
-    /* Returns upto fns_len fns with extension ext and the number of files.
-     * If fns is NULL, just return the file count.
-     * If ext is NULL, return all files
-     * Uses malloc to reserve space for fns
-     */
     DIR *dir;
     uint32_t tot = 0;
     struct dirent *ent;

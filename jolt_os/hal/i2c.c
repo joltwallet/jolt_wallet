@@ -13,7 +13,7 @@ static const char TAG[] = "hal/i2c";
 SemaphoreHandle_t i2c_sem;
 
 esp_err_t i2c_driver_setup() {
-    i2c_sem = xSemaphoreCreateMutex();
+    i2c_sem = xSemaphoreCreateRecursiveMutex();
 
     i2c_config_t conf;
     conf.mode = I2C_MODE_MASTER;
@@ -42,7 +42,7 @@ esp_err_t i2c_driver_setup() {
 
 err:
 #if CONFIG_JOLT_I2C_ERROR_RESET
-        abort();
+    abort();
 #endif
     return ESP_FAIL;
 }

@@ -61,6 +61,11 @@ static int ota_ymodem_write_wrapper(const void *data,
     return nmemb;
 }
 
+/**
+ * Perform a JoltOS Update using YMODEM.
+ * @param progress jolt_ota_ymodem will write the update progress (0~100) to this location.
+ * @return ESP_OK on success; ESP_FAIL on failure.
+ */
 esp_err_t jolt_ota_ymodem(int8_t *progress) {
     /* Performs OTA update over Ymodem */
     esp_err_t err = ESP_FAIL;

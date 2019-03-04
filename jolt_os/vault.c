@@ -184,13 +184,13 @@ static void ps_state_exec_task( jolt_bg_job_t *job ) {
             ps.scr = NULL;
 
             /* Create Loading Bar */
-            loading_scr = jolt_gui_scr_loading_create(NULL);
-            jolt_gui_scr_loading_update(loading_scr,
+            loading_scr = jolt_gui_scr_loadingbar_create(NULL);
+            jolt_gui_scr_loadingbar_update(loading_scr,
                     gettext(JOLT_TEXT_PIN),
                     gettext(JOLT_TEXT_CHECKING_PIN), 0);
             jolt_gui_sem_give();
             ESP_LOGI(TAG, "Creating stretch autoupdate lv_task");
-            jolt_gui_scr_loading_autoupdate( loading_scr, &progress );
+            jolt_gui_scr_loadingbar_autoupdate( loading_scr, &progress );
 
             /* Stretch directly here */
             ESP_LOGI(TAG, "Beginning stretch");
@@ -239,12 +239,12 @@ static void ps_state_exec_task( jolt_bg_job_t *job ) {
             /**** We now have mnemonic at this point ****/
 
             /* Create Loading Bar */
-            loading_scr = jolt_gui_scr_loading_create(NULL);
-            jolt_gui_scr_loading_update(loading_scr,
+            loading_scr = jolt_gui_scr_loadingbar_create(NULL);
+            jolt_gui_scr_loadingbar_update(loading_scr,
                     gettext(JOLT_TEXT_PIN),
                     gettext(JOLT_TEXT_UNLOCKING), 0);
             jolt_gui_sem_give();
-            jolt_gui_scr_loading_autoupdate( loading_scr, &progress );
+            jolt_gui_scr_loadingbar_autoupdate( loading_scr, &progress );
 
             /* Do the lengthy master seed derivation */
             bm_mnemonic_to_master_seed_progress(master_seed, 
@@ -411,12 +411,6 @@ bool vault_setup() {
 }
 
 void vault_clear() {
-    /* Clears the Vault struct.
-     * Does NOT clear the following so that the node can be easily restored:
-     *      * purpose
-     *      * coin_type
-     *      * bip32_key
-     */
     vault_sem_take();
     if( vault->valid ) {
         ESP_LOGI(TAG, "Clearing Vault.");
@@ -524,9 +518,6 @@ void vault_refresh(vault_cb_t failure_cb, vault_cb_t success_cb, void *param) {
     }
 }
 
-/* Kicks the dog if vault is valid.
- *   Returns true if vault is valid.
- *   Returns false if vault is invalid. */
 bool vault_kick() {
     vault_sem_take();
     if( !vault->valid  ) {
@@ -562,9 +553,6 @@ hd_node_t *vault_get_node(){
 }
 
 bool vault_get_valid(){
-    return vault_is_valid();
-}
-
-bool vault_is_valid(){
     return vault->valid;
 }
+

@@ -4,7 +4,6 @@
 #include "esp_log.h"
 #include "hal/storage/storage.h"
 
-/* Setup timers and all that stuff */
 void jolt_led_setup() {
     {
         ledc_timer_config_t ledc_timer = {

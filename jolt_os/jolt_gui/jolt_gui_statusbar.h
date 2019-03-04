@@ -1,22 +1,30 @@
+/**
+ * @file jolt_gui_statusbar.h
+ * @brief Statusbar indicators
+ * @author Brian Pugh
+ */
+
 #ifndef __JOLT_GUI_STATUSBAR_H__
 #define __JOLT_GUI_STATUSBAR_H__
 
 #include "lvgl/lvgl.h"
 
-enum {
-    JOLT_GUI_STATUSBAR_INDEX_BATTERY = 0,
-    JOLT_GUI_STATUSBAR_INDEX_WIFI,
-    JOLT_GUI_STATUSBAR_INDEX_BLUETOOTH,
-    JOLT_GUI_STATUSBAR_INDEX_LOCK,
-    JOLT_GUI_STATUSBAR_INDEX_NUM,
-};
-
 #ifndef CONFIG_JOLT_GUI_STATUSBAR_H
     #define CONFIG_JOLT_GUI_STATUSBAR_H 12
 #endif
 
+/**
+ * @brief Initializes and periodically updates the statusbar
+ *
+ * Creates all the necessary LVGL objects and creates an lv_task to periodically
+ * update the statusbar based on hw_monitors values.
+ */
 void statusbar_create();
 
+/**
+ * @brief Get the statusbar label that displays symbols
+ * @return lv_label object
+ */
 lv_obj_t *statusbar_get_label();
 
 #endif

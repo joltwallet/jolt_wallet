@@ -1,3 +1,12 @@
+/**
+ * @file console.h
+ * @brief Interprets the Bluetooth and UART CLI.
+ * @author Brian Pugh
+ * @bugs 
+ *     * Rework the console blocking/nonblocking/channel-ownership system.
+ *     * Stronger subconsole system + documentation.
+ */
+
 /* Jolt Wallet - Open Source Cryptocurrency Hardware Wallet
  Copyright (C) 2018  Brian Pugh, James Coxon, Michael Smaili
  https://www.joltwallet.com/
@@ -11,21 +20,60 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-
+/**
+ * @brief object that represents a command job to process in the BG task.
+ */
 typedef struct jolt_cmd_t {
-    SemaphoreHandle_t complete;
-    int return_value;
-    char *data;
-    FILE *fd_in;
-    FILE *fd_out;
-    FILE *fd_err;
+    SemaphoreHandle_t complete; /**< Indicates Job is done */ // todo: possibly remove this for a more elegant way of "taking over" BLE/UART communication.
+    int return_value;           /**< */ // todo: see above
+    char *data;                 /**< User command string */
+    FILE *fd_in;                /**< FD the command was inputted on*/
+    FILE *fd_out;               /**< FD to print response on */
+    FILE *fd_err;               /**< FD to print errors to*/
 } jolt_cmd_t;
 
+/**
+ * @brief Initialize the console module.
+ *
+ * Initializes the following:
+ *     * configures UART communications.
+ *     * linenoise for parsing commands.
+ *     * registers system commands.
+ *
+ * Restarts device on failure.
+ */
 void console_init();
-volatile TaskHandle_t *console_start();
 
+/**
+ * @brief Creates the FreeRTOS task that handles UART inputs.
+ * @return task handle
+ */
+TaskHandle_t *console_start();
+
+/**
+ * @brief Packages up parameters into a background job to be processed
+ * @param[in] line NULL-terminated command string.
+ * @param[in] in in file stream
+ * @param[in] out out file stream
+ * @param[in] err err file stream
+ * @param[in] block Function blocks if True, otherwise non-blocking.
+ * @return Returns 0 on success.
+ */
 int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err, bool block);
+
+/**
+ * @brief Deallocates cmd job resources.
+ *
+ * NOT used to cancel a job. A job currently cannot be aborted from queue.
+ *
+ * @param[in,out] cmd cmd job to deallocate
+ */
 void jolt_cmd_del(jolt_cmd_t *cmd);
+
+
+/*******************************************************
+ * SUBCONSOLE - console functionality for applications *
+ *******************************************************/
 
 typedef struct subconsole_t {
     esp_console_cmd_t cmd;

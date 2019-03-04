@@ -33,10 +33,37 @@
 #include <stdint.h>
 #include "jolttypes.h"
 
+/**
+ * @brief Receive a file
+ * @param[in] ffd File Descriptor
+ * @param[in] maxsize Maximum file size to accept.
+ * @param[out] getname (optional) buffer to store .
+ * @param[in] write_fun A writer function to handle the incoming stream.
+ * @param[out] progress (optional) updated with transfer progress 0~100
+ *
+ * @return 0 on success.
+ */
 int ymodem_receive_write (void *ffd, unsigned int maxsize, char* getname,
         write_fun_t write_fun, int8_t *progress) ;
 
+/**
+ * @brief Convenience function that will write the transfer to disk
+ * @param[in] ffd File Descriptor
+ * @param[in] maxsize Maximum file size to accept.
+ * @param[out] getname (optional) buffer to store .
+ * @param[out] progress (optional) updated with transfer progress 0~100
+ *
+ * @return 0 on success.
+ */
 int ymodem_receive (FILE *ffd, unsigned int maxsize, char* getname, int8_t *progress);
+
+/**
+ * @brief Transfer a file out of Jolt
+ * @param sendFileName advertising name of file
+ * @param filesize
+ * @param ffd file descriptor
+ * @return 0 on success.
+ */
 int ymodem_transmit (char* sendFileName, unsigned int sizeFile, FILE *ffd);
 
 

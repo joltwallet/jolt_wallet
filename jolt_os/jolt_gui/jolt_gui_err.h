@@ -1,3 +1,9 @@
+/**
+ * @file jolt_gui_err.h
+ * @brief Convert error codes to GUI screens
+ * @author Brian Pugh
+ */
+
 #ifndef JOLT_GUI_SCR_ERR_H__
 #define JOLT_GUI_SCR_ERR_H__
 
@@ -10,8 +16,19 @@ typedef enum {
     JOLT_GUI_ERR_BLUETOOTH_OFF,
 } jolt_gui_err_t;
 
+
+/**
+ * @brief convert a Jolt GUI error code into a NULL-terminated string
+ * @param[in] err GUI error code
+ * @return NULL-terminated error string
+ */
 char *jolt_gui_err_to_str( jolt_gui_err_t err );
 
+/**
+ * @brief Create an error screen for a given error code
+ * @param[in] err GUI error code
+ * @return error screen
+ */
 lv_obj_t *jolt_gui_scr_err_create( jolt_gui_err_t err );
 
 #endif

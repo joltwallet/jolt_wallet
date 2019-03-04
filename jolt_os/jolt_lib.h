@@ -1,3 +1,11 @@
+/**
+ * @file jolt_lib.h
+ * @brief Primary JoltOS library for developing applications
+ * @author Brian Pugh
+ * @bugs
+ *     * Currently versioning isn't used.
+ */
+
 #ifndef __JOLT_LIB_H__
 #define __JOLT_LIB_H__
 

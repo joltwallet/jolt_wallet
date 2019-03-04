@@ -1,3 +1,9 @@
+/**
+ * @file jolt_gui_digit_entry.h
+ * @brief Enter a number via dpad
+ * @author Brian Pugh
+ */
+
 #ifndef __JOLT_LVGL_GUI_DIGIT_ENTRY_H__
 #define __JOLT_LVGL_GUI_DIGIT_ENTRY_H__
 
@@ -17,27 +23,99 @@
     #define CONFIG_JOLT_GUI_PIN_LEN 8
 #endif
 
+/**
+ * @brief Create a digit-entry screen.
+ *
+ * By default, the left-most digit is focussed.
+ *
+ * @param[in] title title-bar string
+ * @param[in] n Number of digits to display
+ * @param[in] pos decimal point position from the right. 0 for right most, 1 to display tenth's place, etc. -1 for no decimal point.
+ * @return screen
+ */
 lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
         int8_t n, int8_t pos);
 
-/* Value getters */
+
+/*****************
+ * Value getters *
+ *****************/
+
+/**
+ * @brief Get current digits as an array.
+ *
+ * Decimal position has no impact on this function.
+ *
+ * @param[in] parent digit-entry screen
+ * @param[out] arr array buffer to populate
+ * @param[in] arr_len length of provided array buffer
+ * @return number of elements (digits) returned. Returns -1 if the provided buffer is too small. 
+ */
 int8_t jolt_gui_scr_digit_entry_get_arr(lv_obj_t *parent, uint8_t *arr, uint8_t arr_len);
+
+/**
+ * @brief Get the 256-bit Blake2b hash of the current value
+ * @param[in] parent digit-entry screen
+ * @param[out] pointer to a 256-bit buffer
+ * @return 0 on success, -1 on failure.
+ */
 uint8_t jolt_gui_scr_digit_entry_get_hash(lv_obj_t *parent, uint8_t *hash);
 
-
-/* Note: the float/double functions are primarily used for display purposes. 
- * Floats/Doubles are not precisely the value specified.
- * Exercise heavy caution if using the returned value in signed transactions.*/
-
-/* Returns the entered value as a double, taking into account the decimal point.*/
+/**
+ * @brief Get entered value as a double, taking into account the decimal point.
+ *
+ * WARNING: Primarily used for display purposes only, not financial computation.
+ * Floats/Doubles may not be the precise value specified.
+ * Exercise heavy caution if using the returned value in signed transactions.
+ *
+ * @param[in] parent digit-entry screen
+ * @return entered value
+ */
 double jolt_gui_scr_digit_entry_get_double(lv_obj_t *parent);
 
-/* Return the enter value as all the rollers concatenated.
- * Does not take into account decimal place. */
+/**
+ * @brief Get the entered value as an integer, decimal point has no impact on this function.
+ *
+ * All entered values are concatenated.
+ *
+ * @param[in] parent digit-entry screen
+ * @return entered value.
+ */
 uint32_t jolt_gui_scr_digit_entry_get_int(lv_obj_t *parent);
 
-/* Action Setters */
+/******************
+ * Value Setters *
+ ******************/
+
+/**
+ * @brief Sets the action when back is pressed on the left-most digit. 
+ * 
+ * It is the callback's responsibility to delete the PIN screen.
+ *
+ * The generic jolt_gui_scr_set_back_action() will detect this screen type and calls this function.
+ *
+ * @param[in] parent digit-entry screen
+ * @param[in] callback
+ */
 void jolt_gui_scr_digit_entry_set_back_action(lv_obj_t *parent, lv_action_t cb);
+
+/**
+ * @brief Sets the action when enter is pressed on the right-most digit. 
+ * 
+ * It is the callback's responsibility to delete the PIN screen.
+ *
+ * The generic jolt_gui_scr_set_enter_action() will detect this screen type and calls this function.
+ *
+ * @param[in] parent digit-entry screen
+ * @param[in] callback
+ */
 void jolt_gui_scr_digit_entry_set_enter_action(lv_obj_t *parent, lv_action_t cb);
+
+/**
+ * @brief Sets the currently focused digit pos digits from the right. 0 for the right most digit.
+ * @param[in] parent digit-entry screen
+ * @param[in] pos 0-indexed entry position from the right to focus on
+ */
+void jolt_gui_scr_digit_entry_set_pos(lv_obj_t *parent, int8_t pos);
 
 #endif

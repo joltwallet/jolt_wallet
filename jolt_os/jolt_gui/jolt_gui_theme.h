@@ -1,10 +1,11 @@
 /**
  * @file jolt_gui_theme.h
- *
+ * @brief LVGL theme specific for Jolt
+ * @author Brian Pugh
  */
 
-#ifndef JOLT_GUI_THEME__H
-#define JOLT_GUI_THEME_H
+#ifndef JOLT_GUI_THEME_H__
+#define JOLT_GUI_THEME_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,8 +30,8 @@ extern "C" {
 
 /**
  * Initialize the jolt theme
- * @param hue [0..360] hue value from HSV color space to define the theme's base color
- * @param font pointer to a font (NULL to use the default)
+ * @param[in] hue [0..360] hue value from HSV color space to define the theme's base color. Unused.
+ * @param[in] font pointer to a font (NULL to use the default).
  * @return pointer to the initialized theme
  */
 lv_theme_t * jolt_gui_theme_init(uint16_t hue, const lv_font_t *font);
@@ -49,4 +50,4 @@ lv_theme_t * jolt_gui_theme_get(void);
 } /* extern "C" */
 #endif
 
-#endif /*LV_THEME_MONO_H*/
+#endif

@@ -179,50 +179,50 @@ void storage_ataes132a_set_pin_last(uint32_t count) {
     }
 }
 
-bool storage_ataes132a_get_u8(uint8_t *value, char *namespace, char *key,
+bool storage_ataes132a_get_u8(uint8_t *value, const char *namespace, const char *key,
         uint8_t default_value ) {
     return storage_internal_get_u8(value, namespace, key, default_value);
 }
 
-bool storage_ataes132a_set_u8(uint8_t value, char *namespace, char *key) {
+bool storage_ataes132a_set_u8(uint8_t value, const char *namespace, const char *key) {
     return storage_internal_set_u8(value, namespace, key);
 }
 
-bool storage_ataes132a_get_u16(uint16_t *value, char *namespace, char *key,
+bool storage_ataes132a_get_u16(uint16_t *value, const char *namespace, const char *key,
         uint16_t default_value ) {
     return storage_internal_get_u16(value, namespace, key, default_value);
 }
 
-bool storage_ataes132a_set_u16(uint16_t value, char *namespace, char *key) {
+bool storage_ataes132a_set_u16(uint16_t value, const char *namespace, const char *key) {
     return storage_internal_set_u16(value, namespace, key);
 }
 
-bool storage_ataes132a_get_u32(uint32_t *value, char *namespace, char *key,
+bool storage_ataes132a_get_u32(uint32_t *value, const char *namespace, const char *key,
         uint32_t default_value ) {
     return storage_internal_get_u32(value, namespace, key, default_value);
 }
 
-bool storage_ataes132a_set_u32(uint32_t value, char *namespace, char *key) {
+bool storage_ataes132a_set_u32(uint32_t value, const char *namespace, const char *key) {
     return storage_internal_set_u32(value, namespace, key);
 }
 
 bool storage_ataes132a_get_str(char *buf, size_t *required_size,
-        char *namespace, char *key, char *default_value) {
+        const char *namespace, const char *key, const char *default_value) {
     return storage_internal_get_str(buf, required_size, namespace, key,
             default_value);
 }
 
-bool storage_ataes132a_set_str(char *str, char *namespace, char *key) {
+bool storage_ataes132a_set_str(const char *str, const char *namespace, const char *key) {
     return storage_internal_set_str(str, namespace, key);
 }
 
 bool storage_ataes132a_get_blob(unsigned char *buf, size_t *required_size,
-        char *namespace, char *key) {
+        const char *namespace, const char *key) {
     return storage_internal_get_blob(buf, required_size, namespace, key);
 }
 
-bool storage_ataes132a_set_blob(unsigned char *buf, size_t len,
-        char *namespace, char *key) {
+bool storage_ataes132a_set_blob(const unsigned char *buf, size_t len,
+        const char *namespace, const char *key) {
     return storage_internal_set_blob(buf, len, namespace, key);
 }
 
@@ -232,6 +232,6 @@ void storage_ataes132a_factory_reset() {
     return false;
 }
 
-bool storage_ataes132a_erase_key(char *namespace, char *key) {
+bool storage_ataes132a_erase_key(const char *namespace, const char *key) {
     return storage_internal_erase_key(namespace, key);
 }
