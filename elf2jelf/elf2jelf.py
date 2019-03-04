@@ -16,13 +16,6 @@ ELF File Structure that esp-idf creates:
 
 The Section Header Table is a Section like any other
    * Theres a pointer to the Section Header Table Section in the ELF Header.
-
-Assumes symtab is at the end (ignoring strtab and shstrtab)
-
-This is so that all st_shndx can be kept the same
-
-Todo:
-    * Generate Signature
 '''
 
 __author__  = 'Brian Pugh'
