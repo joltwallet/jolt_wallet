@@ -256,7 +256,7 @@ menu "JoltOS"
         config JOLT_TASK_STACK_SIZE_LVGL
             int
             prompt "LittleVGL Task Stack Size"
-            default 3072
+            default 4096
             help
                 help text here
 
