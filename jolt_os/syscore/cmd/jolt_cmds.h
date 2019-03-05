@@ -9,6 +9,11 @@
 #define JOLT_CMDS_H__
 
 /**
+ * @brief Report versioning and other system data
+ */
+int jolt_cmd_about(int argc, char** argv);
+
+/**
  * @brief Sets app public key. WILL ERASE ALL DATA. Does not require PIN.
  *
  * If no argument is provided, will return the current app_key.
