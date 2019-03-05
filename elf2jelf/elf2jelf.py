@@ -33,6 +33,7 @@ import math
 import binascii
 from binascii import hexlify, unhexlify
 import zlib
+import git
 import nacl.encoding
 from nacl.signing import SigningKey
 from nacl.bindings import \
@@ -45,6 +46,8 @@ import ipdb as pdb
 
 this_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, this_path)
+
+repo = git.Repo(os.path.dirname(__file__), search_parent_directories=True)
 
 from jelf_loader import jelf_loader_hash
 
@@ -145,7 +148,7 @@ def write_export_file(export_list, major, minor, patch, release):
         export_string += '''    EXPORT_SYMBOL( %s ),\n''' % f_name
 
     jolt_lib = template % \
-            (major, minor, patch, release,
+            (major, minor, patch, release, repo.head.object.hexsha,
             export_string, len(export_list) )
 
     # Write it to where the hardware firmware expects it

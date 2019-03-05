@@ -18,6 +18,7 @@ const jolt_version_t JOLT_JELF_VERSION = {
     .release = %s,
 };
 
+const char *JOLT_OS_COMMIT = "%s";
 
 extern void *__floatsidf;
 extern void *__gtdf2;
@@ -40,6 +41,8 @@ static const void *exports[] = {
 #else
 
 const jolt_version_t JOLT_JELF_VERSION = { 0 };
+
+const char *JOLT_OS_COMMIT = NULL;
 
 /* Dummy place holder */
 static const void *exports[%d] = { 0 };
