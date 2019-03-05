@@ -111,6 +111,9 @@ def parse_args():
     parser.add_argument('--export_only', action='store_true',
             help='''Only compile the new jolt_lib.c exports, then exit''')
 
+    parser.add_argument('--release', action='store_true',
+            help='''Set versioning to RELEASE''')
+
     args = parser.parse_args()
     dargs = vars(args)
     return (args, dargs)
@@ -130,7 +133,7 @@ def read_export_list():
         export_list = [line.rstrip() for line in f]
     return export_list, major, minor, patch
 
-def write_export_file(export_list, major, minor, patch):
+def write_export_file(export_list, major, minor, patch, release):
     """
     Writes the export struct used in jolt_lib.c
     """
@@ -141,7 +144,9 @@ def write_export_file(export_list, major, minor, patch):
     for f_name in export_list:
         export_string += '''    EXPORT_SYMBOL( %s ),\n''' % f_name
 
-    jolt_lib = template % (export_string, len(export_list))
+    jolt_lib = template % \
+            (major, minor, patch, release,
+            export_string, len(export_list) )
 
     # Write it to where the hardware firmware expects it
     write_file = False # only write file if it changes contents
@@ -598,7 +603,12 @@ def main():
     ###################################
     # Generate jolt_lib.c export list #
     ###################################
-    write_export_file(export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR, _JELF_VERSION_PATCH)
+    if(args.release):
+        release = "JOLT_VERSION_RELEASE"
+    else:
+        release = "JOLT_VERSION_DEV"
+
+    write_export_file(export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR, _JELF_VERSION_PATCH, release)
 
     if args.export_only:
         return

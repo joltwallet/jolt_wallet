@@ -36,6 +36,8 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
 
     /* App Launcher */
     "Launching", /* Label for spinning preloader */
+    "Application update required to run application",
+    "JoltOS update required to run application.",
 
     /* Bluetooth Options */
     "Bluetooth Enable",

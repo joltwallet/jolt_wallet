@@ -49,11 +49,18 @@
 static heap_trace_record_t trace_records[HEAP_TRACING_NUM_RECORDS];
 #endif /* CONFIG_HEAP_TRACING */
 
-const jolt_version_t JOLT_VERSION = {
+const jolt_version_t JOLT_OS_VERSION = {
     .major = 0,
     .minor = 1,
     .patch = 0,
     .release = JOLT_VERSION_DEV,
+};
+
+/* todo: this information should be stored in another partition */
+const jolt_version_t JOLT_HW_VERSION = {
+    .major = JOLT_HW_JOLT,
+    .minor = 1,
+    .patch = 0,
 };
 
 static const char TAG[] = __FILE__;

@@ -23,7 +23,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('input', type=str,
-            helf='File to send over.')
+            help='File to send over.')
     parser.add_argument('--baudrate', type=int, default=230400,
             help="Baudrate")
     parser.add_argument('--port', type=str, default='/dev/ttyUSB0',

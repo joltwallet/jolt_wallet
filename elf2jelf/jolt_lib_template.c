@@ -11,6 +11,14 @@
 
 #if JOLT_OS
 
+const jolt_version_t JOLT_JELF_VERSION = {
+    .major = %d,
+    .minor = %d,
+    .patch = %d,
+    .release = %s,
+};
+
+
 extern void *__floatsidf;
 extern void *__gtdf2;
 extern void *__ltdf2;
@@ -20,12 +28,18 @@ extern void *__stack_chk_guard;
 
 #define EXPORT_SYMBOL(x) &x
 
-/* This order is very important; only *append* fuctions */
+/**
+ * @brief Export functions to be used in applications.
+ *
+ * This order is very important; only *append* fuctions
+ */
 static const void *exports[] = {
 %s
 };
 
 #else
+
+const jolt_version_t JOLT_JELF_VERSION = { 0 };
 
 /* Dummy place holder */
 static const void *exports[%d] = { 0 };
