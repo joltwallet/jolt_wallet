@@ -1,6 +1,6 @@
 /**
  * @file jolt_gui_err.h
- * @brief Convert error codes to GUI screens
+ * @brief Convert generic error codes to GUI screens
  * @author Brian Pugh
  */
 

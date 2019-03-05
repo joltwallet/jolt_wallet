@@ -537,22 +537,47 @@ bool vault_kick() {
  ********************/
 
 uint32_t vault_get_coin_type(){
-    return vault->coin_type;
+    if( NULL != vault ) {
+        return vault->coin_type;
+    }
+    else {
+        return 0;
+    }
 }
 
 uint32_t vault_get_purpose(){
-    return vault->purpose;
+    if( NULL != vault ) {
+        return vault->purpose;
+    }
+    else {
+        return 0;
+    }
 }
 
 char *vault_get_bip32_key(){
-    return vault->bip32_key;
+    if( NULL != vault ) {
+        return vault->bip32_key;
+    }
+    else {
+        return NULL;
+    }
 }
 
 hd_node_t *vault_get_node(){
-    return &(vault->node);
+    if( NULL != vault ) {
+        return &(vault->node);
+    }
+    else {
+        return NULL;
+    }
 }
 
 bool vault_get_valid(){
-    return vault->valid;
+    if( NULL != vault ) {
+        return vault->valid;
+    }
+    else {
+        return false;
+    }
 }
 

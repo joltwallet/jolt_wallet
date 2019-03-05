@@ -130,21 +130,39 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
 
     ESP_LOGI(TAG, "jelfLoader; Initializing");
     /* fn_basename is passed in for signature checking */
-    if( NULL == (app_cache.ctx = jelfLoaderInit(program, fn_basename, &jelf_loader_env)) ) {
-        return_code = -4;
-        goto exit;
+    switch( jelfLoaderInit(&app_cache.ctx, program, fn_basename, &jelf_loader_env) ) {
+        case JELF_LOADER_OK:
+            ESP_LOGI(TAG, "Context initialization OK.");
+            break;
+        case JELF_LOADER_VERSION_APP:
+            jolt_gui_scr_text_create(fn_basename, gettext(JOLT_TEXT_LAUNCH_APP_OUT_OF_DATE) );
+            return_code = -4;
+            goto exit;
+        case JELF_LOADER_VERSION_JOLTOS:
+            jolt_gui_scr_text_create(fn_basename, gettext(JOLT_TEXT_LAUNCH_JOLTOS_OUT_OF_DATE) );
+            return_code = -4;
+            goto exit;
+        default:
+            return_code = -4;
+            goto exit;
     }
 
     ESP_LOGI(TAG, "elfLoader; Loading Sections");
-    if( NULL == jelfLoaderLoad(app_cache.ctx) ) {
-        return_code = -5;
-        goto exit;
+    switch( jelfLoaderLoad(app_cache.ctx) ) {
+        case JELF_LOADER_OK:
+            break;
+        default:
+            return_code = -5;
+            goto exit;
     }
 
     ESP_LOGI(TAG, "elfLoader; Relocating");
-    if( NULL == jelfLoaderRelocate(app_cache.ctx) ) {
-        return_code = -6;
-        goto exit;
+    switch( jelfLoaderRelocate(app_cache.ctx) ) {
+        case JELF_LOADER_OK:
+            break;
+        default:
+            return_code = -6;
+            goto exit;
     }
 
     jelfLoader_time = esp_timer_get_time() - jelfLoader_time;

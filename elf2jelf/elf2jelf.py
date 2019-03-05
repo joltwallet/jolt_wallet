@@ -16,13 +16,6 @@ ELF File Structure that esp-idf creates:
 
 The Section Header Table is a Section like any other
    * Theres a pointer to the Section Header Table Section in the ELF Header.
-
-Assumes symtab is at the end (ignoring strtab and shstrtab)
-
-This is so that all st_shndx can be kept the same
-
-Todo:
-    * Generate Signature
 '''
 
 __author__  = 'Brian Pugh'
@@ -40,6 +33,7 @@ import math
 import binascii
 from binascii import hexlify, unhexlify
 import zlib
+import git
 import nacl.encoding
 from nacl.signing import SigningKey
 from nacl.bindings import \
@@ -52,6 +46,8 @@ import ipdb as pdb
 
 this_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, this_path)
+
+repo = git.Repo(os.path.dirname(__file__), search_parent_directories=True)
 
 from jelf_loader import jelf_loader_hash
 
@@ -118,6 +114,9 @@ def parse_args():
     parser.add_argument('--export_only', action='store_true',
             help='''Only compile the new jolt_lib.c exports, then exit''')
 
+    parser.add_argument('--release', action='store_true',
+            help='''Set versioning to RELEASE''')
+
     args = parser.parse_args()
     dargs = vars(args)
     return (args, dargs)
@@ -137,7 +136,7 @@ def read_export_list():
         export_list = [line.rstrip() for line in f]
     return export_list, major, minor, patch
 
-def write_export_file(export_list, major, minor, patch):
+def write_export_file(export_list, major, minor, patch, release):
     """
     Writes the export struct used in jolt_lib.c
     """
@@ -148,7 +147,9 @@ def write_export_file(export_list, major, minor, patch):
     for f_name in export_list:
         export_string += '''    EXPORT_SYMBOL( %s ),\n''' % f_name
 
-    jolt_lib = template % (export_string, len(export_list))
+    jolt_lib = template % \
+            (major, minor, patch, release, repo.head.object.hexsha,
+            export_string, len(export_list) )
 
     # Write it to where the hardware firmware expects it
     write_file = False # only write file if it changes contents
@@ -605,7 +606,12 @@ def main():
     ###################################
     # Generate jolt_lib.c export list #
     ###################################
-    write_export_file(export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR, _JELF_VERSION_PATCH)
+    if(args.release):
+        release = "JOLT_VERSION_RELEASE"
+    else:
+        release = "JOLT_VERSION_DEV"
+
+    write_export_file(export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR, _JELF_VERSION_PATCH, release)
 
     if args.export_only:
         return

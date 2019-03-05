@@ -60,6 +60,8 @@ typedef enum jolt_text_id_t {
     
     /* App Launcher */
     JOLT_TEXT_PRELOAD_LAUNCHING,
+    JOLT_TEXT_LAUNCH_APP_OUT_OF_DATE,
+    JOLT_TEXT_LAUNCH_JOLTOS_OUT_OF_DATE,
 
     /* Bluetooth Options */
     JOLT_TEXT_BLUETOOTH_ENABLE,

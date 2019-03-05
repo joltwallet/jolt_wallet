@@ -138,6 +138,24 @@ typedef struct jelfLoaderContext_t {
 } jelfLoaderContext_t;
 
 /**
+ * @brief Application loading return codes
+ */
+typedef enum jelfLoaderStatus_t{
+    JELF_LOADER_OK = 0,           /**< Success */
+    JELF_LOADER_ERROR,            /**< Generic error if one was not explicitly defined */
+    JELF_LOADER_INVALID_STATE,    /**< Context is not in correct state to perform requested action */
+    JELF_LOADER_INVALID_KEY,      /**< Application's public key doesn't match approved */
+    JELF_LOADER_OOM,              /**< Out of memory */
+    JELF_LOADER_VERSION_JOLTOS,   /**< JoltOS is out of date */
+    JELF_LOADER_VERSION_APP,      /**< Application is out of data */
+    JELF_LOADER_MALFORMED,        /**< Malformed data */
+    JELF_LOADER_RELOC,            /**< Error relocating section */
+    JELF_LOADER_LINK,             /**< Invalid section linking data */
+    JELF_LOADER_SYMTAB,           /**< Missing symbol table */
+    JELF_LOADER_ENTRYPOINT,       /**< Missing entrypoint */
+} jelfLoaderStatus_t;
+
+/**
  * @brief Runs the EntryPoint of the program loaded in the give context.
  * @param[in,out] ctx Context the application was loaded into
  * @param[in] argc Argument Count
@@ -180,26 +198,28 @@ inline int jelfLoaderRunConsole(jelfLoaderContext_t *ctx, int argc, char **argv)
  *         * Number of sections in the ELF file.
  *         * offset to SectionHeaderTable, which maps an index to a offset in ELF where the section header begins.
  *         * offset to StringTable, which is a list of null terminated strings.
-
+ *
+ * @param[out] ctx_ptr Allocated JELF loading context
  * @param[in,out] fd
  * @param[in,out] name 
  * @param[in,out] env Exported function environment
- * @return Initialized launcher context. Returns NULL on error.
+ * @return status code
  */
-jelfLoaderContext_t *jelfLoaderInit(LOADER_FD_T fd, const char *name, const jelfLoaderEnv_t *env);
+jelfLoaderStatus_t jelfLoaderInit(jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd, const char *name, const jelfLoaderEnv_t *env);
 
 /**
  * @brief Loads ALLOC sections into context.
  * @param[in,out] ctx Context the application was loaded into.
  * @return Application loader context. Returns NULL on error.
  */
-jelfLoaderContext_t *jelfLoaderLoad(jelfLoaderContext_t *ctx);
+jelfLoaderStatus_t jelfLoaderLoad(jelfLoaderContext_t *ctx);
+
 /**
  * @brief Loads RELA sections and performs relocation.
  * @param[in,out] ctx Context the application was loaded into
  * @return Application loader context. Returns NULL on error.
  */
-jelfLoaderContext_t *jelfLoaderRelocate(jelfLoaderContext_t *ctx);
+jelfLoaderStatus_t jelfLoaderRelocate(jelfLoaderContext_t *ctx);
 
 /**
  * @brief Deallocates the loader context.

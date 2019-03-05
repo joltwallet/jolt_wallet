@@ -348,6 +348,14 @@ static void console_syscore_register() {
     esp_console_cmd_t cmd;
 
     cmd = (esp_console_cmd_t) {
+        .command = "about",
+        .help = "Display system information.",
+        .hint = NULL,
+        .func = &jolt_cmd_about,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
         .command = "app_key",
         .help = "Sets app public key. WILL ERASE ALL DATA.",
         .hint = NULL,
