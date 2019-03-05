@@ -3,13 +3,10 @@ PROJECT_NAME := jolt_os
 EXTRA_COMPONENT_DIRS := \
 	$(abspath jolt_os)
 
-GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
-
 #COMPONENTS = 
 CFLAGS += \
 		  -Werror \
 		  -DJOLT_OS \
-		  -DJOLT_OS_COMMIT_STR=\"$(GIT_VERSION)\" \
 		  -DJOLT_GUI_TEST_MENU \
 		  -DJOLT_GUI_DEBUG_FUNCTIONS
 
