@@ -14,6 +14,7 @@ typedef enum {
     JOLT_GUI_ERR_WIFI_OFF,
     JOLT_GUI_ERR_BLUETOOTH_NO_DRIVERS,
     JOLT_GUI_ERR_BLUETOOTH_OFF,
+    JOLT_GUI_ERR_OOM,
 } jolt_gui_err_t;
 
 

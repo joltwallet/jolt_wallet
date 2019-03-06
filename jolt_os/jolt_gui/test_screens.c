@@ -113,6 +113,7 @@ static void https_cb(int16_t status_code, char *post_response, void *params, lv_
     if( NULL != post_response ) {
         free(post_response);
     }
+    jolt_gui_obj_del(scr);
 }
 
 lv_res_t jolt_gui_test_https_create( lv_obj_t *btn ) {

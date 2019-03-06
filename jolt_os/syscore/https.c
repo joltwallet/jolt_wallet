@@ -9,7 +9,7 @@
 #include "https.h"
 
 
-static const char TAG[] = __FILE__;
+static const char TAG[] = "https";
 
 static esp_http_client_handle_t client = NULL;
 
@@ -43,7 +43,7 @@ static void https_func( jolt_bg_job_t *bg_job ) {
     }
 
     /* Poll the http client until complete or user abort */
-    for(;; vTaskDelay(pdMS_TO_TICKS(77))) {
+    for(;; vTaskDelay(pdMS_TO_TICKS(100))) {
         err = esp_http_client_perform(client);
 
         if( ESP_OK == err ) {
@@ -56,6 +56,7 @@ static void https_func( jolt_bg_job_t *bg_job ) {
         }
         else if( JOLT_BG_ABORT == jolt_bg_get_signal( bg_job ) ) {
             ESP_LOGI(TAG, "user aborted https client.");
+            status_code = JOLT_NETWORK_CANCEL;
             goto exit;
         }
     }
@@ -73,9 +74,9 @@ static void https_func( jolt_bg_job_t *bg_job ) {
             status_code = JOLT_NETWORK_OOM;
             goto exit;
         }
-        ESP_LOGI(TAG, "Server Response:\n%s\n", response);
         int read_len = esp_http_client_read(client, response, content_length);
         response[read_len] = '\0';
+        ESP_LOGI(TAG, "Server Response:\n%s\n", response);
     }
 
     /* Call user callback and free job resources */

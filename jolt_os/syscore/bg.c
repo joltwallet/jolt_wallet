@@ -1,16 +1,16 @@
 #include "esp_log.h"
 #include "bg.h"
 
-static const char TAG[] = "background";
+static const char TAG[] = "bg";
 
 static TaskHandle_t task_handle = NULL;
 static QueueHandle_t job_queue = NULL;
 
 typedef struct jolt_bg_job_t {
-    jolt_bg_task_t task; // function to be called
-    void *param;         // user parameters to be passed into function
-    QueueHandle_t input; // queue to receive jolt_bg_cmd_t
-    lv_obj_t *scr;       // optional screen (usually a loading/preloading screen)
+    jolt_bg_task_t task; /**< function to be called */
+    void *param;         /**< user parameters to be passed into function */
+    QueueHandle_t input; /**< queue to receive jolt_bg_cmd_t */
+    lv_obj_t *scr;       /**< optional screen (usually a loading/preloading screen) */
 } jolt_bg_job_t;
 
 static void bg_task( void *param ) {
@@ -21,11 +21,6 @@ static void bg_task( void *param ) {
         /* Call the task */
         ESP_LOGD(TAG, "Calling job func");
         (job.task)( &job );
-
-        /* Delete the screen */
-        if( NULL != job.scr) {
-            jolt_gui_obj_del( job.scr );
-        }
 
         /* Delete the Queue */
         vQueueDelete( job.input );
@@ -63,8 +58,12 @@ exit:
 static lv_res_t abort_cb( lv_obj_t *btn ) {
     QueueHandle_t queue = lv_obj_get_free_ptr( btn );
     jolt_bg_signal_t signal = JOLT_BG_ABORT;
-    if( pdPASS != xQueueSend(queue, &signal, 0) ) {
-        ESP_LOGE(TAG, "Failed to send JOLT_BG_ABORT signal");
+    switch( xQueueSend(queue, &signal, 0) ) {
+        case pdPASS:
+            break;
+        default:
+            ESP_LOGE(TAG, "Failed to send JOLT_BG_ABORT signal");
+            break;
     }
 
     return LV_RES_OK;
@@ -84,7 +83,7 @@ esp_err_t jolt_bg_create( jolt_bg_task_t task, void *param, lv_obj_t *scr ) {
     input_queue = xQueueCreate( CONFIG_JOLT_BG_SIGNAL_QUEUE_LEN, sizeof(jolt_bg_signal_t) );
     if( NULL == job_queue) {
         ESP_LOGE(TAG, "Failed to create bg job queue");
-        return ESP_FAIL;
+        goto exit;
     }
 
     /* Configure Job */
@@ -99,9 +98,11 @@ esp_err_t jolt_bg_create( jolt_bg_task_t task, void *param, lv_obj_t *scr ) {
         lv_obj_t *back = jolt_gui_scr_set_back_action(scr, abort_cb);
         if( NULL == back ) {
             // failed to set back action
+            ESP_LOGE(TAG, "Failed to set back action");
             goto exit;
         }
         jolt_gui_scr_set_back_param(scr, input_queue);
+        ESP_LOGI(TAG, "Registered abort back action");
     }
 
     /* Send the job to the job_queue. Do NOT block to put it on the queue */
@@ -133,3 +134,9 @@ lv_obj_t *jolt_bg_get_scr(jolt_bg_job_t *job) {
     return job->scr;
 }
 
+void jolt_bg_del_scr( jolt_bg_job_t *job ) {
+    if( NULL != job->scr) {
+        jolt_gui_obj_del( job->scr );
+        job->scr = NULL;
+    }
+}

@@ -78,6 +78,10 @@ lv_obj_t *jolt_gui_obj_parent_create() {
 /* Creates the statusbar title label for a screen. Returns the 
  * label object. */
 lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
+    if( NULL == parent ) {
+        return NULL;
+    }
+
     lv_obj_t *label = NULL;
     JOLT_GUI_CTX{
         lv_obj_t *statusbar_label = statusbar_get_label();
@@ -108,6 +112,10 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
 
 /* Creates the body container */ 
 lv_obj_t *jolt_gui_obj_cont_body_create( lv_obj_t *parent ) {
+    if( NULL == parent ) {
+        return NULL;
+    }
+
     lv_obj_t *cont = NULL;
     JOLT_GUI_CTX{
         cont = BREAK_IF_NULL(lv_cont_create(parent, NULL));
@@ -121,6 +129,10 @@ lv_obj_t *jolt_gui_obj_cont_body_create( lv_obj_t *parent ) {
 }
 
 void jolt_gui_obj_del(lv_obj_t *obj){
+    if( NULL == obj ) {
+        return;
+    }
+
     JOLT_GUI_CTX{
         /* Some objects may require special actions before deleting */
         jolt_gui_scr_id_t id = lv_obj_get_free_num(obj);

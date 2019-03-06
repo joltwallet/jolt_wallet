@@ -96,6 +96,15 @@ void *jolt_bg_get_param(jolt_bg_job_t *job);
 lv_obj_t *jolt_bg_get_scr(jolt_bg_job_t *job);
 
 /**
+ * @brief Convenience function to delete a job's screen. Will set screen pointer to NULL.
+ *
+ * Generally called at the end of a job function if done using the screen.
+ *
+ * @param[in, out] job Job
+ */
+void jolt_bg_del_scr( jolt_bg_job_t *job );
+
+/**
  * @brief If an abort signal has been received, goto "exit" for cleanup
  */
 #define JOLT_BG_CHECK_ABORT(job) \

@@ -20,6 +20,7 @@ enum{
     JOLT_NETWORK_ERROR = -1,    /**< Unspecified Error */
     JOLT_NETWORK_TIMEDOUT = -2, /**< Network Timed Out*/
     JOLT_NETWORK_OOM = -3,      /**< Unable to allocate memory */
+    JOLT_NETWORK_CANCEL = -4,   /**< User cancelled request */
 };
 typedef uint8_t jolt_network_status_t;
 
