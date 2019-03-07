@@ -58,6 +58,7 @@ jolt_gui_debug_obj_print
 jolt_gui_err_to_str
 jolt_gui_scr_err_create
 jolt_gui_find
+jolt_gui_get_param
 jolt_gui_group_add
 jolt_gui_group_back_get
 jolt_gui_group_enter_get

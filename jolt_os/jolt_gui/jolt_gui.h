@@ -256,6 +256,13 @@ lv_res_t jolt_gui_send_enter_back(lv_obj_t *dummy);
  */
 lv_res_t jolt_gui_send_enter_enter(lv_obj_t *dummy);
 
+/**
+ * @brief alias for lv_obj_get_free_ptr
+ */
+static inline void *jolt_gui_get_param( lv_obj_t *obj ){
+    return lv_obj_get_free_ptr( obj );
+}
+
 /*****************
  * System Events *
  *****************/
