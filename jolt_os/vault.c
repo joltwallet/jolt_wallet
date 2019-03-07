@@ -505,15 +505,26 @@ esp_err_t vault_set(uint32_t purpose, uint32_t coin_type,
 */
 void vault_refresh(vault_cb_t failure_cb, vault_cb_t success_cb, void *param) {
     if( vault_kick() ) {
-        success_cb(NULL);
+        ESP_LOGI(TAG, "Vault refreshed and valid; calling %p", success_cb);
+        if(NULL != success_cb) {
+            // todo; execute this on the bg instead
+            success_cb(param);
+        }
     }
     else if( PIN_STATE_EMPTY != ps.state ) {
         ESP_LOGE(TAG, "PIN Entry in progress; cannot refresh vault.");
+        if( NULL != failure_cb ) {
+            // todo; execute this on the bg instead
+            failure_cb(param);
+        }
     }
     else{
         /* Prompt for pin access without overwriting vault values */
         memset(&ps, 0, sizeof(ps));
         ps.state = PIN_STATE_CREATE;
+        ps.failure_cb = failure_cb;
+        ps.success_cb = success_cb;
+        ps.param = param;
         ps_state_exec();
     }
 }
