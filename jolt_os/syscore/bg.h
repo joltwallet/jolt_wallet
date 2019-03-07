@@ -53,7 +53,6 @@ typedef uint8_t jolt_bg_signal_t;
  *
  * If a screen is provided, the following will be performed:
  *     1. The screen's back action will be overrided to send a JOLT_BG_ABORT signal to the task.
- *     2. Upon task exit, the screen will be deleted. 
  * Typically some form of loading screen is used.
  * If your task needs to be passed a screen, but you don't want these actions,
  * pass the screen as part of param.
