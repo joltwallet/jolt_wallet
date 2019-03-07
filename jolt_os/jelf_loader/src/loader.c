@@ -1133,7 +1133,7 @@ jelfLoaderStatus_t jelfLoaderLoad(jelfLoaderContext_t *ctx) {
                         char *tmp = LOADER_ALLOC_DATA(CEIL4(sectHdr.sh_size));
                         /* Zero out the last 4 bytes, just in case */
                         memset(&tmp[CEIL4(sectHdr.sh_size)-4], 0, 4);
-                        //memset(tmp, 0, CEIL4(sectHdr.sh_size));
+
                         LOADER_GETDATA( ctx, tmp, sectHdr.sh_size );
                         memcpy(section->data, tmp, CEIL4(sectHdr.sh_size));
                         LOADER_FREE(tmp);
@@ -1141,6 +1141,9 @@ jelfLoaderStatus_t jelfLoaderLoad(jelfLoaderContext_t *ctx) {
                     else{
                         LOADER_GETDATA( ctx, section->data, sectHdr.sh_size );
                     }
+                }
+                else {
+                    memset(section->data, 0, sectHdr.sh_size);
                 }
 
                 MSG("  section %2d %08X %6i", n,
