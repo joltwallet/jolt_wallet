@@ -2,6 +2,9 @@
  * @file vault.h
  * @brief Primary master mnemonic handling functions
  * @author Brian Pugh
+ *
+ * @bugs
+ *     * Stack overflow on VaultWatchDog after a long time idle, possible memory leak.
  */
 
 /* Jolt Wallet - Open Source Cryptocurrency Hardware Wallet
