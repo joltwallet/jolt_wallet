@@ -2,6 +2,8 @@
  * @file wifi.h
  * @brief High level wifi control functions
  * @author Brian Pugh
+ * @bugs
+ *     * WiFi credentials not properly updated until a hard reboot.
  */
 
 /* Jolt Wallet - Open Source Cryptocurrency Hardware Wallet

@@ -338,7 +338,7 @@ void vault_sem_take() {
 #if ESP_LOG_LEVEL >= ESP_LOG_INFO
     vault_sem_ctr--;
 #endif
-    ESP_LOGI(TAG, "%s %d", __func__, vault_sem_ctr);
+    ESP_LOGD(TAG, "%s %d", __func__, vault_sem_ctr);
 
     if( !xSemaphoreTakeRecursive(vault_sem, pdMS_TO_TICKS( 
                     CONFIG_JOLT_VAULT_TIMEOUT_TIMEOUT_MS) ) ) {
@@ -353,7 +353,7 @@ void vault_sem_give() {
 #if ESP_LOG_LEVEL >= ESP_LOG_INFO
     vault_sem_ctr++;
 #endif
-    ESP_LOGI(TAG, "%s %d", __func__, vault_sem_ctr);
+    ESP_LOGD(TAG, "%s %d", __func__, vault_sem_ctr);
     xSemaphoreGive(vault_sem);
 }
 

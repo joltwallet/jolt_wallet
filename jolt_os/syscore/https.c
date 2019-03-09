@@ -149,8 +149,11 @@ static void https_func( jolt_bg_job_t *bg_job ) {
 
     /* Call user callback and free job resources */
 exit:
+    free(job->post_data);
     ESP_LOGI(TAG, "Calling user callback");
-    job->cb(status_code, response, job->param, scr);
+    if( NULL != job->cb ) {
+        job->cb(status_code, response, job->param, scr);
+    }
     free( job );
 }
 
