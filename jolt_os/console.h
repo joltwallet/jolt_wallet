@@ -80,9 +80,32 @@ typedef struct subconsole_t {
     struct subconsole_t *next;
 } subconsole_t;
 
+/**
+ * @brief Create a subconsole object that an application can register commands to 
+ * @return Subconsole
+ */
 subconsole_t *subconsole_cmd_init();
+
+/**
+ * @brief Register a command to the subconsole
+ * @param[in,out] subconsole Subconsole object
+ * @param[in], cmd Command to register. Does not need to persist.
+ * @return 0 on success. 
+ */
 int subconsole_cmd_register(subconsole_t *subconsole, esp_console_cmd_t *cmd);
+
+/**
+ * @brief execute the cmd. 
+ * @param[in] subconsole Subconsole object
+ * @param argc
+ * @return Command's return code. Returns -100 if command is not found.
+ */
 int subconsole_cmd_run(subconsole_t *subconsole, uint8_t argc, char **argv);
+
+/**
+ * @brief De allocate a subconsole.
+ * @param[in] subconsole Subconsole object to deallocate.
+ */
 void subconsole_cmd_free(subconsole_t *subconsole);
 
 #endif

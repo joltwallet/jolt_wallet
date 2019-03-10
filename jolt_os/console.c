@@ -73,7 +73,8 @@ static void jolt_process_cmd_task(jolt_bg_job_t *bg_job){
         size_t argc = esp_console_split_argv(cmd->data, argv, sizeof(argv));
         ESP_LOGD(TAG, "Not an internal command; looking for app of name %s", argv[0]);
         // todo, parse passphrase argument
-        if( launch_file(argv[0], argc-1, argv+1, "") ) {
+        ESP_LOGI(TAG, "argv[1] %s", argv[1]);
+        if( launch_file(argv[0], argc-1, &argv[1], "") ) {
             printf("Unsuccessful command\n");
         }
     } else if (err == ESP_ERR_INVALID_ARG) {
@@ -320,13 +321,14 @@ static void subconsole_cmd_help(subconsole_t *subconsole) {
 int subconsole_cmd_run(subconsole_t *subconsole, uint8_t argc, char **argv) {
     subconsole_t *current = subconsole;
     if( argc > 0 ) {
+        if( 0 == strcmp(argv[0], "help") ) {
+            subconsole_cmd_help(subconsole);
+            return 0;
+        }
+
         while( current ) {
             if( 0 == strcmp(argv[0], current->cmd.command) ) {
                 return (current->cmd.func)(argc, argv);
-            }
-            else if( 0 == strcmp(argv[0], "help") ) {
-                subconsole_cmd_help(subconsole);
-                return 0;
             }
             current = current->next;
         }

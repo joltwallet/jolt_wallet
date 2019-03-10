@@ -39,6 +39,12 @@ static lv_res_t launch_app_exit(lv_obj_t *btn);
 static void launch_app_from_store(void *dummy);
 
 static void launch_app_cache_clear(){
+    if( NULL != app_cache.argv ) {
+        for(uint8_t i=0; i < app_cache.argc; i++) {
+            free( app_cache.argv[i] );
+        }
+        free(app_cache.argv);
+    }
     if( NULL != app_cache.scr) {
         ESP_LOGE(TAG, "Cannot clear app_cache with a valid screen");
     }
@@ -184,7 +190,13 @@ exec:
     /* Prepare vault for app launching. vault_set() creates the PIN entry screen */
     // maybe move these out of cache
     app_cache.argc = app_argc;
-    app_cache.argv = app_argv;
+
+    // todo: error handling
+    app_cache.argv = malloc(app_argc * sizeof(char *));
+    for(uint8_t i=0; i < app_argc; i++) {
+        app_cache.argv[i] = malloc(strlen(app_argv[i])+1);
+        strcpy(app_cache.argv[i], app_argv[i]);
+    }
 
     ESP_LOGI( TAG, "Derivation Purpose: 0x%x. Coin Type: 0x%x",
             app_cache.ctx->coin_purpose,
@@ -219,7 +231,9 @@ static void launch_app_from_store(void *dummy) {
     app_cache.scr = (lv_obj_t *)jelfLoaderRun(app_cache.ctx,
             app_cache.argc, app_cache.argv);
     app_cache.loading = false;
-    jolt_gui_scr_set_back_action(app_cache.scr, launch_app_exit);
+    if( NULL != app_cache.scr ) {
+        jolt_gui_scr_set_back_action(app_cache.scr, launch_app_exit);
+    }
 }
 
 static lv_res_t launch_app_exit(lv_obj_t *btn) {
