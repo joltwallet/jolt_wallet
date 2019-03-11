@@ -9,11 +9,11 @@
 static const char TAG[] = "decompress";
 
 typedef struct decomp_t{
-    tinfl_decompressor inflator;
-    write_fun_t writer;
-    void *cookie;
-    uint8_t *buf;
-    uint8_t *next_out;
+    tinfl_decompressor inflator; /**< miniz decompressor object */
+    write_fun_t writer;          /**< writer function to flush decompressed data to */
+    void *cookie;                /**< identifier data to be passed into the writer function */
+    uint8_t *buf;                /**< Output ringbuffer to decompress data into. */
+    uint8_t *next_out;           /**< Pointer into buf on where to read from */
 } decomp_t;
 
 
