@@ -121,7 +121,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
     strcat(exec_fn, fn_basename);
     strcat(exec_fn, ".jelf");
 
-    if( jolt_fs_exists(exec_fn) != 1 ){
+    if( !jolt_fs_exists(exec_fn) ){
         ESP_LOGE(TAG, "Executable doesn't exist\n");
         return_code = -2;
         goto exit;

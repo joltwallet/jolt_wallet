@@ -12,6 +12,8 @@
 #ifndef __JOLT_SYSCORE_FS_CONSOLE_H__
 #define __JOLT_SYSCORE_FS_CONSOLE_H__
 
+#include "stdbool.h"
+
 /**
  * @brief Minimum amount of free space allowed in bytes.
  *
@@ -73,13 +75,13 @@ uint32_t jolt_fs_free();
  * @param[in] full filename path; i.e. '/spiffs/test.txt 
  * @return size of file in bytes. Returns -1 if the file is not found. 
  */
-size_t jolt_fs_size(char *fname);
+size_t jolt_fs_size(const char *fname);
 
 /**
  * @brief Checks if file exists. 
  * @param[in] full filename path; i.e. '/spiffs/test.txt 
- * @return 0 if file exists, -1 if it does not
+ * @return 0 if file exists, 1 if file does not exist, -1 if filesystem is not mounted.
  */
-int jolt_fs_exists(char *fname);
+bool jolt_fs_exists(const char *fname);
 
 #endif

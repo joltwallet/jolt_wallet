@@ -118,30 +118,30 @@ uint32_t jolt_fs_free() {
     return (tot-used-FS_MIN_FREE);
 }
 
-size_t jolt_fs_size(char *fname) {
+size_t jolt_fs_size(const char *fname) {
+    struct stat sb;
+
     if (!esp_spiffs_mounted( NULL )) {
         return -1;
     }
 
-    struct stat sb;
-    if (stat(fname, &sb) == 0) {
-        return sb.st_size;
-    }
-    else{
+    if( 0 != stat(fname, &sb) ) {
         return -1;
     }
+
+    return sb.st_size;
 }
 
-int jolt_fs_exists(char *fname) {
+bool jolt_fs_exists(const char *fname) {
     if (!esp_spiffs_mounted( NULL )) {
-        return -1;
+        return false;
     }
 
     struct stat sb;
     if (stat(fname, &sb) == 0) {
-        return 1;
+        return true;
     }
-    return 0;
+    return false;
 }
 
 

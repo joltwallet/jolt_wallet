@@ -7,7 +7,7 @@
 
 
 int jolt_cmd_rm(int argc, char** argv) {
-    int return_code = -1;;
+    int return_code = -1;
 
     if( !console_check_range_argc(argc, 2, 32) ) {
         return_code = 1;

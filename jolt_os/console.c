@@ -374,6 +374,14 @@ static void console_syscore_register() {
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
     cmd = (esp_console_cmd_t) {
+        .command = "cat",
+        .help = "Print the contents of a file",
+        .hint = NULL,
+        .func = &jolt_cmd_cat,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
         .command = "download",
         .help = "Send specified file from Jolt over UART ymodem",
         .hint = NULL,

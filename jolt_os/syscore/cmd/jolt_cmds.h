@@ -30,6 +30,13 @@ int jolt_cmd_app_key(int argc, char** argv);
 int jolt_cmd_bt_whitelist(int argc, char** argv);
 
 /**
+ * @brief Print the contents of a file
+ *
+ * Takes 1 argument: file to print
+ */
+int jolt_cmd_cat(int argc, char** argv);
+
+/**
  * @brief Send specified file from Jolt over UART ymodem
  *
  * Takes 1 argument: filename to transfer

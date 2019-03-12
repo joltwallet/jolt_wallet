@@ -4,9 +4,40 @@
 #include "jolt_helpers.h"
 #include <driver/adc.h>
 
+#include "json_config.h"
+#include "cJSON.h"
+
 #include "syscore/https.h"
 
 static const char TAG[] = "test_screens";
+
+lv_res_t jolt_gui_test_json_create(lv_obj_t *btn) {
+#define EXIT_IF_NULL(x) if( NULL == x ) goto exit;
+    const char fn[] = "/spiffs/test.json";
+    cJSON *json;
+
+    json = jolt_json_read( fn );
+
+    if( NULL == json ) {
+        ESP_LOGI(TAG, "No json file found; creating.");
+        json = cJSON_CreateObject();
+        EXIT_IF_NULL( cJSON_AddStringToObject(json, "testStringKey", "testStringVal") );
+        EXIT_IF_NULL( cJSON_AddNumberToObject(json, "testIntKey", 123456789) );
+        jolt_json_write( fn, json );
+    }
+
+    /* Print stuff to stdout*/
+    {
+        cJSON *obj;
+        obj = cJSON_GetObjectItemCaseSensitive(json, "testStringKey");
+        printf("testStringKey: %s\n", cJSON_GetStringValue(obj) );
+    }
+
+exit:
+    jolt_json_del(json);
+    return LV_RES_OK;
+#undef EXIT_IF_NULL
+}
 
 static lv_res_t jolt_gui_test_number_enter_cb(lv_obj_t *parent){
     double d_val = jolt_gui_scr_digit_entry_get_double(parent);
