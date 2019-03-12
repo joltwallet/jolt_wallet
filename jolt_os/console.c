@@ -146,8 +146,9 @@ static void console_task() {
         bool block = false;
         const char blocking_prefix[] = "upload";
         if( 0 == strncmp(line, blocking_prefix, strlen(blocking_prefix))
-                || 0 == strcmp(line, "mnemonic_restore") ) {
-            block = true;
+                || 0 == strcmp(line, "mnemonic_restore")
+                || 0 == strcmp(line, "cat") ) {
+            block = true; // todo: better stream control
         }
         jolt_cmd_process(line, stdin, stdout, stderr, block);
         vTaskDelay(50/portTICK_PERIOD_MS); // give enough time for quick commands to execute

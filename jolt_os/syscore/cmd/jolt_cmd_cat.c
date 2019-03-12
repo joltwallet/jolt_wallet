@@ -30,7 +30,7 @@ int jolt_cmd_cat(int argc, char** argv) {
         goto exit;
     }
 
-    while( 0 != fread(&c, 1, 1, stdin) ) {
+    while( 0 != fread(&c, 1, 1, f) ) {
         printf("%c", c);
     }
     printf("\n");
