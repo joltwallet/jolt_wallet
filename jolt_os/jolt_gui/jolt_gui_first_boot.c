@@ -95,7 +95,7 @@ static void generate_mnemonic() {
 }
 
 /* BG Task for stretching */
-static void bg_stretch_task(jolt_bg_job_t *job) {
+static int bg_stretch_task(jolt_bg_job_t *job) {
     int8_t progress = 0;
     lv_obj_t *loading_scr;
 
@@ -120,6 +120,8 @@ static void bg_stretch_task(jolt_bg_job_t *job) {
     sodium_memzero(mnemonic, sizeof(mnemonic));
 
     esp_restart();
+
+    return 0;
 }
 
 static lv_res_t mismatch_cb(lv_obj_t *btn) {

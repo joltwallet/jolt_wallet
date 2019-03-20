@@ -2,6 +2,7 @@
  Copyright (C) 2018  Brian Pugh, James Coxon, Michael Smaili
  https://www.joltwallet.com/
  */
+//#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -76,7 +77,7 @@ static SemaphoreHandle_t vault_watchdog_sem; // Used to kick the dog
 /* Static Function */
 static void ps_state_cleanup();
 static esp_err_t ps_state_exec();
-static void ps_state_exec_task( jolt_bg_job_t *job );
+static int ps_state_exec_task( jolt_bg_job_t *job );
 
 static lv_res_t pin_fail_cb( lv_obj_t *btn );
 static lv_res_t pin_enter_cb(lv_obj_t *scr);
@@ -86,6 +87,7 @@ static void vault_watchdog_task();
 
 static void ps_state_cleanup() {
     /* Cleanup */
+    ESP_LOGV(TAG, "Cleaning up ps_state ");
     if( NULL != ps.scr ) {
         jolt_gui_obj_del( ps.scr );
         ps.scr = NULL;
@@ -105,7 +107,7 @@ static esp_err_t ps_state_exec() {
 }
 
 /* Increments the PIN Entry State Machine in the BG */
-static void ps_state_exec_task( jolt_bg_job_t *job ) {
+static int ps_state_exec_task( jolt_bg_job_t *job ) {
     /* This always gets executed in the BG Task */
     switch( ps.state ){
         case PIN_STATE_CREATE: {
@@ -153,7 +155,7 @@ static void ps_state_exec_task( jolt_bg_job_t *job ) {
             #endif
 
             /* Create GUI Objects */
-            ESP_LOGI(TAG, "Creating PIN screen");
+            ESP_LOGD(TAG, "Creating PIN screen");
             JOLT_GUI_CTX{
                 ps.scr = BREAK_IF_NULL( jolt_gui_scr_digit_entry_create( 
                         title,
@@ -189,13 +191,13 @@ static void ps_state_exec_task( jolt_bg_job_t *job ) {
                     gettext(JOLT_TEXT_PIN),
                     gettext(JOLT_TEXT_CHECKING_PIN), 0);
             jolt_gui_sem_give();
-            ESP_LOGI(TAG, "Creating stretch autoupdate lv_task");
+            ESP_LOGD(TAG, "Creating stretch autoupdate lv_task");
             jolt_gui_scr_loadingbar_autoupdate( loading_scr, &progress );
 
             /* Stretch directly here */
-            ESP_LOGI(TAG, "Beginning stretch");
+            ESP_LOGD(TAG, "Beginning stretch");
             storage_stretch( ps.pin_hash, &progress );
-            ESP_LOGI(TAG, "Finished stretch");
+            ESP_LOGD(TAG, "Finished stretch");
 
             /* Delete Loading Screen */
             jolt_gui_sem_take();
@@ -270,12 +272,18 @@ static void ps_state_exec_task( jolt_bg_job_t *job ) {
             vault->valid = true;
             sodium_mprotect_readonly(vault);
 
-            /* Call the user callback */
-            if( NULL != ps.success_cb ) {
-                ps.success_cb( ps.param );
+            /* Cleanup and Call the user callback */
+            {
+                vault_cb_t cb = ps.success_cb;
+                void *param = ps.param;
+                
+                ps_state_cleanup();
+
+                if( NULL != cb ) {
+                    cb( param );
+                }
             }
 
-            ps_state_cleanup();
             break;
         }
         case PIN_STATE_FAIL:
@@ -294,6 +302,7 @@ static void ps_state_exec_task( jolt_bg_job_t *job ) {
             ps_state_cleanup();
             break;
     }
+    return 0;
 }
 
 static lv_res_t pin_fail_cb( lv_obj_t *btn ) {
@@ -321,7 +330,7 @@ static lv_res_t pin_enter_cb(lv_obj_t *scr) {
 
 /* gets triggered when user presses back on first pin roller on pin screen */
 static lv_res_t pin_back_cb( lv_obj_t *scr ) {
-    ESP_LOGI(TAG, "pin_back_cb");
+    ESP_LOGD(TAG, "pin_back_cb");
     if( ps.state != PIN_STATE_FAIL ) {
         ps.state = PIN_STATE_FAIL;
         ps_state_exec();
@@ -354,7 +363,7 @@ void vault_sem_give() {
     vault_sem_ctr++;
 #endif
     ESP_LOGD(TAG, "%s %d", __func__, vault_sem_ctr);
-    xSemaphoreGive(vault_sem);
+    xSemaphoreGiveRecursive(vault_sem);
 }
 
 static void vault_watchdog_task() {
@@ -443,7 +452,7 @@ esp_err_t vault_set(uint32_t purpose, uint32_t coin_type,
         const char *bip32_key, const char *passphrase,
         vault_cb_t failure_cb, vault_cb_t success_cb, void *param) {
 
-    ESP_LOGI(TAG, "%s", __func__);
+    ESP_LOGD(TAG, "%s", __func__);
 
     if( PIN_STATE_EMPTY != ps.state ) {
         ESP_LOGE(TAG, "PIN Entry in progress; cannot set vault.");

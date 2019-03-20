@@ -349,10 +349,10 @@ menu "JoltOS"
         config JOLT_TASK_PRIORITY_BACKGROUND
             int
             prompt "Background Task Priority"
-            default 12
+            default 3
             range 1 20
             help
-                help text here.
+                Must be lower than BLE_CONSOLE and UART_CONSOLE
 
     endmenu
 

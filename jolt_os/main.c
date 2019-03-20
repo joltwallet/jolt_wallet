@@ -63,9 +63,9 @@ const jolt_version_t JOLT_HW_VERSION = {
     .patch = 0,
 };
 
-static const char TAG[] = __FILE__;
+static const char TAG[] = "main";
 
-void littlevgl_task() {
+static void littlevgl_task() {
     ESP_LOGI(TAG, "Starting draw loop");
     TickType_t xLastWakeTime = xTaskGetTickCount();
     for( ;; vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS(10) ) ) {
@@ -106,6 +106,7 @@ void app_main() {
 
     /* Initialize LVGL graphics system */
     {
+        ESP_LOGI(TAG, "Initializing LVGL graphics system");
         lv_init();
         display_init();
         jolt_gui_indev_init();
@@ -119,11 +120,13 @@ void app_main() {
 
     /* Run Key/Value Storage Initialization */
     {
+        ESP_LOGI(TAG, "Initializing Storage");
         storage_startup();
     }
 
     /* Initialize the file system */
     {
+        ESP_LOGI(TAG, "Initializing Filesystem");
         jolt_fs_init();
     }
 
@@ -164,6 +167,7 @@ void app_main() {
 
     /* Create GUI StatusBar */
     {
+        ESP_LOGI(TAG, "Creating Statusbar");
         statusbar_create();
     }
 
@@ -177,12 +181,14 @@ void app_main() {
         uint8_t wifi_en;
         storage_get_u8(&wifi_en, "user", "wifi_en", 0 );
         if( wifi_en ) {
+            ESP_LOGI(TAG, "Starting WiFi");
             jolt_wifi_start();
         }
     }
 
     /* Check and run first-boot routine if necessary */
     {
+        ESP_LOGI(TAG, "Setting up Vault");
         if( vault_setup() ) {
             /* Create Home Menu */
             jolt_gui_menu_home_create();
@@ -204,13 +210,16 @@ void app_main() {
         uint8_t bluetooth_en;
         storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 0 );
         if( bluetooth_en ) {
+            ESP_LOGI(TAG, "Starting Bluetooth");
             jolt_bluetooth_start();
         }
     }
 
     /* Initialize Console */
     {
+        ESP_LOGI(TAG, "Initializing Console");
         console_init();
+        ESP_LOGI(TAG, "Starting Console");
         console_start();
     }
 

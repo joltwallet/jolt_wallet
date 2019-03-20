@@ -34,7 +34,7 @@ static void console_syscore_register();
 
 
 /* Executes the command string */
-static void jolt_process_cmd_task(jolt_bg_job_t *bg_job){
+static int32_t jolt_process_cmd_task(jolt_bg_job_t *bg_job){
     jolt_cmd_t *cmd = jolt_bg_get_param(bg_job); 
 
     FILE *orig_stdin = stdin;
@@ -66,22 +66,29 @@ static void jolt_process_cmd_task(jolt_bg_job_t *bg_job){
 
     /* Try to run the command */
     esp_err_t err = esp_console_run(cmd->data, &ret);
-    if (err == ESP_ERR_NOT_FOUND) {
-        // The command could be an app to run console commands from
-        char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
-        // split_argv modifies line with NULL-terminators
-        size_t argc = esp_console_split_argv(cmd->data, argv, sizeof(argv));
-        ESP_LOGD(TAG, "Not an internal command; looking for app of name %s", argv[0]);
-        // todo, parse passphrase argument
-        ESP_LOGI(TAG, "argv[1] %s", argv[1]);
-        if( launch_file(argv[0], argc-1, &argv[1], "") ) {
-            printf("Unsuccessful command\n");
+    switch( err ) {
+        case ESP_ERR_NOT_FOUND: {
+            /* The command could be an app to run console commands from */
+            char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
+            /* split_argv modifies line with NULL-terminators */
+            size_t argc = esp_console_split_argv(cmd->data, argv, sizeof(argv));
+            ESP_LOGD(TAG, "Not an internal command; looking for app of name %s", argv[0]);
+            // todo, parse passphrase argument
+            if( launch_file(argv[0], argc-1, &argv[1], "") ) {
+                printf("Unsuccessful command\n");
+            }
+            break;
         }
-    } else if (err == ESP_ERR_INVALID_ARG) {
-        // command was empty
-    } else if (err == ESP_OK && ret != ESP_OK) {
-        printf("Command returned non-zero error code: %d\n", ret);
-    } else if (err != ESP_OK) {
+        case ESP_ERR_INVALID_ARG:
+            // command was empty
+            break;
+        case ESP_OK:
+            if( ESP_OK != ret ) {
+                printf("Command returned non-zero error code: %d\n", ret);
+            }
+            break;
+        default:
+            break;
         printf("Internal error: 0x%x\n", err);
     }
     cmd->return_value = ret;
@@ -89,6 +96,7 @@ static void jolt_process_cmd_task(jolt_bg_job_t *bg_job){
 exit:
     /* De-allocate memory */
     jolt_cmd_del(cmd);
+    return 0;
 }
 
 void jolt_cmd_del(jolt_cmd_t *cmd){
@@ -100,7 +108,7 @@ void jolt_cmd_del(jolt_cmd_t *cmd){
     }
     if( NULL != cmd->complete ){
         xSemaphoreGive(cmd->complete);
-        taskYIELD();
+        taskYIELD(); /* Allow the blocked CLI task to return */
     }
     free(cmd);
 }
@@ -143,15 +151,7 @@ static void console_task() {
         linenoiseHistoryAdd(line);
 
         /* Send the command to the command queue */
-        bool block = false;
-        const char blocking_prefix[] = "upload";
-        if( 0 == strncmp(line, blocking_prefix, strlen(blocking_prefix))
-                || 0 == strcmp(line, "mnemonic_restore")
-                || 0 == strcmp(line, "cat") ) {
-            block = true; // todo: better stream control
-        }
-        jolt_cmd_process(line, stdin, stdout, stderr, block);
-        vTaskDelay(50/portTICK_PERIOD_MS); // give enough time for quick commands to execute
+        jolt_cmd_process(line, stdin, stdout, stderr, true); /* Block until job is processed */
     }
     
     #if CONFIG_JOLT_CONSOLE_OVERRIDE_LOGGING
@@ -190,6 +190,7 @@ int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err, bool block) {
     cmd->fd_err = err;
 
     /* Send the job now */
+    // jobs are processed in the bg task to make better use of task stack
     jolt_bg_create(jolt_process_cmd_task, cmd, NULL);
 
     /* Wait until the process signals completion */

@@ -94,7 +94,7 @@ static esp_err_t _http_event_handle(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
-static void https_func( jolt_bg_job_t *bg_job ) {
+static int https_func( jolt_bg_job_t *bg_job ) {
     https_job_t *job = jolt_bg_get_param( bg_job );
     lv_obj_t *scr = jolt_bg_get_scr( bg_job );
     char *response = NULL;
@@ -102,6 +102,9 @@ static void https_func( jolt_bg_job_t *bg_job ) {
 
     int16_t status_code = JOLT_NETWORK_ERROR;
     esp_err_t err;
+
+    /* todo: try and grab https semaphore; poll */
+
     /* Set HTTP Method */
     esp_http_client_set_method(client, job->method);
 
@@ -118,6 +121,7 @@ static void https_func( jolt_bg_job_t *bg_job ) {
     }
 
     /* Poll the http client until complete or user abort */
+    // todo: make this into a state machine
     for(;; vTaskDelay(pdMS_TO_TICKS(100))) {
         err = esp_http_client_perform(client);
 
@@ -155,6 +159,7 @@ exit:
         job->cb(status_code, response, job->param, scr);
     }
     free( job );
+    return 0;
 }
 
 esp_err_t jolt_network_client_init_from_nvs() {

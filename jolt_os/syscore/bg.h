@@ -1,6 +1,6 @@
 /**
  * @file bg.h
- * @brief Background task functionality for lengthier tasks
+ * @brief Background task functionality for lengthier tasks.
  * @author Brian Pugh
  */
 
@@ -22,9 +22,14 @@
 typedef struct jolt_bg_job_t jolt_bg_job_t;
 
 /**
- * @brief Function to execute in the BG task
+ * @brief Function to execute in the BG task.
+ *
+ * If the function relies on network events, it should be as non-blocking as possible.
+ * If the function should be a state-machine if it is requeued multiple times (returns a non-zero value).
+ *
+ * @return Minimum number of seconds before calling again. Return 0 to clean up job.
  */
-typedef void (*jolt_bg_task_t)( jolt_bg_job_t *job );
+typedef int32_t (*jolt_bg_task_t)( jolt_bg_job_t *job );
 
 /**
  * @brief Signals to send to the Job task

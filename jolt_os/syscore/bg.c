@@ -1,5 +1,7 @@
 #include "esp_log.h"
 #include "bg.h"
+#include <esp_timer.h>
+#include "freertos/timers.h"
 
 static const char TAG[] = "bg";
 
@@ -9,23 +11,61 @@ static QueueHandle_t job_queue = NULL;
 typedef struct jolt_bg_job_t {
     jolt_bg_task_t task; /**< function to be called */
     void *param;         /**< user parameters to be passed into function */
-    QueueHandle_t input; /**< queue to receive jolt_bg_cmd_t */
+    QueueHandle_t input; /**< queue to receive jolt_bg_signal_t signals */
     lv_obj_t *scr;       /**< optional screen (usually a loading/preloading screen) */
 } jolt_bg_job_t;
 
+/**
+ * @brief Get current time in microseconds since boot/deep_sleep_awake
+ * @return Time in microseconds
+ */
+static inline uint64_t get_time_us() {
+    return esp_timer_get_time();
+}
+
+/**
+ * @brief Get current time in milliseconds since boot/deep_sleep_awake
+ * @return Time in microseconds
+ */
+static inline uint64_t get_time_ms() {
+    return get_time_us() / 1000;
+}
+
+static void add_job_to_queue(jolt_bg_job_t *job) {
+    if(!xQueueSend(job_queue, &job, 0)) {
+        ESP_LOGE(TAG, "Failed to re-add bg job to the queue");
+    }
+    free(job);
+}
+
 static void bg_task( void *param ) {
-    jolt_bg_job_t job;
     for(;;) {
+        int t;
+        jolt_bg_job_t job;
         xQueueReceive(job_queue, &job, portMAX_DELAY);
 
         /* Call the task */
         ESP_LOGD(TAG, "Calling job func");
-        (job.task)( &job );
+        t = (job.task)( &job );
 
-        /* Delete the Queue */
+        if( t > 0) {
+            /* Create a timer that will re-add the job to the queue */
+            jolt_bg_job_t *j;
+            j = malloc(sizeof(jolt_bg_job_t));
+            if( NULL == j ) {
+                ESP_LOGE(TAG, "Failed to allocate space for job.");
+                goto job_end;
+            }
+            memcpy(j, &job, sizeof(jolt_bg_job_t));
+            xTimerCreate("bgJob", pdMS_TO_TICKS(t), pdFALSE,
+                    j, (TimerCallbackFunction_t) add_job_to_queue);
+            continue;
+        }
+job_end:
+        /* Delete the Job's input Queue */
         vQueueDelete( job.input );
     }
-    vTaskDelete( NULL );
+    vTaskDelete( NULL ); /* Should never reach here */
 }
 
 esp_err_t jolt_bg_init( ) {
@@ -93,7 +133,7 @@ esp_err_t jolt_bg_create( jolt_bg_task_t task, void *param, lv_obj_t *scr ) {
     job.input = input_queue;
     job.scr   = scr;
 
-    /* Register the abort callback */
+    /* Register the abort callback to the provided screen */
     if( NULL != scr ) {
         lv_obj_t *back = jolt_gui_scr_set_back_action(scr, abort_cb);
         if( NULL == back ) {

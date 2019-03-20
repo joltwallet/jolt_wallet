@@ -85,12 +85,12 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s);
 /* Timers */
 #if ESP_PLATFORM
 #include <esp_timer.h>
-uint64_t get_time() {
+static uint64_t get_time() {
     return esp_timer_get_time();
 }
 #else
 #include <time.h>
-uint64_t get_time() {
+static uint64_t get_time() {
     struct timeval tv;
     gettimeofday(&tv,NULL);
     return tv.tv_sec*(uint64_t)1000000+tv.tv_usec;

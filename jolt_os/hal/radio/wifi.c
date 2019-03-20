@@ -126,7 +126,7 @@ esp_err_t jolt_wifi_start(){
         storage_get_str(NULL, &ssid_len, "user", "wifi_ssid",
                 CONFIG_AP_TARGET_SSID);
         if( ssid_len > 31 ) {
-            // todo err
+            goto err;
         }
         storage_get_str((char *)sta_config.sta.ssid, &ssid_len,
                 "user", "wifi_ssid",
@@ -137,7 +137,7 @@ esp_err_t jolt_wifi_start(){
         storage_get_str(NULL, &pass_len, "user", "wifi_pass",
                 CONFIG_AP_TARGET_PASSWORD);
         if( pass_len > 63 ) {
-            // todo err
+            goto err;
         }
         storage_get_str((char *)sta_config.sta.password, &pass_len,
                 "user", "wifi_pass",
@@ -162,6 +162,8 @@ esp_err_t jolt_wifi_start(){
     ESP_ERROR_CHECK( esp_wifi_set_ps(WIFI_PS_MAX_MODEM) );
 
     return ESP_OK;
+err:
+    return ESP_FAIL;
 }
 
 esp_err_t jolt_wifi_stop() {

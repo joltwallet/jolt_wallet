@@ -22,9 +22,10 @@
 static const char TAG[] = "menu_home";
 static lv_obj_t *main_menu = NULL;
 
-static void launch_app_task(jolt_bg_job_t *job){
+static int launch_app_task(jolt_bg_job_t *job){
     char *fn_c = jolt_bg_get_param(job);
     launch_file(fn_c, 0, NULL, ""); // puts the app back into the gui task
+    return 0;
 }
 
 /* App launching is spawned in the background task because it's a bit intense.
@@ -36,7 +37,7 @@ static lv_res_t launch_file_proxy(lv_obj_t *btn) {
 
     err = jolt_bg_create( launch_app_task, (void *)fn, NULL);
 
-    return LV_RES_OK;
+    return err;
 }
 
 void jolt_gui_menu_home_create() {
