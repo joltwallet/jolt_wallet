@@ -1,3 +1,6 @@
+
+//#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+
 #include "esp_log.h"
 #include "bg.h"
 #include <esp_timer.h>
@@ -13,6 +16,7 @@ typedef struct jolt_bg_job_t {
     void *param;         /**< user parameters to be passed into function */
     QueueHandle_t input; /**< queue to receive jolt_bg_signal_t signals */
     lv_obj_t *scr;       /**< optional screen (usually a loading/preloading screen) */
+    TimerHandle_t timer; /**< timer used for re-queueing job */
 } jolt_bg_job_t;
 
 /**
@@ -32,9 +36,15 @@ static inline uint64_t get_time_ms() {
 }
 
 static void add_job_to_queue(jolt_bg_job_t *job) {
-    if(!xQueueSend(job_queue, &job, 0)) {
+    ESP_LOGD(TAG, "Re-adding job %p to queue", job);
+    if(!xQueueSend(job_queue, job, 0)) {
         ESP_LOGE(TAG, "Failed to re-add bg job to the queue");
     }
+}
+
+static void job_timer_cb( TimerHandle_t timer ) {
+    jolt_bg_job_t *job = pvTimerGetTimerID(timer);
+    add_job_to_queue(job);
     free(job);
 }
 
@@ -42,10 +52,11 @@ static void bg_task( void *param ) {
     for(;;) {
         int t;
         jolt_bg_job_t job;
+        ESP_LOGD(TAG, "Waiting on Job");
         xQueueReceive(job_queue, &job, portMAX_DELAY);
 
         /* Call the task */
-        ESP_LOGD(TAG, "Calling job func");
+        ESP_LOGD(TAG, "Calling job func %p", job.task);
         t = (job.task)( &job );
 
         if( t > 0) {
@@ -57,13 +68,38 @@ static void bg_task( void *param ) {
                 goto job_end;
             }
             memcpy(j, &job, sizeof(jolt_bg_job_t));
-            xTimerCreate("bgJob", pdMS_TO_TICKS(t), pdFALSE,
-                    j, (TimerCallbackFunction_t) add_job_to_queue);
+
+            if( NULL == j->timer ) {
+                ESP_LOGD(TAG, "Creating a %dmS timer to re-add %p job to queue.", t, j);
+                j->timer = xTimerCreate("bgJob", pdMS_TO_TICKS(t), pdFALSE, j, job_timer_cb);
+                if( NULL == j->timer ) {
+                    ESP_LOGE(TAG, "Failed to create timer");
+                    free(j); // todo: this will cause job memory leak
+                    continue;
+                }
+            }
+            else {
+                ESP_LOGD(TAG, "Updating timer %p to %dmS", j->timer, t);
+                if( pdPASS != xTimerChangePeriod(j->timer, pdMS_TO_TICKS(t), 0) ) {
+                    ESP_LOGE(TAG, "Failed to update timer period");
+                }
+                vTimerSetTimerID(j->timer, j);
+            }
+            ESP_LOGD(TAG, "Starting timer %p", j->timer);
+            if( pdPASS != xTimerStart(j->timer, 0) ) {
+                ESP_LOGE(TAG, "timer could not be activated");
+                xTimerDelete(j->timer, 0);
+                free(j); // todo: this will cause job memory leak
+                continue;
+            }
             continue;
         }
 job_end:
         /* Delete the Job's input Queue */
         vQueueDelete( job.input );
+        if( NULL != job.timer ) {
+            xTimerDelete(job.timer, 0);
+        }
     }
     vTaskDelete( NULL ); /* Should never reach here */
 }
@@ -132,6 +168,7 @@ esp_err_t jolt_bg_create( jolt_bg_task_t task, void *param, lv_obj_t *scr ) {
     job.param = param;
     job.input = input_queue;
     job.scr   = scr;
+    job.timer = NULL;
 
     /* Register the abort callback to the provided screen */
     if( NULL != scr ) {

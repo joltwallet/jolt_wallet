@@ -12,18 +12,19 @@
 static const char TAG[] = "https";
 
 static esp_http_client_handle_t client = NULL;
+static SemaphoreHandle_t client_mutex = NULL;
 
 /**
  * @brief variables for the http_event_handler to ineract with
  */
 typedef struct {
     uint32_t jid;           /** monotonically increasing job_id */
-    uint32_t jid_cancelled; // todo
+    uint32_t jid_cancelled; /** JID to cancel */
     uint32_t len;           /**< length of allocated response buffer */
     uint32_t written;       /**< how many bytes have been written to response */
     char **response;        /**< Pointer of where to store allocated data pointer */
-    char *buf_ptr;          /**< */
 } cb_data_t;
+
 static cb_data_t cb_data = {
     .jid_cancelled = UINT32_MAX,
 };
@@ -33,6 +34,7 @@ typedef struct {
     char *post_data;
     esp_http_client_method_t method;
     void *param;                     // Additional parameters to be fed to the user cb 
+    bool running;                    /**< True if job is currently running */
 } https_job_t;
 
 static esp_err_t _http_event_handle(esp_http_client_event_t *evt) {
@@ -103,42 +105,47 @@ static int https_func( jolt_bg_job_t *bg_job ) {
     int16_t status_code = JOLT_NETWORK_ERROR;
     esp_err_t err;
 
-    /* todo: try and grab https semaphore; poll */
-
-    /* Set HTTP Method */
-    esp_http_client_set_method(client, job->method);
-
-    /* If it's a post method, set the post field */
-    if(HTTP_METHOD_POST == job->method) {
-        err = esp_http_client_set_post_field(client, job->post_data, strlen(job->post_data));
-        if( ESP_OK != err ) {
-            ESP_LOGE(TAG, "Failed to set http post field");
-            goto exit;
+    /* First call */
+    if( !job->running  ) {
+        /* Try and grab https semaphore */
+        if( pdFALSE == xSemaphoreTake( client_mutex, 0) ) {
+            return 100; /* Try again in 100mS */
         }
-        else {
-            ESP_LOGI(TAG, "Set POST:\n%s\n", job->post_data);
+        job->running = true;
+        /* Set HTTP Method */
+        esp_http_client_set_method(client, job->method);
+
+        /* If it's a post method, set the post field */
+        if(HTTP_METHOD_POST == job->method) {
+            err = esp_http_client_set_post_field(client, job->post_data, strlen(job->post_data));
+            if( ESP_OK != err ) {
+                ESP_LOGE(TAG, "Failed to set http post field");
+                goto exit;
+            }
+            else {
+                ESP_LOGI(TAG, "Set POST:\n%s\n", job->post_data);
+            }
         }
     }
 
     /* Poll the http client until complete or user abort */
-    // todo: make this into a state machine
-    for(;; vTaskDelay(pdMS_TO_TICKS(100))) {
-        err = esp_http_client_perform(client);
+    err = esp_http_client_perform(client);
 
-        if( ESP_OK == err ) {
-            ESP_LOGD(TAG, "https client perform success.\n%s\n", response);
-            break;
-        }
-        else if( ESP_FAIL == err ) {
-            ESP_LOGE(TAG, "https client failed.");
-            goto exit;
-        }
-        else if( JOLT_BG_ABORT == jolt_bg_get_signal( bg_job ) ) {
-            ESP_LOGI(TAG, "user aborted https client.");
-            status_code = JOLT_NETWORK_CANCEL;
-            cb_data.jid_cancelled = cb_data.jid;
-            goto exit;
-        }
+    if( ESP_OK == err ) {
+        ESP_LOGD(TAG, "https client perform success.\n%s\n", response);
+    }
+    else if( ESP_FAIL == err ) {
+        ESP_LOGE(TAG, "https client failed.");
+        goto exit;
+    }
+    else if( JOLT_BG_ABORT == jolt_bg_get_signal( bg_job ) ) {
+        ESP_LOGI(TAG, "user aborted https client.");
+        status_code = JOLT_NETWORK_CANCEL;
+        cb_data.jid_cancelled = cb_data.jid;
+        goto exit;
+    }
+    else {
+        return 100; /* Try again in 100mS */
     }
 
     status_code = esp_http_client_get_status_code(client);
@@ -154,6 +161,7 @@ static int https_func( jolt_bg_job_t *bg_job ) {
     /* Call user callback and free job resources */
 exit:
     free(job->post_data);
+    xSemaphoreGive( client_mutex );
     ESP_LOGI(TAG, "Calling user callback");
     if( NULL != job->cb ) {
         job->cb(status_code, response, job->param, scr);
@@ -187,6 +195,15 @@ esp_err_t jolt_network_client_init( char *uri ) {
     if( NULL == uri ){
         ESP_LOGE(TAG, "Must specify URI!");
         return ESP_FAIL;
+    }
+
+    /* Create client-use mutex */
+    if( NULL == client_mutex ) {
+        client_mutex = xSemaphoreCreateMutex();
+        if( NULL == client_mutex ) {
+            ESP_LOGE(TAG, "Failed to create client_mutex.");
+            return ESP_FAIL;
+        }
     }
 
     /* Allocate a static copy of the uri */
@@ -266,6 +283,7 @@ esp_err_t jolt_network_post( const char *post_data, jolt_network_client_cb_t cb,
     job->post_data = cmd;
     job->method = HTTP_METHOD_POST;
     job->param = param;
+    job->running = false;
 
     /* Send the job to the job_queue. Do NOT block to put it on the queue */
     if(ESP_OK != jolt_bg_create( https_func, job, scr) ) {
