@@ -18,7 +18,7 @@ const jolt_version_t JOLT_JELF_VERSION = {
     .release = JOLT_VERSION_DEV,
 };
 
-const char *JOLT_OS_COMMIT = "de5f6e9c9aca03f4261cb0f3c498fbb086000f89";
+const char *JOLT_OS_COMMIT = "e57a432901cfc4328a4f0a83e642fdbecc560d75";
 
 extern void *__floatsidf;
 extern void *__gtdf2;

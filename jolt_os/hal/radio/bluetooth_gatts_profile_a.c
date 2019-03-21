@@ -12,7 +12,7 @@
 #include "esp_log.h"
 
 
-#define GATTS_TABLE_TAG  "GATTS_SPP_DEMO"
+static const char TAG[] = "GATTS_A";
 static bool is_connected = false;
 
 bool gatts_profile_a_is_connected() {
@@ -28,6 +28,41 @@ static uint8_t find_char_and_desr_index(uint16_t handle) {
     return 0xff; // error
 }
 
+static const char* gatts_evt_to_str(esp_gap_ble_cb_event_t event) {
+#define CASE(x) case x: return #x;
+    switch(event) {
+        CASE(ESP_GATTS_REG_EVT);
+        CASE(ESP_GATTS_READ_EVT);
+        CASE(ESP_GATTS_WRITE_EVT);
+        CASE(ESP_GATTS_EXEC_WRITE_EVT);
+        CASE(ESP_GATTS_MTU_EVT);
+        CASE(ESP_GATTS_CONF_EVT);
+        CASE(ESP_GATTS_UNREG_EVT);
+        CASE(ESP_GATTS_CREATE_EVT);
+        CASE(ESP_GATTS_ADD_INCL_SRVC_EVT);
+        CASE(ESP_GATTS_ADD_CHAR_EVT);
+        CASE(ESP_GATTS_ADD_CHAR_DESCR_EVT);
+        CASE(ESP_GATTS_DELETE_EVT);
+        CASE(ESP_GATTS_START_EVT);
+        CASE(ESP_GATTS_STOP_EVT);
+        CASE(ESP_GATTS_CONNECT_EVT);
+        CASE(ESP_GATTS_DISCONNECT_EVT);
+        CASE(ESP_GATTS_OPEN_EVT);
+        CASE(ESP_GATTS_CANCEL_OPEN_EVT);
+        CASE(ESP_GATTS_CLOSE_EVT);
+        CASE(ESP_GATTS_LISTEN_EVT);
+        CASE(ESP_GATTS_CONGEST_EVT);
+        CASE(ESP_GATTS_RESPONSE_EVT);
+        CASE(ESP_GATTS_CREAT_ATTR_TAB_EVT);
+        CASE(ESP_GATTS_SET_ATTR_VAL_EVT);
+        CASE(ESP_GATTS_SEND_SERVICE_CHANGE_EVT);
+        default:
+            return "<unknown>";
+    }
+#undef CASE
+}
+
+
 /* Only used to handle events for SPP_PROFILE_A_APP_ID */
 void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, 
         esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) {
@@ -35,7 +70,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
     esp_ble_gatts_cb_param_t *p_data = (esp_ble_gatts_cb_param_t *) param;
     uint8_t res = 0xff;
 
-    ESP_LOGE(GATTS_TABLE_TAG, "GATTS event %d", event);
+    ESP_LOGI(TAG, "GATTS event %d: %s", event, gatts_evt_to_str(event));
     switch (event) {
     	case ESP_GATTS_REG_EVT:
             /* Triggers when an application is registered */
@@ -49,22 +84,22 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
     	case ESP_GATTS_READ_EVT:
             /* gatt client request read operation */
             res = find_char_and_desr_index(p_data->read.handle);
-            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_READ_EVT : handle = %d\n", res);
+            ESP_LOGI(TAG, "ESP_GATTS_READ_EVT : handle = %d\n", res);
        	    break;
     	case ESP_GATTS_WRITE_EVT: {
             /*  gatt client request write operation */
     	    res = find_char_and_desr_index(p_data->write.handle);
             if(p_data->write.is_prep == false){
-                ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_WRITE_EVT : handle = %d\n", res);
+                ESP_LOGI(TAG, "ESP_GATTS_WRITE_EVT : handle = %d\n", res);
                 if(res == SPP_IDX_SPP_COMMAND_VAL){
                     /* Allocate memory for 1 MTU;
                      * send it off to the ble_in_queue */
-                    ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_COMMAND_VAL;"
+                    ESP_LOGI(TAG, "SPP_IDX_SPP_COMMAND_VAL;"
                             " Allocating %d bytes.", spp_mtu_size-3);
                     uint8_t * spp_cmd_buff = NULL;
                     spp_cmd_buff = (uint8_t *)malloc((spp_mtu_size - 3) * sizeof(uint8_t));
                     if(spp_cmd_buff == NULL){
-                        ESP_LOGE(GATTS_TABLE_TAG, "%s malloc failed\n", __func__);
+                        ESP_LOGE(TAG, "%s malloc failed\n", __func__);
                         break;
                     }
                     memset(spp_cmd_buff, 0, (spp_mtu_size - 3));
@@ -72,7 +107,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                     xQueueSend(ble_in_queue, &spp_cmd_buff, 10/portTICK_PERIOD_MS);
                 }
                 else if(res == SPP_IDX_SPP_DATA_NOTIFY_CFG){
-                    ESP_LOGI(GATTS_TABLE_TAG, "SPP_IDX_SPP_DATA_NOTIFY_CFG");
+                    ESP_LOGI(TAG, "SPP_IDX_SPP_DATA_NOTIFY_CFG");
                     if( (p_data->write.len == 2)
                             &&(p_data->write.value[0] == 0x01)
                             &&(p_data->write.value[1] == 0x00) ) {
@@ -83,14 +118,14 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                     }
                 }
                 else{
-                    ESP_LOGI(GATTS_TABLE_TAG, "Unknown state machine attribute %d.",
+                    ESP_LOGI(TAG, "Unknown state machine attribute %d.",
                             res);
                     //TODO:
                 }
             }
             else if( (p_data->write.is_prep == true)
                     && (res == SPP_IDX_SPP_COMMAND_VAL) ) {
-                ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_PREP_WRITE_EVT : handle = %d\n", res);
+                ESP_LOGI(TAG, "ESP_GATTS_PREP_WRITE_EVT : handle = %d\n", res);
                 store_wr_buffer(p_data);
             }
       	 	break;
@@ -99,7 +134,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
             /* gatt client request execute write.
              * Performs the full atmoic write that has been queued up
              * by multiple "prepare write". */
-    	    ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_EXEC_WRITE_EVT\n");
+    	    ESP_LOGI(TAG, "ESP_GATTS_EXEC_WRITE_EVT\n");
     	    if(p_data->exec_write.exec_write_flag){
     	        print_write_buffer();
     	        free_write_buffer();
@@ -108,7 +143,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
     	}
     	case ESP_GATTS_MTU_EVT:
             /* set mtu complete */
-            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_MTU_EVENT;"
+            ESP_LOGI(TAG, "ESP_GATTS_MTU_EVENT;"
                     "Setting MTU size to %d bytes.", p_data->mtu.mtu);
     	    spp_mtu_size = p_data->mtu.mtu;
     	    break;
@@ -147,7 +182,7 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                 if(!found) {
                     /* Disconnect from the device */
                     esp_ble_gap_disconnect(param->connect.remote_bda);
-                    ESP_LOGI(GATTS_TABLE_TAG, "Unknown device attempted to connect while not in pairing mode.");
+                    ESP_LOGI(TAG, "Unknown device attempted to connect while not in pairing mode.");
                 }
                 else {
                     esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_MITM);
@@ -172,15 +207,15 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
     	case ESP_GATTS_CONGEST_EVT:
     	    break;
     	case ESP_GATTS_CREAT_ATTR_TAB_EVT:{
-    	    ESP_LOGI( GATTS_TABLE_TAG, "The number handle =%x\n",
+    	    ESP_LOGI( TAG, "The number handle =%x\n",
                     param->add_attr_tab.num_handle );
     	    if ( param->add_attr_tab.status != ESP_GATT_OK ) {
-    	        ESP_LOGE(GATTS_TABLE_TAG, 
+    	        ESP_LOGE(TAG, 
                         "Create attribute table failed, error code=0x%x",
                         param->add_attr_tab.status);
     	    }
     	    else if (param->add_attr_tab.num_handle != SPP_IDX_NB){
-                ESP_LOGE(GATTS_TABLE_TAG, "Create attribute table abnormally, "
+                ESP_LOGE(TAG, "Create attribute table abnormally, "
                         "num_handle (%d) doesn't equal to HRS_IDX_NB(%d)",
                         param->add_attr_tab.num_handle, SPP_IDX_NB);
     	    }

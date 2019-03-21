@@ -179,8 +179,8 @@ void app_main() {
         ESP_ERROR_CHECK( jolt_network_client_init_from_nvs() );
 
         uint8_t wifi_en;
-        storage_get_u8(&wifi_en, "user", "wifi_en", 0 );
-        if( wifi_en ) {
+        storage_get_u8(&wifi_en, "user", "wifi_en", 1 );
+        if( 1 == wifi_en ) {
             ESP_LOGI(TAG, "Starting WiFi");
             jolt_wifi_start();
         }
@@ -208,11 +208,14 @@ void app_main() {
     /* Initialize Bluetooth */
     {
         uint8_t bluetooth_en;
-        storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 0 );
-        if( bluetooth_en ) {
+        storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 1 );
+        if( 1 == bluetooth_en ) {
             ESP_LOGI(TAG, "Starting Bluetooth");
             jolt_bluetooth_start();
         }
+#if CONFIG_JOLT_BT_DEBUG_ALWAYS_ADV
+        //jolt_bluetooth_adv_all_start();
+#endif
     }
 
     /* Initialize Console */

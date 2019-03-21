@@ -380,6 +380,15 @@ menu "JoltOS"
         endmenu
     endmenu
 
+    menu "Bluetooth"
+        config JOLT_BT_DEBUG_ALWAYS_ADV
+             bool
+             prompt "[DEBUG] Always advertise"
+             default n
+             help
+                 Always advertise; for debugging purposes only. Not enabled for production.
+    endmenu
+
     menu "Battery"
         config JOLT_VBATT_SENSE_PIN
             int

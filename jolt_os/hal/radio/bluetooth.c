@@ -52,8 +52,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t, esp_ble_gap_cb_param_t *);
 static void gatts_event_handler(esp_gatts_cb_event_t event, 
         esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
-#define GATTS_TABLE_TAG  "GATTS_SPP_DEMO"
-#define TAG  "GATTS_SPP_DEMO"
+static const char TAG[] = "bluetooth.c";
 
 /***************************
  *  SPP PROFILE ATTRIBUTES *
@@ -212,15 +211,18 @@ static ssize_t ble_read(int fd, void* data, size_t size) {
         if ( '\n' == (char)c) {
             break;
         }
+        // todo: do we need a null terminator?
     }
 
     _lock_release_recursive(&s_ble_read_lock);
 
 #if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
     {
+        /* Display what was received */
         char buf[100];
-        sprintf(buf, "ble_read returning %d\n", received);
+        sprintf(buf, "ble_read returning %d bytes\n", received);
         uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+        uart_write_bytes(UART_NUM_0, data_c, received);
     }
 #endif
 
@@ -437,10 +439,48 @@ static void add_all_bonded_to_whitelist() {
     free(dev_list);
 }
 
+static const char* gap_evt_to_str(esp_gap_ble_cb_event_t event) {
+#define CASE(x) case x: return #x;
+    switch(event) {
+        CASE(ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_SCAN_RESULT_EVT);
+        CASE(ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_ADV_START_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_SCAN_START_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_AUTH_CMPL_EVT);
+        CASE(ESP_GAP_BLE_KEY_EVT);
+        CASE(ESP_GAP_BLE_SEC_REQ_EVT);
+        CASE(ESP_GAP_BLE_PASSKEY_NOTIF_EVT);
+        CASE(ESP_GAP_BLE_PASSKEY_REQ_EVT);
+        CASE(ESP_GAP_BLE_OOB_REQ_EVT);
+        CASE(ESP_GAP_BLE_LOCAL_IR_EVT);
+        CASE(ESP_GAP_BLE_LOCAL_ER_EVT);
+        CASE(ESP_GAP_BLE_NC_REQ_EVT);
+        CASE(ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT);
+        CASE(ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT);
+        CASE(ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT);
+        CASE(ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT);
+        default:
+            return "<unknown>";
+    }
+#undef CASE
+}
+
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
 
     esp_err_t err;
-    ESP_LOGE(GATTS_TABLE_TAG, "GAP event %d", event);
+    ESP_LOGI(TAG, "GAP event %d: %s", event, gap_evt_to_str(event));
     switch (event) {
         /***************
          * Advertising *
@@ -459,7 +499,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
             /* advertising start complete event to indicate advertising 
              * start successfully or failed. */
             if((err = param->adv_start_cmpl.status) != ESP_BT_STATUS_SUCCESS) {
-                ESP_LOGE(GATTS_TABLE_TAG, "Advertising start failed: %s\n", 
+                ESP_LOGE(TAG, "Advertising start failed: %s\n", 
                         esp_err_to_name(err));
             }
             
@@ -490,10 +530,10 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         /* Triggered by: esp_ble_gap_stop_scanning( ) */
         case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
 			if (param->scan_stop_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-				ESP_LOGE(GATTS_TABLE_TAG, "Scan stop failed, error status = %x", param->scan_stop_cmpl.status);
+				ESP_LOGE(TAG, "Scan stop failed, error status = %x", param->scan_stop_cmpl.status);
 			}
             else {
-                ESP_LOGI(GATTS_TABLE_TAG, "Stop scan successfully");
+                ESP_LOGI(TAG, "Stop scan successfully");
             }
             break;
 
@@ -510,17 +550,17 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                 esp_bd_addr_t bd_addr;
                 memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr,
                         sizeof(esp_bd_addr_t));
-                ESP_LOGI(GATTS_TABLE_TAG, "remote BD_ADDR: %08x%04x",
+                ESP_LOGI(TAG, "remote BD_ADDR: %08x%04x",
                         (bd_addr[0] << 24) + (bd_addr[1] << 16)
                         + (bd_addr[2] << 8) + bd_addr[3], (bd_addr[4] << 8)
                         + bd_addr[5]);
             }
-            ESP_LOGI(GATTS_TABLE_TAG, "address type = %d", 
+            ESP_LOGI(TAG, "address type = %d", 
                     param->ble_security.auth_cmpl.addr_type);
-            ESP_LOGI(GATTS_TABLE_TAG, "pair status = %s", 
+            ESP_LOGI(TAG, "pair status = %s", 
                     param->ble_security.auth_cmpl.success ? "success" : "fail");
 			if (param->ble_security.auth_cmpl.success) {
-				ESP_LOGI(GATTS_TABLE_TAG, "auth mode = 0x%x", 
+				ESP_LOGI(TAG, "auth mode = 0x%x", 
                         param->ble_security.auth_cmpl.auth_mode);    
                 /* Add the address to the whitelist */
                 esp_err_t err;
@@ -529,24 +569,24 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                         sizeof(esp_bd_addr_t));
                 err = esp_ble_gap_update_whitelist(WHITELIST_ADD, bd_addr);
                 if( ESP_OK != err ){
-                    ESP_LOGE(GATTS_TABLE_TAG, "Failed to add bd_addr to whitelist");
+                    ESP_LOGE(TAG, "Failed to add bd_addr to whitelist");
                 }
 			}
             else {
-				ESP_LOGI(GATTS_TABLE_TAG, "fail reason = 0x%x", 
+				ESP_LOGI(TAG, "fail reason = 0x%x", 
                         param->ble_security.auth_cmpl.fail_reason);
 			}
             break;
         }
         case ESP_GAP_BLE_KEY_EVT:
             /* Triggered for every key exchange message */
-            ESP_LOGI(GATTS_TABLE_TAG, "key type = 0x%x", param->ble_security.ble_key.key_type);
+            ESP_LOGI(TAG, "key type = 0x%02x", param->ble_security.ble_key.key_type);
             break;
         case ESP_GAP_BLE_SEC_REQ_EVT:
             /* Slave requests to start encryption.
              * Send the [true] security response to the peer device to accept the security request.
              * To reject the security request, send the security response with [false] value*/
-            ESP_LOGI(GATTS_TABLE_TAG, "Slave requesting security.");
+            ESP_LOGI(TAG, "Slave requesting security.");
             esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
             break;
         case ESP_GAP_BLE_PASSKEY_REQ_EVT:
@@ -560,7 +600,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
              * and the peer device IO has Input capability.
              * Show the passkey integer param->ble_security.key_notif.passkey 
              * to the user to input it in the peer device. */
-            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_PASSKEY_NOTIF_EVT, the passkey Notify number:%d",
+            ESP_LOGI(TAG, "ESP_GAP_BLE_PASSKEY_NOTIF_EVT, the passkey Notify number:%06d",
                     param->ble_security.key_notif.passkey);
             /* See bluetooth_pair.c for gui handling */
             break;
@@ -584,14 +624,14 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
          * Security - Bonding *
          **********************/
         case ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT:
-            ESP_LOGD(GATTS_TABLE_TAG,
+            ESP_LOGD(TAG,
                     "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d",
                     param->remove_bond_dev_cmpl.status);
-            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV");
-            ESP_LOGI(GATTS_TABLE_TAG, "-----ESP_GAP_BLE_REMOVE_BOND_DEV----");
-            esp_log_buffer_hex(GATTS_TABLE_TAG, (void *)param->remove_bond_dev_cmpl.bd_addr,
+            ESP_LOGI(TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV");
+            ESP_LOGI(TAG, "-----ESP_GAP_BLE_REMOVE_BOND_DEV----");
+            esp_log_buffer_hex(TAG, (void *)param->remove_bond_dev_cmpl.bd_addr,
                     sizeof(esp_bd_addr_t));
-            ESP_LOGI(GATTS_TABLE_TAG, "------------------------------------");
+            ESP_LOGI(TAG, "------------------------------------");
             break;
         case ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT:
             break;
@@ -610,7 +650,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         /* Triggered by: esp_ble_gap_config_local_privacy() */
         case ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT: {
             if (param->local_privacy_cmpl.status != ESP_BT_STATUS_SUCCESS){
-                ESP_LOGE(GATTS_TABLE_TAG, "config local privacy failed, error status = %x",
+                ESP_LOGE(TAG, "config local privacy failed, error status = %x",
                         param->local_privacy_cmpl.status);
                 break;
             }
@@ -650,7 +690,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event,
             spp_profile_tab[SPP_PROFILE_A_APP_ID].gatts_if = gatts_if;
         } 
         else {
-            ESP_LOGI(GATTS_TABLE_TAG, 
+            ESP_LOGI(TAG, 
                     "Reg app failed, app_id %04x, status %d\n",
                     param->reg.app_id, param->reg.status);
             return;
@@ -766,7 +806,7 @@ esp_err_t jolt_bluetooth_start() {
             case ESP_BLUEDROID_STATUS_INITIALIZED:
                 err = esp_bluedroid_enable();
                 if ( err ) {
-                    ESP_LOGE(GATTS_TABLE_TAG, "%s enable bluedroid failed: %s\n",
+                    ESP_LOGE(TAG, "%s enable bluedroid failed: %s\n",
                             __func__, esp_err_to_name(err));
                     goto exit;
                 }
@@ -783,21 +823,21 @@ esp_err_t jolt_bluetooth_start() {
 
     err = esp_ble_gap_register_callback(gap_event_handler);
     if ( err ){
-        ESP_LOGE(GATTS_TABLE_TAG, "%s gap register failed, error code = %s\n",
+        ESP_LOGE(TAG, "%s gap register failed, error code = %s\n",
                 __func__, esp_err_to_name(err));
         goto exit;
     }
 
     err = esp_ble_gatts_register_callback(gatts_event_handler);
     if( err ){
-        ESP_LOGE(GATTS_TABLE_TAG, "%s gatts register failed, error code = %s\n",
+        ESP_LOGE(TAG, "%s gatts register failed, error code = %s\n",
                 __func__, esp_err_to_name(err) );
         goto exit;
     }
 
     err = esp_ble_gatts_app_register(SPP_PROFILE_A_APP_ID);
     if ( err ){
-        ESP_LOGE(GATTS_TABLE_TAG, "%s gatts app register failed, error code = %s\n",
+        ESP_LOGE(TAG, "%s gatts app register failed, error code = %s\n",
                 __func__, esp_err_to_name(err) );
         goto exit;
     }
@@ -830,14 +870,14 @@ esp_err_t jolt_bluetooth_stop() {
             case ESP_BLUEDROID_STATUS_ENABLED:
                 err = esp_bluedroid_disable();
                 if ( ESP_OK != err ){
-                    ESP_LOGE(GATTS_TABLE_TAG, "%s bluedroid disable failed, "
+                    ESP_LOGE(TAG, "%s bluedroid disable failed, "
                             "error code = %s\n", __func__, esp_err_to_name(err) );
                     goto exit;
                 }
             case ESP_BLUEDROID_STATUS_INITIALIZED:
                 err = esp_bluedroid_deinit();
                 if ( ESP_OK != err ){
-                    ESP_LOGE(GATTS_TABLE_TAG, "%s bluedroid deinit failed, "
+                    ESP_LOGE(TAG, "%s bluedroid deinit failed, "
                             "error code = %s\n",
                             __func__, esp_err_to_name(err) );
                     goto exit;
@@ -859,14 +899,14 @@ esp_err_t jolt_bluetooth_stop() {
             case ESP_BT_CONTROLLER_STATUS_ENABLED:
                 err = esp_bt_controller_disable();
                 if ( ESP_OK != err ){
-                    ESP_LOGE(GATTS_TABLE_TAG, "%s bt controller disable failed, "
+                    ESP_LOGE(TAG, "%s bt controller disable failed, "
                             "error code = %s\n", __func__, esp_err_to_name(err) );
                     goto exit;
                 }
             case ESP_BT_CONTROLLER_STATUS_INITED:
                 err = esp_bt_controller_deinit();
                 if ( ESP_OK != err ) {
-                    ESP_LOGE(GATTS_TABLE_TAG, "%s bt controller deinit failed, "
+                    ESP_LOGE(TAG, "%s bt controller deinit failed, "
                             "error code = %s\n", __func__, esp_err_to_name(err) );
                     goto exit;
                 }
@@ -889,7 +929,7 @@ esp_err_t jolt_bluetooth_adv_all_start() {
     
     err = esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_pair_params );
     if( ESP_OK != err ){
-        ESP_LOGE(GATTS_TABLE_TAG, "Failed to start BT advertising: %d", err);
+        ESP_LOGE(TAG, "Failed to start BT advertising: %d", err);
         return err;
     }
 
@@ -903,7 +943,7 @@ esp_err_t jolt_bluetooth_adv_wht_start() {
     
     err = esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_wht_params );
     if( ESP_OK != err ){
-        ESP_LOGE(GATTS_TABLE_TAG, "Failed to start BT advertising: %d", err);
+        ESP_LOGE(TAG, "Failed to start BT advertising: %d", err);
         return err;
     }
 
