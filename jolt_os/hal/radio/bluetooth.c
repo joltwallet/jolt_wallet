@@ -211,7 +211,6 @@ static ssize_t ble_read(int fd, void* data, size_t size) {
         if ( '\n' == (char)c) {
             break;
         }
-        // todo: do we need a null terminator?
     }
 
     _lock_release_recursive(&s_ble_read_lock);
@@ -220,9 +219,10 @@ static ssize_t ble_read(int fd, void* data, size_t size) {
     {
         /* Display what was received */
         char buf[100];
-        sprintf(buf, "ble_read returning %d bytes\n", received);
+        sprintf(buf, "ble_read returning %d bytes\nreceived message: ", received);
         uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-        uart_write_bytes(UART_NUM_0, data_c, received);
+        uart_write_bytes(UART_NUM_0, data_c, received-1);
+        uart_write_bytes(UART_NUM_0, "\n", 1);
     }
 #endif
 
@@ -412,7 +412,7 @@ static void spp_cmd_task(void * arg) {
         }
         char *ptr = buf;
         uint16_t i;
-        for(i=0; i<CONFIG_JOLT_CONSOLE_MAX_CMD_LEN; i++, ptr++){
+        for(i=0; i<CONFIG_JOLT_CONSOLE_MAX_CMD_LEN-1; i++, ptr++){
             fread(ptr, 1, 1, ble_stdin);
             if('\n' == *ptr){
                 *ptr = '\0';
@@ -420,6 +420,13 @@ static void spp_cmd_task(void * arg) {
             }
         }
         if(i>0){
+#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
+            {
+                const char buf[] = "sending command from ble\n";
+                uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+            }
+#endif
+
             jolt_cmd_process(buf, ble_stdin, ble_stdout, ble_stderr, false);
             buf = NULL;
         }
@@ -477,6 +484,24 @@ static const char* gap_evt_to_str(esp_gap_ble_cb_event_t event) {
 #undef CASE
 }
 
+static const char* key_type_to_str( esp_ble_key_type_t key ) {
+#define CASE(x) case x: return #x;
+    switch( key ) {
+        case ESP_LE_KEY_NONE:  return "None";
+        case ESP_LE_KEY_PENC:  return "Peer Encryption Key";
+        case ESP_LE_KEY_PID:   return "Peer Identity Key";
+        case ESP_LE_KEY_PCSRK: return "Peer SRK";
+        case ESP_LE_KEY_PLK:   return "Peer Link Key";
+        case ESP_LE_KEY_LLK:   return "Local Link Key";
+        case ESP_LE_KEY_LENC:  return "Local Encryption Key";
+        case ESP_LE_KEY_LID:   return "Local Identity Key";
+        case ESP_LE_KEY_LCSRK: return "Local CSRK has been delivered to peer";
+        default:
+            return "<unknown>";
+    }
+#undef CASE
+}
+
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
 
     esp_err_t err;
@@ -502,7 +527,6 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                 ESP_LOGE(TAG, "Advertising start failed: %s\n", 
                         esp_err_to_name(err));
             }
-            
             break;
 
         /*********
@@ -546,6 +570,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
              */
 
             /* [logging] Print Connection Data */
+#if ESP_LOG_LEVEL >= ESP_LOG_INFO
             {
                 esp_bd_addr_t bd_addr;
                 memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr,
@@ -555,10 +580,12 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                         + (bd_addr[2] << 8) + bd_addr[3], (bd_addr[4] << 8)
                         + bd_addr[5]);
             }
+#endif
             ESP_LOGI(TAG, "address type = %d", 
                     param->ble_security.auth_cmpl.addr_type);
             ESP_LOGI(TAG, "pair status = %s", 
                     param->ble_security.auth_cmpl.success ? "success" : "fail");
+
 			if (param->ble_security.auth_cmpl.success) {
 				ESP_LOGI(TAG, "auth mode = 0x%x", 
                         param->ble_security.auth_cmpl.auth_mode);    
@@ -580,7 +607,8 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         }
         case ESP_GAP_BLE_KEY_EVT:
             /* Triggered for every key exchange message */
-            ESP_LOGI(TAG, "key type = 0x%02x", param->ble_security.ble_key.key_type);
+            ESP_LOGI(TAG, "key type 0x%02x: %s", param->ble_security.ble_key.key_type,
+                    key_type_to_str(param->ble_security.ble_key.key_type));
             break;
         case ESP_GAP_BLE_SEC_REQ_EVT:
             /* Slave requests to start encryption.

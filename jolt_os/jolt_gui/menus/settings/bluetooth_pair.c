@@ -18,7 +18,8 @@ static lv_res_t scanning_scr_back_cb(lv_obj_t *btn) {
 static lv_res_t passkey_scr_back_cb(lv_obj_t *btn) {
     jolt_bluetooth_pair_mode = false;
     jolt_bluetooth_adv_stop();
-    jolt_gui_scr_del();
+    jolt_gui_obj_del(passkey_scr);
+    passkey_scr = NULL;
     return LV_RES_INV;
 }
 

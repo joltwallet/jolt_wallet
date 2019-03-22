@@ -9,6 +9,8 @@
  *
  */
 
+#define ENCRYPTION_ON true /**< [debug] Toggles encryption/mitm permissions */
+
 /// SPP Service
 static const uint16_t spp_service_uuid = 0xFFE0;
 
@@ -103,7 +105,11 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
         {
             .uuid_length = ESP_UUID_LEN_16,
             .uuid_p      = (uint8_t *)&spp_data_notify_uuid,
+#if ENCRYPTION_ON
             .perm        = ESP_GATT_PERM_READ_ENC_MITM,
+#else
+            .perm        = ESP_GATT_PERM_READ,
+#endif
             .max_length  = SPP_DATA_MAX_LEN,
             .length      = sizeof(spp_data_notify_val),
             .value       = (uint8_t *)spp_data_notify_val
@@ -116,7 +122,11 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
         {
             .uuid_length = ESP_UUID_LEN_16,
             .uuid_p      = (uint8_t *)&character_client_config_uuid,
-            .perm        =  ESP_GATT_PERM_READ_ENC_MITM | ESP_GATT_PERM_WRITE_ENC_MITM,
+#if ENCRYPTION_ON
+            .perm        = ESP_GATT_PERM_READ_ENC_MITM | ESP_GATT_PERM_WRITE_ENC_MITM,
+#else
+            .perm        = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+#endif
             .max_length  = sizeof(uint16_t),
             .length      = sizeof(spp_data_notify_ccc),
             .value       = (uint8_t *)spp_data_notify_ccc
@@ -142,7 +152,11 @@ const esp_gatts_attr_db_t spp_gatt_db[SPP_IDX_NB] = {
         {
            .uuid_length =  ESP_UUID_LEN_16,
            .uuid_p      =  (uint8_t *)&spp_command_uuid, 
-           .perm        =  ESP_GATT_PERM_READ_ENC_MITM | ESP_GATT_PERM_WRITE_ENC_MITM,
+#if ENCRYPTION_ON
+            .perm        = ESP_GATT_PERM_READ_ENC_MITM | ESP_GATT_PERM_WRITE_ENC_MITM,
+#else
+            .perm        = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+#endif
            .max_length  =  SPP_CMD_MAX_LEN,
            .length      =  sizeof(spp_command_val),
            .value       =  (uint8_t *)spp_command_val

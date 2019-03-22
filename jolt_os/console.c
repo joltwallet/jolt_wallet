@@ -3,6 +3,8 @@
  https://www.joltwallet.com/
  */
 
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+
 #include "sodium.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -192,6 +194,7 @@ int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err, bool block) {
     /* Send the job now */
     // jobs are processed in the bg task to make better use of task stack
     jolt_bg_create(jolt_process_cmd_task, cmd, NULL);
+    ESP_LOGD(TAG, "Command added to job queue.");
 
     /* Wait until the process signals completion */
     if(block){
