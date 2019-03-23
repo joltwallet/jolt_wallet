@@ -5,6 +5,7 @@
 #include "bg.h"
 #include <esp_timer.h>
 #include "freertos/timers.h"
+#include "syscore/launcher.h"
 
 static const char TAG[] = "bg";
 
@@ -195,6 +196,45 @@ exit:
         vQueueDelete( input_queue );
     }
     return ESP_FAIL;
+}
+
+typedef struct app_wrapper_param_t {
+    jolt_bg_task_t task;
+    void *param;
+} app_wrapper_param_t;
+
+/**
+ * @brief Calls the user's task, and performs post job accounting.
+ */
+static int32_t app_task_wrapper( jolt_bg_job_t *job ) {
+    int32_t res;
+
+    app_wrapper_param_t *param = jolt_bg_get_param(job);
+    job->task = param->task;
+    job->param = param->param;
+
+    res = job->task(job);
+    if( 0 == res ) {
+        launch_dec_ref_ctr();
+        free(param);
+    }
+    else{
+        job->task = app_task_wrapper;
+        job->param = param;
+    }
+    return res;
+}
+esp_err_t jolt_bg_create_app( jolt_bg_task_t task, void *param, lv_obj_t *scr) {
+    launch_inc_ref_ctr();
+    app_wrapper_param_t *app_param = NULL;
+    app_param = malloc(sizeof(app_wrapper_param_t));
+    if( NULL == app_param ) {
+        // todo error handling
+    }
+    app_param->task = task;
+    app_param->param = param;
+
+    return jolt_bg_create(app_task_wrapper, app_param, scr);
 }
 
 jolt_bg_signal_t jolt_bg_get_signal( jolt_bg_job_t *job ) {

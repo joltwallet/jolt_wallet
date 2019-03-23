@@ -42,4 +42,16 @@ bool launch_in_app();
  */
 char *launch_get_name();
 
+/**
+ * @brief Increment the application reference counter.
+ *
+ * An application can only be unloaded when the reference counter is 0.
+ */
+void launch_inc_ref_ctr();
+
+/**
+ * @brief Decrement the application reference counter.
+ */
+void launch_dec_ref_ctr();
+
 #endif

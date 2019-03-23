@@ -24,13 +24,16 @@
  * @brief object that represents a command job to process in the BG task.
  */
 typedef struct jolt_cmd_t {
-    SemaphoreHandle_t complete; /**< Indicates Job is done */ // todo: possibly remove this for a more elegant way of "taking over" BLE/UART communication.
-    int return_value;           /**< */ // todo: see above
     char *data;                 /**< User command string */
     FILE *fd_in;                /**< FD the command was inputted on*/
     FILE *fd_out;               /**< FD to print response on */
     FILE *fd_err;               /**< FD to print errors to*/
 } jolt_cmd_t;
+
+/**
+ * @brief In a CLI function, return this if your function will explicitly call console_cmd_return(val) at a later time via a queued bg job.
+ */
+#define JOLT_CONSOLE_NON_BLOCKING INT_MAX
 
 /**
  * @brief Initialize the console module.
@@ -56,10 +59,9 @@ TaskHandle_t *console_start();
  * @param[in] in in file stream
  * @param[in] out out file stream
  * @param[in] err err file stream
- * @param[in] block Function blocks if True, otherwise non-blocking.
  * @return Returns 0 on success.
  */
-int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err, bool block);
+int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err);
 
 /**
  * @brief Deallocates cmd job resources.
@@ -69,6 +71,12 @@ int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err, bool block);
  * @param[in,out] cmd cmd job to deallocate
  */
 void jolt_cmd_del(jolt_cmd_t *cmd);
+
+/**
+ * @brief Unblocks the CLI and returns the passed in value.
+ * @param[in] val Return value for the CLI cmd.
+ */
+void console_cmd_return( int val );
 
 
 /*******************************************************

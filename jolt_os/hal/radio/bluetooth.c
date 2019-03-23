@@ -427,7 +427,7 @@ static void spp_cmd_task(void * arg) {
             }
 #endif
 
-            jolt_cmd_process(buf, ble_stdin, ble_stdout, ble_stderr, false);
+            jolt_cmd_process(buf, ble_stdin, ble_stdout, ble_stderr);
             buf = NULL;
         }
     }

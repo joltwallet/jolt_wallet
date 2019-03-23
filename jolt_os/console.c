@@ -29,13 +29,21 @@
 
 static const char TAG[] = "console";
 
-TaskHandle_t console_h = NULL;
+static TaskHandle_t console_h = NULL;
+static SemaphoreHandle_t cli_mutex = NULL; 
+static QueueHandle_t return_value_queue = NULL;
 
 /* Static Function Declaration */
 static void console_syscore_register();
 
+static void cli_mutex_take() {
+    xSemaphoreTake(cli_mutex, portMAX_DELAY);
+}
+static void cli_mutex_give() {
+    xSemaphoreGive(cli_mutex);
+}
 
-/* Executes the command string */
+/* Executes the command string in the bg task */
 static int32_t jolt_process_cmd_task(jolt_bg_job_t *bg_job){
     jolt_cmd_t *cmd = jolt_bg_get_param(bg_job); 
 
@@ -78,22 +86,25 @@ static int32_t jolt_process_cmd_task(jolt_bg_job_t *bg_job){
             // todo, parse passphrase argument
             if( launch_file(argv[0], argc-1, &argv[1], "") ) {
                 printf("Unsuccessful command\n");
+                console_cmd_return(-1);
             }
             break;
         }
         case ESP_ERR_INVALID_ARG:
             // command was empty
+            console_cmd_return(-1);
             break;
         case ESP_OK:
-            if( ESP_OK != ret ) {
-                printf("Command returned non-zero error code: %d\n", ret);
+            if( JOLT_CONSOLE_NON_BLOCKING == ret ) {
+                break;
             }
+            console_cmd_return(ret);
             break;
         default:
+            console_cmd_return(-1);
             break;
         printf("Internal error: 0x%x\n", err);
     }
-    cmd->return_value = ret;
 
 exit:
     /* De-allocate memory */
@@ -107,10 +118,6 @@ void jolt_cmd_del(jolt_cmd_t *cmd){
     }
     if( NULL != cmd->data ){
         free(cmd->data);
-    }
-    if( NULL != cmd->complete ){
-        xSemaphoreGive(cmd->complete);
-        taskYIELD(); /* Allow the blocked CLI task to return */
     }
     free(cmd);
 }
@@ -153,7 +160,7 @@ static void console_task() {
         linenoiseHistoryAdd(line);
 
         /* Send the command to the command queue */
-        jolt_cmd_process(line, stdin, stdout, stderr, true); /* Block until job is processed */
+        jolt_cmd_process(line, stdin, stdout, stderr); /* Block until job is processed */
     }
     
     #if CONFIG_JOLT_CONSOLE_OVERRIDE_LOGGING
@@ -164,29 +171,21 @@ static void console_task() {
     vTaskDelete( NULL );
 }
 
-int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err, bool block) {
+int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err) {
     int return_code = -1;
     jolt_cmd_t *cmd = NULL;
+
+    /* Take CLI mutex */
+    cli_mutex_take();
+    
     cmd = malloc(sizeof(jolt_cmd_t));
     if(NULL == cmd) {
         printf("Failed to allocate memory for job parameters.\n");
         return_code = -1;
         goto exit;
     }
-    if(block){
-        cmd->complete = xSemaphoreCreateBinary();
-        if(NULL == cmd->complete){
-            printf("Failed to allocate memory for job finish semaphore.\n");
-            return_code = -2;
-            goto exit;
-        }
-    }
-    else {
-        cmd->complete = NULL;
-    }
 
     cmd->data = line;
-    cmd->return_value = -1;
     cmd->fd_in = in;
     cmd->fd_out = out;
     cmd->fd_err = err;
@@ -197,18 +196,16 @@ int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err, bool block) {
     ESP_LOGD(TAG, "Command added to job queue.");
 
     /* Wait until the process signals completion */
-    if(block){
-        xSemaphoreTake(cmd->complete, portMAX_DELAY);
-        vSemaphoreDelete(cmd->complete);
-        return cmd->return_value;
-    }
-    return_code = 0;
+    xQueueReceive(return_value_queue, &return_code, portMAX_DELAY);
+    cli_mutex_give();
+
     return return_code;
 
 exit:
     if( NULL != cmd ) {
         free(cmd);
     }
+    cli_mutex_give();
     return return_code;
 }
 
@@ -230,7 +227,24 @@ void console_init() {
     /* Disable buffering on stdin and stdout */
     setvbuf(stdin, NULL, _IONBF, 0);
     setvbuf(stdout, NULL, _IONBF, 0);
-    
+
+    /* Create CLI Mutex */
+    if( NULL == cli_mutex ) {
+        cli_mutex = xSemaphoreCreateMutex();
+        if( NULL == cli_mutex) {
+            ESP_LOGE(TAG, "Couldn't create CLI mutex");
+        }
+    }
+
+    /* Create cmd return queue */
+     if( NULL == return_value_queue ) {
+        return_value_queue = xQueueCreate(1, sizeof(int));
+        if( NULL == return_value_queue) {
+            ESP_LOGE(TAG, "Couldn't create return_value_queue");
+        }
+    }
+   
+
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
     esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
@@ -285,6 +299,16 @@ void console_init() {
     console_register_commands();
 }
 
+void console_cmd_return( int val ) {
+    if( JOLT_CONSOLE_NON_BLOCKING == val ) {
+        return;
+    }
+    xQueueSend(return_value_queue, &val, portMAX_DELAY);
+    if( 0 != val ) {
+        printf("Command returned non-zero error code: %d\n", val);
+    }
+}
+
 subconsole_t *subconsole_cmd_init() {
     subconsole_t *subconsole;
     subconsole = calloc(1, sizeof(subconsole_t));
@@ -294,7 +318,7 @@ subconsole_t *subconsole_cmd_init() {
 int subconsole_cmd_register(subconsole_t *subconsole, esp_console_cmd_t *cmd) {
     subconsole_t *new;
     subconsole_t *current = subconsole;
-    if( NULL != current->cmd.func ) {
+    if( NULL != current->cmd.func ) { // check if this cmd is populated
         new = subconsole_cmd_init();
         if( NULL == new ) {
             return -1;
@@ -323,8 +347,15 @@ static void subconsole_cmd_help(subconsole_t *subconsole) {
     }
 }
 
+/**
+ * @brief BG Function to execute the command function.
+ */
+static void subconsole_execute() {
+}
+
 int subconsole_cmd_run(subconsole_t *subconsole, uint8_t argc, char **argv) {
     subconsole_t *current = subconsole;
+    launch_inc_ref_ctr();
     if( argc > 0 ) {
         if( 0 == strcmp(argv[0], "help") ) {
             subconsole_cmd_help(subconsole);
@@ -333,11 +364,14 @@ int subconsole_cmd_run(subconsole_t *subconsole, uint8_t argc, char **argv) {
 
         while( current ) {
             if( 0 == strcmp(argv[0], current->cmd.command) ) {
+                // todo: shuttle this to as a bg job
+                //jolt_bg_create( subconsole_execute, void *param, lv_obj_t *scr);
                 return (current->cmd.func)(argc, argv);
             }
             current = current->next;
         }
     }
+    printf("Command not found.\n");
     subconsole_cmd_help(subconsole);
     return -100;
 }
