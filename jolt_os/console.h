@@ -31,7 +31,7 @@ typedef struct jolt_cmd_t {
 } jolt_cmd_t;
 
 /**
- * @brief In a CLI function, return this if your function will explicitly call console_cmd_return(val) at a later time via a queued bg job.
+ * @brief In a CLI function, return this if your function will explicitly call jolt_cmd_return(val) at a later time via a queued bg job.
  */
 #define JOLT_CONSOLE_NON_BLOCKING INT_MAX
 
@@ -76,7 +76,7 @@ void jolt_cmd_del(jolt_cmd_t *cmd);
  * @brief Unblocks the CLI and returns the passed in value.
  * @param[in] val Return value for the CLI cmd.
  */
-void console_cmd_return( int val );
+void jolt_cmd_return( int val );
 
 
 /*******************************************************

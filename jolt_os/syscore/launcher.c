@@ -243,7 +243,7 @@ static void launch_app_from_store(void *dummy) {
     }
     else{
         /* Application returns a return code */
-        console_cmd_return( res );
+        jolt_cmd_return( res );
     }
 
     if( NULL != app_cache.scr ) {

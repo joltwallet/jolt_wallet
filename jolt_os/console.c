@@ -86,22 +86,22 @@ static int32_t jolt_process_cmd_task(jolt_bg_job_t *bg_job){
             // todo, parse passphrase argument
             if( launch_file(argv[0], argc-1, &argv[1], "") ) {
                 printf("Unsuccessful command\n");
-                console_cmd_return(-1);
+                jolt_cmd_return(-1);
             }
             break;
         }
         case ESP_ERR_INVALID_ARG:
             // command was empty
-            console_cmd_return(-1);
+            jolt_cmd_return(-1);
             break;
         case ESP_OK:
             if( JOLT_CONSOLE_NON_BLOCKING == ret ) {
                 break;
             }
-            console_cmd_return(ret);
+            jolt_cmd_return(ret);
             break;
         default:
-            console_cmd_return(-1);
+            jolt_cmd_return(-1);
             break;
         printf("Internal error: 0x%x\n", err);
     }
@@ -299,7 +299,7 @@ void console_init() {
     console_register_commands();
 }
 
-void console_cmd_return( int val ) {
+void jolt_cmd_return( int val ) {
     if( JOLT_CONSOLE_NON_BLOCKING == val ) {
         return;
     }

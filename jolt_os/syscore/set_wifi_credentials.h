@@ -12,9 +12,11 @@
  *
  * Will prompt user for PIN.
  *
+ * Must be called from CLI.
+ *
  * @param[in] ssid NULL-terminated network SSID to save
  * @param[in] pass NULL-terminated network password
  */
-void set_wifi_credentials(const char *ssid, const char *pass);
+void set_wifi_credentials(const char *ssid, const char *pass );
 
 #endif
