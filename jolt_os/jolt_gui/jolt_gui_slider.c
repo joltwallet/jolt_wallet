@@ -71,7 +71,7 @@ lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_act
         lv_obj_align(slider, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -10);
         lv_slider_set_action(slider, cb);
         lv_slider_set_value(slider, 0); // Default initial value
-        lv_slider_set_anim_time(slider, CONFIG_JOLT_GUI_SLIDER_ANIM_MS);
+        //lv_slider_set_anim_time(slider, CONFIG_JOLT_GUI_SLIDER_ANIM_MS);
 
         jolt_gui_group_add( slider );
 
