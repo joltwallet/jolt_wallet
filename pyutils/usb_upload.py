@@ -61,7 +61,7 @@ def main(args):
     ser.port     = args.port
     ser.dtr = 1
     ser.rts = 1
-    ser.timeout = 1
+    ser.timeout = 3
 
     ser.open()
 
@@ -93,7 +93,7 @@ def main(args):
     log.info("Sending File")
     ymodem.send([args.input,])
 
-    time.sleep(0.5)
+    time.sleep(1)
     log.info("Upload Complete. If you got a 'send error: expected ACK; got b\'\\x15\'' the transfer was probably fine.")
 
 if __name__ == '__main__':

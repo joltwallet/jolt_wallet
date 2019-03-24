@@ -130,6 +130,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
         /* Just incase stdin is from uart, we override the current settings to 
          * potentially replace carriage returns */
     esp_vfs_dev_uart_set_rx_line_endings(-1);
+    esp_log_level_set("*", ESP_LOG_NONE);
 
     uint8_t *packet_data = NULL;
     int size = 0;

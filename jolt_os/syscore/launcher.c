@@ -235,7 +235,6 @@ static void launch_app_from_store(void *dummy) {
 
     launch_inc_ref_ctr();
     res = jelfLoaderRun(app_cache.ctx, app_cache.argc, app_cache.argv);
-    launch_dec_ref_ctr();
 
     if( 0 == app_cache.argc ){
         /* Application returns a LVGL screen */
@@ -244,6 +243,7 @@ static void launch_app_from_store(void *dummy) {
     else{
         /* Application returns a return code */
         jolt_cmd_return( res );
+        launch_dec_ref_ctr();
     }
 
     if( NULL != app_cache.scr ) {
@@ -257,9 +257,11 @@ static lv_res_t launch_app_exit(lv_obj_t *btn) {
         ESP_LOGI(TAG, "Deleting App Screen.");
         lv_obj_del(app_cache.scr);
         app_cache.scr = NULL;
+        launch_dec_ref_ctr();
         return LV_RES_INV;
     }
     else{
+        launch_dec_ref_ctr();
         return LV_RES_OK;
     }
 }

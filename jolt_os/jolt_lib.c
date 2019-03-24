@@ -18,8 +18,10 @@ const jolt_version_t JOLT_JELF_VERSION = {
     .release = JOLT_VERSION_DEV,
 };
 
-const char *JOLT_OS_COMMIT = "d96cbf86a7021265803b73e72aa7df063ceccb22";
+const char *JOLT_OS_COMMIT = "f024e497e8bdce37604fcad44d69c492ddc57509";
 
+extern void *__fixunsdfsi;
+extern void *__floatunsidf;
 extern void *__floatsidf;
 extern void *__gtdf2;
 extern void *__ltdf2;
@@ -35,6 +37,8 @@ extern void *__stack_chk_guard;
  * This order is very important; only *append* fuctions
  */
 static const void *exports[] = {
+    EXPORT_SYMBOL( __fixunsdfsi ),
+    EXPORT_SYMBOL( __floatunsidf ),
     EXPORT_SYMBOL( __floatsidf ),
     EXPORT_SYMBOL( __gtdf2 ),
     EXPORT_SYMBOL( __ltdf2 ),
@@ -42,6 +46,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( __stack_chk_fail ),
     EXPORT_SYMBOL( __stack_chk_guard ),
     EXPORT_SYMBOL( _esp_error_check_failed ),
+    EXPORT_SYMBOL( abort ),
     EXPORT_SYMBOL( atoi ),
     EXPORT_SYMBOL( atol ),
     EXPORT_SYMBOL( bm_entropy256 ),
@@ -106,6 +111,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( cJSON_AddRawToObject ),
     EXPORT_SYMBOL( cJSON_AddObjectToObject ),
     EXPORT_SYMBOL( cJSON_AddArrayToObject ),
+    EXPORT_SYMBOL( cJSON_SetNumberHelper ),
     EXPORT_SYMBOL( console_check_equal_argc ),
     EXPORT_SYMBOL( console_check_range_argc ),
     EXPORT_SYMBOL( crypto_core_curve25519_ref10_ge_double_scalarmult_vartime ),
@@ -146,6 +152,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( hd_node_copy ),
     EXPORT_SYMBOL( hd_node_iterate ),
     EXPORT_SYMBOL( heap_caps_calloc ),
+    EXPORT_SYMBOL( heap_caps_check_integrity_all ),
     EXPORT_SYMBOL( jolt_cmd_return ),
     EXPORT_SYMBOL( jolt_gui_debug_obj_print ),
     EXPORT_SYMBOL( jolt_gui_err_to_str ),
@@ -390,7 +397,7 @@ const jolt_version_t JOLT_JELF_VERSION = { 0 };
 const char *JOLT_OS_COMMIT = NULL;
 
 /* Dummy place holder */
-static const void *exports[345] = { 0 };
+static const void *exports[350] = { 0 };
 
 #endif
 

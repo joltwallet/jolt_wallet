@@ -1,4 +1,6 @@
 VERSION 0.1.0
+__fixunsdfsi
+__floatunsidf
 __floatsidf
 __gtdf2
 __ltdf2
@@ -6,6 +8,7 @@ __muldf3
 __stack_chk_fail
 __stack_chk_guard
 _esp_error_check_failed
+abort
 atoi
 atol
 bm_entropy256
@@ -70,6 +73,7 @@ cJSON_AddStringToObject
 cJSON_AddRawToObject
 cJSON_AddObjectToObject
 cJSON_AddArrayToObject
+cJSON_SetNumberHelper
 console_check_equal_argc
 console_check_range_argc
 crypto_core_curve25519_ref10_ge_double_scalarmult_vartime
@@ -110,6 +114,7 @@ get_display_brightness
 hd_node_copy
 hd_node_iterate
 heap_caps_calloc
+heap_caps_check_integrity_all
 jolt_cmd_return
 jolt_gui_debug_obj_print
 jolt_gui_err_to_str
