@@ -18,11 +18,25 @@
 cJSON *jolt_json_read( const char *fn );
 
 /**
+ * @brief Read the config file for the currently running app.
+ * @return cJSON object representing the application's config json
+ */
+cJSON *jolt_json_read_app();
+
+/**
  * @brief Writes json to a compressed file (probably starts with "/spiffs/").
  * @param[in] fn Path to write JSON to.
+ * @param[in] json JSON object to write.
  * @return 0 on success; -1 otherwise.
  */
 int jolt_json_write( const char *fn, const cJSON *json );
+
+/**
+ * @brief Write the config file for the currently running app.
+ * @param[in] json JSON object to write.
+ * @return 0 on success; -1 otherwise.
+ */
+int jolt_json_write_app( const cJSON *json );
 
 /**
  * @brief delete a cJSON object; can be NULL
@@ -33,6 +47,7 @@ static inline void jolt_json_del( cJSON *json ) {
         cJSON_Delete( json );
     }
 }
+
 
 #endif
 

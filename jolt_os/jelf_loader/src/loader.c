@@ -772,7 +772,7 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
     PROFILER_START_RELOCATESECTION;
 
     int r = 0;
-    Jelf_Rela rel;
+    Jelf_Rela rel = { 0 };
     size_t relEntries = sectHdr.sh_size / sizeof(rel);
     PROFILER_REL_COUNT(relEntries);
     MSG("RELOCATING SECTION")

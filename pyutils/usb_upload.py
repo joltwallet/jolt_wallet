@@ -69,7 +69,7 @@ def main(args):
     ser.rts = 0
 
     log.info("Waiting for device to boot")
-    time.sleep(4) # Wait for device to boot
+    time.sleep(5) # Wait for device to boot
 
     def getc(size, timeout=5):
         return ser.read(size=size)
@@ -93,6 +93,7 @@ def main(args):
     log.info("Sending File")
     ymodem.send([args.input,])
 
+    time.sleep(0.5)
     log.info("Upload Complete. If you got a 'send error: expected ACK; got b\'\\x15\'' the transfer was probably fine.")
 
 if __name__ == '__main__':

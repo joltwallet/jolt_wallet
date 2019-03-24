@@ -1,10 +1,13 @@
 #include "json_config.h"
 #include "esp_vfs.h"
 #include "esp_log.h"
+#include "syscore/launcher.h"
 #include "jolt_helpers.h"
 #include "syscore/filesystem.h"
 
 static const char TAG[] = "json_config";
+
+static const char PATH_STR[] = "/spiffs/%s.json";
 
 cJSON *jolt_json_read( const char *fn ) {
     FILE *f = NULL;
@@ -82,6 +85,14 @@ exit:
     return NULL;
 }
 
+cJSON *jolt_json_read_app() {
+    char *name;
+    char buf[128] = { 0 };
+    name = launch_get_name();
+    snprintf(buf, sizeof(buf), PATH_STR, name);
+    return jolt_json_read(buf);
+}
+
 int jolt_json_write(const char *fn, const cJSON *json) {
     FILE *f = NULL;
     char *str = NULL;
@@ -127,3 +138,12 @@ exit:
 
     return -1; /* Failure */
 }
+
+int jolt_json_write_app( const cJSON *json ) {
+    char *name;
+    char buf[128] = { 0 };
+    name = launch_get_name();
+    snprintf(buf, sizeof(buf), PATH_STR, name);
+    return jolt_json_write(buf, json);
+}
+

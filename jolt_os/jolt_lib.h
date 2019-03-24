@@ -34,14 +34,15 @@
 #include "sodium/private/curve25519_ref10.h"
 
 #include "console.h"
-#include "hal/storage/storage.h"
 #include "hal/display.h"
-#include "jolt_helpers.h"
+#include "hal/storage/storage.h"
 #include "jolt_gui/jolt_gui.h"
-#include "syscore/filesystem.h"
-#include "vault.h"
+#include "jolt_helpers.h"
+#include "json_config.h"
 #include "syscore/console_helpers.h"
+#include "syscore/filesystem.h"
 #include "syscore/https.h"
+#include "vault.h"
 
 #endif // ESP_PLATFORM
 
