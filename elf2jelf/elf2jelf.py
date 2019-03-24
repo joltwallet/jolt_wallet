@@ -16,13 +16,6 @@ ELF File Structure that esp-idf creates:
 
 The Section Header Table is a Section like any other
    * Theres a pointer to the Section Header Table Section in the ELF Header.
-
-Assumes symtab is at the end (ignoring strtab and shstrtab)
-
-This is so that all st_shndx can be kept the same
-
-Todo:
-    * Generate Signature
 '''
 
 __author__  = 'Brian Pugh'
@@ -40,6 +33,7 @@ import math
 import binascii
 from binascii import hexlify, unhexlify
 import zlib
+import git
 import nacl.encoding
 from nacl.signing import SigningKey
 from nacl.bindings import \
@@ -52,6 +46,8 @@ import ipdb as pdb
 
 this_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, this_path)
+
+repo = git.Repo(os.path.dirname(__file__), search_parent_directories=True)
 
 from jelf_loader import jelf_loader_hash
 
@@ -118,6 +114,9 @@ def parse_args():
     parser.add_argument('--export_only', action='store_true',
             help='''Only compile the new jolt_lib.c exports, then exit''')
 
+    parser.add_argument('--release', action='store_true',
+            help='''Set versioning to RELEASE''')
+
     args = parser.parse_args()
     dargs = vars(args)
     return (args, dargs)
@@ -130,13 +129,14 @@ def read_export_list():
         version_header = f.readline().rstrip()
         version_name, version_str = version_header.split(' ')
         assert(version_name == 'VERSION')
-        major, minor = version_str.split('.')
+        major, minor, patch = version_str.split('.')
         major = int(major)
         minor = int(minor)
+        patch = int(patch)
         export_list = [line.rstrip() for line in f]
-    return export_list, major, minor
+    return export_list, major, minor, patch
 
-def write_export_file(export_list, major, minor):
+def write_export_file(export_list, major, minor, patch, release):
     """
     Writes the export struct used in jolt_lib.c
     """
@@ -147,11 +147,23 @@ def write_export_file(export_list, major, minor):
     for f_name in export_list:
         export_string += '''    EXPORT_SYMBOL( %s ),\n''' % f_name
 
-    jolt_lib = template % (export_string, len(export_list))
+    jolt_lib = template % \
+            (major, minor, patch, release, repo.head.object.hexsha,
+            export_string, len(export_list) )
 
     # Write it to where the hardware firmware expects it
-    with open(os.path.join(this_path, '..', 'jolt_os', 'jolt_lib.c'), 'w') as f:
-        f.write(jolt_lib)
+    write_file = False # only write file if it changes contents
+    jolt_lib_path = os.path.join(this_path, '..', 'jolt_os', 'jolt_lib.c')
+    if os.path.isfile(jolt_lib_path):
+        with open(jolt_lib_path, 'r') as f:
+            data = f.read()
+        if data != jolt_lib:
+            write_file = True
+    else:
+        write_file = True
+    if write_file:
+        with open(jolt_lib_path, 'w') as f:
+            f.write(jolt_lib)
 
 def get_ehdr(elf_contents):
     assert( Elf32_Ehdr.size_bytes() == 52 )
@@ -589,12 +601,17 @@ def main():
     ##################################
     # Read in the JoltOS Export List #
     ##################################
-    export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR = read_export_list()
+    export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR, _JELF_VERSION_PATCH = read_export_list()
 
     ###################################
     # Generate jolt_lib.c export list #
     ###################################
-    write_export_file(export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR)
+    if(args.release):
+        release = "JOLT_VERSION_RELEASE"
+    else:
+        release = "JOLT_VERSION_DEV"
+
+    write_export_file(export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR, _JELF_VERSION_PATCH, release)
 
     if args.export_only:
         return
@@ -699,6 +716,7 @@ def main():
     jelf_ehdr_d['e_public_key']     = pk
     jelf_ehdr_d['e_version_major']  = _JELF_VERSION_MAJOR
     jelf_ehdr_d['e_version_minor']  = _JELF_VERSION_MINOR
+    jelf_ehdr_d['e_version_patch']  = _JELF_VERSION_PATCH
     jelf_ehdr_d['e_entry_index']    = jelf_entrypoint_sym_idx
     jelf_ehdr_d['e_shnum']          = len(jelf_shdrs)
     jelf_ehdr_d['e_coin_purpose']   = purpose
@@ -719,8 +737,12 @@ def main():
     #############################
     # Write JELF binary to file #
     #############################
+    # write the uncompressed unsigned jelf file for debugging purposes
+    with open(output_fn + '.uncompressed', 'wb') as f:
+        f.write(jelf_contents)
+
     # write the compressed unsigned jelf file
-    compressed_jelf = compress_data(jelf_contents);
+    compressed_jelf = compress_data(jelf_contents)
     with open(output_fn, 'wb') as f:
         f.write(bytes(64) + compressed_jelf)
 

@@ -123,7 +123,7 @@ void storage_set_pin_last(uint32_t count) {
 #endif
 }
 
-bool storage_get_u8(uint8_t *value, char *namespace, char *key, uint8_t default_value ) {
+bool storage_get_u8(uint8_t *value, const char *namespace, const char *key, uint8_t default_value ) {
     /* Populates [value] from value in storage with [namespace] and [key].
      * If [key] is not found in storage, set [value] to [default_value]
      *
@@ -138,7 +138,7 @@ bool storage_get_u8(uint8_t *value, char *namespace, char *key, uint8_t default_
     return res;
 }
 
-bool storage_set_u8(uint8_t value, char *namespace, char *key) {
+bool storage_set_u8(uint8_t value, const char *namespace, const char *key) {
     /* Stores [value] into [key]. Primarily used for settings.
      *
      * Returns true on success, false on failure.
@@ -152,7 +152,7 @@ bool storage_set_u8(uint8_t value, char *namespace, char *key) {
     return res;
 }
 
-bool storage_get_u16(uint16_t *value, char *namespace, char *key, uint16_t default_value ) {
+bool storage_get_u16(uint16_t *value, const char *namespace, const char *key, uint16_t default_value ) {
     /* Populates [value] from value in storage with [namespace] and [key].
      * If [key] is not found in storage, set [value] to [default_value]
      *
@@ -167,7 +167,7 @@ bool storage_get_u16(uint16_t *value, char *namespace, char *key, uint16_t defau
     return res;
 }
 
-bool storage_set_u16(uint16_t value, char *namespace, char *key) {
+bool storage_set_u16(uint16_t value, const char *namespace, const char *key) {
     /* Stores [value] into [key]. Primarily used for settings.
      *
      * Returns true on success, false on failure.
@@ -181,7 +181,7 @@ bool storage_set_u16(uint16_t value, char *namespace, char *key) {
     return res;
 }
 
-bool storage_get_u32(uint32_t *value, char *namespace, char *key, uint32_t default_value ) {
+bool storage_get_u32(uint32_t *value, const char *namespace, const char *key, uint32_t default_value ) {
     /* Populates [value] from value in storage with [namespace] and [key].
      * If [key] is not found in storage, set [value] to [default_value]
      *
@@ -197,7 +197,7 @@ bool storage_get_u32(uint32_t *value, char *namespace, char *key, uint32_t defau
 
 }
 
-bool storage_set_u32(uint32_t value, char *namespace, char *key) {
+bool storage_set_u32(uint32_t value, const char *namespace, const char *key) {
     /* Stores [value] into [key]. Primarily used for settings.
      *
      * Returns true on success, false on failure.
@@ -211,7 +211,7 @@ bool storage_set_u32(uint32_t value, char *namespace, char *key) {
     return res;
 }
 
-bool storage_get_blob(unsigned char *buf, size_t *required_size, char *namespace, char *key) {
+bool storage_get_blob(unsigned char *buf, size_t *required_size, const char *namespace, const char *key) {
     /* Populates [value] from value in storage with [namespace] and [key].
      * If [key] is not found in storage, set [value] to [default_value]
      *
@@ -226,7 +226,7 @@ bool storage_get_blob(unsigned char *buf, size_t *required_size, char *namespace
     return res;
 }
 
-bool storage_set_blob(unsigned char *buf, size_t len, char *namespace, char *key) {
+bool storage_set_blob(const unsigned char *buf, size_t len, const char *namespace, const char *key) {
     /* Stores [value] into [key]. Primarily used for settings.
      *
      * Returns true on success, false on failure.
@@ -240,7 +240,7 @@ bool storage_set_blob(unsigned char *buf, size_t len, char *namespace, char *key
     return res;
 }
 
-bool storage_get_str(char *buf, size_t *required_size, char *namespace, char *key, char *default_value) {
+bool storage_get_str(char *buf, size_t *required_size, const char *namespace, const char *key, const char *default_value) {
     bool res;
 #if CONFIG_JOLT_STORE_INTERNAL
     res = storage_internal_get_str(buf, required_size, namespace, key, default_value);
@@ -250,7 +250,7 @@ bool storage_get_str(char *buf, size_t *required_size, char *namespace, char *ke
     return res;
 }
 
-bool storage_set_str(char *str, char *namespace, char *key) {
+bool storage_set_str(const char *str, const char *namespace, const char *key) {
     bool res;
 #if CONFIG_JOLT_STORE_INTERNAL
     res = storage_internal_set_str(str, namespace, key);
@@ -270,7 +270,7 @@ void storage_factory_reset( ) {
     esp_restart();
 }
 
-bool storage_erase_key(char *namespace, char *key) {
+bool storage_erase_key(const char *namespace, const char *key) {
     bool res;
 #if CONFIG_JOLT_STORE_INTERNAL
     res = storage_internal_erase_key(namespace, key);

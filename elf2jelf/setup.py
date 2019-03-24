@@ -4,6 +4,8 @@ from Cython.Build import cythonize
 import os
 
 import ipdb as pdb
+
+
 # Unmangle env variables if part of ESP-IDF build
 if 'CFLAGS' in os.environ and ('-DJOLT_OS' in os.environ['CFLAGS'] \
                             or '-DJOLT_APP' in os.environ['CFLAGS']):
@@ -35,5 +37,5 @@ extensions = [
 
 setup(
     name = "jelf_loader",
-    ext_modules = cythonize(extensions, force=True)
+    ext_modules = cythonize(extensions)
 )

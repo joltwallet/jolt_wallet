@@ -3,10 +3,9 @@
 
 /* Loading and Preloading Screen Structures:
  * * SCREEN
- *   +--CONT_TITLE
- *   |   +--LABEL_0 (title)
+ *   +--LABEL_TITLE
  *   +--CONT_BODY
- *       +--BAR_LOADING or PRELOADING
+ *       +--LOADINGBAR or PRELOADING
  *       +--LABEL_0 (loading label)
  */
 
@@ -21,7 +20,7 @@ typedef struct autoupdate_param_t {
 
 /* Update the loading screen.
  * Title and Text are optional.*/
-void jolt_gui_scr_loading_update(lv_obj_t *parent,
+void jolt_gui_scr_loadingbar_update(lv_obj_t *parent,
         const char *title, const char *text,
         uint8_t percentage) {
     JOLT_GUI_CTX{
@@ -38,14 +37,14 @@ void jolt_gui_scr_loading_update(lv_obj_t *parent,
         {
             lv_obj_t *cont_body = NULL;
             cont_body     = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_CONT_BODY);
-            bar_loading   = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_BAR_LOADING);
+            bar_loading   = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_LOADINGBAR);
             label_loading = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_LABEL_0);
         }
 
         if( percentage > 100 ) {
             percentage = 100;
         }
-        lv_bar_set_value_anim(bar_loading, percentage, CONFIG_JOLT_GUI_LOADING_BAR_ANIM_MS);
+        lv_bar_set_value_anim(bar_loading, percentage, CONFIG_JOLT_GUI_LOADINGBAR_ANIM_MS);
         if( text ) {
             lv_label_set_text(label_loading, text);
         }
@@ -61,12 +60,12 @@ static void autoupdate_task(void *input) {
     autoupdate_param_t *param = lv_obj_get_free_ptr( scr );
     if( *(param->progress) <= 100 && *(param->progress) >= 0 ) {
         // The +10 makes it look better
-        jolt_gui_scr_loading_update(scr, NULL, NULL,
+        jolt_gui_scr_loadingbar_update(scr, NULL, NULL,
                 *(param->progress) + 10);
     }
 }
 
-void jolt_gui_scr_loading_autoupdate(lv_obj_t *parent, int8_t *progress) {
+void jolt_gui_scr_loadingbar_autoupdate(lv_obj_t *parent, int8_t *progress) {
     autoupdate_param_t *param;
     param = malloc( sizeof(autoupdate_param_t) );
     if( NULL == param ) {
@@ -82,7 +81,7 @@ void jolt_gui_scr_loading_autoupdate(lv_obj_t *parent, int8_t *progress) {
 }
 
 /* Deletes the update task and free's its parameters. DOES NOT delete parent */
-void jolt_gui_scr_loading_autoupdate_del(lv_obj_t *parent) {
+void jolt_gui_scr_loadingbar_autoupdate_del(lv_obj_t *parent) {
     JOLT_GUI_CTX{
         autoupdate_param_t *param = lv_obj_get_free_ptr( parent );
         if( NULL == param ) {
@@ -98,16 +97,16 @@ void jolt_gui_scr_loading_autoupdate_del(lv_obj_t *parent) {
 /* Creates and returns a loading screen.
  * Defaults the back and enter action to NULL.
  * */
-lv_obj_t *jolt_gui_scr_loading_create(const char *title) {
+lv_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
     JOLT_GUI_SCR_CTX(title){
         /* Set screen ID */
-        lv_obj_set_free_num(parent, JOLT_GUI_SCR_ID_LOADING);
+        lv_obj_set_free_num(parent, JOLT_GUI_SCR_ID_LOADINGBAR);
 
         /* Create Loading Bar */
         lv_obj_t *bar = BREAK_IF_NULL(lv_bar_create(cont_body, NULL));
-        lv_obj_set_free_num(bar, JOLT_GUI_OBJ_ID_BAR_LOADING);
+        lv_obj_set_free_num(bar, JOLT_GUI_OBJ_ID_LOADINGBAR);
         lv_obj_set_size(bar, 
-                CONFIG_JOLT_GUI_LOADING_BAR_W, CONFIG_JOLT_GUI_LOADING_BAR_H);
+                CONFIG_JOLT_GUI_LOADINGBAR_W, CONFIG_JOLT_GUI_LOADINGBAR_H);
         lv_obj_align(bar, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -10);
         lv_bar_set_value(bar, 1);
 
@@ -139,7 +138,7 @@ lv_obj_t *jolt_gui_scr_loading_create(const char *title) {
 lv_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text) {
     JOLT_GUI_SCR_CTX( title ){
         /* Set screen ID */
-        lv_obj_set_free_num(parent, JOLT_GUI_SCR_ID_LOADING);
+        lv_obj_set_free_num(parent, JOLT_GUI_SCR_ID_LOADINGBAR);
 
         /* Create PreLoading Object */
         lv_obj_t *preload = BREAK_IF_NULL(lv_preload_create(cont_body, NULL));

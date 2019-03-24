@@ -13,7 +13,6 @@
 #include "sodium.h"
 
 #include "../console.h"
-#include "jolt_gui/confirmation.h"
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_helpers.h"
 #include "vault.h"
@@ -23,7 +22,6 @@
 
 static const char* TAG = "console_syscore_fs";
 
-/* Starts up the SPIFFS Filesystem */
 void jolt_fs_init() {
     esp_err_t ret;
     esp_vfs_spiffs_conf_t conf = {
@@ -53,11 +51,6 @@ void jolt_fs_init() {
 }
 
 uint32_t jolt_fs_get_all_fns(char **fns, uint32_t fns_len, const char *ext, bool remove_ext){
-    /* Returns upto fns_len fns with extension ext and the number of files.
-     * If fns is NULL, just return the file count.
-     * If ext is NULL, return all files
-     * Uses malloc to reserve space for fns
-     */
     DIR *dir;
     uint32_t tot = 0;
     struct dirent *ent;
@@ -125,30 +118,30 @@ uint32_t jolt_fs_free() {
     return (tot-used-FS_MIN_FREE);
 }
 
-size_t jolt_fs_size(char *fname) {
+size_t jolt_fs_size(const char *fname) {
+    struct stat sb;
+
     if (!esp_spiffs_mounted( NULL )) {
         return -1;
     }
 
-    struct stat sb;
-    if (stat(fname, &sb) == 0) {
-        return sb.st_size;
-    }
-    else{
+    if( 0 != stat(fname, &sb) ) {
         return -1;
     }
+
+    return sb.st_size;
 }
 
-int jolt_fs_exists(char *fname) {
+bool jolt_fs_exists(const char *fname) {
     if (!esp_spiffs_mounted( NULL )) {
-        return -1;
+        return false;
     }
 
     struct stat sb;
     if (stat(fname, &sb) == 0) {
-        return 1;
+        return true;
     }
-    return 0;
+    return false;
 }
 
 

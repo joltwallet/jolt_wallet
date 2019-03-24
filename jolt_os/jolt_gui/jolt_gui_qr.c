@@ -3,8 +3,7 @@
 
 /* QR Screen Structure:
  * * SCREEN
- *   +--CONT_TITLE
- *   |   +--LABEL_0 (title)
+ *   +--LABEL_TITLE
  *   +--CONT_BODY
  *       +--IMG_QR
  */

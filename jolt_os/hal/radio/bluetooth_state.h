@@ -1,3 +1,9 @@
+/**
+ * @file bluetooth_state.h
+ * @brief Variables that define the current state of Bluetooth
+ * @author Brian Pugh
+ */
+
 #ifndef JOLT_HAL_BLUETOOTH_STATE_H__
 #define JOLT_HAL_BLUETOOTH_STATE_H__
 
@@ -11,6 +17,9 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 
+/**
+ * @brief GATTS profile object
+ */
 typedef struct gatts_profile_inst_t {
     esp_gatts_cb_t gatts_cb;
     uint16_t gatts_if;
@@ -26,13 +35,29 @@ typedef struct gatts_profile_inst_t {
     esp_bt_uuid_t descr_uuid;
 } gatts_profile_inst_t;
 
+/**
+ * @brief Table of available profiles
+ */
 extern gatts_profile_inst_t spp_profile_tab[SPP_PROFILE_NUM];
 
+/**
+ * @brief Attribute Handle Table
+ */
 extern uint16_t spp_handle_table[SPP_IDX_NB];
 
+/**
+ * @brief Queue to shuttle data from the event handler to ble_in_task
+ */
 extern xQueueHandle ble_in_queue;
+
+/**
+ * @brief Task that aggregates BLE messages into commands to be processed.
+ */
 extern xTaskHandle ble_in_task;
 
+/**
+ * @brief True if currently in pairing mode, false otherwise
+ */
 extern bool jolt_bluetooth_pair_mode;
 
 #endif

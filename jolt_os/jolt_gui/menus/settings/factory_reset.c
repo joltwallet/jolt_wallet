@@ -2,6 +2,11 @@
 #include "hal/storage/storage.h"
 #include "syscore/bg.h"
 
+static int factory_reset( jolt_bg_job_t *job ) {
+    storage_factory_reset();
+    return 0;
+}
+
 static lv_res_t factory_reset_back( lv_obj_t *btn ) {
     jolt_gui_scr_del();
     return LV_RES_INV;
@@ -11,9 +16,9 @@ static lv_res_t factory_reset_enter( lv_obj_t *btn ) {
     jolt_gui_scr_preloading_create("Factory Reset", "Erasing...");
 
     esp_err_t err;
-    err = jolt_bg_create( storage_factory_reset, NULL, NULL);
+    err = jolt_bg_create( factory_reset, NULL, NULL);
 
-    return LV_RES_OK;
+    return err;
 }
 
 lv_res_t menu_factory_reset_create(lv_obj_t *btn) {

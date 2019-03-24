@@ -1,9 +1,6 @@
 [submodule "components/easy_input"]
 	path = components/easy_input
 	url = https://github.com/joltwallet/easy_input.git
-[submodule "components/zlib"]
-	path = components/zlib
-	url = https://github.com/joltwallet/nano_zlib.git
 [submodule "components/QRCode"]
 	path = components/QRCode
 	url = https://github.com/joltwallet/QRCode.git

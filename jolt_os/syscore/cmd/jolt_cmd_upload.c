@@ -28,7 +28,7 @@ int jolt_cmd_upload(int argc, char** argv) {
                 "sz --ymodem cat.jpg > /dev/ttyUSB0 < /dev/ttyUSB0\n"
                 "Ready to receive file, please start YModem transfer on host ...\n");
         strcat(orig_fn, "/");
-        rec_res = Ymodem_Receive(ffd, max_fsize, orig_fn + strlen(orig_fn), NULL);
+        rec_res = ymodem_receive(ffd, max_fsize, orig_fn + strlen(orig_fn), NULL);
         fclose(ffd);
         printf("\r\n");
         if (rec_res > 0) {

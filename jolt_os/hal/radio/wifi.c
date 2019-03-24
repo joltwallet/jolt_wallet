@@ -26,7 +26,6 @@
 #if !CONFIG_NO_BLOBS
 static const char TAG[] = "wifi_task";
 
-static esp_timer_handle_t disconnect_timer = NULL;
 static uint8_t disconnect_ctr = 0;
 
 static void disconnect_timer_cb( void *arg ) {
@@ -39,8 +38,8 @@ static void disconnect_timer_cb( void *arg ) {
     esp_wifi_connect();
 }
 
-esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
-{
+esp_err_t wifi_event_handler(void *ctx, system_event_t *event) {
+    static esp_timer_handle_t disconnect_timer = NULL;
     uint8_t primary;
     wifi_second_chan_t second;
     esp_err_t err;
@@ -77,7 +76,7 @@ esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
         case SYSTEM_EVENT_STA_DISCONNECTED: {
             /* Gets triggered on disconnect, or when esp_wifi_connect() fails to 
              * connect */
-            ESP_LOGI(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
+            ESP_LOGD(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
             if( 0 == disconnect_ctr ){
                 /* Try to connect immediately */
                 esp_wifi_connect();
@@ -118,6 +117,8 @@ esp_err_t jolt_wifi_start(){
         tcpip_adapter_init();
         initiate_tcpip_adapter = false;
     }
+
+    esp_wifi_stop();
     
     /* Check for WiFi credentials in NVS */
     {
@@ -125,7 +126,7 @@ esp_err_t jolt_wifi_start(){
         storage_get_str(NULL, &ssid_len, "user", "wifi_ssid",
                 CONFIG_AP_TARGET_SSID);
         if( ssid_len > 31 ) {
-            // todo err
+            goto err;
         }
         storage_get_str((char *)sta_config.sta.ssid, &ssid_len,
                 "user", "wifi_ssid",
@@ -136,7 +137,7 @@ esp_err_t jolt_wifi_start(){
         storage_get_str(NULL, &pass_len, "user", "wifi_pass",
                 CONFIG_AP_TARGET_PASSWORD);
         if( pass_len > 63 ) {
-            // todo err
+            goto err;
         }
         storage_get_str((char *)sta_config.sta.password, &pass_len,
                 "user", "wifi_pass",
@@ -161,6 +162,8 @@ esp_err_t jolt_wifi_start(){
     ESP_ERROR_CHECK( esp_wifi_set_ps(WIFI_PS_MAX_MODEM) );
 
     return ESP_OK;
+err:
+    return ESP_FAIL;
 }
 
 esp_err_t jolt_wifi_stop() {

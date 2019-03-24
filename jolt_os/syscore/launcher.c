@@ -27,11 +27,12 @@
 static const char* TAG = "syscore_launcher";
 
 static struct {
-    jelfLoaderContext_t *ctx; /* Jelf Loader Context */
-    lv_obj_t *scr;            /* LVGL Screen Object. Null if the user has exited */
+    jelfLoaderContext_t *ctx; /**< Jelf Loader Context */
+    lv_obj_t *scr;            /**< LVGL Screen Object. */
     int argc;
     char **argv;
-    char name[65];            /* App Name */
+    char name[65];            /**< App Name */
+    uint8_t ref_ctr;          /**< Number of references to currently running app code. Can only unload app if this is 0. */
     bool loading;             /* True until app actually begins executing */
 } app_cache = { 0 };
 
@@ -39,12 +40,18 @@ static lv_res_t launch_app_exit(lv_obj_t *btn);
 static void launch_app_from_store(void *dummy);
 
 static void launch_app_cache_clear(){
-    if( NULL != app_cache.scr) {
+    if( NULL != app_cache.scr && 0 != app_cache.ref_ctr) {
         ESP_LOGE(TAG, "Cannot clear app_cache with a valid screen");
     }
     else {
         if(app_cache.ctx != NULL){
             jelfLoaderFree(app_cache.ctx);
+        }
+        if( NULL != app_cache.argv ) {
+            for(uint8_t i=0; i < app_cache.argc; i++) {
+                free( app_cache.argv[i] );
+            }
+            free(app_cache.argv);
         }
         app_cache.ctx = NULL;
         app_cache.name[0] = '\0';
@@ -53,7 +60,7 @@ static void launch_app_cache_clear(){
     }
 }
 
-/* Launches app specified without ".elf" suffix. i.e. "app"
+/* Launches app specified without ".jelf" suffix. i.e. "app"
  * Launches the app's function with same name as func.
  *
  * If the app was the last app launched (or currently launched app), it will
@@ -73,6 +80,13 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
         goto exit;
     }
     app_cache.loading = true;
+
+    /* Check filename length */
+    if(strlen(fn_basename) > sizeof(exec_fn)-strlen(exec_fn)-1-5-1 ) {
+        ESP_LOGE(TAG, "Too long of an app name");
+        return_code = -13;
+        goto exit;
+    }
 
     if( NULL != app_cache.ctx ) {
         ESP_LOGI(TAG, "An app is already cached. Checking...");
@@ -105,12 +119,13 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
     /* Parse Exec Filename.
      * Takes something like "app" into  "/spiffs/app.jelf" */
 	strcat(exec_fn, "/");
-	strncat(exec_fn, fn_basename, sizeof(exec_fn)-strlen(exec_fn)-1-4);
+    strcat(exec_fn, fn_basename);
     strcat(exec_fn, ".jelf");
 
-    if( jolt_fs_exists(exec_fn) != 1 ){
+    if( !jolt_fs_exists(exec_fn) ){
         ESP_LOGE(TAG, "Executable doesn't exist\n");
-        return -2;
+        return_code = -2;
+        goto exit;
     }
 
     preloading_scr = jolt_gui_scr_preloading_create(fn_basename, gettext(JOLT_TEXT_PRELOAD_LAUNCHING));
@@ -122,21 +137,39 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
 
     ESP_LOGI(TAG, "jelfLoader; Initializing");
     /* fn_basename is passed in for signature checking */
-    if( NULL == (app_cache.ctx = jelfLoaderInit(program, fn_basename, &jelf_loader_env)) ) {
-        return_code = -4;
-        goto exit;
+    switch( jelfLoaderInit(&app_cache.ctx, program, fn_basename, &jelf_loader_env) ) {
+        case JELF_LOADER_OK:
+            ESP_LOGI(TAG, "Context initialization OK.");
+            break;
+        case JELF_LOADER_VERSION_APP:
+            jolt_gui_scr_text_create(fn_basename, gettext(JOLT_TEXT_LAUNCH_APP_OUT_OF_DATE) );
+            return_code = -4;
+            goto exit;
+        case JELF_LOADER_VERSION_JOLTOS:
+            jolt_gui_scr_text_create(fn_basename, gettext(JOLT_TEXT_LAUNCH_JOLTOS_OUT_OF_DATE) );
+            return_code = -4;
+            goto exit;
+        default:
+            return_code = -4;
+            goto exit;
     }
 
     ESP_LOGI(TAG, "elfLoader; Loading Sections");
-    if( NULL == jelfLoaderLoad(app_cache.ctx) ) {
-        return_code = -5;
-        goto exit;
+    switch( jelfLoaderLoad(app_cache.ctx) ) {
+        case JELF_LOADER_OK:
+            break;
+        default:
+            return_code = -5;
+            goto exit;
     }
 
     ESP_LOGI(TAG, "elfLoader; Relocating");
-    if( NULL == jelfLoaderRelocate(app_cache.ctx) ) {
-        return_code = -6;
-        goto exit;
+    switch( jelfLoaderRelocate(app_cache.ctx) ) {
+        case JELF_LOADER_OK:
+            break;
+        default:
+            return_code = -6;
+            goto exit;
     }
 
     jelfLoader_time = esp_timer_get_time() - jelfLoader_time;
@@ -153,12 +186,19 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
 exec:
     /* Verify Signature */
     if(!jelfLoaderSigCheck(app_cache.ctx)) {
+        ESP_LOGE(TAG, "Invalid App Signature");
         goto exit;
     }
     /* Prepare vault for app launching. vault_set() creates the PIN entry screen */
     // maybe move these out of cache
     app_cache.argc = app_argc;
-    app_cache.argv = app_argv;
+
+    // todo: error handling
+    app_cache.argv = malloc(app_argc * sizeof(char *));
+    for(uint8_t i=0; i < app_argc; i++) {
+        app_cache.argv[i] = malloc(strlen(app_argv[i])+1);
+        strcpy(app_cache.argv[i], app_argv[i]);
+    }
 
     ESP_LOGI( TAG, "Derivation Purpose: 0x%x. Coin Type: 0x%x",
             app_cache.ctx->coin_purpose,
@@ -189,11 +229,26 @@ exit:
 }
 
 static void launch_app_from_store(void *dummy) {
+    /* Runs in the BG task */
+    int res;
     ESP_LOGI(TAG, "Launching App");
-    app_cache.scr = (lv_obj_t *)jelfLoaderRun(app_cache.ctx,
-            app_cache.argc, app_cache.argv);
-    app_cache.loading = false;
-    jolt_gui_scr_set_back_action(app_cache.scr, launch_app_exit);
+
+    launch_inc_ref_ctr();
+    res = jelfLoaderRun(app_cache.ctx, app_cache.argc, app_cache.argv);
+
+    if( 0 == app_cache.argc ){
+        /* Application returns a LVGL screen */
+        app_cache.scr = (lv_obj_t*)res;
+    }
+    else{
+        /* Application returns a return code */
+        jolt_cmd_return( res );
+        launch_dec_ref_ctr();
+    }
+
+    if( NULL != app_cache.scr ) {
+        jolt_gui_scr_set_back_action(app_cache.scr, launch_app_exit);
+    }
 }
 
 static lv_res_t launch_app_exit(lv_obj_t *btn) {
@@ -202,15 +257,17 @@ static lv_res_t launch_app_exit(lv_obj_t *btn) {
         ESP_LOGI(TAG, "Deleting App Screen.");
         lv_obj_del(app_cache.scr);
         app_cache.scr = NULL;
+        launch_dec_ref_ctr();
         return LV_RES_INV;
     }
     else{
+        launch_dec_ref_ctr();
         return LV_RES_OK;
     }
 }
 
 bool launch_in_app(){
-    if( NULL != app_cache.scr ) {
+    if( 0 == app_cache.ref_ctr) {
         return true;
     }
     else {
@@ -220,4 +277,22 @@ bool launch_in_app(){
 
 char *launch_get_name() {
     return app_cache.name;
+}
+
+void launch_inc_ref_ctr() {
+    if(app_cache.ref_ctr == UINT8_MAX){
+        ESP_LOGE(TAG, "Cannot increment reference counter.");
+    }
+    else {
+        app_cache.ref_ctr++;
+    }
+}
+
+void launch_dec_ref_ctr() {
+    if(app_cache.ref_ctr > 0) {
+        app_cache.ref_ctr--;
+    }
+    else {
+        ESP_LOGE(TAG, "Reference Counter is 0; cannot decrement");
+    }
 }

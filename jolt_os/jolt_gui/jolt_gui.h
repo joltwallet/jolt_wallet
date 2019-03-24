@@ -1,3 +1,17 @@
+/**
+ * @file jolt_gui.h
+ * @brief Functions used to build up the GUI
+ *
+ * JoltOS heavily uses the open-source graphics library LVGL. 
+ * 
+ * To create parts of a GUI, you should only include jolt_gui.h
+ *
+ * All jolt_gui functions are protected by a recursive-mutex, so you can call
+ * them anywhere. If you are directly using LVGL functions, you MUST wrap your
+ * code in a JOLT_GUI_CTX which will automatically obtain and release the mutex. 
+ *
+ * @author Brian Pugh
+ */
 #ifndef __JOLT_LVGL_GUI_H__
 #define __JOLT_LVGL_GUI_H__
 
@@ -17,6 +31,8 @@
 #include "jolt_gui_theme.h"
 #include "jolt_gui_bignum.h"
 #include "jolt_gui_err.h"
+
+#include "jolt_gui_indev.h"
 
 #include "menus/home.h"
 
@@ -42,100 +58,210 @@
  *   GLOBAL VARIABLES
  **********************/
 
-/* This whole struct should be moved into globals */
-struct {
-    bool first_boot;
-    struct {
-        lv_group_t *main; // Parent group for user input
-        lv_group_t *back; // Group used to handle back button
-        lv_group_t *enter;
-    } group;
-} jolt_gui_store;
-
 extern lv_theme_t *jolt_gui_theme;
 
-/* If you add more values here, also add them to jolt_gui_obj_id_str */
+#define FOREACH_JOLT_GUI_OBJ_ID(x) \
+    x(JOLT_GUI_OBJ_ID_UNINITIALIZED)    /**< If you don't set a free_num, then it's 0 */ \
+    x(JOLT_GUI_OBJ_ID_CONT_TITLE)       /**< container or page holding title */ \
+    x(JOLT_GUI_OBJ_ID_CONT_BODY)        /**< container or page holding body */ \
+    x(JOLT_GUI_OBJ_ID_BACK)             /**< The inivisible back button */ \
+    x(JOLT_GUI_OBJ_ID_ENTER)            /**< The invisible enter button */ \
+    x(JOLT_GUI_OBJ_ID_PAGE)             /**< page */ \
+    x(JOLT_GUI_OBJ_ID_LABEL_TITLE)      /**< Title Label */ \
+    x(JOLT_GUI_OBJ_ID_LABEL_0)          /**< Primary text */ \
+    x(JOLT_GUI_OBJ_ID_LABEL_1)          /**< Secondary text */ \
+    x(JOLT_GUI_OBJ_ID_LABEL_2)          /**< 3rd text */ \
+    x(JOLT_GUI_OBJ_ID_LABEL_3)          /**< 4th text */ \
+    x(JOLT_GUI_OBJ_ID_LABEL_4)          /**< 5th text */ \
+    x(JOLT_GUI_OBJ_ID_LOADINGBAR)       /**< Loading Bar Object */ \
+    x(JOLT_GUI_OBJ_ID_PRELOADING)       /**< Loading Bar Object */ \
+    x(JOLT_GUI_OBJ_ID_IMG_QR)           /**< QR code object */ \
+    x(JOLT_GUI_OBJ_ID_SLIDER)           /**<  */ \
+    x(JOLT_GUI_OBJ_ID_LIST)             /**<  */ \
+    x(JOLT_GUI_OBJ_ID_ROLLER)           /**<  */ \
+    x(JOLT_GUI_OBJ_ID_DECIMAL_POINT)    /**<  */ \
+    x(JOLT_GUI_OBJ_ID_MAX)
+
+
+#define GENERATE_ENUM(ENUM) ENUM,
+#define GENERATE_STRING(STRING) #STRING,
+
+/**
+ * @brief Identifiers so we can quickly transverse an object that makes up a screen.
+ */
 enum {
-    JOLT_GUI_OBJ_ID_UNINITIALIZED = 0,    // If you don't set a free_num, then it's 0
-    JOLT_GUI_OBJ_ID_CONT_TITLE,       // container or page holding title
-    JOLT_GUI_OBJ_ID_CONT_BODY,        // container or page holding body
-    JOLT_GUI_OBJ_ID_BACK,             // The inivisible back button
-    JOLT_GUI_OBJ_ID_ENTER,            // The invisible enter button
-    JOLT_GUI_OBJ_ID_PAGE,             //
-    JOLT_GUI_OBJ_ID_LABEL_TITLE,      // Title Label
-    JOLT_GUI_OBJ_ID_LABEL_0,          // Primary text
-    JOLT_GUI_OBJ_ID_LABEL_1,          // Secondary text
-    JOLT_GUI_OBJ_ID_LABEL_2,          // 3rd text
-    JOLT_GUI_OBJ_ID_LABEL_3,          // 4th text
-    JOLT_GUI_OBJ_ID_LABEL_4,          // 5th text
-    JOLT_GUI_OBJ_ID_BAR_LOADING,      // Loading Bar Object
-    JOLT_GUI_OBJ_ID_PRELOADING,       // Loading Bar Object
-    JOLT_GUI_OBJ_ID_IMG_QR,           // QR code object
-    JOLT_GUI_OBJ_ID_SLIDER,
-    JOLT_GUI_OBJ_ID_LIST,
-    JOLT_GUI_OBJ_ID_ROLLER,
-    JOLT_GUI_OBJ_ID_DECIMAL_POINT,
+    FOREACH_JOLT_GUI_OBJ_ID(GENERATE_ENUM)
 };
 typedef uint8_t jolt_gui_obj_id_t;
 
+#define FOREACH_JOLT_GUI_SCR_ID(x) \
+    x(JOLT_GUI_SCR_ID_UNINITIALIZED)   /**<  */ \
+    x(JOLT_GUI_SCR_ID_MENU)            /**<  */ \
+    x(JOLT_GUI_SCR_ID_SCROLL)          /**<  */ \
+    x(JOLT_GUI_SCR_ID_DIGIT_ENTRY)     /**<  */ \
+    x(JOLT_GUI_SCR_ID_LOADINGBAR)      /**<  */ \
+    x(JOLT_GUI_SCR_ID_PRELOADING)      /**<  */ \
+    x(JOLT_GUI_SCR_ID_MAX)             /**<  */
+
+/**
+ * @brief Identifiers so we can quickly identify a screen type
+ */
 enum {
-    JOLT_GUI_SCR_ID_UNINITIALIZED = 0,
-    JOLT_GUI_SCR_ID_MENU,
-    JOLT_GUI_SCR_ID_SCROLL,
-    JOLT_GUI_SCR_ID_DIGIT_ENTRY,
-    JOLT_GUI_SCR_ID_LOADING,
-    JOLT_GUI_SCR_ID_PRELOADING,
+    FOREACH_JOLT_GUI_SCR_ID(GENERATE_ENUM)
 };
 typedef uint8_t jolt_gui_scr_id_t;
 
 /*********************
  * Screen Management *
  *********************/
-/* Deletes the container of the currently focused object */
+/**
+ * @brief Deletes the currently focused screen.
+ *
+ * Internally it gets the currently focused object, and recursively finds the
+ * parent, then deletes that parent.
+ */
 lv_res_t jolt_gui_scr_del();
 
 /**************************************
  * STANDARD SCREEN CREATION FUNCTIONS *
  **************************************/
-/* These functions for the base to create new screen types */
 
-/* Creates a parent object for a new screen thats easy to delete */
+/**
+ * @brief Creates a dummy parent object
+ *
+ * A single dummy parent object makes screens easier to delete.
+ *
+ * @return object
+ */
 lv_obj_t *jolt_gui_obj_parent_create();
 
-/* Creates the body container */ 
+/**
+ * @brief Creates a container for the drawable area of the screen
+ * @param[in,out] scr dummy parent object
+ * @return container body
+ */ 
 lv_obj_t *jolt_gui_obj_cont_body_create( lv_obj_t *scr );
 
-/* Creates a title in the top left statusbar. 
- * Allocates and copies the title string. */
+/**
+ * @brief Creates a title in the top left statusbar. 
+ *
+ * LVGL internally allocates and copies the title string, so it doesn't need
+ * to persist.
+ *
+ * @param[in,out] parent dummy parent object
+ * @param[in] title NULL-terminated title string. If NULL, a blank title is used. 
+ * @return title label object
+ */
 lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title);
 
-/* Wraps lv_obj_del in a JOLT_GUI_CTX */
+/**
+ * @brief Wraps lv_obj_del in a JOLT_GUI_CTX 
+ */
 void jolt_gui_obj_del(lv_obj_t *obj);
 
 /***************
  * Group Stuff *
  ***************/
 
-/* Run before running jolt_gui_create();
- * Creates all the groups and registers the in-device to the groups */
+/**
+ * @brief Creates all the LVGL groups and registers the in-device 
+ *
+ * Must be run before calling jolt_gui_create();
+ */
 void jolt_gui_group_create();
 
-/* Adds object to main group */
+/**
+ * @brief Adds object to main group 
+ * @param[in,out] obj object to add to the main group
+ */
 void jolt_gui_group_add( lv_obj_t *obj );
+
+/**
+ * @brief Get the main group handle 
+ * @return group handle
+ */
+lv_group_t *jolt_gui_group_main_get();
+
+/**
+ * @brief Get the back group handle 
+ * @return group handle
+ */
+lv_group_t *jolt_gui_group_back_get();
+
+/**
+ * @brief Get the enter group handle 
+ * @return group handle
+ */
+lv_group_t *jolt_gui_group_enter_get();
 
 /**********
  * Action *
  **********/
 
-/* Calls cb whenever the back button is pressed */
+/**
+ * @brief executes callback on back-button
+ * @param[in,out] parent screen parent object
+ * @param[in] cb callback to execute
+ * @return back button object
+ */
 lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_action_t cb);
+
+/**
+ * @brief executes callback on back-button
+ * @param[in,out] parent screen parent object
+ * @param[in] cb callback to execute
+ * @return back button object
+ */
 lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb);
 
+/**
+ * @brief pass an object to the back callback
+ * @param[in,out] parent screen parent object
+ * @param[in] object to pass
+ */
 void jolt_gui_scr_set_back_param(lv_obj_t *parent, void *param);
+
+/**
+ * @brief pass an object to the enter callback
+ * @param[in,out] parent screen parent object
+ * @param[in] object to pass
+ */
 void jolt_gui_scr_set_enter_param(lv_obj_t *parent, void *param);
 
+/**
+ * @brief Send an "Enter" signal to the main group.
+ * @param[in] dummy; unused; only here for signature consistency
+ * @return LV_RES_OK
+ */
 lv_res_t jolt_gui_send_enter_main(lv_obj_t *dummy);
+
+/**
+ * @brief Send a "Left" signal to the main group.
+ * @param[in] dummy; unused; only here for signature consistency
+ * @return LV_RES_OK
+ */
 lv_res_t jolt_gui_send_left_main(lv_obj_t *dummy);
+
+/**
+ * @brief Send an "Enter" signal to the back group.
+ * @param[in] dummy; unused; only here for signature consistency
+ * @return LV_RES_OK
+ */
+lv_res_t jolt_gui_send_enter_back(lv_obj_t *dummy);
+
+/**
+ * @brief Send an "Enter" signal to the enter group.
+ * @param[in] dummy; unused; only here for signature consistency
+ * @return LV_RES_OK
+ */
+lv_res_t jolt_gui_send_enter_enter(lv_obj_t *dummy);
+
+/**
+ * @brief alias for lv_obj_get_free_ptr
+ */
+static inline void *jolt_gui_get_param( lv_obj_t *obj ){
+    return lv_obj_get_free_ptr( obj );
+}
 
 /*****************
  * System Events *
@@ -143,28 +269,53 @@ lv_res_t jolt_gui_send_left_main(lv_obj_t *dummy);
 #if CONFIG_BT_ENABLED
 
 #include "esp_gap_ble_api.h"
+
+/**
+ * @brief GUI-related callbacks that get tagged onto the BLE GAP Event loop
+ */
 void jolt_gui_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 
 #endif
 
-
 /********
  * MISC *
  ********/
+/**
+ * @brief Take the GUI semaphore
+ */
 void jolt_gui_sem_take();
+
+/**
+ * @brief Give the GUI semaphore
+ */
 void jolt_gui_sem_give();
 
-/* Finds the first child object with the free_num identifier */
+/**
+ * @brief Finds the first child object with the specified identifier
+ * @param[in] parent Any LVGL object who's children we want to search
+ * @param[in] id ID we are searching for.
+ */
 lv_obj_t *jolt_gui_find(lv_obj_t *parent, LV_OBJ_FREE_NUM_TYPE id);
 
-/* Convert the enumerated value to a constant string */
+/**
+ * @brief Convert the enumerated value to a constant string 
+ * @param[in] obj ID value
+ */
 const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val);
+
+/**
+ * @brief Convert the enumerated value to a constant string 
+ * @parami[in] screen ID value
+ */
+const char *jolt_gui_scr_id_str(jolt_gui_scr_id_t val);
 
 /********************
  * Meta Programming *
  ********************/
-/* Wraps user code-block with recursive mutex take/give.
- * NEVER call return or goto within the context. break is fine.*/
+/**
+ * @brief Threadsafe GUI object manipulation context.
+ *
+ * Wraps user code-block with recursive mutex take/give. NEVER call "return" or "goto" within the context. "break" will exit the context.*/
 #define JOLT_GUI_CTX \
     MPP_BEFORE(1, jolt_gui_sem_take() ) \
     MPP_DO_WHILE(2, false) \
@@ -176,15 +327,18 @@ const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val);
 /**********
  * Macros *
  **********/
-/* To be used in a JOLT_GUI_CTX; breaks if passed in value is NULL */
+/**
+ * @brief To be used in a JOLT_GUI_CTX; breaks if passed in value is NULL 
+ */
 #define BREAK_IF_NULL( obj ) ({\
         void *x = obj; \
         if( NULL == x ) break; \
         x; \
         })
 
-/* Declares all the must have objects in a Jolt Screen.
- * If failure, all objects will be NULL.
+/**
+ * @brief Declares all the must have objects (parent, label_title, cont_body) in a Jolt Screen.
+ * If failure, all objects will be NULL and deallocated.
  * Can be called inside or outside of a JOLT_GUI_CTX. Usually called outside
  * so that all the objects are exposed to be returned. */
 #define JOLT_GUI_SCR_PREAMBLE( title ) \
@@ -201,8 +355,12 @@ const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val);
         } \
     }
 
-/* Finds the first child of the provided type. If it cannot be found, break.
- * To be called in a JOLT_GUI_CTX*/
+/**
+ * @brief Finds the first child of the provided type.
+ *
+ * If it cannot be found, break.
+ * Should be called within a JOLT_GUI_CTX
+ */
 #define JOLT_GUI_FIND_AND_CHECK( obj, type ) ({ \
     lv_obj_t *child = jolt_gui_find(obj, type); \
     if( NULL == child ) { \
@@ -210,18 +368,21 @@ const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val);
     } \
     child; \
     })
-//ESP_LOGE(TAG, "%s L%d: Could not find a child of type %s", __FILE__, __LINE__, jolt_gui_obj_id_str(type)); 
 
-/* have to assign obj to a variable, otherwise if obj is a function it will 
- * call it multiple times */
+/**
+ * @brief Delete an lv_obj_t if pointer is non-NULL.
+ */
 #define LV_OBJ_DEL_SAFE(obj) { \
     void *x = obj; \
     if(NULL!=x) lv_obj_del(x); \
     }
 
-/* Similar to a JOLT_GUI_CTX, but will call JOLT_GUI_SCR_PREAMBLE before the
- * JOLT_GUI_CTX. Also, if use breaks from JOLT_GUI_SCR_CTX, this will delete 
- * the parent object and set it to NULL. */
+/**
+ * @brief Similar to a JOLT_GUI_CTX, but will call JOLT_GUI_SCR_PREAMBLE before the
+ * JOLT_GUI_CTX.
+ *
+ * If code breaks from JOLT_GUI_SCR_CTX, the parent object will be deleted and set to NULL.
+ */
 #define JOLT_GUI_SCR_CTX(title) \
     JOLT_GUI_SCR_PREAMBLE( title ) \
     MPP_BEFORE(1, jolt_gui_sem_take() ) \

@@ -1,5 +1,6 @@
 /**
  * @file lv_drv_conf.h
+ * @brief Display driver configuration for LVGL
  */
 
 #ifndef LV_DRV_CONF_H
@@ -204,10 +205,11 @@ static inline int lv_i2c_write(lv_i2c_handle_t i2c_dev, const uint8_t* reg, cons
         goto err;
     }
 
-    I2C_SEM_TAKE;
-    err = i2c_master_cmd_begin(CONFIG_JOLT_I2C_MASTER_NUM, cmd,
-            CONFIG_JOLT_I2C_TIMEOUT_MS / portTICK_RATE_MS);
-    I2C_SEM_GIVE;
+    I2C_CTX{
+        err = i2c_master_cmd_begin(CONFIG_JOLT_I2C_MASTER_NUM, cmd,
+                CONFIG_JOLT_I2C_TIMEOUT_MS / portTICK_RATE_MS);
+    }
+
     if( ESP_OK != err ) {
         ESP_LOGE(TAG, "Failed i2c_master_cmd_begin. This is likely due to misconfigured i2c pins.");
         goto err;

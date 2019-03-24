@@ -102,7 +102,7 @@ menu "JoltOS"
 
     menu "GUI"
 
-        config JOLT_GUI_LOADING_BAR_ANIM_MS
+        config JOLT_GUI_LOADINGBAR_ANIM_MS
             int
             prompt "Loading bar animation catchup time in ms"
             default 100
@@ -256,28 +256,28 @@ menu "JoltOS"
         config JOLT_TASK_STACK_SIZE_LVGL
             int
             prompt "LittleVGL Task Stack Size"
-            default 3072
+            default 4096
             help
                 help text here
 
         config JOLT_TASK_STACK_SIZE_HW_MONITORS
             int
             prompt "Hardware Monitors Task Stack Size"
-            default 1024
+            default 1520
             help
                 HW Monitors periodically read and store the state of various systems.
 
         config JOLT_TASK_STACK_SIZE_VAULT_WATCHDOG
             int
             prompt "Vault Watchdog Task Stack Size"
-            default 2048
+            default 1520
             help
                 Stack size of the task responsibility for vault timeout.
 
         config JOLT_TASK_STACK_SIZE_UART_CONSOLE
             int
             prompt "UART Linenoise Console Task Stack Size"
-            default 3072
+            default 2048
             help
                 Task that receives UART CLI commands and sends them to BG as a job.
 
@@ -349,10 +349,10 @@ menu "JoltOS"
         config JOLT_TASK_PRIORITY_BACKGROUND
             int
             prompt "Background Task Priority"
-            default 12
+            default 3
             range 1 20
             help
-                help text here.
+                Must be lower than BLE_CONSOLE and UART_CONSOLE
 
     endmenu
 
@@ -378,6 +378,15 @@ menu "JoltOS"
                 help
                     Help Text Here
         endmenu
+    endmenu
+
+    menu "Bluetooth"
+        config JOLT_BT_DEBUG_ALWAYS_ADV
+             bool
+             prompt "[DEBUG] Always advertise"
+             default n
+             help
+                 Always advertise; for debugging purposes only. Not enabled for production.
     endmenu
 
     menu "Battery"

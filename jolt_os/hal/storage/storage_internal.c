@@ -23,7 +23,7 @@
 
 static const char TAG[] = "storage_internal";
 
-static jolt_err_t init_nvs_namespace(nvs_handle *nvs_h, const char *namespace) {
+static jolt_err_t init_nvs_namespace(nvs_handle *nvs_h, const const char *namespace) {
     // Initialize NVS
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
@@ -187,7 +187,7 @@ void storage_internal_set_pin_last(uint32_t count) {
     }
 }
 
-bool storage_internal_get_u8(uint8_t *value, char *namespace, char *key,
+bool storage_internal_get_u8(uint8_t *value, const char *namespace, const char *key,
         uint8_t default_value ) {
     bool res;
     nvs_handle nvs;
@@ -208,7 +208,7 @@ bool storage_internal_get_u8(uint8_t *value, char *namespace, char *key,
     return res;
 }
 
-bool storage_internal_set_u8(uint8_t value, char *namespace, char *key) {
+bool storage_internal_set_u8(uint8_t value, const char *namespace, const char *key) {
     nvs_handle nvs;
     esp_err_t err;
 
@@ -220,7 +220,7 @@ bool storage_internal_set_u8(uint8_t value, char *namespace, char *key) {
     return ESP_OK==err;
 }
 
-bool storage_internal_get_u16(uint16_t *value, char *namespace, char *key,
+bool storage_internal_get_u16(uint16_t *value, const char *namespace, const char *key,
         uint16_t default_value ) {
     bool res;
     nvs_handle nvs;
@@ -241,7 +241,7 @@ bool storage_internal_get_u16(uint16_t *value, char *namespace, char *key,
     return res;
 }
 
-bool storage_internal_set_u16(uint16_t value, char *namespace, char *key) {
+bool storage_internal_set_u16(uint16_t value, const char *namespace, const char *key) {
     nvs_handle nvs;
     esp_err_t err;
 
@@ -253,7 +253,7 @@ bool storage_internal_set_u16(uint16_t value, char *namespace, char *key) {
     return ESP_OK==err;
 }
 
-bool storage_internal_get_u32(uint32_t *value, char *namespace, char *key,
+bool storage_internal_get_u32(uint32_t *value, const char *namespace, const char *key,
         uint32_t default_value ) {
     bool res;
     nvs_handle nvs;
@@ -274,7 +274,7 @@ bool storage_internal_get_u32(uint32_t *value, char *namespace, char *key,
     return res;
 }
 
-bool storage_internal_set_u32(uint32_t value, char *namespace, char *key) {
+bool storage_internal_set_u32(uint32_t value, const char *namespace, const char *key) {
     nvs_handle nvs;
     esp_err_t err;
 
@@ -288,7 +288,7 @@ bool storage_internal_set_u32(uint32_t value, char *namespace, char *key) {
 
 
 bool storage_internal_get_str(char *buf, size_t *required_size,
-        char *namespace, char *key, char *default_value) {
+        const char *namespace, const char *key, const char *default_value) {
     bool res;
     nvs_handle nvs;
     init_nvs_namespace(&nvs, namespace);
@@ -323,7 +323,7 @@ bool storage_internal_get_str(char *buf, size_t *required_size,
     return res;
 }
 
-bool storage_internal_set_str(char *str, char *namespace, char *key) {
+bool storage_internal_set_str(const char *str, const char *namespace, const char *key) {
     nvs_handle nvs;
     esp_err_t err;
 
@@ -336,7 +336,7 @@ bool storage_internal_set_str(char *str, char *namespace, char *key) {
 }
 
 bool storage_internal_get_blob(unsigned char *buf, size_t *required_size,
-        char *namespace, char *key) {
+        const char *namespace, const char *key) {
     nvs_handle nvs;
     init_nvs_namespace(&nvs, namespace);
     esp_err_t err;
@@ -345,8 +345,8 @@ bool storage_internal_get_blob(unsigned char *buf, size_t *required_size,
     return ESP_OK==err;
 }
 
-bool storage_internal_set_blob(unsigned char *buf, size_t len,
-        char *namespace, char *key) {
+bool storage_internal_set_blob(const unsigned char *buf, size_t len,
+        const char *namespace, const char *key) {
     nvs_handle nvs;
     esp_err_t err;
 
@@ -365,7 +365,7 @@ void storage_internal_factory_reset() {
     ESP_ERROR_CHECK(esp_spiffs_format(NULL));
 }
 
-bool storage_internal_erase_key(char *namespace, char *key) {
+bool storage_internal_erase_key(const char *namespace, const char *key) {
     nvs_handle nvs;
     esp_err_t err;
 

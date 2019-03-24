@@ -30,7 +30,7 @@ int jolt_cmd_download(int argc, char** argv) {
         printf("Receive file on host over YModem using a command like:\n");
         printf("rz --ymodem > /dev/ttyUSB0 < /dev/ttyUSB0\n");
         printf("\r\nReady to send %d byte file \"%s\", please start YModem receive on host ...\r\n", fsize, fname);
-        trans_res = Ymodem_Transmit(argv[1], fsize, ffd);
+        trans_res = ymodem_transmit(argv[1], fsize, ffd);
         fclose(ffd);
         printf("\r\n");
         if (trans_res == 0) {

@@ -1,3 +1,11 @@
+/**
+ * @file jolt_lib.h
+ * @brief Primary JoltOS library for developing applications
+ * @author Brian Pugh
+ * @bugs
+ *     * Currently versioning isn't used.
+ */
+
 #ifndef __JOLT_LIB_H__
 #define __JOLT_LIB_H__
 
@@ -26,24 +34,31 @@
 #include "sodium/private/curve25519_ref10.h"
 
 #include "console.h"
-#include "hal/storage/storage.h"
 #include "hal/display.h"
-#include "jolt_helpers.h"
+#include "hal/storage/storage.h"
 #include "jolt_gui/jolt_gui.h"
-#include "syscore/filesystem.h"
-#include "vault.h"
+#include "jolt_helpers.h"
+#include "json_config.h"
 #include "syscore/console_helpers.h"
+#include "syscore/filesystem.h"
 #include "syscore/https.h"
-
-#include "esp_http_client.h" // todo: replace with less open functions
+#include "vault.h"
 
 #endif // ESP_PLATFORM
 
-enum _jolt_release_type_t {
+/**
+ * @brief Whether this was compiled for development or release
+ */
+enum{
     JOLT_VERSION_RELEASE = 0,
     JOLT_VERSION_DEV = 1,
-} release_type_t;
+};
 typedef uint8_t jolt_release_type_t;
+
+enum{
+    JOLT_HW_JOLT = 0,
+};
+typedef uint8_t jolt_hw_type_t;
 
 typedef struct jolt_version_t {
     union {
@@ -51,14 +66,17 @@ typedef struct jolt_version_t {
             uint8_t major;
             uint8_t minor;
             uint8_t patch;
-            uint8_t padding;
+            uint8_t padding; /**< explicit 0-padding */
         };
         uint32_t version; // For easy comparison
     };
     jolt_release_type_t release;
 } jolt_version_t;
 
-extern const jolt_version_t JOLT_VERSION;
+extern const char *JOLT_OS_COMMIT;             /**< JoltOS commit */
+extern const jolt_version_t JOLT_OS_VERSION;   /**< JoltOS version */
+extern const jolt_version_t JOLT_JELF_VERSION; /**< Used to determine app compatibility */
+extern const jolt_version_t JOLT_HW_VERSION;   /**< To check hardware compatability */
 
 extern const jelfLoaderEnv_t jelf_loader_env;
 

@@ -16,10 +16,10 @@ static lv_res_t scanning_scr_back_cb(lv_obj_t *btn) {
 }
 
 static lv_res_t passkey_scr_back_cb(lv_obj_t *btn) {
-    /* todo: This is not the correct action to take */
     jolt_bluetooth_pair_mode = false;
     jolt_bluetooth_adv_stop();
-    jolt_gui_scr_del();
+    jolt_gui_obj_del(passkey_scr);
+    passkey_scr = NULL;
     return LV_RES_INV;
 }
 
@@ -63,7 +63,9 @@ void jolt_gui_bluetooth_pair_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb
             jolt_gui_scr_set_back_action(passkey_scr, passkey_scr_back_cb);
             break;
         case ESP_GAP_BLE_AUTH_CMPL_EVT:
+#if !CONFIG_JOLT_BT_DEBUG_ALWAYS_ADV
             jolt_bluetooth_pair_mode = false;
+#endif
             if( NULL != passkey_scr){
                 JOLT_GUI_CTX{
                     lv_obj_del( passkey_scr );

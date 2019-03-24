@@ -14,6 +14,7 @@ _Jelf_Ehdr_d['e_ident']          = 't%d' % (6*8) # 6 8-bit characters
 _Jelf_Ehdr_d['e_public_key']     = 'r%d' % 256
 _Jelf_Ehdr_d['e_version_major']  = 'u8'
 _Jelf_Ehdr_d['e_version_minor']  = 'u8'
+_Jelf_Ehdr_d['e_version_patch']  = 'u8'
 _Jelf_Ehdr_d['e_entry_index']    = 'u16'
 _Jelf_Ehdr_d['e_shnum']          = 'u16'
 _Jelf_Ehdr_d['e_coin_purpose']   = 'u32'

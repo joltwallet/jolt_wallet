@@ -4,6 +4,7 @@
 #include "syscore/set_wifi_credentials.h"
 #include "syscore/console_helpers.h"
 #include "jolt_gui/jolt_gui.h"
+#include "console.h"
 
 int jolt_cmd_wifi_update(int argc, char** argv) {
     int return_code = 0;
@@ -18,23 +19,11 @@ int jolt_cmd_wifi_update(int argc, char** argv) {
     if( 3 == argc ) {
         pass = argv[2];
     }
-    bool update_success = set_wifi_credentials( ssid, pass );
+    set_wifi_credentials( ssid, pass );
 
-    if( update_success ) {
-        printf("Wifi Settings Updated. Restarting...\n");
-        jolt_gui_scr_text_create( "WiFi Update", "WiFi credentials updated. Rebooting system." );
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        esp_restart();
-        return_code = 0;
-        esp_restart();
-    }
-    else {
-        printf("Error Updating WiFi Settings\n");
-        return_code = 1;
-        goto exit;
-    }
+    return_code = JOLT_CONSOLE_NON_BLOCKING;
 
-    exit:
-        return return_code;
+exit:
+    return return_code;
 }
 

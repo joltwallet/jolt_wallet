@@ -3,6 +3,8 @@
  https://www.joltwallet.com/
  */
 
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+
 #include "sodium.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -27,14 +29,22 @@
 
 static const char TAG[] = "console";
 
-TaskHandle_t console_h = NULL;
+static TaskHandle_t console_h = NULL;
+static SemaphoreHandle_t cli_mutex = NULL; 
+static QueueHandle_t return_value_queue = NULL;
 
 /* Static Function Declaration */
 static void console_syscore_register();
 
+static void cli_mutex_take() {
+    xSemaphoreTake(cli_mutex, portMAX_DELAY);
+}
+static void cli_mutex_give() {
+    xSemaphoreGive(cli_mutex);
+}
 
-/* Executes the command string */
-static void jolt_process_cmd_task(jolt_bg_job_t *bg_job){
+/* Executes the command string in the bg task */
+static int32_t jolt_process_cmd_task(jolt_bg_job_t *bg_job){
     jolt_cmd_t *cmd = jolt_bg_get_param(bg_job); 
 
     FILE *orig_stdin = stdin;
@@ -66,27 +76,40 @@ static void jolt_process_cmd_task(jolt_bg_job_t *bg_job){
 
     /* Try to run the command */
     esp_err_t err = esp_console_run(cmd->data, &ret);
-    if (err == ESP_ERR_NOT_FOUND) {
-        // The command could be an app to run console commands from
-        char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
-        // split_argv modifies line with NULL-terminators
-        size_t argc = esp_console_split_argv(cmd->data, argv, sizeof(argv));
-        ESP_LOGD(TAG, "Not an internal command; looking for app of name %s", argv[0]);
-        // todo, parse passphrase argument
-        if( launch_file(argv[0], argc-1, argv+1, "") ) {
-            printf("Unsuccessful command\n");
+    switch( err ) {
+        case ESP_ERR_NOT_FOUND: {
+            /* The command could be an app to run console commands from */
+            char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
+            /* split_argv modifies line with NULL-terminators */
+            size_t argc = esp_console_split_argv(cmd->data, argv, sizeof(argv));
+            ESP_LOGD(TAG, "Not an internal command; looking for app of name %s", argv[0]);
+            // todo, parse passphrase argument
+            if( launch_file(argv[0], argc-1, &argv[1], "") ) {
+                printf("Unsuccessful command\n");
+                jolt_cmd_return(-1);
+            }
+            break;
         }
-    } else if (err == ESP_ERR_INVALID_ARG) {
-        // command was empty
-    } else if (err == ESP_OK && ret != ESP_OK) {
-        printf("Command returned non-zero error code: %d\n", ret);
-    } else if (err != ESP_OK) {
+        case ESP_ERR_INVALID_ARG:
+            // command was empty
+            jolt_cmd_return(-1);
+            break;
+        case ESP_OK:
+            if( JOLT_CONSOLE_NON_BLOCKING == ret ) {
+                break;
+            }
+            jolt_cmd_return(ret);
+            break;
+        default:
+            jolt_cmd_return(-1);
+            break;
         printf("Internal error: 0x%x\n", err);
     }
-    cmd->return_value = ret;
 
 exit:
+    /* De-allocate memory */
     jolt_cmd_del(cmd);
+    return 0;
 }
 
 void jolt_cmd_del(jolt_cmd_t *cmd){
@@ -95,10 +118,6 @@ void jolt_cmd_del(jolt_cmd_t *cmd){
     }
     if( NULL != cmd->data ){
         free(cmd->data);
-    }
-    if( NULL != cmd->complete ){
-        xSemaphoreGive(cmd->complete);
-        taskYIELD();
     }
     free(cmd);
 }
@@ -141,14 +160,7 @@ static void console_task() {
         linenoiseHistoryAdd(line);
 
         /* Send the command to the command queue */
-        bool block = false;
-        const char blocking_prefix[] = "upload";
-        if( 0 == strncmp(line, blocking_prefix, strlen(blocking_prefix))
-                || 0 == strcmp(line, "mnemonic_restore") ) {
-            block = true;
-        }
-        jolt_cmd_process(line, stdin, stdout, stderr, block);
-        vTaskDelay(50/portTICK_PERIOD_MS); // give enough time for quick commands to execute
+        jolt_cmd_process(line, stdin, stdout, stderr); /* Block until job is processed */
     }
     
     #if CONFIG_JOLT_CONSOLE_OVERRIDE_LOGGING
@@ -159,59 +171,51 @@ static void console_task() {
     vTaskDelete( NULL );
 }
 
-int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err, bool block) {
+int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err) {
     int return_code = -1;
     jolt_cmd_t *cmd = NULL;
+
+    /* Take CLI mutex */
+    cli_mutex_take();
+    
     cmd = malloc(sizeof(jolt_cmd_t));
     if(NULL == cmd) {
         printf("Failed to allocate memory for job parameters.\n");
         return_code = -1;
         goto exit;
     }
-    if(block){
-        cmd->complete = xSemaphoreCreateBinary();
-        if(NULL == cmd->complete){
-            printf("Failed to allocate memory for job finish semaphore.\n");
-            return_code = -2;
-            goto exit;
-        }
-    }
-    else {
-        cmd->complete = NULL;
-    }
 
     cmd->data = line;
-    cmd->return_value = -1;
     cmd->fd_in = in;
     cmd->fd_out = out;
     cmd->fd_err = err;
 
     /* Send the job now */
+    // jobs are processed in the bg task to make better use of task stack
     jolt_bg_create(jolt_process_cmd_task, cmd, NULL);
+    ESP_LOGD(TAG, "Command added to job queue.");
 
     /* Wait until the process signals completion */
-    if(block){
-        xSemaphoreTake(cmd->complete, portMAX_DELAY);
-        vSemaphoreDelete(cmd->complete);
-        return cmd->return_value;
-    }
-    return_code = 0;
+    xQueueReceive(return_value_queue, &return_code, portMAX_DELAY);
+    cli_mutex_give();
+
     return return_code;
 
 exit:
     if( NULL != cmd ) {
         free(cmd);
     }
+    cli_mutex_give();
     return return_code;
 }
 
-volatile TaskHandle_t *console_start(){
+TaskHandle_t *console_start(){
     /* Start the Task that handles the UART Console IO */
     xTaskCreate(console_task,
                 "UART_Console", CONFIG_JOLT_TASK_STACK_SIZE_UART_CONSOLE,
                 NULL, CONFIG_JOLT_TASK_PRIORITY_UART_CONSOLE,
                 (TaskHandle_t *) &console_h);
-    return  &console_h;
+    return &console_h;
 }
 
 static void console_register_commands() {
@@ -223,7 +227,24 @@ void console_init() {
     /* Disable buffering on stdin and stdout */
     setvbuf(stdin, NULL, _IONBF, 0);
     setvbuf(stdout, NULL, _IONBF, 0);
-    
+
+    /* Create CLI Mutex */
+    if( NULL == cli_mutex ) {
+        cli_mutex = xSemaphoreCreateMutex();
+        if( NULL == cli_mutex) {
+            ESP_LOGE(TAG, "Couldn't create CLI mutex");
+        }
+    }
+
+    /* Create cmd return queue */
+     if( NULL == return_value_queue ) {
+        return_value_queue = xQueueCreate(1, sizeof(int));
+        if( NULL == return_value_queue) {
+            ESP_LOGE(TAG, "Couldn't create return_value_queue");
+        }
+    }
+   
+
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
     esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
@@ -231,12 +252,12 @@ void console_init() {
 
 #if 1
     uart_config_t uart_config = {
-			.baud_rate = 1500000,
+			.baud_rate = CONFIG_CONSOLE_UART_BAUDRATE,
 			.data_bits = UART_DATA_8_BITS,
 			.parity = UART_PARITY_DISABLE,
 			.stop_bits = UART_STOP_BITS_1,
 			.flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-            //.use_ref_tick = true,
+            .use_ref_tick = true,
 	};
 	// Configure UART parameters
 	ESP_ERROR_CHECK(uart_param_config(CONFIG_CONSOLE_UART_NUM, &uart_config));
@@ -278,6 +299,16 @@ void console_init() {
     console_register_commands();
 }
 
+void jolt_cmd_return( int val ) {
+    if( JOLT_CONSOLE_NON_BLOCKING == val ) {
+        return;
+    }
+    xQueueSend(return_value_queue, &val, portMAX_DELAY);
+    if( 0 != val ) {
+        printf("Command returned non-zero error code: %d\n", val);
+    }
+}
+
 subconsole_t *subconsole_cmd_init() {
     subconsole_t *subconsole;
     subconsole = calloc(1, sizeof(subconsole_t));
@@ -287,7 +318,7 @@ subconsole_t *subconsole_cmd_init() {
 int subconsole_cmd_register(subconsole_t *subconsole, esp_console_cmd_t *cmd) {
     subconsole_t *new;
     subconsole_t *current = subconsole;
-    if( NULL != current->cmd.func ) {
+    if( NULL != current->cmd.func ) { // check if this cmd is populated
         new = subconsole_cmd_init();
         if( NULL == new ) {
             return -1;
@@ -316,20 +347,31 @@ static void subconsole_cmd_help(subconsole_t *subconsole) {
     }
 }
 
+/**
+ * @brief BG Function to execute the command function.
+ */
+static void subconsole_execute() {
+}
+
 int subconsole_cmd_run(subconsole_t *subconsole, uint8_t argc, char **argv) {
     subconsole_t *current = subconsole;
+    launch_inc_ref_ctr();
     if( argc > 0 ) {
+        if( 0 == strcmp(argv[0], "help") ) {
+            subconsole_cmd_help(subconsole);
+            return 0;
+        }
+
         while( current ) {
             if( 0 == strcmp(argv[0], current->cmd.command) ) {
+                // todo: shuttle this to as a bg job
+                //jolt_bg_create( subconsole_execute, void *param, lv_obj_t *scr);
                 return (current->cmd.func)(argc, argv);
-            }
-            else if( 0 == strcmp(argv[0], "help") ) {
-                subconsole_cmd_help(subconsole);
-                return 0;
             }
             current = current->next;
         }
     }
+    printf("Command not found.\n");
     subconsole_cmd_help(subconsole);
     return -100;
 }
@@ -347,10 +389,114 @@ static void console_syscore_register() {
     esp_console_cmd_t cmd;
 
     cmd = (esp_console_cmd_t) {
+        .command = "about",
+        .help = "Display system information.",
+        .hint = NULL,
+        .func = &jolt_cmd_about,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "app_key",
+        .help = "Sets app public key. WILL ERASE ALL DATA.",
+        .hint = NULL,
+        .func = &jolt_cmd_app_key,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "bt_whitelist",
+        .help = "Print BLE GAP White List",
+        .hint = NULL,
+        .func = &jolt_cmd_bt_whitelist,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "cat",
+        .help = "Print the contents of a file",
+        .hint = NULL,
+        .func = &jolt_cmd_cat,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "download",
+        .help = "Send specified file from Jolt over UART ymodem",
+        .hint = NULL,
+        .func = &jolt_cmd_download,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
         .command = "free",
         .help = "Get the total size of heap memory available",
         .hint = NULL,
         .func = &jolt_cmd_free,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "jolt_cast_update",
+        .help = "Update jolt_cast URI.",
+        .hint = NULL,
+        .func = &jolt_cmd_jolt_cast_update,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "ls",
+        .help = "List all files in filesystem",
+        .hint = NULL,
+        .func = &jolt_cmd_ls,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "mnemonic_restore",
+        .help = "Restore mnemonic seed.",
+        .hint = NULL,
+        .func = &jolt_cmd_mnemonic_restore,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "mv",
+        .help = "rename file (src, dst)",
+        .hint = NULL,
+        .func = &jolt_cmd_mv,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "pmtop",
+        .help = "print power management statistics",
+        .hint = NULL,
+        .func = &jolt_cmd_pmtop,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "reboot",
+        .help = "Reboot device.",
+        .hint = NULL,
+        .func = &jolt_cmd_reboot,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "rm",
+        .help = "remove file from filesystem",
+        .hint = NULL,
+        .func = &jolt_cmd_rm,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
+        .command = "run",
+        .help = "launch application",
+        .hint = NULL,
+        .func = &jolt_cmd_run,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
@@ -371,42 +517,10 @@ static void console_syscore_register() {
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
     cmd = (esp_console_cmd_t) {
-        .command = "wifi_update",
-        .help = "Update WiFi SSID and Pass.",
+        .command = "upload",
+        .help = "Enters file UART ymodem upload mode",
         .hint = NULL,
-        .func = &jolt_cmd_wifi_update,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "mnemonic_restore",
-        .help = "Restore mnemonic seed.",
-        .hint = NULL,
-        .func = &jolt_cmd_mnemonic_restore,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "jolt_cast_update",
-        .help = "Update jolt_cast (domain, path, port).",
-        .hint = NULL,
-        .func = &jolt_cmd_jolt_cast_update,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "reboot",
-        .help = "Reboot device.",
-        .hint = NULL,
-        .func = &jolt_cmd_reboot,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "app_key",
-        .help = "Sets app public key. WILL ERASE ALL DATA.",
-        .hint = NULL,
-        .func = &jolt_cmd_app_key,
+        .func = &jolt_cmd_upload,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
@@ -419,67 +533,10 @@ static void console_syscore_register() {
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
     cmd = (esp_console_cmd_t) {
-        .command = "upload",
-        .help = "Enters file UART ymodem upload mode",
+        .command = "wifi_update",
+        .help = "Update WiFi SSID and Pass.",
         .hint = NULL,
-        .func = &jolt_cmd_upload,
+        .func = &jolt_cmd_wifi_update,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "download",
-        .help = "Transmit specified file over UART ymodem",
-        .hint = NULL,
-        .func = &jolt_cmd_download,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "ls",
-        .help = "List filesystem",
-        .hint = NULL,
-        .func = &jolt_cmd_ls,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "mv",
-        .help = "rename file (src, dst)",
-        .hint = NULL,
-        .func = &jolt_cmd_mv,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "rm",
-        .help = "remove file from filesystem",
-        .hint = NULL,
-        .func = &jolt_cmd_rm,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "run",
-        .help = "launch elf file",
-        .hint = NULL,
-        .func = &jolt_cmd_run,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "pmtop",
-        .help = "print power management statistics",
-        .hint = NULL,
-        .func = &jolt_cmd_pmtop,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "bt_whitelist",
-        .help = "Print BLE GAP White List",
-        .hint = NULL,
-        .func = &jolt_cmd_bt_whitelist,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
 }

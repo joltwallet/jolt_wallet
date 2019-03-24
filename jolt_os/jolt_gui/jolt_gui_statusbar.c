@@ -2,6 +2,7 @@
 #include "jolt_gui.h"
 #include "jolt_gui_symbols.h"
 #include "jolt_gui_statusbar.h"
+#include "hal/hw_monitor.h"
 
 static const char TAG[] = "statusbar";
 static lv_style_t header_style;
@@ -46,7 +47,7 @@ static void statusbar_update() {
     char *ptr = statusbar_symbols;
 
     int8_t lock_status;
-    lock_status = statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_LOCK].val;
+    lock_status = statusbar_indicators[JOLT_HW_MONITOR_INDEX_LOCK].val;
     if( lock_status == 0 ) {
     }
     else {
@@ -55,7 +56,7 @@ static void statusbar_update() {
     }
 
     int8_t bluetooth_level;
-    bluetooth_level = statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_BLUETOOTH].val;
+    bluetooth_level = statusbar_indicators[JOLT_HW_MONITOR_INDEX_BLUETOOTH].val;
     switch( bluetooth_level ) {
         case JOLT_BLUETOOTH_LEVEL_OFF:
             /* Don't Display Anything */
@@ -74,7 +75,7 @@ static void statusbar_update() {
     }
 
     int8_t wifi_level;
-    wifi_level = statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_WIFI].val;
+    wifi_level = statusbar_indicators[JOLT_HW_MONITOR_INDEX_WIFI].val;
     if( wifi_level == -1 ) {
         /* Display Nothing */
     }
@@ -95,7 +96,7 @@ static void statusbar_update() {
         ptr += 3;
     }
 
-    int8_t battery_level = statusbar_indicators[JOLT_GUI_STATUSBAR_INDEX_BATTERY].val; 
+    int8_t battery_level = statusbar_indicators[JOLT_HW_MONITOR_INDEX_BATTERY].val; 
     if( battery_level > 100 ) {
         strcpy(ptr, JOLT_GUI_SYMBOL_BATTERY_CHARGING);
     }

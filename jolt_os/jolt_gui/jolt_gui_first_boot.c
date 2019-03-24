@@ -15,13 +15,17 @@
 
 #define MNEMONIC_STRENGTH 256
 
-/* Static Variables */
+/********************
+ * Static Variables *
+ ********************/
 static const char TAG[] = "first_boot";
 static CONFIDENTIAL uint256_t mnemonic_bin;
 static CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
 static CONFIDENTIAL uint256_t pin_hash;
 
-/* Static Functions */
+/********************
+ * Static Functions *
+ ********************/
 static void generate_mnemonic();
 static lv_res_t screen_pin_verify_create(lv_obj_t *num);
 static lv_res_t screen_mnemonic_create(lv_obj_t *btn);
@@ -91,13 +95,13 @@ static void generate_mnemonic() {
 }
 
 /* BG Task for stretching */
-static void bg_stretch_task(jolt_bg_job_t *job) {
+static int bg_stretch_task(jolt_bg_job_t *job) {
     int8_t progress = 0;
     lv_obj_t *loading_scr;
 
     /* Create Loading Bar */
-    loading_scr = jolt_gui_scr_loading_create("Saving");
-    jolt_gui_scr_loading_autoupdate( loading_scr, &progress );
+    loading_scr = jolt_gui_scr_loadingbar_create("Saving");
+    jolt_gui_scr_loadingbar_autoupdate( loading_scr, &progress );
 
     /* Perform the lengthy stretching */
     storage_stretch( pin_hash, &progress );
@@ -116,6 +120,8 @@ static void bg_stretch_task(jolt_bg_job_t *job) {
     sodium_memzero(mnemonic, sizeof(mnemonic));
 
     esp_restart();
+
+    return 0;
 }
 
 static lv_res_t mismatch_cb(lv_obj_t *btn) {
@@ -222,7 +228,7 @@ void jolt_gui_first_boot_create() {
 }
 
 /* Prompts user for pin and performs the rest of setup for a given entropy */
-void jolt_gui_restore_sequence(uint256_t entropy) {
-    memcpy(mnemonic_bin, entropy, 32);
+void jolt_gui_restore_sequence(const uint256_t mnemonic) {
+    memcpy(mnemonic_bin, mnemonic, 32);
     screen_pin_entry_create( NULL );
 }
