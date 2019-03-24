@@ -7,7 +7,7 @@
 #ifndef __JOLT_GUI_LOADING_H__
 #define __JOLT_GUI_LOADING_H__
 
-#include "../../lvgl/lvgl.h"
+#include "lvgl/lvgl.h"
 
 #ifndef CONFIG_JOLT_GUI_LOADINGBAR_W
     #define CONFIG_JOLT_GUI_LOADINGBAR_W 100

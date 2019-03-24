@@ -204,7 +204,7 @@ lv_group_t *jolt_gui_group_enter_get();
  * @param[in] cb callback to execute
  * @return back button object
  */
-lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_action_t cb);
+lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_event_cb_t cb);
 
 /**
  * @brief executes callback on back-button
@@ -212,7 +212,7 @@ lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_action_t cb);
  * @param[in] cb callback to execute
  * @return back button object
  */
-lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb);
+lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_event_cb_t cb);
 
 /**
  * @brief pass an object to the back callback
@@ -260,7 +260,7 @@ lv_res_t jolt_gui_send_enter_enter(lv_obj_t *dummy);
  * @brief alias for lv_obj_get_free_ptr
  */
 static inline void *jolt_gui_get_param( lv_obj_t *obj ){
-    return lv_obj_get_free_ptr( obj );
+    return lv_obj_get_user_data( obj );
 }
 
 /*****************

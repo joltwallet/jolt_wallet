@@ -60,7 +60,7 @@ void jolt_gui_scr_slider_set_label(lv_obj_t *scr, const char *text){
  * slider, and will activate the callback everytime the slider value changes.
  *
  * Back button is set to screen delete by default. */
-lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_action_t cb) {
+lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_event_cb_t cb) {
     JOLT_GUI_SCR_CTX( title ) {
         /* Create Slider */
         lv_obj_t *slider = lv_slider_create(cont_body, NULL);
