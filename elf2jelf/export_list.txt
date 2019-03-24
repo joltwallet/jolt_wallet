@@ -170,6 +170,7 @@ jolt_gui_sem_take
 jolt_gui_send_enter_main
 jolt_gui_send_left_main
 jolt_json_read_app
+jolt_json_write_app
 jolt_network_post
 linenoise
 lv_btn_create

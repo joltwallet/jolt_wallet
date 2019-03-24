@@ -18,7 +18,7 @@ const jolt_version_t JOLT_JELF_VERSION = {
     .release = JOLT_VERSION_DEV,
 };
 
-const char *JOLT_OS_COMMIT = "c7c31551814a9c0b7806b351f0963bd284f7c471";
+const char *JOLT_OS_COMMIT = "d96cbf86a7021265803b73e72aa7df063ceccb22";
 
 extern void *__floatsidf;
 extern void *__gtdf2;
@@ -206,6 +206,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_send_enter_main ),
     EXPORT_SYMBOL( jolt_gui_send_left_main ),
     EXPORT_SYMBOL( jolt_json_read_app ),
+    EXPORT_SYMBOL( jolt_json_write_app ),
     EXPORT_SYMBOL( jolt_network_post ),
     EXPORT_SYMBOL( linenoise ),
     EXPORT_SYMBOL( lv_btn_create ),
@@ -389,7 +390,7 @@ const jolt_version_t JOLT_JELF_VERSION = { 0 };
 const char *JOLT_OS_COMMIT = NULL;
 
 /* Dummy place holder */
-static const void *exports[344] = { 0 };
+static const void *exports[345] = { 0 };
 
 #endif
 
