@@ -34,6 +34,7 @@ typedef struct jolt_cmd_t {
  * @brief In a CLI function, return this if your function will explicitly call jolt_cmd_return(val) at a later time via a queued bg job.
  */
 #define JOLT_CONSOLE_NON_BLOCKING INT_MAX
+#define JOLT_CMD_NON_BLOCKING JOLT_CONSOLE_NON_BLOCKING
 
 /**
  * @brief Initialize the console module.
