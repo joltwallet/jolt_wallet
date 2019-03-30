@@ -84,6 +84,15 @@ lv_obj_t *jolt_gui_scr_menu_get_list(lv_obj_t *parent) {
     return menu;
 }
 
+lv_obj_t *jolt_gui_scr_menu_get_scr( lv_obj_t *btn ) {
+    lv_obj_t *scr = NULL;
+    JOLT_GUI_CTX{
+        lv_obj_t *list = lv_obj_get_parent(lv_obj_get_parent(btn));
+        scr = lv_obj_get_parent(lv_obj_get_parent(list));
+    }
+    return scr;
+}
+
 /* Adds an item to a Jolt Menu Screen */
 lv_obj_t *jolt_gui_scr_menu_add(lv_obj_t *par, const void *img_src,
         const char *txt, lv_action_t rel_action) {

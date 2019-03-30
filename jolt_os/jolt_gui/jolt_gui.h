@@ -207,12 +207,23 @@ lv_group_t *jolt_gui_group_enter_get();
 lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_action_t cb);
 
 /**
- * @brief executes callback on back-button
+ * @brief executes callback on enter-button
  * @param[in,out] parent screen parent object
  * @param[in] cb callback to execute
  * @return back button object
  */
 lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb);
+
+/**
+ * @brief executes callback on back and enter button
+ * @param[in,out] parent screen parent object
+ * @param[in] cb callback to execute
+
+ */
+static inline void jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb) {
+    jolt_gui_scr_set_enter_action(parent, cb);
+    jolt_gui_scr_set_enter_action(parent, cb);
+}
 
 /**
  * @brief pass an object to the back callback
@@ -227,6 +238,16 @@ void jolt_gui_scr_set_back_param(lv_obj_t *parent, void *param);
  * @param[in] object to pass
  */
 void jolt_gui_scr_set_enter_param(lv_obj_t *parent, void *param);
+
+/**
+ * @brief pass an object to both the back and the enter callback
+ * @param[in,out] parent screen parent object
+ * @param[in] object to pass
+ */
+static inline void jolt_gui_scr_set_param(lv_obj_t *parent, void *param) {
+    jolt_gui_scr_set_back_param(parent, param);
+    jolt_gui_scr_set_enter_param(parent, param);
+}
 
 /**
  * @brief Send an "Enter" signal to the main group.

@@ -18,7 +18,7 @@ const jolt_version_t JOLT_JELF_VERSION = {
     .release = JOLT_VERSION_DEV,
 };
 
-const char *JOLT_OS_COMMIT = "c6470e5ae4298325d36bd8a615203c3eacf1ebfc";
+const char *JOLT_OS_COMMIT = "dfc1f3918239739c424003dea9def77e37ed2119";
 
 extern void *__fixunsdfsi;
 extern void *__floatunsidf;
@@ -187,6 +187,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_scr_menu_add_sw ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_create ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_get_list ),
+    EXPORT_SYMBOL( jolt_gui_scr_menu_get_scr ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_remove ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_set_btn_selected ),
     EXPORT_SYMBOL( jolt_gui_scr_preloading_create ),
@@ -197,10 +198,12 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_scr_scroll_add_text ),
     EXPORT_SYMBOL( jolt_gui_scr_scroll_add_monospace_text ),
     EXPORT_SYMBOL( jolt_gui_scr_scroll_get_page ),
+    EXPORT_SYMBOL( jolt_gui_scr_set_action ),
     EXPORT_SYMBOL( jolt_gui_scr_set_back_action ),
     EXPORT_SYMBOL( jolt_gui_scr_set_back_param ),
     EXPORT_SYMBOL( jolt_gui_scr_set_enter_action ),
     EXPORT_SYMBOL( jolt_gui_scr_set_enter_param ),
+    EXPORT_SYMBOL( jolt_gui_scr_set_param ),
     EXPORT_SYMBOL( jolt_gui_scr_slider_create ),
     EXPORT_SYMBOL( jolt_gui_scr_slider_get_slider ),
     EXPORT_SYMBOL( jolt_gui_scr_slider_get_value ),
@@ -397,7 +400,7 @@ const jolt_version_t JOLT_JELF_VERSION = { 0 };
 const char *JOLT_OS_COMMIT = NULL;
 
 /* Dummy place holder */
-static const void *exports[350] = { 0 };
+static const void *exports[353] = { 0 };
 
 #endif
 

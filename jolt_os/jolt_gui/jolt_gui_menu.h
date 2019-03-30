@@ -42,6 +42,15 @@ lv_obj_t *jolt_gui_scr_menu_add(lv_obj_t *par, const void *img_src,
 lv_obj_t *jolt_gui_scr_menu_get_list(lv_obj_t *par);
 
 /**
+ * @brief Gets the screen object given a selected button of a menu.
+ *
+ * Useful for getting the screen in btn callbacks
+ * @param[in] par menu screen
+ * @return jolt menu screen object
+ */ 
+lv_obj_t *jolt_gui_scr_menu_get_scr( lv_obj_t *btn );
+
+/**
  * @brief Adds an item to a Jolt Menu Screen 
  * @param[in,out] btn Menu element to add a switch to
  * @return lv_sw object
