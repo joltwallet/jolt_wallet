@@ -8,6 +8,7 @@
  * */
 
 #include "jolt_lib.h"
+#include "sdkconfig.h"
 
 #if JOLT_OS
 
@@ -18,7 +19,7 @@ const jolt_version_t JOLT_JELF_VERSION = {
     .release = JOLT_VERSION_DEV,
 };
 
-const char *JOLT_OS_COMMIT = "c026336897a7ac4acf743517ae53b61a3043145a";
+const char *JOLT_OS_COMMIT = "2b92a9e37bffdaa8d3e9a6afb89bdca763487ced";
 
 extern void *__fixunsdfsi;
 extern void *__floatunsidf;
@@ -26,8 +27,14 @@ extern void *__floatsidf;
 extern void *__gtdf2;
 extern void *__ltdf2;
 extern void *__muldf3;
+
+#if CONFIG_STACK_CHECK
 extern void *__stack_chk_fail;
 extern void *__stack_chk_guard;
+#else
+static inline void __stack_chk_fail (void) { return; }
+void *__stack_chk_guard = NULL;
+#endif
 
 #define EXPORT_SYMBOL(x) &x
 
@@ -37,6 +44,7 @@ extern void *__stack_chk_guard;
  * This order is very important; only *append* fuctions
  */
 static const void *exports[] = {
+    EXPORT_SYMBOL( __assert_func ),
     EXPORT_SYMBOL( __fixunsdfsi ),
     EXPORT_SYMBOL( __floatunsidf ),
     EXPORT_SYMBOL( __floatsidf ),
@@ -401,7 +409,7 @@ const jolt_version_t JOLT_JELF_VERSION = { 0 };
 const char *JOLT_OS_COMMIT = NULL;
 
 /* Dummy place holder */
-static const void *exports[354] = { 0 };
+static const void *exports[355] = { 0 };
 
 #endif
 

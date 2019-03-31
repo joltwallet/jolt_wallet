@@ -1,4 +1,5 @@
 VERSION 0.1.0
+__assert_func
 __fixunsdfsi
 __floatunsidf
 __floatsidf

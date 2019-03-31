@@ -48,6 +48,7 @@ int jolt_cmd_about(int argc, char** argv) {
         else {
             printf("Wifi Disconnected\n");
         }
+        return 0;
 #else
         printf("No wifi drivers installed.\n");
 #endif
