@@ -19,7 +19,7 @@ const jolt_version_t JOLT_JELF_VERSION = {
     .release = JOLT_VERSION_DEV,
 };
 
-const char *JOLT_OS_COMMIT = "2b92a9e37bffdaa8d3e9a6afb89bdca763487ced";
+const char *JOLT_OS_COMMIT = "634ccc62c1e6710062af79bf30464f0c26fc4b35";
 
 extern void *__fixunsdfsi;
 extern void *__floatunsidf;
@@ -355,6 +355,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( memmove ),
     EXPORT_SYMBOL( memset ),
     EXPORT_SYMBOL( printf ),
+    EXPORT_SYMBOL( putchar ),
     EXPORT_SYMBOL( puts ),
     EXPORT_SYMBOL( qrcode_getBufferSize ),
     EXPORT_SYMBOL( qrcode_initText ),
@@ -409,7 +410,7 @@ const jolt_version_t JOLT_JELF_VERSION = { 0 };
 const char *JOLT_OS_COMMIT = NULL;
 
 /* Dummy place holder */
-static const void *exports[355] = { 0 };
+static const void *exports[356] = { 0 };
 
 #endif
 

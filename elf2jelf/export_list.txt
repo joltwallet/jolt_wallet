@@ -310,6 +310,7 @@ memcpy
 memmove
 memset
 printf
+putchar
 puts
 qrcode_getBufferSize
 qrcode_initText
