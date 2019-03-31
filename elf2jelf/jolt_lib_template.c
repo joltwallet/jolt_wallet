@@ -8,6 +8,7 @@
  * */
 
 #include "jolt_lib.h"
+#include "sdkconfig.h"
 
 #if JOLT_OS
 
@@ -26,8 +27,14 @@ extern void *__floatsidf;
 extern void *__gtdf2;
 extern void *__ltdf2;
 extern void *__muldf3;
+
+#if CONFIG_STACK_CHECK
 extern void *__stack_chk_fail;
 extern void *__stack_chk_guard;
+#else
+static inline void __stack_chk_fail (void) { return; }
+void *__stack_chk_guard = NULL;
+#endif
 
 #define EXPORT_SYMBOL(x) &x
 

@@ -907,7 +907,7 @@ int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv) {
     {
         typedef int (*func_t)(int, char**);
         func_t func = (func_t)ctx->exec;
-        MSG("Running...");
+        MSG("Running... (%p)", func);
         res = func(argc, argv);
         MSG("Result: %08X", res);
     }

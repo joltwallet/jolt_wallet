@@ -243,7 +243,7 @@ int8_t jolt_gui_scr_digit_entry_get_arr(lv_obj_t *parent, uint8_t *arr, uint8_t 
     }
 #if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
     if(n_entries > 0){
-        printf("Entered PIN: ");
+        printf("Entered Array: ");
         for(uint8_t i=0; i < ext->num_rollers; i++) {
             printf("%d ", arr[i]);
         }

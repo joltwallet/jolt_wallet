@@ -83,7 +83,9 @@ static inline void IRAM_ATTR rx_consume() {
  * @param[in] n number of bytes to send
  */
 static inline uint32_t IRAM_ATTR send_bytes(char *c, uint32_t n) {
+    const char new_line = '\n';
     fwrite(c, 1, n, stdout);
+    fwrite(&new_line, 1, 1, stdout);
     return 0;
 }
 

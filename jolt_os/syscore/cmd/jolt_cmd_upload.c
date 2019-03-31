@@ -37,7 +37,9 @@ int jolt_cmd_upload(int argc, char** argv) {
             if( jolt_fs_exists(orig_fn) ) {
                 remove(orig_fn);
             }
+            ESP_LOGI(TAG, "Renaming file");
             rename(tmp_fn, orig_fn);
+            ESP_LOGI(TAG, "File renamed");
 
             jolt_h_fn_home_refresh( orig_fn );
         }

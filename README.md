@@ -43,6 +43,10 @@ Checkout our extensive FAQs for more information - [FAQs](docs/faq.md)
 
 To see the latest on what we've done, what we're planning, and where we're headed click [here](docs/roadmap.md).
 
+## Known Issues
+
+* App loading only works when set to release mode or stack protection is disabled.
+
 ## Contributors
 
 This project wouldn't have been possible without the hard work and dedication of these fellow members.

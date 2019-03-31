@@ -79,10 +79,16 @@ static int32_t jolt_process_cmd_task(jolt_bg_job_t *bg_job){
     switch( err ) {
         case ESP_ERR_NOT_FOUND: {
             /* The command could be an app to run console commands from */
-            char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
+            static char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
             /* split_argv modifies line with NULL-terminators */
-            size_t argc = esp_console_split_argv(cmd->data, argv, sizeof(argv));
+            size_t argc = esp_console_split_argv(cmd->data, argv, CONFIG_JOLT_CONSOLE_MAX_ARGS);
+#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
+            ESP_LOGD(TAG, "%d arguments parsed.", argc);
+            for(uint8_t i=0; i < argc; i++) {
+                ESP_LOGD(TAG, "argv[%d]: %s", i, argv[i]);
+            }
             ESP_LOGD(TAG, "Not an internal command; looking for app of name %s", argv[0]);
+#endif
             // todo, parse passphrase argument
             if( launch_file(argv[0], argc-1, &argv[1], "") ) {
                 printf("Unsuccessful command\n");
@@ -108,7 +114,6 @@ static int32_t jolt_process_cmd_task(jolt_bg_job_t *bg_job){
 
 exit:
     /* De-allocate memory */
-    jolt_cmd_del(cmd);
     return 0;
 }
 
@@ -198,6 +203,8 @@ int jolt_cmd_process(char *line, FILE *in, FILE *out, FILE *err) {
     /* Wait until the process signals completion */
     xQueueReceive(return_value_queue, &return_code, portMAX_DELAY);
     cli_mutex_give();
+
+    jolt_cmd_del(cmd);
 
     return return_code;
 

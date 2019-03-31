@@ -270,7 +270,7 @@ menu "JoltOS"
         config JOLT_TASK_STACK_SIZE_VAULT_WATCHDOG
             int
             prompt "Vault Watchdog Task Stack Size"
-            default 1520
+            default 1792
             help
                 Stack size of the task responsibility for vault timeout.
 

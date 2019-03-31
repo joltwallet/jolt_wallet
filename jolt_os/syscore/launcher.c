@@ -47,12 +47,6 @@ static void launch_app_cache_clear(){
         if(app_cache.ctx != NULL){
             jelfLoaderFree(app_cache.ctx);
         }
-        if( NULL != app_cache.argv ) {
-            for(uint8_t i=0; i < app_cache.argc; i++) {
-                free( app_cache.argv[i] );
-            }
-            free(app_cache.argv);
-        }
         app_cache.ctx = NULL;
         app_cache.name[0] = '\0';
         app_cache.argc = 0;
@@ -192,13 +186,7 @@ exec:
     /* Prepare vault for app launching. vault_set() creates the PIN entry screen */
     // maybe move these out of cache
     app_cache.argc = app_argc;
-
-    // todo: error handling
-    app_cache.argv = malloc(app_argc * sizeof(char *));
-    for(uint8_t i=0; i < app_argc; i++) {
-        app_cache.argv[i] = malloc(strlen(app_argv[i])+1);
-        strcpy(app_cache.argv[i], app_argv[i]);
-    }
+    app_cache.argv = app_argv;
 
     ESP_LOGI( TAG, "Derivation Purpose: 0x%x. Coin Type: 0x%x",
             app_cache.ctx->coin_purpose,

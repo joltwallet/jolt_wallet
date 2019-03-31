@@ -193,8 +193,7 @@ lv_group_t *jolt_gui_group_enter_get() {
  * Action *
  **********/
 
-lv_obj_t *jolt_gui_scr_set_action(lv_obj_t *parent, lv_event_cb_t cb, 
-        lv_group_t *g) {
+lv_obj_t *_jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb, lv_group_t *g) {
     lv_obj_t *btn = NULL;
     JOLT_GUI_CTX{
         /* Remove any children buttons already in group g */
@@ -239,7 +238,7 @@ lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_event_cb_t cb) {
             }
             default:{
                 /* Usually, just create a button in the back group as a child of the screen */
-                btn = jolt_gui_scr_set_action(parent, cb, group.back);
+                btn = _jolt_gui_scr_set_action(parent, cb, group.back);
                 break;
             }
         }
@@ -260,7 +259,7 @@ lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_event_cb_t cb) {
             }
             default:{
                 /* Usually, just create a button in the back group as a child of the screen */
-                btn = jolt_gui_scr_set_action(parent, cb, group.enter);
+                btn = _jolt_gui_scr_set_action(parent, cb, group.enter);
                 break;
             }
         }

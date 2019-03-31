@@ -8,6 +8,7 @@
  * */
 
 #include "jolt_lib.h"
+#include "sdkconfig.h"
 
 #if JOLT_OS
 
@@ -18,7 +19,7 @@ const jolt_version_t JOLT_JELF_VERSION = {
     .release = JOLT_VERSION_DEV,
 };
 
-const char *JOLT_OS_COMMIT = "f024e497e8bdce37604fcad44d69c492ddc57509";
+const char *JOLT_OS_COMMIT = "31ca816de8c8c1fb0b9797e7c42f01408350a29a";
 
 extern void *__fixunsdfsi;
 extern void *__floatunsidf;
@@ -26,8 +27,14 @@ extern void *__floatsidf;
 extern void *__gtdf2;
 extern void *__ltdf2;
 extern void *__muldf3;
+
+#if CONFIG_STACK_CHECK
 extern void *__stack_chk_fail;
 extern void *__stack_chk_guard;
+#else
+static inline void __stack_chk_fail (void) { return; }
+void *__stack_chk_guard = NULL;
+#endif
 
 #define EXPORT_SYMBOL(x) &x
 
@@ -37,6 +44,7 @@ extern void *__stack_chk_guard;
  * This order is very important; only *append* fuctions
  */
 static const void *exports[] = {
+    EXPORT_SYMBOL( __assert_func ),
     EXPORT_SYMBOL( __fixunsdfsi ),
     EXPORT_SYMBOL( __floatunsidf ),
     EXPORT_SYMBOL( __floatsidf ),
@@ -180,6 +188,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_scr_digit_entry_get_double ),
     EXPORT_SYMBOL( jolt_gui_scr_digit_entry_get_hash ),
     EXPORT_SYMBOL( jolt_gui_scr_digit_entry_get_int ),
+    EXPORT_SYMBOL( jolt_gui_scr_digit_entry_set_pos ),
     EXPORT_SYMBOL( jolt_gui_scr_loadingbar_create ),
     EXPORT_SYMBOL( jolt_gui_scr_loadingbar_update ),
     EXPORT_SYMBOL( jolt_gui_scr_loadingbar_autoupdate ),
@@ -187,6 +196,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_scr_menu_add_sw ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_create ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_get_list ),
+    EXPORT_SYMBOL( jolt_gui_scr_menu_get_scr ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_remove ),
     EXPORT_SYMBOL( jolt_gui_scr_menu_set_btn_selected ),
     EXPORT_SYMBOL( jolt_gui_scr_preloading_create ),
@@ -197,10 +207,12 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_scr_scroll_add_text ),
     EXPORT_SYMBOL( jolt_gui_scr_scroll_add_monospace_text ),
     EXPORT_SYMBOL( jolt_gui_scr_scroll_get_page ),
+    EXPORT_SYMBOL( jolt_gui_scr_set_action ),
     EXPORT_SYMBOL( jolt_gui_scr_set_back_action ),
     EXPORT_SYMBOL( jolt_gui_scr_set_back_param ),
     EXPORT_SYMBOL( jolt_gui_scr_set_enter_action ),
     EXPORT_SYMBOL( jolt_gui_scr_set_enter_param ),
+    EXPORT_SYMBOL( jolt_gui_scr_set_param ),
     EXPORT_SYMBOL( jolt_gui_scr_slider_create ),
     EXPORT_SYMBOL( jolt_gui_scr_slider_get_slider ),
     EXPORT_SYMBOL( jolt_gui_scr_slider_get_value ),
@@ -343,6 +355,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( memmove ),
     EXPORT_SYMBOL( memset ),
     EXPORT_SYMBOL( printf ),
+    EXPORT_SYMBOL( putchar ),
     EXPORT_SYMBOL( puts ),
     EXPORT_SYMBOL( qrcode_getBufferSize ),
     EXPORT_SYMBOL( qrcode_initText ),
@@ -397,7 +410,7 @@ const jolt_version_t JOLT_JELF_VERSION = { 0 };
 const char *JOLT_OS_COMMIT = NULL;
 
 /* Dummy place holder */
-static const void *exports[350] = { 0 };
+static const void *exports[356] = { 0 };
 
 #endif
 
