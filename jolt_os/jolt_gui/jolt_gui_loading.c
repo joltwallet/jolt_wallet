@@ -100,11 +100,11 @@ void jolt_gui_scr_loadingbar_autoupdate_del(lv_obj_t *parent) {
 lv_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
     JOLT_GUI_SCR_CTX(title){
         /* Set screen ID */
-        lv_obj_set_free_num(parent, JOLT_GUI_SCR_ID_LOADINGBAR);
+        jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_LOADINGBAR);
 
         /* Create Loading Bar */
         lv_obj_t *bar = BREAK_IF_NULL(lv_bar_create(cont_body, NULL));
-        lv_obj_set_free_num(bar, JOLT_GUI_OBJ_ID_LOADINGBAR);
+        jolt_gui_obj_id_set(bar, JOLT_GUI_OBJ_ID_LOADINGBAR);
         lv_obj_set_size(bar, 
                 CONFIG_JOLT_GUI_LOADINGBAR_W, CONFIG_JOLT_GUI_LOADINGBAR_H);
         lv_obj_align(bar, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -10);
@@ -112,7 +112,7 @@ lv_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
 
         /* Create Loading Label */
         lv_obj_t *label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
-        lv_obj_set_free_num(label, JOLT_GUI_OBJ_ID_LABEL_0);
+        jolt_gui_obj_id_set(label, JOLT_GUI_OBJ_ID_LABEL_0);
         lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
         lv_label_set_text(label, "Initializing");
         lv_label_set_long_mode(label, LV_LABEL_LONG_ROLL);
@@ -138,17 +138,17 @@ lv_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
 lv_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text) {
     JOLT_GUI_SCR_CTX( title ){
         /* Set screen ID */
-        lv_obj_set_free_num(parent, JOLT_GUI_SCR_ID_LOADINGBAR);
+        jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_PRELOADING);
 
         /* Create PreLoading Object */
         lv_obj_t *preload = BREAK_IF_NULL(lv_preload_create(cont_body, NULL));
-        lv_obj_set_free_num(preload, JOLT_GUI_OBJ_ID_PRELOADING);
+        jolt_gui_obj_id_set(preload, JOLT_GUI_OBJ_ID_PRELOADING);
         lv_obj_set_size(preload, 30, 30);
         lv_obj_align(preload, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
 
         /* Create Loading Label */
         lv_obj_t *label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
-        lv_obj_set_free_num(label, JOLT_GUI_OBJ_ID_LABEL_0);
+        jolt_gui_obj_id_set(label, JOLT_GUI_OBJ_ID_LABEL_0);
         lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
         if( NULL == text ){
             lv_label_set_text(label, "");

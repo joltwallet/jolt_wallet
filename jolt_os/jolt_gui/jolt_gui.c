@@ -58,6 +58,29 @@ lv_res_t jolt_gui_scr_del() {
     return res;
 }
 
+void jolt_gui_obj_id_set( lv_obj_t *obj, jolt_gui_obj_id_t id) {
+    obj->user_data.id = id;
+    obj->user_data.is_scr = 0;
+} 
+
+jolt_gui_obj_id_t jolt_gui_obj_id_get( const lv_obj_t *obj ) {
+    if( obj->user_data.is_scr ){
+        return JOLT_GUI_OBJ_ID_INVALID;
+    }
+    return obj->user_data.id;
+}
+
+void jolt_gui_scr_id_set( lv_obj_t *obj, jolt_gui_scr_id_t id) {
+    obj->user_data.id = id;
+    obj->user_data.is_scr = 1;
+}
+
+jolt_gui_scr_id_t jolt_gui_scr_id_get( const lv_obj_t *obj ) {
+    if( !obj->user_data.is_scr ){
+        return JOLT_GUI_SCR_ID_INVALID;
+    }
+    return obj->user_data.id;
+}
 
 /**************************************
  * STANDARD SCREEN CREATION FUNCTIONS *
@@ -87,14 +110,14 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
         lv_obj_t *statusbar_label = statusbar_get_label();
         /* Create a non-transparent background to block out old titles */
         lv_obj_t *title_cont = BREAK_IF_NULL(lv_cont_create(parent, NULL));
-        lv_obj_set_free_num(title_cont, JOLT_GUI_OBJ_ID_CONT_TITLE);
+        jolt_gui_obj_id_set(title_cont, JOLT_GUI_OBJ_ID_CONT_TITLE);
         lv_obj_align(title_cont, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
         lv_obj_set_size( title_cont,
                 lv_obj_get_x(statusbar_label) - 1, // todo: use style padding
                 CONFIG_JOLT_GUI_STATUSBAR_H-1);
 
         label = BREAK_IF_NULL(lv_label_create(title_cont, NULL));
-        lv_obj_set_free_num(label, JOLT_GUI_OBJ_ID_LABEL_0);
+        jolt_gui_obj_id_set(label, JOLT_GUI_OBJ_ID_LABEL_0);
         lv_style_t *label_style = lv_obj_get_style(label);
         lv_label_set_long_mode(label, LV_LABEL_LONG_ROLL);
         lv_label_set_body_draw(label, false); // dont draw background
@@ -119,7 +142,7 @@ lv_obj_t *jolt_gui_obj_cont_body_create( lv_obj_t *parent ) {
     lv_obj_t *cont = NULL;
     JOLT_GUI_CTX{
         cont = BREAK_IF_NULL(lv_cont_create(parent, NULL));
-        lv_obj_set_free_num(cont, JOLT_GUI_OBJ_ID_CONT_BODY);
+        jolt_gui_obj_id_set(cont, JOLT_GUI_OBJ_ID_CONT_BODY);
         lv_obj_set_size(cont, LV_HOR_RES, 
                 LV_VER_RES - CONFIG_JOLT_GUI_STATUSBAR_H);
         lv_obj_align(cont, NULL, LV_ALIGN_IN_TOP_LEFT,
@@ -135,7 +158,7 @@ void jolt_gui_obj_del(lv_obj_t *obj){
 
     JOLT_GUI_CTX{
         /* Some objects may require special actions before deleting */
-        jolt_gui_scr_id_t id = lv_obj_get_free_num(obj);
+        jolt_gui_scr_id_t id = jolt_gui_scr_id_get( obj );
         switch( id ) {
             case JOLT_GUI_SCR_ID_LOADINGBAR:
                 /* Check and Delete the auto updater task */
@@ -216,10 +239,10 @@ lv_obj_t *_jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb, lv_group_t 
         lv_group_focus_obj(btn);
 
         if( g == group.enter ) {
-            lv_obj_set_free_num(btn, JOLT_GUI_OBJ_ID_ENTER);
+            jolt_gui_obj_id_set(btn, JOLT_GUI_OBJ_ID_ENTER);
         }
         else if ( g == group.back) {
-            lv_obj_set_free_num(btn, JOLT_GUI_OBJ_ID_BACK);
+            jolt_gui_obj_id_set(btn, JOLT_GUI_OBJ_ID_BACK);
         }
     }
     return btn;
@@ -228,10 +251,15 @@ lv_obj_t *_jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb, lv_group_t 
 lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_event_cb_t cb) {
     lv_obj_t *btn = NULL;
     JOLT_GUI_CTX{
-        LV_OBJ_FREE_NUM_TYPE type = lv_obj_get_free_num( parent );
+        jolt_gui_scr_id_t type = jolt_gui_scr_id_get( parent );
         switch( type ) {
             /* Some screens need to wrap callbacks. Wrapping them here 
              * enables a unified interface for seting back actions. */
+            case JOLT_GUI_SCR_ID_INVALID:{
+                ESP_LOGE(TAG, "Not a screen");
+                abort();
+                break;
+            }
             case JOLT_GUI_SCR_ID_DIGIT_ENTRY:{
                 jolt_gui_scr_digit_entry_set_back_action(parent, cb);
                 break;
@@ -249,10 +277,15 @@ lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_event_cb_t cb) {
 lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_event_cb_t cb) {
     lv_obj_t *btn = NULL;
     JOLT_GUI_CTX{
-        LV_OBJ_FREE_NUM_TYPE type = lv_obj_get_free_num( parent );
+        jolt_gui_scr_id_t type = jolt_gui_scr_id_get( parent );
         switch( type ) {
             /* Some screens need to wrap callbacks. Wrapping them here 
              * enables a unified interface for seting back actions. */
+            case JOLT_GUI_SCR_ID_INVALID:{
+                ESP_LOGE(TAG, "Not a screen");
+                abort();
+                break;
+            }
             case JOLT_GUI_SCR_ID_DIGIT_ENTRY:{
                 jolt_gui_scr_digit_entry_set_enter_action(parent, cb);
                 break;
@@ -318,15 +351,15 @@ void jolt_gui_sem_give() {
     xSemaphoreGiveRecursive( jolt_gui_mutex );
 }
 
-/* Finds the first child object with the free_num identifier.
+/* Finds the first child object with the object identifier.
  * Returns NULL if child not found. */
-lv_obj_t *jolt_gui_find(lv_obj_t *parent, LV_OBJ_FREE_NUM_TYPE id) {
+lv_obj_t *jolt_gui_find(lv_obj_t *parent, jolt_gui_obj_id_t id) {
     lv_obj_t *child = NULL;
     JOLT_GUI_CTX{
         ESP_LOGD(TAG, "Searchng the %d children of %p", lv_obj_count_children(parent), parent);
         while( NULL != (child = lv_obj_get_child(parent, child)) ) {
-            LV_OBJ_FREE_NUM_TYPE child_id;
-            child_id = lv_obj_get_free_num(child);
+            jolt_gui_obj_id_t child_id;
+            child_id = jolt_gui_obj_id_get( child );
             ESP_LOGD(TAG, "Child: %p %s", child, jolt_gui_obj_id_str(child_id));
             if( child_id == id) {
                 break;

@@ -27,11 +27,11 @@ lv_obj_t *jolt_gui_scr_scroll_get_page(lv_obj_t *scr){
 lv_obj_t *jolt_gui_scr_scroll_create(const char *title) {
     JOLT_GUI_SCR_CTX(title){
         /* Set screen ID */
-        lv_obj_set_free_num(parent, JOLT_GUI_SCR_ID_SCROLL);
+        jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_SCROLL);
 
         /* Create Scrollable Page */
         lv_obj_t *page = BREAK_IF_NULL(lv_page_create(cont_body, NULL));
-        lv_obj_set_free_num(page, JOLT_GUI_OBJ_ID_PAGE);
+        jolt_gui_obj_id_set(page, JOLT_GUI_OBJ_ID_PAGE);
         lv_obj_set_size(page, LV_HOR_RES, LV_VER_RES - CONFIG_JOLT_GUI_STATUSBAR_H);
         lv_obj_align(page, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
         lv_page_set_sb_mode(page, LV_SB_MODE_AUTO);

@@ -9,8 +9,8 @@ Every screen in JoltOS has the typical layout:
      * `JOLT_GUI_OBJ_ID_CONT_BODY`; `lv_cont` representing the entire drawable space below the statusbar. All visible have this container as their parent.
          * CUSTOM_OBJECTS specific objects for this screen
 
-Each lvgl object will have it's `free_num` field populated with a `jolt_gui_obj_id_t` for easier identification.
-The dummy parent object must be at the top level (child of `lv_scr_act()`). The parent's `free_num` field will be populated with a `jolt_gui_scr_id_t`. 
+Each lvgl object will have it's `user_data.id` field populated with a `jolt_gui_obj_id_t` for easier identification.
+The dummy parent object must be at the top level (child of `lv_scr_act()`). The parent's `id` field will be populated with a `jolt_gui_scr_id_t`. 
 
 ## Notes on Meta-Programming
 

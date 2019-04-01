@@ -34,7 +34,7 @@ lv_obj_t *jolt_gui_scr_scroll_add_qr(lv_obj_t *scr, const char *data, uint16_t d
             // error: too much data
             break;
         }
-        lv_obj_set_free_num(img, JOLT_GUI_OBJ_ID_IMG_QR);
+        jolt_gui_obj_id_set(img, JOLT_GUI_OBJ_ID_IMG_QR);
         memset(ext->img_data, 0, sizeof(ext->img_data));
         memcpy(ext->img_data, lv_img_color_header, sizeof(lv_img_color_header));
 

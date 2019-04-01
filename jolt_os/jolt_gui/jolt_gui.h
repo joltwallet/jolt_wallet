@@ -60,57 +60,6 @@
 
 extern lv_theme_t *jolt_gui_theme;
 
-#define FOREACH_JOLT_GUI_OBJ_ID(x) \
-    x(JOLT_GUI_OBJ_ID_UNINITIALIZED)    /**< If you don't set a free_num, then it's 0 */ \
-    x(JOLT_GUI_OBJ_ID_CONT_TITLE)       /**< container or page holding title */ \
-    x(JOLT_GUI_OBJ_ID_CONT_BODY)        /**< container or page holding body */ \
-    x(JOLT_GUI_OBJ_ID_BACK)             /**< The inivisible back button */ \
-    x(JOLT_GUI_OBJ_ID_ENTER)            /**< The invisible enter button */ \
-    x(JOLT_GUI_OBJ_ID_PAGE)             /**< page */ \
-    x(JOLT_GUI_OBJ_ID_LABEL_TITLE)      /**< Title Label */ \
-    x(JOLT_GUI_OBJ_ID_LABEL_0)          /**< Primary text */ \
-    x(JOLT_GUI_OBJ_ID_LABEL_1)          /**< Secondary text */ \
-    x(JOLT_GUI_OBJ_ID_LABEL_2)          /**< 3rd text */ \
-    x(JOLT_GUI_OBJ_ID_LABEL_3)          /**< 4th text */ \
-    x(JOLT_GUI_OBJ_ID_LABEL_4)          /**< 5th text */ \
-    x(JOLT_GUI_OBJ_ID_LOADINGBAR)       /**< Loading Bar Object */ \
-    x(JOLT_GUI_OBJ_ID_PRELOADING)       /**< Loading Bar Object */ \
-    x(JOLT_GUI_OBJ_ID_IMG_QR)           /**< QR code object */ \
-    x(JOLT_GUI_OBJ_ID_SLIDER)           /**<  */ \
-    x(JOLT_GUI_OBJ_ID_LIST)             /**<  */ \
-    x(JOLT_GUI_OBJ_ID_ROLLER)           /**<  */ \
-    x(JOLT_GUI_OBJ_ID_DECIMAL_POINT)    /**<  */ \
-    x(JOLT_GUI_OBJ_ID_MAX)
-
-
-#define GENERATE_ENUM(ENUM) ENUM,
-#define GENERATE_STRING(STRING) #STRING,
-
-/**
- * @brief Identifiers so we can quickly transverse an object that makes up a screen.
- */
-enum {
-    FOREACH_JOLT_GUI_OBJ_ID(GENERATE_ENUM)
-};
-typedef uint8_t jolt_gui_obj_id_t;
-
-#define FOREACH_JOLT_GUI_SCR_ID(x) \
-    x(JOLT_GUI_SCR_ID_UNINITIALIZED)   /**<  */ \
-    x(JOLT_GUI_SCR_ID_MENU)            /**<  */ \
-    x(JOLT_GUI_SCR_ID_SCROLL)          /**<  */ \
-    x(JOLT_GUI_SCR_ID_DIGIT_ENTRY)     /**<  */ \
-    x(JOLT_GUI_SCR_ID_LOADINGBAR)      /**<  */ \
-    x(JOLT_GUI_SCR_ID_PRELOADING)      /**<  */ \
-    x(JOLT_GUI_SCR_ID_MAX)             /**<  */
-
-/**
- * @brief Identifiers so we can quickly identify a screen type
- */
-enum {
-    FOREACH_JOLT_GUI_SCR_ID(GENERATE_ENUM)
-};
-typedef uint8_t jolt_gui_scr_id_t;
-
 /*********************
  * Screen Management *
  *********************/
@@ -121,6 +70,34 @@ typedef uint8_t jolt_gui_scr_id_t;
  * parent, then deletes that parent.
  */
 lv_res_t jolt_gui_scr_del();
+
+/**
+ * @brief Sets object id
+ * @param[in] obj
+ * @param[in] id
+ */
+void jolt_gui_obj_id_set( lv_obj_t *obj, jolt_gui_obj_id_t id);
+
+/**
+ * @brief Gets the ID of an object.
+ * @param[in] obj Object to get ID of.
+ * @return Object ID. Returns JOLT_GUI_OBJ_ID_INVALID if a screen.
+ */
+jolt_gui_obj_id_t jolt_gui_obj_id_get( const lv_obj_t *obj );
+
+/**
+ * @brief Sets screen id
+ * @param[in] obj
+ * @param[in] id
+ */
+void jolt_gui_scr_id_set( lv_obj_t *obj, jolt_gui_scr_id_t id);
+
+/**
+ * @brief Gets the screen type
+ * @param[in]
+ * @return Screen ID. JOLT_GUI_SCR_ID_INVALID if it's not a screen.
+ */
+jolt_gui_scr_id_t jolt_gui_scr_id_get( const lv_obj_t *obj );
 
 /**************************************
  * STANDARD SCREEN CREATION FUNCTIONS *

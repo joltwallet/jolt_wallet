@@ -62,9 +62,10 @@ void jolt_gui_scr_slider_set_label(lv_obj_t *scr, const char *text){
  * Back button is set to screen delete by default. */
 lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_event_cb_t cb) {
     JOLT_GUI_SCR_CTX( title ) {
+        jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_SLIDER);
         /* Create Slider */
         lv_obj_t *slider = lv_slider_create(cont_body, NULL);
-        lv_obj_set_free_num(slider, JOLT_GUI_OBJ_ID_SLIDER);
+        jolt_gui_obj_id_set(slider, JOLT_GUI_OBJ_ID_SLIDER);
         lv_slider_set_range(slider, 0, 10); // Default Slider Range
         lv_obj_set_size(slider,
                 CONFIG_JOLT_GUI_SLIDER_W, CONFIG_JOLT_GUI_SLIDER_H);
@@ -77,7 +78,7 @@ lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_eve
 
         /* Create Label */
         lv_obj_t *label = BREAK_IF_NULL(lv_label_create(slider, NULL));
-        lv_obj_set_free_num(label, JOLT_GUI_OBJ_ID_LABEL_0);
+        jolt_gui_obj_id_set(label, JOLT_GUI_OBJ_ID_LABEL_0);
         lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
         if( NULL == text ){
             lv_label_set_text(label, "");

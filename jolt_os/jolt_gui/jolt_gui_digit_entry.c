@@ -150,7 +150,7 @@ static lv_obj_t *create_dp(lv_obj_t *parent){
     lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
 
     lv_label_set_text(label, ".");
-    lv_obj_set_free_num(label, JOLT_GUI_OBJ_ID_DECIMAL_POINT);
+    jolt_gui_obj_id_set(label, JOLT_GUI_OBJ_ID_DECIMAL_POINT);
     return label;
 }
 
@@ -191,7 +191,7 @@ lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
         BREAK_IF_NULL(jolt_gui_scr_set_back_action(parent, &jolt_gui_send_left_main));
         BREAK_IF_NULL(jolt_gui_scr_set_enter_action(parent, &jolt_gui_send_enter_main));
 
-        lv_obj_set_free_num(parent, JOLT_GUI_SCR_ID_DIGIT_ENTRY);
+        jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_DIGIT_ENTRY);
 
         /* Initialize remaining ext params */
         ext->sel = 0;
@@ -208,7 +208,7 @@ lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
                 ext->decimal_point = create_dp(cont_body);
             }
             ext->rollers[i] = digit_create(cont_body);
-            lv_obj_set_free_num(ext->rollers[i], JOLT_GUI_OBJ_ID_ROLLER);
+            jolt_gui_obj_id_set(ext->rollers[i], JOLT_GUI_OBJ_ID_ROLLER);
             jolt_gui_group_add( ext->rollers[i] );
             if( NULL == old_roller_signal) {
                 old_roller_signal = lv_obj_get_signal_func(ext->rollers[i]);
