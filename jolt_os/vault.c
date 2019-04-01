@@ -329,7 +329,7 @@ static lv_res_t pin_enter_cb(lv_obj_t *scr) {
 }
 
 /* gets triggered when user presses back on first pin roller on pin screen */
-static lv_res_t pin_back_cb( lv_obj_t *scr ) {
+static lv_res_t pin_back_cb( lv_obj_t *scr) {
     ESP_LOGD(TAG, "pin_back_cb");
     if( ps.state != PIN_STATE_FAIL ) {
         ps.state = PIN_STATE_FAIL;

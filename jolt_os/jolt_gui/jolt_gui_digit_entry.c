@@ -21,8 +21,8 @@ typedef struct {
     lv_obj_t *rollers[CONFIG_JOLT_GUI_SCR_DIGIT_ENTRY_MAX_LEN];
     lv_obj_t *decimal_point;
     int8_t decimal_point_pos; // Position of decimal point from right. -1 for no decimal
-    lv_event_cb_t back_cb;
-    lv_event_cb_t enter_cb;
+    lv_action_t back_cb;
+    lv_action_t enter_cb;
 } digit_entry_cont_ext_t;
 
 /* Static Variables */
@@ -272,7 +272,7 @@ uint8_t jolt_gui_scr_digit_entry_get_hash(lv_obj_t *parent, uint8_t *hash) {
     return res;
 }
 
-void jolt_gui_scr_digit_entry_set_back_action(lv_obj_t *parent, lv_event_cb_t cb){
+void jolt_gui_scr_digit_entry_set_back_action(lv_obj_t *parent, lv_action_t cb){
     JOLT_GUI_CTX{
         lv_obj_t *cont_body = NULL;
         cont_body = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_CONT_BODY);
@@ -281,7 +281,7 @@ void jolt_gui_scr_digit_entry_set_back_action(lv_obj_t *parent, lv_event_cb_t cb
     }
 }
 
-void jolt_gui_scr_digit_entry_set_enter_action(lv_obj_t *parent, lv_event_cb_t cb){
+void jolt_gui_scr_digit_entry_set_enter_action(lv_obj_t *parent, lv_action_t cb){
     JOLT_GUI_CTX{
         lv_obj_t *cont_body = NULL;
         cont_body = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_CONT_BODY);

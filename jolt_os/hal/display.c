@@ -36,8 +36,9 @@ void display_init() {
 
     static lv_disp_drv_t lv_disp_drv;
     lv_disp_drv_init(&lv_disp_drv);
-    lv_disp_drv.disp_flush = ssd1306_flush;
-    lv_disp_drv.vdb_wr = ssd1306_vdb_wr;
+    lv_disp_drv.flush_cb = ssd1306_flush;
+    lv_disp_drv.set_px_cb = ssd1306_vdb_wr;
+    lv_disp_drv.rounder_cb = ssd1306_rounder;
     lv_disp_drv_register(&lv_disp_drv);
 
     ssd1306_set_whole_display_lighting(&disp_hal, false);

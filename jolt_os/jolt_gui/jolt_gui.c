@@ -59,27 +59,27 @@ lv_res_t jolt_gui_scr_del() {
 }
 
 void jolt_gui_obj_id_set( lv_obj_t *obj, jolt_gui_obj_id_t id) {
-    obj->user_data.id = id;
-    obj->user_data.is_scr = 0;
+    lv_obj_get_user_data( obj )->id = id;
+    lv_obj_get_user_data( obj )->is_scr = 0;
 } 
 
 jolt_gui_obj_id_t jolt_gui_obj_id_get( const lv_obj_t *obj ) {
-    if( obj->user_data.is_scr ){
+    if( lv_obj_get_user_data((lv_obj_t *)obj)->is_scr ){
         return JOLT_GUI_OBJ_ID_INVALID;
     }
-    return obj->user_data.id;
+    return lv_obj_get_user_data((lv_obj_t *)obj)->id;
 }
 
 void jolt_gui_scr_id_set( lv_obj_t *obj, jolt_gui_scr_id_t id) {
-    obj->user_data.id = id;
-    obj->user_data.is_scr = 1;
+    lv_obj_get_user_data( obj )->id = id;
+    lv_obj_get_user_data( obj )->is_scr = 1;
 }
 
 jolt_gui_scr_id_t jolt_gui_scr_id_get( const lv_obj_t *obj ) {
-    if( !obj->user_data.is_scr ){
+    if( !lv_obj_get_user_data((lv_obj_t *)obj)->is_scr ){
         return JOLT_GUI_SCR_ID_INVALID;
     }
-    return obj->user_data.id;
+    return lv_obj_get_user_data((lv_obj_t *)obj)->id;
 }
 
 /**************************************
@@ -184,7 +184,6 @@ void jolt_gui_group_create() {
         lv_group_set_refocus_policy(group.back, LV_GROUP_REFOCUS_POLICY_PREV);
         group.enter = BREAK_IF_NULL(lv_group_create());
         lv_group_set_refocus_policy(group.enter, LV_GROUP_REFOCUS_POLICY_PREV);
-        lv_group_set_style_mod_cb(group.main, group_mod_cb);
         success = true;
     }
     if( !success ){
@@ -216,12 +215,27 @@ lv_group_t *jolt_gui_group_enter_get() {
  * Action *
  **********/
 
+/* todo; change the lv_action_t return type to void */
+static void event_action_wrapper_cb( lv_obj_t *obj, lv_event_t event) {
+    ESP_LOGD(TAG, "Event %d", event);
+    switch(event){
+        case LV_EVENT_PRESSED:
+            break;
+        case LV_EVENT_SHORT_CLICKED:
+            lv_obj_get_user_data(obj)->cb.short_clicked( obj );
+            break;
+        default:
+            break;
+    }
+}
+
 lv_obj_t *_jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb, lv_group_t *g) {
     lv_obj_t *btn = NULL;
     JOLT_GUI_CTX{
         /* Remove any children buttons already in group g */
         lv_obj_t *child = NULL;
         lv_obj_type_t obj_type;
+        /* todo; change this find logic to our macro */
         while( NULL != (child = lv_obj_get_child(parent, child)) ) {
             lv_obj_get_type(child, &obj_type);
             if( 0==strcmp("lv_btn", obj_type.type[0]) && g==lv_obj_get_group(child) ) {
@@ -231,8 +245,8 @@ lv_obj_t *_jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb, lv_group_t 
         }
 
         btn = BREAK_IF_NULL(lv_btn_create(parent, NULL));
-        lv_obj_set_event_cb(btn, cb);
-        //lv_btn_set_action(btn, LV_BTN_ACTION_CLICK, cb);
+        lv_obj_set_event_cb(btn, event_action_wrapper_cb);
+        lv_obj_get_user_data(parent)->cb.short_clicked = cb;
         lv_obj_set_size(btn, 0, 0);
         lv_group_remove_obj(btn);
         lv_group_add_obj(g, btn);
@@ -248,7 +262,7 @@ lv_obj_t *_jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb, lv_group_t 
     return btn;
 }
 
-lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_event_cb_t cb) {
+lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_action_t cb) {
     lv_obj_t *btn = NULL;
     JOLT_GUI_CTX{
         jolt_gui_scr_id_t type = jolt_gui_scr_id_get( parent );
@@ -274,7 +288,7 @@ lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_event_cb_t cb) {
     return btn;
 }
 
-lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_event_cb_t cb) {
+lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb) {
     lv_obj_t *btn = NULL;
     JOLT_GUI_CTX{
         jolt_gui_scr_id_t type = jolt_gui_scr_id_get( parent );
@@ -304,7 +318,7 @@ void jolt_gui_scr_set_back_param(lv_obj_t *parent, void *param) {
     lv_obj_t *btn = NULL;
     JOLT_GUI_CTX{
         btn = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_BACK);
-        lv_obj_set_free_ptr(btn, param);
+        lv_obj_get_user_data( btn )->param = param;
     }
 }
 
@@ -312,7 +326,7 @@ void jolt_gui_scr_set_enter_param(lv_obj_t *parent, void *param) {
     lv_obj_t *btn = NULL;
     JOLT_GUI_CTX{
         btn = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_ENTER);
-        lv_obj_set_free_ptr(btn, param);
+        lv_obj_get_user_data( btn )->param = param;
     }
 }
 

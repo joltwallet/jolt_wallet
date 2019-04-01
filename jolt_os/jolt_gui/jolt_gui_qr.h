@@ -18,7 +18,7 @@ static const uint8_t lv_img_color_header[] = {
 /**
  * @brief Maximum QR Version that will fit at 1 pixel per module.
  */
-#define JOLT_GUI_QR_VERSION ((uint8_t)((LV_VER_RES - CONFIG_JOLT_GUI_STATUSBAR_H -17)/4))
+#define JOLT_GUI_QR_VERSION ((uint8_t)((LV_VER_RES_MAX - CONFIG_JOLT_GUI_STATUSBAR_H -17)/4))
 
 /**
  * @brief Height/Width of maximum QR Code

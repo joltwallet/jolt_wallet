@@ -3,12 +3,11 @@
  *
  */
 
-/*
- * COPY THIS FILE AS lv_conf.h
- */
+#if ESP_PLATFORM
 
-#if 1 /*Set it to "1" to enable content*/
-
+#include "sdkconfig.h"
+#include "esp_log.h"
+#include "esp_attr.h"
 
 #ifndef LV_CONF_H
 #define LV_CONF_H
@@ -16,6 +15,8 @@
 /*===================
    Graphical settings
  *===================*/
+
+#include "stdint.h"
 
 /* Horizontal and vertical resolution of the library.*/
 #define LV_HOR_RES_MAX          (128)
@@ -65,6 +66,13 @@
 #  define LV_GC_INCLUDE "gc.h"                           /*Include Garbage Collector related things*/
 #endif /* LV_ENABLE_GC */
 
+/* ESP32 Heap Tracing Utilities */
+#if CONFIG_HEAP_TRACING
+#include "esp_heap_trace.h"
+#include "esp_heap_caps.h"
+#define CHECK_HEAP ESP_ERROR_CHECK(!heap_caps_check_integrity_all(true));
+#endif
+
 /*=================
    Misc. setting
  *=================*/
@@ -94,7 +102,7 @@ typedef void * lv_group_user_data_t;
 #define LV_USE_GPU              0               /*1: Enable GPU interface*/
 #define LV_USE_FILESYSTEM       0               /*1: Enable file system (might be required for images*/
 #define LV_USE_USER_DATA_SINGLE 1               /*1: Add a `user_data` to drivers and objects*/
-#define LV_USE_USER_DATA_MULTI  1               /*1: Add separate `user_data` for every callback*/
+#define LV_USE_USER_DATA_MULTI  0               /*1: Add separate `user_data` for every callback*/
 
 /*Compiler settings*/
 #define LV_ATTRIBUTE_TICK_INC IRAM_ATTR                  /* Define a custom attribute to `lv_tick_inc` function */
@@ -247,9 +255,16 @@ typedef uint8_t jolt_gui_obj_id_t;
 enum { FOREACH_JOLT_GUI_SCR_ID(GENERATE_ENUM) };
 typedef uint8_t jolt_gui_scr_id_t;
 
+/* Called whenever the event is LV_EVENT_SHORT_CLICKED */
+struct _lv_obj_t;
+typedef uint8_t (*lv_action_t)(struct _lv_obj_t * obj);
+
 typedef struct {
     uint8_t id:7;              /**< Either a screen id or an object id */
     uint8_t is_scr:1;          /**< 0=obj; 1=screen (parent object) */
+    struct {
+        lv_action_t short_clicked;            /**< cb to call when an option is clicked */
+    } cb;
     void *param;               /**< parameters to pass to callbacks */
 } lv_obj_user_data_t;          /*Declare the type of the user data of object (can be e.g. `void *`, `int`, `struct`)*/
 

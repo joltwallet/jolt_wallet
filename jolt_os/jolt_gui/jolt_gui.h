@@ -54,6 +54,7 @@
     #define CONFIG_JOLT_GUI_LOADING_BUF_SIZE 30
 #endif
 
+
 /**********************
  *   GLOBAL VARIABLES
  **********************/
@@ -181,7 +182,7 @@ lv_group_t *jolt_gui_group_enter_get();
  * @param[in] cb callback to execute
  * @return back button object
  */
-lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_event_cb_t cb);
+lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_action_t cb);
 
 /**
  * @brief executes callback on enter-button
@@ -189,7 +190,7 @@ lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_event_cb_t cb);
  * @param[in] cb callback to execute
  * @return back button object
  */
-lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_event_cb_t cb);
+lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb);
 
 /**
  * @brief executes callback on back and enter button
@@ -255,10 +256,10 @@ lv_res_t jolt_gui_send_enter_back(lv_obj_t *dummy);
 lv_res_t jolt_gui_send_enter_enter(lv_obj_t *dummy);
 
 /**
- * @brief alias for lv_obj_get_free_ptr
+ * @brief Get the free obj pointer in user_data
  */
 static inline void *jolt_gui_get_param( lv_obj_t *obj ){
-    return lv_obj_get_user_data( obj );
+    return lv_obj_get_user_data( obj )->param;
 }
 
 /*****************
@@ -293,7 +294,7 @@ void jolt_gui_sem_give();
  * @param[in] parent Any LVGL object who's children we want to search
  * @param[in] id ID we are searching for.
  */
-lv_obj_t *jolt_gui_find(lv_obj_t *parent, LV_OBJ_FREE_NUM_TYPE id);
+lv_obj_t *jolt_gui_find(lv_obj_t *parent, jolt_gui_obj_id_t id);
 
 /**
  * @brief Convert the enumerated value to a constant string 

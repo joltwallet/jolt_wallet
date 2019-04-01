@@ -97,7 +97,7 @@ uint32_t jolt_gui_scr_digit_entry_get_int(lv_obj_t *parent);
  * @param[in] parent digit-entry screen
  * @param[in] callback
  */
-void jolt_gui_scr_digit_entry_set_back_action(lv_obj_t *parent, lv_event_cb_t cb);
+void jolt_gui_scr_digit_entry_set_back_action(lv_obj_t *parent, lv_action_t cb);
 
 /**
  * @brief Sets the action when enter is pressed on the right-most digit. 
@@ -109,7 +109,7 @@ void jolt_gui_scr_digit_entry_set_back_action(lv_obj_t *parent, lv_event_cb_t cb
  * @param[in] parent digit-entry screen
  * @param[in] callback
  */
-void jolt_gui_scr_digit_entry_set_enter_action(lv_obj_t *parent, lv_event_cb_t cb);
+void jolt_gui_scr_digit_entry_set_enter_action(lv_obj_t *parent, lv_action_t cb);
 
 /**
  * @brief Sets the currently focused digit pos digits from the right. 0 for the right most digit.
