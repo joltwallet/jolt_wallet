@@ -73,6 +73,8 @@
 #define CHECK_HEAP ESP_ERROR_CHECK(!heap_caps_check_integrity_all(true));
 #endif
 
+#define LV_LOG( ... ) ESP_LOGI("lvgl_internal", __VA_ARGS__);
+
 /*=================
    Misc. setting
  *=================*/

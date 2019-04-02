@@ -7,6 +7,10 @@ static const char TAG[] = "display.c";
 static ssd1306_t disp_hal = { 0 };
 
 void display_init() {
+    static lv_disp_drv_t lv_disp_drv;
+    static lv_disp_buf_t disp_buf;
+    static lv_color_t buf[LV_HOR_RES_MAX*8];
+
     /* Set reset pin as output */
     gpio_config_t io_config;
     io_config.pin_bit_mask = (1 << CONFIG_JOLT_DISPLAY_PIN_RST);
@@ -20,8 +24,8 @@ void display_init() {
     disp_hal.screen    = SSD1306_SCREEN;
     disp_hal.i2c_dev   = CONFIG_JOLT_DISPLAY_ADDRESS;
     disp_hal.rst_pin   = CONFIG_JOLT_DISPLAY_PIN_RST;
-    disp_hal.width     = LV_HOR_RES;
-    disp_hal.height    = LV_VER_RES;
+    disp_hal.width     = LV_HOR_RES_MAX;
+    disp_hal.height    = LV_VER_RES_MAX;
     ESP_ERROR_CHECK(ssd1306_init(&disp_hal));
 
     /*inverse screen (180°) */
@@ -34,10 +38,11 @@ void display_init() {
     ssd1306_set_segment_remapping_enabled(&disp_hal, true);
 #endif
 
-    static lv_disp_drv_t lv_disp_drv;
     lv_disp_drv_init(&lv_disp_drv);
+    lv_disp_buf_init(&disp_buf, buf, NULL, LV_HOR_RES_MAX * 8);    /*Initialize the display buffer*/
+    lv_disp_drv.buffer = &disp_buf;
     lv_disp_drv.flush_cb = ssd1306_flush;
-    lv_disp_drv.set_px_cb = ssd1306_vdb_wr;
+    lv_disp_drv.set_px_cb = ssd1306_vdb_wr; // do we need this
     lv_disp_drv.rounder_cb = ssd1306_rounder;
     lv_disp_drv_register(&lv_disp_drv);
 
