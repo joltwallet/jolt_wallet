@@ -21,7 +21,7 @@ static void destroy_list() {
 
 static lv_res_t sw_en_cb(lv_obj_t *btn) {
     uint8_t state;
-    state = lv_sw_toggle_anim(sw_en);
+    state = lv_sw_toggle(sw_en, true);
     storage_set_u8(state, "user", "wifi_en");
 
     if( state ) {
@@ -44,11 +44,11 @@ lv_res_t menu_wifi_create(lv_obj_t *btn) {
     sw_en = jolt_gui_scr_menu_add_sw( btn_en );
 
     if( wifi_en ) {
-        lv_sw_on( sw_en );
+        lv_sw_on( sw_en, false );
         create_list();
     }
     else{
-        lv_sw_off( sw_en );
+        lv_sw_off( sw_en, false );
     }
 
     return LV_RES_OK;

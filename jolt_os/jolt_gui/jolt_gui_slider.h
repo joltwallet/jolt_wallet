@@ -34,7 +34,7 @@ lv_obj_t *jolt_gui_scr_slider_get_slider(lv_obj_t *parent);
  * @param[in] cb callback to execute when slider changes position
  * @return slider screen
  */
-lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_event_cb_t cb);
+lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_action_t cb);
 
 /**
  * @brief Set the current slider value of a slider screen

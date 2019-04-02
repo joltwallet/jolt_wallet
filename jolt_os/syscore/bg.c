@@ -133,7 +133,7 @@ exit:
 }
 
 static lv_res_t abort_cb( lv_obj_t *btn ) {
-    QueueHandle_t queue = jolt_gui_get_param( btn );
+    QueueHandle_t queue = jolt_gui_obj_get_param( btn );
     jolt_bg_signal_t signal = JOLT_BG_ABORT;
     switch( xQueueSend(queue, &signal, 0) ) {
         case pdPASS:

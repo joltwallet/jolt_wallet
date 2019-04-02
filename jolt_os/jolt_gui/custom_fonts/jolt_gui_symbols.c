@@ -1,4 +1,4 @@
-#include "lvgl/lv_misc/lv_font.h"
+#include "lvgl/src/lv_misc/lv_font.h"
 
 /***********************************************************
  * jolt_gui_symbols.ttf 9 px Font in U+F000  .. U+F000 range

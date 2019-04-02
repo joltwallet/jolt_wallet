@@ -1,5 +1,5 @@
 
-#include "lvgl/lv_misc/lv_font.h"
+#include "lvgl/src/lv_misc/lv_font.h"
 
 #if USE_LV_FONT_CROX3HB_NUMERIC != 0  /*Can be enabled in lv_conf.h*/
 

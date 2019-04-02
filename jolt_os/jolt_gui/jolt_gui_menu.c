@@ -12,7 +12,7 @@
 #define LABEL_LONG_MODE_SELECTED LV_LABEL_LONG_ROLL 
 static const char TAG[] = "scr_menu";
 
-static lv_signal_func_t old_list_signal = NULL;     /*Store the old signal function*/
+static lv_signal_cb_t old_list_signal = NULL;     /*Store the old signal function*/
 
 static void set_selected_label_long_mode(lv_obj_t *list, lv_label_long_mode_t mode){
     JOLT_GUI_CTX{
@@ -33,7 +33,7 @@ static lv_res_t new_list_signal(lv_obj_t *list, lv_signal_t sign, void * param)
         if(res != LV_RES_OK) return res;
         set_selected_label_long_mode(list, LABEL_LONG_MODE_SELECTED);
     }
-    else if(sign == LV_SIGNAL_CONTROLL
+    else if(sign == LV_SIGNAL_CONTROL
                 && (c = *((char *)param), 
                         (c == LV_GROUP_KEY_RIGHT || c == LV_GROUP_KEY_DOWN
                         || c == LV_GROUP_KEY_LEFT || c == LV_GROUP_KEY_UP)) ){
@@ -60,7 +60,7 @@ lv_obj_t *jolt_gui_scr_menu_create(const char *title) {
             old_list_signal = lv_obj_get_signal_func(menu);
         }
         lv_style_t *sb_style = lv_obj_get_style(menu);
-        lv_obj_set_signal_func(menu, new_list_signal);
+        lv_obj_set_signal_cb(menu, new_list_signal);
         jolt_gui_obj_id_set(menu, JOLT_GUI_OBJ_ID_LIST);
         lv_obj_set_size(menu,
                 lv_obj_get_width(cont_body) - sb_style->body.padding.inner, lv_obj_get_height(cont_body));
@@ -96,11 +96,12 @@ lv_obj_t *jolt_gui_scr_menu_get_scr( lv_obj_t *btn ) {
 
 /* Adds an item to a Jolt Menu Screen */
 lv_obj_t *jolt_gui_scr_menu_add(lv_obj_t *par, const void *img_src,
-        const char *txt, lv_event_cb_t rel_action) {
+        const char *txt, lv_action_t rel_action) {
     lv_obj_t *btn = NULL;
     JOLT_GUI_CTX{
         lv_obj_t *list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list( par ));
-        btn = BREAK_IF_NULL(lv_list_add(list, img_src, txt, rel_action));
+        btn = BREAK_IF_NULL(lv_list_add(list, img_src, txt, jolt_gui_event_action_wrapper_cb));
+        lv_obj_get_user_data(btn)->cb.short_clicked = rel_action;
         lv_obj_t *label = BREAK_IF_NULL(lv_list_get_btn_label(btn));
         if( 1 == lv_list_get_size(list) ){
             lv_label_set_long_mode(label, LABEL_LONG_MODE_SELECTED);
@@ -108,7 +109,7 @@ lv_obj_t *jolt_gui_scr_menu_add(lv_obj_t *par, const void *img_src,
         else{
             lv_label_set_long_mode(label, LABEL_LONG_MODE_DEFAULT);
         }
-        lv_btn_set_fit(btn, false, false);
+        lv_btn_set_fit2(btn, false, false);
     }
     return btn;
 }

@@ -64,8 +64,10 @@ static void basic_init(void)
     def.body.grad_color = LV_COLOR_WHITE;
     def.body.radius = 0;
     def.body.opa = LV_OPA_COVER;
-    def.body.padding.hor = 1;
-    def.body.padding.ver = 1;
+    def.body.padding.left = 1;
+    def.body.padding.right = 1;
+    def.body.padding.top = 1;
+    def.body.padding.bottom = 1;
     def.body.padding.inner = 1;
     def.body.border.width = 0;
 
@@ -121,7 +123,8 @@ static void basic_init(void)
      * Scrollbar style *
      *******************/
     lv_style_copy(&scrollbar_style, &dark_plain);
-    scrollbar_style.body.padding.hor = -2; // Scrollbar distance from the Right 
+    scrollbar_style.body.padding.left = -2; // Scrollbar distance from the Right 
+    scrollbar_style.body.padding.right = -2; // Scrollbar distance from the Right 
     scrollbar_style.body.padding.inner = 3; // Scrollbar's Width 
 
     theme.style.bg = &def;
@@ -193,13 +196,17 @@ static void bar_init(void)
     static lv_style_t bg, indic;
 
     lv_style_copy(&bg, &light_frame_round);
-    bg.body.padding.hor = 3;
-    bg.body.padding.ver = 3;
+    bg.body.padding.left = 3;
+    bg.body.padding.right = 3;
+    bg.body.padding.top = 3;
+    bg.body.padding.bottom = 3;
 
     lv_style_copy(&indic, &dark_plain);
     indic.body.radius       = bg.body.radius;
-    indic.body.padding.hor  = 2;
-    indic.body.padding.ver  = 2;
+    indic.body.padding.left  = 2;
+    indic.body.padding.right  = 2;
+    indic.body.padding.top  = 2;
+    indic.body.padding.bottom  = 2;
     indic.body.border.width = 0;
 
     theme.style.bar.bg = &bg;
@@ -221,8 +228,10 @@ static void sw_init(void)
 #if USE_LV_SW != 0
     lv_style_t indic;
     lv_style_copy(&indic, theme.style.slider.indic);
-    indic.body.padding.hor = 0;
-    indic.body.padding.ver = 0;
+    indic.body.padding.left = 0;
+    indic.body.padding.right = 0;
+    indic.body.padding.top = 0;
+    indic.body.padding.bottom = 0;
 
     theme.style.sw.bg = theme.style.slider.bg;
     theme.style.sw.indic = &indic;
@@ -240,7 +249,8 @@ static void lmeter_init(void)
     lmeter_bg.body.empty = 1;
     lmeter_bg.body.main_color = LV_COLOR_BLACK;
     lmeter_bg.body.grad_color = LV_COLOR_BLACK;
-    lmeter_bg.body.padding.hor = LV_DPI / 20;
+    lmeter_bg.body.padding.left = LV_DPI / 20;
+    lmeter_bg.body.padding.right = LV_DPI / 20;
     lmeter_bg.body.padding.inner = LV_DPI / 8;
     lmeter_bg.line.color = LV_COLOR_WHITE;
     lmeter_bg.line.width = 1;
@@ -374,7 +384,8 @@ static void roller_init(void)
 #if USE_LV_ROLLER != 0
     static lv_style_t bg;
     lv_style_copy(&bg, &def);
-    bg.body.padding.hor = 3; // Width Padding of the entire roller
+    bg.body.padding.left = 3; // Width Padding of the entire roller
+    bg.body.padding.right = 3; // Width Padding of the entire roller
     bg.body.padding.inner = 0;
     bg.text.font = &lv_font_crox3hb_numeric;
     bg.text.line_space = 6; // Distance between options
@@ -403,8 +414,10 @@ static void win_init(void)
 #if USE_LV_WIN != 0
     static lv_style_t win_header;
     lv_style_copy(&win_header, &dark_plain);
-    win_header.body.padding.hor = LV_DPI / 30;
-    win_header.body.padding.ver = LV_DPI / 30;
+    win_header.body.padding.left = LV_DPI / 30;
+    win_header.body.padding.right = LV_DPI / 30;
+    win_header.body.padding.top = LV_DPI / 30;
+    win_header.body.padding.bottom = LV_DPI / 30;
 
     theme.style.win.bg = &def;
     theme.style.win.sb = &dark_plain;

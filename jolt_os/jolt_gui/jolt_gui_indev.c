@@ -8,7 +8,7 @@ static const char TAG[] = __FILE__;
 
 static QueueHandle_t input_queue;
 
-static bool easy_input_read(lv_indev_data_t *data) {
+static bool easy_input_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
     data->state = LV_INDEV_STATE_REL;
 
     uint64_t input_buf;
@@ -54,12 +54,11 @@ void jolt_gui_indev_init() {
     lv_indev_drv_init(&indev_drv);
 
     indev_drv.type = LV_INDEV_TYPE_KEYPAD;
-    indev_drv.read = easy_input_read;
+    indev_drv.read_cb = easy_input_read;
 
     group = jolt_gui_group_main_get();
 
     indev = lv_indev_drv_register(&indev_drv);
     lv_indev_set_group(indev, group);
 }
-
 

@@ -1,4 +1,4 @@
-#include "lvgl/lv_misc/lv_font.h"
+#include "lvgl/src/lv_misc/lv_font.h"
 
 #if USE_LV_FONT_PIXELMIX_7_LATIN_SUP != 0  /*Can be enabled in lv_conf.h*/
 

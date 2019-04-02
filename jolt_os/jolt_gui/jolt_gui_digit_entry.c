@@ -27,7 +27,7 @@ typedef struct {
 
 /* Static Variables */
 static const char TAG[] = "digit_entry";
-static lv_signal_func_t old_roller_signal = NULL;     /*Store the old signal function*/
+static lv_signal_cb_t old_roller_signal = NULL;     /*Store the old signal function*/
 
 /* Static Functions Declarations */
 static lv_obj_t *digit_create(lv_obj_t *parent);
@@ -35,15 +35,16 @@ static void loop_roller( lv_obj_t *rol);
 static unsigned concat_int(unsigned x, unsigned y);
 static lv_obj_t *create_dp(lv_obj_t *parent);
 
+// todo: deprecate this assuming native inf looping works properly
 static void loop_roller( lv_obj_t *rol) {
     /* Loops roller position */
     lv_roller_ext_t *rol_ext = lv_obj_get_ext_attr(rol);
     uint8_t id = rol_ext->ddlist.sel_opt_id;
     if( id < 10 ) { // todo refine loop point
-        lv_roller_set_selected(rol, id + 10, false);
+        //lv_roller_set_selected(rol, id + 10, false);
     }
     if( id > 25 ) { // todo refine loop point
-        lv_roller_set_selected(rol, id - 10, false);
+        //lv_roller_set_selected(rol, id - 10, false);
     }
 }
 
@@ -63,7 +64,7 @@ static lv_res_t new_roller_signal(lv_obj_t *roller, lv_signal_t sign, void * par
     else if(sign == LV_SIGNAL_DEFOCUS) {
         lv_roller_set_visible_row_count(roller, 1);
     }
-    else if(sign == LV_SIGNAL_CONTROLL){
+    else if(sign == LV_SIGNAL_CONTROL){
         char c = *((char *)param);
         
         loop_roller(ext->rollers[ext->sel]);
@@ -126,8 +127,8 @@ static lv_obj_t *digit_create(lv_obj_t *parent) {
             "9\n8\n7\n6\n5\n4\n3\n2\n1\n0"
             "\n9\n8\n7\n6\n5\n4\n3\n2\n1\n0"
             "\n9\n8\n7\n6\n5\n4\n3\n2\n1\n0"
-            "\n9\n8\n7\n6\n5\n4\n3\n2\n1\n0"
-            );
+            "\n9\n8\n7\n6\n5\n4\n3\n2\n1\n0",
+            true);
     lv_roller_set_selected(roller, 19, false); // Set it to the middle 0 entry
     lv_roller_set_visible_row_count(roller, 1);
     lv_roller_set_align(roller, LV_LABEL_ALIGN_CENTER);
@@ -144,7 +145,8 @@ static lv_obj_t *create_dp(lv_obj_t *parent){
         dp_style = &dp_style_obj;
         lv_style_copy(dp_style, lv_label_get_style(label));
         dp_style->text.font = &lv_font_crox3hb_numeric;
-        dp_style->body.padding.hor = 0;
+        dp_style->body.padding.left = 0;
+        dp_style->body.padding.right = 0;
     }
     lv_label_set_style(label, dp_style);
     lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
@@ -180,7 +182,8 @@ lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
             cont_body_style = &cont_body_style_obj;
             lv_style_copy(cont_body_style, lv_cont_get_style(cont_body));
             cont_body_style->body.padding.inner = 1;
-            cont_body_style->body.padding.hor = 0;
+            cont_body_style->body.padding.left = 0;
+            cont_body_style->body.padding.right = 0;
         }
         lv_cont_set_style(cont_body, cont_body_style);
         lv_cont_set_layout(cont_body, LV_LAYOUT_PRETTY);
@@ -213,7 +216,7 @@ lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
             if( NULL == old_roller_signal) {
                 old_roller_signal = lv_obj_get_signal_func(ext->rollers[i]);
             }
-            lv_obj_set_signal_func(ext->rollers[i], new_roller_signal);
+            lv_obj_set_signal_cb(ext->rollers[i], new_roller_signal);
         }
         if( 0 == pos ) {
             ext->decimal_point = create_dp(cont_body);

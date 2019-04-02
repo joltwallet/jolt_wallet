@@ -19,7 +19,7 @@ const jolt_version_t JOLT_JELF_VERSION = {
     .release = JOLT_VERSION_DEV,
 };
 
-const char *JOLT_OS_COMMIT = "8a13dc3486b2409a4368fa92041ae2790c03a09f";
+const char *JOLT_OS_COMMIT = "687c326cf7f4d9112a463728112b0c9651a51cb2";
 
 extern void *__fixunsdfsi;
 extern void *__floatunsidf;
@@ -165,17 +165,16 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_debug_obj_print ),
     EXPORT_SYMBOL( jolt_gui_err_to_str ),
     EXPORT_SYMBOL( jolt_gui_find ),
-    EXPORT_SYMBOL( jolt_gui_get_param ),
     EXPORT_SYMBOL( jolt_gui_group_add ),
     EXPORT_SYMBOL( jolt_gui_group_back_get ),
     EXPORT_SYMBOL( jolt_gui_group_enter_get ),
     EXPORT_SYMBOL( jolt_gui_group_main_get ),
-    EXPORT_SYMBOL( jolt_gui_obj_id_get ),
     EXPORT_SYMBOL( jolt_gui_obj_cont_body_create ),
     EXPORT_SYMBOL( jolt_gui_obj_del ),
+    EXPORT_SYMBOL( jolt_gui_obj_get_param ),
+    EXPORT_SYMBOL( jolt_gui_obj_id_get ),
     EXPORT_SYMBOL( jolt_gui_obj_parent_create ),
     EXPORT_SYMBOL( jolt_gui_obj_title_create ),
-    EXPORT_SYMBOL( jolt_gui_scr_id_get ),
     EXPORT_SYMBOL( jolt_gui_scr_bignum_create ),
     EXPORT_SYMBOL( jolt_gui_scr_del ),
     EXPORT_SYMBOL( jolt_gui_scr_digit_entry_create ),
@@ -185,6 +184,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_scr_digit_entry_get_int ),
     EXPORT_SYMBOL( jolt_gui_scr_digit_entry_set_pos ),
     EXPORT_SYMBOL( jolt_gui_scr_err_create ),
+    EXPORT_SYMBOL( jolt_gui_scr_id_get ),
     EXPORT_SYMBOL( jolt_gui_scr_loadingbar_autoupdate ),
     EXPORT_SYMBOL( jolt_gui_scr_loadingbar_create ),
     EXPORT_SYMBOL( jolt_gui_scr_loadingbar_update ),

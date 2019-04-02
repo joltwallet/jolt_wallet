@@ -44,7 +44,9 @@ void jolt_gui_scr_loadingbar_update(lv_obj_t *parent,
         if( percentage > 100 ) {
             percentage = 100;
         }
-        lv_bar_set_value_anim(bar_loading, percentage, CONFIG_JOLT_GUI_LOADINGBAR_ANIM_MS);
+        // todo: set animation time based on config value
+        //lv_bar_set_value_anim(bar_loading, percentage, CONFIG_JOLT_GUI_LOADINGBAR_ANIM_MS);
+        lv_bar_set_value(bar_loading, percentage, true);
         if( text ) {
             lv_label_set_text(label_loading, text);
         }
@@ -57,7 +59,7 @@ void jolt_gui_scr_loadingbar_update(lv_obj_t *parent,
 /* lv_task that periodically updates the loading screen */
 static void autoupdate_task(void *input) {
     lv_obj_t *scr = input;
-    autoupdate_param_t *param = lv_obj_get_free_ptr( scr );
+    autoupdate_param_t *param = jolt_gui_obj_get_param( scr );
     if( *(param->progress) <= 100 && *(param->progress) >= 0 ) {
         // The +10 makes it look better
         jolt_gui_scr_loadingbar_update(scr, NULL, NULL,
@@ -73,7 +75,8 @@ void jolt_gui_scr_loadingbar_autoupdate(lv_obj_t *parent, int8_t *progress) {
         return;
     }
     JOLT_GUI_CTX{
-        lv_obj_set_free_ptr(parent, param);
+        // todo: maybe set this as the loadingbar object param
+        jolt_gui_obj_set_param(parent, param);
         param->scr      = parent;
         param->progress = progress;
         param->task = lv_task_create(autoupdate_task, 100, LV_TASK_PRIO_HIGH, parent);
@@ -83,7 +86,7 @@ void jolt_gui_scr_loadingbar_autoupdate(lv_obj_t *parent, int8_t *progress) {
 /* Deletes the update task and free's its parameters. DOES NOT delete parent */
 void jolt_gui_scr_loadingbar_autoupdate_del(lv_obj_t *parent) {
     JOLT_GUI_CTX{
-        autoupdate_param_t *param = lv_obj_get_free_ptr( parent );
+        autoupdate_param_t *param = jolt_gui_obj_get_param( parent );
         if( NULL == param ) {
             break;
         }
@@ -108,7 +111,7 @@ lv_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
         lv_obj_set_size(bar, 
                 CONFIG_JOLT_GUI_LOADINGBAR_W, CONFIG_JOLT_GUI_LOADINGBAR_H);
         lv_obj_align(bar, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -10);
-        lv_bar_set_value(bar, 1);
+        lv_bar_set_value(bar, 1, true);
 
         /* Create Loading Label */
         lv_obj_t *label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));

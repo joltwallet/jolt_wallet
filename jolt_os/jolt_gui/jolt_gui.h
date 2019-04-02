@@ -196,11 +196,29 @@ lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb);
  * @brief executes callback on back and enter button
  * @param[in,out] parent screen parent object
  * @param[in] cb callback to execute
-
  */
 static inline void jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb) {
     jolt_gui_scr_set_enter_action(parent, cb);
     jolt_gui_scr_set_enter_action(parent, cb);
+}
+
+/**
+ * @brief Set lv_action_t cb
+ */
+void jolt_gui_obj_set_action(lv_obj_t *obj, lv_action_t cb);
+
+/**
+ * @brief Get the free obj pointer in user_data
+ */
+static inline void *jolt_gui_obj_get_param( lv_obj_t *obj ){
+    return lv_obj_get_user_data( obj )->param;
+}
+
+/**
+ * @brief set the free obj pointer in user_data
+ */
+static inline void jolt_gui_obj_set_param( lv_obj_t *obj, void *param ) {
+    lv_obj_get_user_data(obj)->param = param;
 }
 
 /**
@@ -255,13 +273,6 @@ lv_res_t jolt_gui_send_enter_back(lv_obj_t *dummy);
  */
 lv_res_t jolt_gui_send_enter_enter(lv_obj_t *dummy);
 
-/**
- * @brief Get the free obj pointer in user_data
- */
-static inline void *jolt_gui_get_param( lv_obj_t *obj ){
-    return lv_obj_get_user_data( obj )->param;
-}
-
 /*****************
  * System Events *
  *****************/
@@ -304,9 +315,23 @@ const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val);
 
 /**
  * @brief Convert the enumerated value to a constant string 
- * @parami[in] screen ID value
+ * @param[in] screen ID value
  */
 const char *jolt_gui_scr_id_str(jolt_gui_scr_id_t val);
+
+/**
+ * @brief Forwards callback to:
+ *
+ * lv_obj_get_user_data(parent)->cb.short_clicked = cb;
+ *
+ * where the cb only takes in the object, not the event type.
+ *
+ * This provides the programmer less options, but simplifies common actions.
+ *
+ * @param[in,out] obj
+ * @param event 
+ */
+void jolt_gui_event_action_wrapper_cb( lv_obj_t *obj, lv_event_t event);
 
 /********************
  * Meta Programming *

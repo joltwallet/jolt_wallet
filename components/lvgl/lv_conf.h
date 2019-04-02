@@ -242,11 +242,12 @@ typedef uint8_t jolt_gui_obj_id_t;
 #define FOREACH_JOLT_GUI_SCR_ID(x) \
     x(JOLT_GUI_SCR_ID_UNINITIALIZED)   /**<  */ \
     x(JOLT_GUI_SCR_ID_INVALID)          /**< Error handling */ \
-    x(JOLT_GUI_SCR_ID_MENU)            /**<  */ \
-    x(JOLT_GUI_SCR_ID_SCROLL)          /**<  */ \
     x(JOLT_GUI_SCR_ID_DIGIT_ENTRY)     /**<  */ \
     x(JOLT_GUI_SCR_ID_LOADINGBAR)      /**<  */ \
+    x(JOLT_GUI_SCR_ID_MENU)            /**<  */ \
     x(JOLT_GUI_SCR_ID_PRELOADING)      /**<  */ \
+    x(JOLT_GUI_SCR_ID_SCROLL)          /**<  */ \
+    x(JOLT_GUI_SCR_ID_SLIDER)          /**<  */ \
     x(JOLT_GUI_SCR_ID_MAX)             /**<  */
 
 /**
