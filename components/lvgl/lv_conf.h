@@ -163,10 +163,10 @@ typedef void * lv_indev_drv_user_data_t;                /*Type of user data in t
 #define LV_USE_FONT_DEJAVU_10_CYRILLIC     0
 #define LV_USE_FONT_SYMBOL_10              0
 
-#define LV_USE_FONT_DEJAVU_20              4
-#define LV_USE_FONT_DEJAVU_20_LATIN_SUP    4
-#define LV_USE_FONT_DEJAVU_20_CYRILLIC     4
-#define LV_USE_FONT_SYMBOL_20              4
+#define LV_USE_FONT_DEJAVU_20              0
+#define LV_USE_FONT_DEJAVU_20_LATIN_SUP    0
+#define LV_USE_FONT_DEJAVU_20_CYRILLIC     0
+#define LV_USE_FONT_SYMBOL_20              0
 
 #define LV_USE_FONT_DEJAVU_30              0
 #define LV_USE_FONT_DEJAVU_30_LATIN_SUP    0

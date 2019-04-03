@@ -1,3 +1,6 @@
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#include "esp_log.h"
+
 #include "stdio.h"
 #include "jolt_gui.h"
 
@@ -252,9 +255,11 @@ lv_obj_t *_jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb, lv_group_t 
         lv_group_focus_obj(btn);
 
         if( g == group.enter ) {
+            ESP_LOGD(TAG, "Creating enter button");
             jolt_gui_obj_id_set(btn, JOLT_GUI_OBJ_ID_ENTER);
         }
         else if ( g == group.back) {
+            ESP_LOGD(TAG, "Creating back button");
             jolt_gui_obj_id_set(btn, JOLT_GUI_OBJ_ID_BACK);
         }
     }
@@ -315,6 +320,7 @@ lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb) {
 
 void jolt_gui_obj_set_action(lv_obj_t *obj, lv_action_t cb) {
     lv_obj_set_event_cb(obj, jolt_gui_event_action_wrapper_cb);
+    ESP_LOGD(TAG, "Setting cb.short_clicked to %p", cb);
     lv_obj_get_user_data(obj)->cb.short_clicked = cb;
 }
 
@@ -335,18 +341,22 @@ void jolt_gui_scr_set_enter_param(lv_obj_t *parent, void *param) {
 }
 
 lv_res_t jolt_gui_send_enter_main(lv_obj_t *dummy) {
+    ESP_LOGD(TAG, "Sending LV_GROUP_KEY_ENTER to group.main");
     return lv_group_send_data(group.main, LV_GROUP_KEY_ENTER);
 }
 
 lv_res_t jolt_gui_send_left_main(lv_obj_t *dummy) {
+    ESP_LOGD(TAG, "Sending LV_GROUP_KEY_LEFT to group.main");
     return lv_group_send_data(group.main, LV_GROUP_KEY_LEFT);
 }
 
 lv_res_t jolt_gui_send_enter_back(lv_obj_t *dummy) {
+    ESP_LOGD(TAG, "Sending LV_GROUP_KEY_ENTER to group.back");
     return lv_group_send_data(group.back, LV_GROUP_KEY_ENTER);
 
 }
 lv_res_t jolt_gui_send_enter_enter(lv_obj_t *dummy) {
+    ESP_LOGD(TAG, "Sending LV_GROUP_KEY_ENTER to group.enter");
     return lv_group_send_data(group.enter, LV_GROUP_KEY_ENTER);
 }
 
@@ -354,6 +364,7 @@ lv_res_t jolt_gui_send_enter_enter(lv_obj_t *dummy) {
  * MISC *
  ********/
 static SemaphoreHandle_t jolt_gui_mutex = NULL;
+
 void jolt_gui_sem_take() {
     if( NULL == jolt_gui_mutex ){
         /* Create the jolt_gui_mutex; avoids need to explicitly initialize */
@@ -374,7 +385,8 @@ void jolt_gui_sem_give() {
 lv_obj_t *jolt_gui_find(lv_obj_t *parent, jolt_gui_obj_id_t id) {
     lv_obj_t *child = NULL;
     JOLT_GUI_CTX{
-        ESP_LOGD(TAG, "Searchng the %d children of %p", lv_obj_count_children(parent), parent);
+        ESP_LOGD(TAG, "Searching the %d children of %p for %s", 
+                lv_obj_count_children(parent), parent, jolt_gui_obj_id_str(id));
         while( NULL != (child = lv_obj_get_child(parent, child)) ) {
             jolt_gui_obj_id_t child_id;
             child_id = jolt_gui_obj_id_get( child );

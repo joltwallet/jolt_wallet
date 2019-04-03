@@ -1,3 +1,6 @@
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//
+#include "esp_log.h"
 #include "stdbool.h"
 #include "jolt_gui/jolt_gui.h"
 #include "freertos/FreeRTOS.h"
@@ -42,10 +45,10 @@ static bool easy_input_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
 
 void jolt_gui_indev_init() {
     /* Setup Input Button Debouncing Code */
-    easy_input_queue_init(&input_queue);
-    easy_input_run( &input_queue );
-
     lv_group_t *group;
+
+    easy_input_queue_init( &input_queue );
+    easy_input_run( &input_queue );
 
     jolt_gui_group_create();
 
@@ -58,7 +61,7 @@ void jolt_gui_indev_init() {
 
     group = jolt_gui_group_main_get();
 
-    indev = lv_indev_drv_register(&indev_drv);
+    indev = lv_indev_drv_register( &indev_drv );
     lv_indev_set_group(indev, group);
 }
 

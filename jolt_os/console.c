@@ -3,7 +3,7 @@
  https://www.joltwallet.com/
  */
 
-#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include "sodium.h"
 #include "freertos/FreeRTOS.h"

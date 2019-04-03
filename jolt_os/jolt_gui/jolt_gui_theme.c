@@ -35,7 +35,6 @@ static lv_style_t dark_plain_round;
 static lv_style_t scrollbar_style;
 
 /*Saved input parameters*/
-static uint16_t _hue;
 static const lv_font_t * _font;
 
 /**********************
@@ -64,12 +63,17 @@ static void basic_init(void)
     def.body.grad_color = LV_COLOR_WHITE;
     def.body.radius = 0;
     def.body.opa = LV_OPA_COVER;
+
     def.body.padding.left = 1;
     def.body.padding.right = 1;
     def.body.padding.top = 1;
     def.body.padding.bottom = 1;
     def.body.padding.inner = 1;
-    def.body.border.width = 0;
+
+    def.body.border.color = LV_COLOR_WHITE;
+    def.body.border.width = 1;
+    def.body.border.opa = LV_OPA_COVER;
+    def.body.border.part = LV_BORDER_NONE;
 
     /* Text Configuration */
     def.text.font         = _font; // de
@@ -102,9 +106,9 @@ static void basic_init(void)
     lv_style_copy(&light_frame_round, &light_frame);
     light_frame_round.body.radius = LV_RADIUS_CIRCLE;
 
-    /*****************************************
-     * dark_plain: black body, white borders *
-     *****************************************/
+    /*****************************************************
+     * dark_plain: black body, white borders, white text *
+     *****************************************************/
     lv_style_copy(&dark_plain, &def);
     dark_plain.body.main_color   = LV_COLOR_BLACK;
     dark_plain.body.grad_color   = LV_COLOR_BLACK;
@@ -123,6 +127,9 @@ static void basic_init(void)
      * Scrollbar style *
      *******************/
     lv_style_copy(&scrollbar_style, &dark_plain);
+    scrollbar_style.body.border.width = 1;
+    scrollbar_style.body.border.opa = LV_OPA_COVER;
+    scrollbar_style.body.border.part = LV_BORDER_FULL;
     scrollbar_style.body.padding.left = -2; // Scrollbar distance from the Right 
     scrollbar_style.body.padding.right = -2; // Scrollbar distance from the Right 
     scrollbar_style.body.padding.inner = 3; // Scrollbar's Width 
@@ -131,25 +138,32 @@ static void basic_init(void)
     theme.style.panel = &def;
 }
 
-#if USE_LV_GROUP
-static void style_mod(lv_style_t * style) {
+#if LV_USE_GROUP
+static void style_mod(lv_group_t * group, lv_style_t * style) {
     /* Do Nothing */
+    (void) group;
+    //(void) style;
+    style->body.border.opa = LV_OPA_COVER;
+    style->body.border.color = LV_COLOR_BLACK;
+    style->body.border.width = 5;
 }
-static void style_mod_edit(lv_style_t * style) {
+static void style_mod_edit(lv_group_t * group, lv_style_t * style) {
     /* Do Nothing */
+    (void) group;
+    (void) style;
 }
 #endif
 
 static void cont_init(void)
 {
-#if USE_LV_CONT != 0
+#if LV_USE_CONT != 0
     theme.style.cont = &def;
 #endif
 }
 
 static void btn_init(void)
 {
-#if USE_LV_BTN != 0
+#if LV_USE_BTN != 0
     theme.style.btn.rel = &def;
     theme.style.btn.pr = &dark_plain;
     theme.style.btn.tgl_rel = &dark_plain;
@@ -161,7 +175,7 @@ static void btn_init(void)
 
 static void label_init(void)
 {
-#if USE_LV_LABEL != 0
+#if LV_USE_LABEL != 0
     theme.style.label.prim = NULL;
     theme.style.label.sec = NULL;
     theme.style.label.hint = NULL;
@@ -170,7 +184,7 @@ static void label_init(void)
 
 static void img_init(void)
 {
-#if USE_LV_IMG != 0
+#if LV_USE_IMG != 0
     theme.style.img.light = &def;
     theme.style.img.dark = &dark_plain;
 #endif
@@ -178,21 +192,21 @@ static void img_init(void)
 
 static void line_init(void)
 {
-#if USE_LV_LINE != 0
+#if LV_USE_LINE != 0
     theme.style.line.decor = NULL;
 #endif
 }
 
 static void led_init(void)
 {
-#if USE_LV_LED != 0
+#if LV_USE_LED != 0
     theme.style.led = &dark_plain_round;
 #endif
 }
 
 static void bar_init(void)
 {
-#if USE_LV_BAR
+#if LV_USE_BAR
     static lv_style_t bg, indic;
 
     lv_style_copy(&bg, &light_frame_round);
@@ -216,7 +230,7 @@ static void bar_init(void)
 
 static void slider_init(void)
 {
-#if USE_LV_SLIDER != 0
+#if LV_USE_SLIDER != 0
     theme.style.slider.bg    = theme.style.bar.bg;
     theme.style.slider.indic = theme.style.bar.indic;
     theme.style.slider.knob  = &light_frame_round;
@@ -225,7 +239,7 @@ static void slider_init(void)
 
 static void sw_init(void)
 {
-#if USE_LV_SW != 0
+#if LV_USE_SW != 0
     lv_style_t indic;
     lv_style_copy(&indic, theme.style.slider.indic);
     indic.body.padding.left = 0;
@@ -243,7 +257,7 @@ static void sw_init(void)
 
 static void lmeter_init(void)
 {
-#if USE_LV_LMETER != 0
+#if LV_USE_LMETER != 0
     static lv_style_t lmeter_bg;
     lv_style_copy(&lmeter_bg, &def);
     lmeter_bg.body.empty = 1;
@@ -261,7 +275,7 @@ static void lmeter_init(void)
 
 static void gauge_init(void)
 {
-#if USE_LV_GAUGE != 0
+#if LV_USE_GAUGE != 0
     static lv_style_t gauge_bg;
     lv_style_copy(&gauge_bg, theme.style.lmeter);
     gauge_bg.line.color = LV_COLOR_BLACK;
@@ -273,14 +287,14 @@ static void gauge_init(void)
 
 static void chart_init(void)
 {
-#if USE_LV_CHART
+#if LV_USE_CHART
     theme.style.chart = &def;
 #endif
 }
 
 static void calendar_init(void)
 {
-#if USE_LV_CALENDAR
+#if LV_USE_CALENDAR
     static lv_style_t box;
     lv_style_copy(&box, &def);
     box.body.padding.ver = LV_DPI / 20;
@@ -293,7 +307,7 @@ static void calendar_init(void)
 
 static void cb_init(void)
 {
-#if USE_LV_CB != 0
+#if LV_USE_CB != 0
     theme.style.cb.bg = &lv_style_transp;
     theme.style.cb.box.rel = &def;
     theme.style.cb.box.pr = &dark_plain;
@@ -305,7 +319,7 @@ static void cb_init(void)
 
 static void btnm_init(void)
 {
-#if USE_LV_BTNM
+#if LV_USE_BTNM
     theme.style.btnm.bg = &def;
     theme.style.btnm.btn.rel = &def;
     theme.style.btnm.btn.pr = &dark_plain;
@@ -317,7 +331,7 @@ static void btnm_init(void)
 
 static void kb_init(void)
 {
-#if USE_LV_KB
+#if LV_USE_KB
     theme.style.kb.bg = &lv_style_transp_fit;
     theme.style.kb.btn.rel = &def;
     theme.style.kb.btn.pr = &def;
@@ -329,7 +343,7 @@ static void kb_init(void)
 
 static void mbox_init(void)
 {
-#if USE_LV_MBOX
+#if LV_USE_MBOX
     theme.style.mbox.bg = &dark_plain;
     theme.style.mbox.btn.bg = &lv_style_transp_fit;
     theme.style.mbox.btn.rel = &def;
@@ -339,7 +353,7 @@ static void mbox_init(void)
 
 static void page_init(void)
 {
-#if USE_LV_PAGE
+#if LV_USE_PAGE
     theme.style.page.bg = &def;
     theme.style.page.scrl = &def;
     theme.style.page.sb = &scrollbar_style;
@@ -348,7 +362,7 @@ static void page_init(void)
 
 static void ta_init(void)
 {
-#if USE_LV_TA
+#if LV_USE_TA
     theme.style.ta.area = &def;
     theme.style.ta.oneline = &def;
     theme.style.ta.cursor = NULL;     /*Let library to calculate the cursor's style*/
@@ -358,21 +372,21 @@ static void ta_init(void)
 
 static void list_init(void)
 {
-#if USE_LV_LIST != 0
+#if LV_USE_LIST != 0
     theme.style.list.sb = &scrollbar_style;
     theme.style.list.bg = &def;
     theme.style.list.scrl = &def;
-    theme.style.list.btn.rel = &def;
-    theme.style.list.btn.pr = &dark_plain;
+    theme.style.list.btn.rel     = &def;
+    theme.style.list.btn.pr      = &dark_plain;
     theme.style.list.btn.tgl_rel = &dark_plain;
-    theme.style.list.btn.tgl_pr = &def;
-    theme.style.list.btn.ina = &def;
+    theme.style.list.btn.tgl_pr  = &def;
+    theme.style.list.btn.ina     = &def;
 #endif
 }
 
 static void ddlist_init(void)
 {
-#if USE_LV_DDLIST != 0
+#if LV_USE_DDLIST != 0
     theme.style.ddlist.bg = &def;
     theme.style.ddlist.sel = &dark_plain;
     theme.style.ddlist.sb = &dark_plain;
@@ -381,7 +395,7 @@ static void ddlist_init(void)
 
 static void roller_init(void)
 {
-#if USE_LV_ROLLER != 0
+#if LV_USE_ROLLER != 0
     static lv_style_t bg;
     lv_style_copy(&bg, &def);
     bg.body.padding.left = 3; // Width Padding of the entire roller
@@ -397,7 +411,7 @@ static void roller_init(void)
 
 static void tabview_init(void)
 {
-#if USE_LV_TABVIEW != 0
+#if LV_USE_TABVIEW != 0
     theme.style.tabview.bg = &def;
     theme.style.tabview.indic = &def;
     theme.style.tabview.btn.bg = &lv_style_transp_fit;
@@ -411,7 +425,7 @@ static void tabview_init(void)
 
 static void win_init(void)
 {
-#if USE_LV_WIN != 0
+#if LV_USE_WIN != 0
     static lv_style_t win_header;
     lv_style_copy(&win_header, &dark_plain);
     win_header.body.padding.left = LV_DPI / 30;
@@ -443,46 +457,50 @@ static void win_init(void)
  */
 lv_theme_t * jolt_gui_theme_init(uint16_t hue, const lv_font_t * font)
 {
+    (void) hue;
     if(font == NULL) font = LV_FONT_DEFAULT;
 
-    _hue = hue;
     _font = font;
 
+#if 1
     /*For backward compatibility initialize all theme elements with a default style */
-    uint16_t i;
-    lv_style_t ** style_p = (lv_style_t **) &theme.style;
-    for(i = 0; i < sizeof(lv_theme_t) / sizeof(lv_style_t *); i++) {
-        *style_p = &def;
-        style_p++;
+    {
+        lv_style_t ** style_p = (lv_style_t **) &theme.style;
+        for(uint16_t i = 0; i < LV_THEME_STYLE_COUNT; i++) {
+            *style_p = &def;
+            style_p++;
+        }
     }
+#endif
 
     basic_init();
-    cont_init();
-    btn_init();
-    label_init();
-    img_init();
-    line_init();
-    led_init();
+
     bar_init();
-    slider_init();
-    sw_init();
-    lmeter_init();
-    gauge_init();
-    chart_init();
+    btn_init();
+    btnm_init();
     calendar_init();
     cb_init();
-    btnm_init();
+    chart_init();
+    cont_init();
+    ddlist_init();
+    gauge_init();
+    img_init();
     kb_init();
+    label_init();
+    led_init();
+    line_init();
+    list_init();
+    lmeter_init();
     mbox_init();
     page_init();
-    ta_init();
-    list_init();
-    ddlist_init();
     roller_init();
+    slider_init();
+    sw_init();
+    ta_init();
     tabview_init();
     win_init();
 
-#if USE_LV_GROUP
+#if LV_USE_GROUP
     theme.group.style_mod = style_mod;
     theme.group.style_mod_edit = style_mod_edit;
 #endif
