@@ -17,7 +17,10 @@
 #define JOLT_GUI_SW_CONT_WIDTH (JOLT_GUI_SW_LEFT_PADDING + JOLT_GUI_SW_RIGHT_PADDING + JOLT_GUI_SW_WIDTH)
 
 /**
- * @brief Creates a scrollable menu that options can be added to
+ * @brief Creates a scrollable menu that options can be added to.
+ *
+ * Default event handler: jolt_gui_event_del
+ *
  * @param[in] title title-bar string
  * @return menu screen
  */

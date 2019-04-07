@@ -75,6 +75,7 @@ lv_obj_t *jolt_gui_scr_menu_create(const char *title) {
         lv_obj_align(menu, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
 
         jolt_gui_group_add( menu );
+        jolt_gui_scr_set_event_cb(parent, jolt_gui_event_del);
     }
     return parent;
 }

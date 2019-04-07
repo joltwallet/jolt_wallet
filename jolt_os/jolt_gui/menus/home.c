@@ -35,10 +35,6 @@ static void launch_file_proxy(lv_obj_t *btn, lv_event_t event) {
     }
 }
 
-static void main_menu_event_cb( lv_obj_t *obj, lv_event_t event) {
-    ESP_LOGD(TAG, "main menu event detected %d.", event);
-}
-
 void jolt_gui_menu_home_create() {
     // Find and Register all user apps
     char **fns = NULL;
@@ -72,7 +68,7 @@ void jolt_gui_menu_home_create() {
     jolt_gui_scr_menu_add(main_menu, NULL, "Alphabet", jolt_gui_test_alphabet_create);
     jolt_gui_scr_menu_add(main_menu, NULL, "Https", jolt_gui_test_https_create);
 #endif
-    jolt_gui_scr_set_event_cb(main_menu, main_menu_event_cb);
+    jolt_gui_scr_set_event_cb(main_menu, NULL); // don't allow the home screen to be deleted.
 }
 
 /* Refreshes the home menu.

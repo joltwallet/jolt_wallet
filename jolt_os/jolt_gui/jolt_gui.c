@@ -202,11 +202,11 @@ static lv_obj_t *jolt_gui_scr_get_active(lv_obj_t *parent) {
     lv_obj_t *obj = NULL;
     JOLT_GUI_CTX{
         /* Find the BODY CONT */
-        lv_obj_t *cont_body = JOLT_GUI_FIND_AND_CHECK( obj, JOLT_GUI_OBJ_ID_CONT_BODY );
+        lv_obj_t *cont_body = JOLT_GUI_FIND_AND_CHECK( parent, JOLT_GUI_OBJ_ID_CONT_BODY );
 
         /* Find the child thats in the group */
         lv_obj_t *child = NULL;
-        while( NULL != (child = lv_obj_get_child(parent, child)) ) {
+        while( NULL != (child = lv_obj_get_child(cont_body, child)) ) {
             if( group == lv_obj_get_group(child) ) {
                 obj = child;
                 break;
@@ -215,6 +215,9 @@ static lv_obj_t *jolt_gui_scr_get_active(lv_obj_t *parent) {
     }
     if( NULL == obj ) {
         ESP_LOGW(TAG, "Couldn't find screen's active object.");
+    }
+    else {
+        ESP_LOGD(TAG, "Active object: %p", obj);
     }
     return obj;
 }
@@ -234,6 +237,12 @@ void jolt_gui_scr_set_active_param( lv_obj_t *parent, void *param ) {
         if( NULL != active ) {
             jolt_gui_obj_set_param(active, param);
         }
+    }
+}
+
+void jolt_gui_event_del( lv_obj_t *obj, lv_event_t event) {
+    if( LV_EVENT_CANCEL == event ) {
+        jolt_gui_scr_del();
     }
 }
 
@@ -261,6 +270,10 @@ void jolt_gui_sem_give() {
  * Returns NULL if child not found. */
 lv_obj_t *jolt_gui_find(lv_obj_t *parent, jolt_gui_obj_id_t id) {
     lv_obj_t *child = NULL;
+    if( NULL == parent ) {
+        ESP_LOGW(TAG, "Cannot search a NULL pointer.");
+        return NULL;
+    }
     JOLT_GUI_CTX{
         ESP_LOGD(TAG, "Searching the %d children of %p for %s", 
                 lv_obj_count_children(parent), parent, jolt_gui_obj_id_str(id));
