@@ -55,17 +55,16 @@ static void vault_success_cb(void *dummy) {
     jolt_cmd_return(0);
 }
 
-static lv_res_t prompt_1_back_cb(lv_obj_t *btn){
-    clear_vars();
-    jolt_gui_scr_del( );
-    jolt_cmd_return(-1);
-    return LV_RES_INV;
-}
-
-static lv_res_t prompt_1_enter_cb(lv_obj_t *btn){
-    jolt_gui_scr_del( );
-    jolt_h_settings_vault_set(vault_fail_cb, vault_success_cb, NULL);
-    return LV_RES_INV;
+static void prompt_1_cb(lv_obj_t *btn, lv_event_t event){
+    if( LV_EVENT_SHORT_CLICKED == event ) {
+        jolt_gui_scr_del( );
+        jolt_h_settings_vault_set(vault_fail_cb, vault_success_cb, NULL);
+    }
+    else if( LV_EVENT_CANCEL == event ) {
+        clear_vars();
+        jolt_gui_scr_del( );
+        jolt_cmd_return(-1);
+    }
 }
 
 /* Non-blocking */
@@ -112,8 +111,7 @@ void set_wifi_credentials(const char *ssid, const char *pass) {
     snprintf(buf, sizeof(buf), JOLT_TEXT_WIFI_CRED_UPDATE_PROMPT_1,
             target_ssid, target_pass);
     lv_obj_t *scr = jolt_gui_scr_text_create( title, buf );
-    jolt_gui_scr_set_back_action( scr, prompt_1_back_cb );
-    jolt_gui_scr_set_enter_action( scr, prompt_1_enter_cb );
+    jolt_gui_scr_set_event_cb( scr, prompt_1_cb );
 
     return;
 

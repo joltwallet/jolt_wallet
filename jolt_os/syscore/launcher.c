@@ -36,7 +36,7 @@ static struct {
     bool loading;             /* True until app actually begins executing */
 } app_cache = { 0 };
 
-static lv_res_t launch_app_exit(lv_obj_t *btn);
+static void launch_app_cb(lv_obj_t *btn, lv_event_t event);
 static void launch_app_from_store(void *dummy);
 
 static void launch_app_cache_clear(){
@@ -235,22 +235,21 @@ static void launch_app_from_store(void *dummy) {
     }
 
     if( NULL != app_cache.scr ) {
-        jolt_gui_scr_set_back_action(app_cache.scr, launch_app_exit);
+        jolt_gui_scr_set_event_cb(app_cache.scr, launch_app_cb);
     }
 }
 
-static lv_res_t launch_app_exit(lv_obj_t *btn) {
-    /* Mapped to back button of app's main menu */
-    if( NULL != app_cache.scr ) {
-        ESP_LOGI(TAG, "Deleting App Screen.");
-        lv_obj_del(app_cache.scr);
-        app_cache.scr = NULL;
-        launch_dec_ref_ctr();
-        return LV_RES_INV;
-    }
-    else{
-        launch_dec_ref_ctr();
-        return LV_RES_OK;
+static void launch_app_cb(lv_obj_t *btn, lv_event_t event) {
+    if( LV_EVENT_CANCEL == event ) {
+        if( NULL != app_cache.scr ) {
+            ESP_LOGI(TAG, "Deleting App Screen.");
+            lv_obj_del(app_cache.scr);
+            app_cache.scr = NULL;
+            launch_dec_ref_ctr();
+        }
+        else{
+            launch_dec_ref_ctr();
+        }
     }
 }
 

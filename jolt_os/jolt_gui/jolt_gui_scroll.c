@@ -35,14 +35,11 @@ lv_obj_t *jolt_gui_scr_scroll_create(const char *title) {
         lv_obj_set_size(page, LV_HOR_RES, LV_VER_RES - CONFIG_JOLT_GUI_STATUSBAR_H);
         lv_obj_align(page, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
         lv_page_set_sb_mode(page, LV_SB_MODE_AUTO);
-        jolt_gui_group_add( page );
         lv_page_set_arrow_scroll(page, true);
         lv_page_set_scrl_layout(page, LV_LAYOUT_COL_M);
 
+        jolt_gui_group_add( page );
         lv_group_focus_obj(page);
-
-        BREAK_IF_NULL(jolt_gui_scr_set_back_action(parent, jolt_gui_scr_del));
-        BREAK_IF_NULL(jolt_gui_scr_set_enter_action(parent, NULL));
     }
     return parent;
 }

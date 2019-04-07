@@ -5,12 +5,7 @@
 
 static const char TAG[] = "gui_storage";
 
-static lv_res_t back_cb( lv_obj_t *btn ) {
-    jolt_gui_scr_del();
-    return LV_RES_INV;
-}
-
-lv_res_t menu_storage_create(lv_obj_t *btn) {
+void menu_storage_create(lv_obj_t *btn, lv_event_t event) {
     uint32_t tot, used;
     uint8_t percentage;
     char subtitle[50];
@@ -25,9 +20,8 @@ lv_res_t menu_storage_create(lv_obj_t *btn) {
     if( NULL == scr ){
         goto exit;
     }
-    jolt_gui_scr_set_back_action(scr, back_cb);
     jolt_gui_scr_loadingbar_update(scr, NULL, subtitle, percentage);
 
 exit:
-    return LV_RES_OK;
+    return;
 }

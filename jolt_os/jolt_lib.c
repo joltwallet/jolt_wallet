@@ -19,7 +19,7 @@ const jolt_version_t JOLT_JELF_VERSION = {
     .release = JOLT_VERSION_DEV,
 };
 
-const char *JOLT_OS_COMMIT = "cdb96b695bebed879403db1d66ce8c432b5e23ee";
+const char *JOLT_OS_COMMIT = "e733317d89c8a4a3decd6131d1d48b0b4775c940";
 
 extern void *__fixunsdfsi;
 extern void *__floatunsidf;
@@ -166,12 +166,11 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_err_to_str ),
     EXPORT_SYMBOL( jolt_gui_find ),
     EXPORT_SYMBOL( jolt_gui_group_add ),
-    EXPORT_SYMBOL( jolt_gui_group_back_get ),
-    EXPORT_SYMBOL( jolt_gui_group_enter_get ),
-    EXPORT_SYMBOL( jolt_gui_group_main_get ),
     EXPORT_SYMBOL( jolt_gui_obj_cont_body_create ),
     EXPORT_SYMBOL( jolt_gui_obj_del ),
     EXPORT_SYMBOL( jolt_gui_obj_get_param ),
+    EXPORT_SYMBOL( jolt_gui_obj_set_param ),
+    EXPORT_SYMBOL( jolt_gui_scr_set_active_param ),
     EXPORT_SYMBOL( jolt_gui_obj_id_get ),
     EXPORT_SYMBOL( jolt_gui_obj_parent_create ),
     EXPORT_SYMBOL( jolt_gui_obj_title_create ),
@@ -203,12 +202,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_scr_scroll_add_text ),
     EXPORT_SYMBOL( jolt_gui_scr_scroll_create ),
     EXPORT_SYMBOL( jolt_gui_scr_scroll_get_page ),
-    EXPORT_SYMBOL( jolt_gui_scr_set_action ),
-    EXPORT_SYMBOL( jolt_gui_scr_set_back_action ),
-    EXPORT_SYMBOL( jolt_gui_scr_set_back_param ),
-    EXPORT_SYMBOL( jolt_gui_scr_set_enter_action ),
-    EXPORT_SYMBOL( jolt_gui_scr_set_enter_param ),
-    EXPORT_SYMBOL( jolt_gui_scr_set_param ),
+    EXPORT_SYMBOL( jolt_gui_scr_set_event_cb ),
     EXPORT_SYMBOL( jolt_gui_scr_slider_create ),
     EXPORT_SYMBOL( jolt_gui_scr_slider_get_slider ),
     EXPORT_SYMBOL( jolt_gui_scr_slider_get_value ),
@@ -220,12 +214,6 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_sem_give ),
     EXPORT_SYMBOL( jolt_gui_sem_take ),
     EXPORT_SYMBOL( jolt_gui_sem_take ),
-    EXPORT_SYMBOL( jolt_gui_send_enter_back ),
-    EXPORT_SYMBOL( jolt_gui_send_enter_enter ),
-    EXPORT_SYMBOL( jolt_gui_send_enter_main ),
-    EXPORT_SYMBOL( jolt_gui_send_enter_main ),
-    EXPORT_SYMBOL( jolt_gui_send_left_main ),
-    EXPORT_SYMBOL( jolt_gui_send_left_main ),
     EXPORT_SYMBOL( jolt_json_read_app ),
     EXPORT_SYMBOL( jolt_json_write_app ),
     EXPORT_SYMBOL( jolt_network_post ),
@@ -415,7 +403,7 @@ const jolt_version_t JOLT_JELF_VERSION = { 0 };
 const char *JOLT_OS_COMMIT = NULL;
 
 /* Dummy place holder */
-static const void *exports[361] = { 0 };
+static const void *exports[349] = { 0 };
 
 #endif
 

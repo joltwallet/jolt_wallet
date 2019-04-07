@@ -29,6 +29,7 @@ lv_obj_t *jolt_gui_scr_bignum_create(const char *title, const char *subtitle, ui
         }
         lv_obj_t *number_label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
         lv_label_set_text(number_label, number_str);
+        jolt_gui_group_add(number_label);
 
         /* Set a Big Font Style for number*/
         if( first ) {

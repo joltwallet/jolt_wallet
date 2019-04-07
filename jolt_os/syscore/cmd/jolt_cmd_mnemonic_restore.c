@@ -42,16 +42,15 @@ static lv_obj_t *jolt_gui_scr_mnemonic_restore_num_create(int n) {
     return jolt_gui_scr_bignum_create(gettext(JOLT_TEXT_RESTORE), gettext(JOLT_TEXT_ENTER_MNEMONIC_WORD), n, -1);
 }
 
-static lv_res_t jolt_cmd_mnemonic_restore_back( lv_obj_t *btn ) {
-    const uint8_t val = MNEMONIC_RESTORE_BACK;
-    xQueueSend(cmd_q, (void *) &val, portMAX_DELAY);
-    return LV_RES_OK;
-}
-
-static lv_res_t jolt_cmd_mnemonic_restore_enter( lv_obj_t *btn ) {
-    const uint8_t val = MNEMONIC_RESTORE_ENTER;
-    xQueueSend(cmd_q, (void *) &val, portMAX_DELAY);
-    return LV_RES_OK;
+static void jolt_cmd_mnemonic_restore_cb( lv_obj_t *btn, lv_event_t event ) {
+    if( LV_EVENT_SHORT_CLICKED == event ) {
+        const uint8_t val = MNEMONIC_RESTORE_ENTER;
+        xQueueSend(cmd_q, (void *) &val, portMAX_DELAY);
+    }
+    else if( LV_EVENT_CANCEL == event ) {
+        const uint8_t val = MNEMONIC_RESTORE_BACK;
+        xQueueSend(cmd_q, (void *) &val, portMAX_DELAY);
+    }
 }
 
 /* Goal: populate the 24 words in ordered */
@@ -65,8 +64,9 @@ static void linenoise_task( void *h ) {
         JOLT_GUI_CTX{
             jolt_gui_scr_del();
             scr = BREAK_IF_NULL(jolt_gui_scr_mnemonic_restore_num_create(j+1)); /*Human-friendly 1-idxing */
-            BREAK_IF_NULL(jolt_gui_scr_set_back_action(scr,  jolt_cmd_mnemonic_restore_back));
-            BREAK_IF_NULL(jolt_gui_scr_set_enter_action(scr,  NULL));
+            // todo set actions here
+            //BREAK_IF_NULL(jolt_gui_scr_set_back_action(scr,  jolt_cmd_mnemonic_restore_back));
+            //BREAK_IF_NULL(jolt_gui_scr_set_enter_action(scr,  NULL));
         }
 
         int8_t in_wordlist = 0;
@@ -115,13 +115,14 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
 
     /* Create prompt screen */
     printf("To begin mnemonic restore, approve prompt on device.\n");
-    lv_obj_t *scr = NULL, *btn = NULL;
+    lv_obj_t *scr = NULL;
     JOLT_GUI_CTX{
         scr = BREAK_IF_NULL(jolt_gui_scr_text_create(gettext(JOLT_TEXT_RESTORE), gettext(JOLT_TEXT_BEGIN_MNEMONIC_RESTORE)));
-        btn = BREAK_IF_NULL(jolt_gui_scr_set_back_action(scr,  jolt_cmd_mnemonic_restore_back));
-        btn = BREAK_IF_NULL(jolt_gui_scr_set_enter_action(scr, jolt_cmd_mnemonic_restore_enter));
+        jolt_gui_scr_set_event_cb(scr, jolt_cmd_mnemonic_restore_cb);
+        //btn = BREAK_IF_NULL(jolt_gui_scr_set_back_action(scr,  jolt_cmd_mnemonic_restore_back));
+        //btn = BREAK_IF_NULL(jolt_gui_scr_set_enter_action(scr, jolt_cmd_mnemonic_restore_enter));
     }
-    if( NULL == scr && NULL == btn ){
+    if( NULL == scr ){
         jolt_gui_obj_del(scr);
         return_code = -1;
         goto exit;

@@ -8,6 +8,7 @@
 static const char TAG[] = "cmd_app_key";
 static uint256_t app_key;
 
+#if 0
 static lv_res_t set_app_key_post_factory_reset(lv_obj_t *dummy) {
     if(!storage_set_blob(app_key, sizeof(app_key), "user", "app_key")){
         printf("Error setting app_key.\n");
@@ -17,16 +18,16 @@ static lv_res_t set_app_key_post_factory_reset(lv_obj_t *dummy) {
 
     return LV_RES_INV;
 }
+#endif
 
-static lv_res_t set_app_key_back_cb(lv_obj_t *btn) {
-    jolt_gui_scr_del();
-    return LV_RES_INV;
-}
-
-static lv_res_t set_app_key_enter_cb(lv_obj_t *btn) {
-    /* Todo: loading-like screen */
-    storage_factory_reset( false, set_app_key_post_factory_reset );
-    return LV_RES_OK;
+static void set_app_key_cb(lv_obj_t *btn, lv_event_t event) {
+    if( LV_EVENT_SHORT_CLICKED == event ){
+        // todo: sort out factory reset
+        //storage_factory_reset( false, set_app_key_post_factory_reset );
+    }
+    else if(LV_EVENT_CANCEL == event) {
+        jolt_gui_scr_del();
+    }
 }
 
 int jolt_cmd_app_key(int argc, char** argv){
@@ -84,8 +85,7 @@ int jolt_cmd_app_key(int argc, char** argv){
 
     /* Prompt user */
     scr = jolt_gui_scr_text_create("Set App Key", body);
-    jolt_gui_scr_set_back_action(scr, set_app_key_back_cb);
-    jolt_gui_scr_set_enter_action(scr, set_app_key_enter_cb);
+    jolt_gui_scr_set_event_cb(scr, set_app_key_cb);
 
 exit:
     return return_code;

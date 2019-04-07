@@ -77,7 +77,7 @@ lv_res_t jolt_gui_scr_del();
  * @param[in] obj
  * @param[in] id
  */
-void jolt_gui_obj_id_set( lv_obj_t *obj, jolt_gui_obj_id_t id);
+void jolt_gui_obj_id_set( lv_obj_t *obj, jolt_gui_obj_id_t id );
 
 /**
  * @brief Gets the ID of an object.
@@ -91,7 +91,7 @@ jolt_gui_obj_id_t jolt_gui_obj_id_get( const lv_obj_t *obj );
  * @param[in] obj
  * @param[in] id
  */
-void jolt_gui_scr_id_set( lv_obj_t *obj, jolt_gui_scr_id_t id);
+void jolt_gui_scr_id_set( lv_obj_t *obj, jolt_gui_scr_id_t id );
 
 /**
  * @brief Gets the screen type
@@ -99,6 +99,12 @@ void jolt_gui_scr_id_set( lv_obj_t *obj, jolt_gui_scr_id_t id);
  * @return Screen ID. JOLT_GUI_SCR_ID_INVALID if it's not a screen.
  */
 jolt_gui_scr_id_t jolt_gui_scr_id_get( const lv_obj_t *obj );
+
+/**
+ * @brief Wraps lv_obj_del in a JOLT_GUI_CTX 
+ */
+void jolt_gui_obj_del(lv_obj_t *obj);
+
 
 /**************************************
  * STANDARD SCREEN CREATION FUNCTIONS *
@@ -109,12 +115,17 @@ jolt_gui_scr_id_t jolt_gui_scr_id_get( const lv_obj_t *obj );
  *
  * A single dummy parent object makes screens easier to delete.
  *
+ * Primarily for internal-use.
+ *
  * @return object
  */
 lv_obj_t *jolt_gui_obj_parent_create();
 
 /**
  * @brief Creates a container for the drawable area of the screen
+ *
+ * Primarily for internal-use.
+ *
  * @param[in,out] scr dummy parent object
  * @return container body
  */ 
@@ -126,16 +137,13 @@ lv_obj_t *jolt_gui_obj_cont_body_create( lv_obj_t *scr );
  * LVGL internally allocates and copies the title string, so it doesn't need
  * to persist.
  *
+ * Primarily for internal-use.
+ *
  * @param[in,out] parent dummy parent object
  * @param[in] title NULL-terminated title string. If NULL, a blank title is used. 
  * @return title label object
  */
 lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title);
-
-/**
- * @brief Wraps lv_obj_del in a JOLT_GUI_CTX 
- */
-void jolt_gui_obj_del(lv_obj_t *obj);
 
 /***************
  * Group Stuff *
@@ -145,133 +153,57 @@ void jolt_gui_obj_del(lv_obj_t *obj);
  * @brief Creates all the LVGL groups and registers the in-device 
  *
  * Must be run before calling jolt_gui_create();
+ *
+ * For internal-use only.
  */
 void jolt_gui_group_create();
 
 /**
- * @brief Adds object to main group 
- * @param[in,out] obj object to add to the main group
+ * @brief Adds object to group 
+ * @param[in,out] obj object to add to the group
  */
 void jolt_gui_group_add( lv_obj_t *obj );
 
 /**
- * @brief Get the main group handle 
+ * @brief Get the group handle 
  * @return group handle
  */
-lv_group_t *jolt_gui_group_main_get();
-
-/**
- * @brief Get the back group handle 
- * @return group handle
- */
-lv_group_t *jolt_gui_group_back_get();
-
-/**
- * @brief Get the enter group handle 
- * @return group handle
- */
-lv_group_t *jolt_gui_group_enter_get();
+lv_group_t *jolt_gui_group_get();
 
 /**********
  * Action *
  **********/
 
 /**
- * @brief executes callback on back-button
- * @param[in,out] parent screen parent object
- * @param[in] cb callback to execute
- * @return back button object
+ * @brief Set the event callback for the active element of the screen
  */
-lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_action_t cb);
+void jolt_gui_scr_set_event_cb(lv_obj_t *parent, lv_event_cb_t event_cb);
 
 /**
- * @brief executes callback on enter-button
- * @param[in,out] parent screen parent object
- * @param[in] cb callback to execute
- * @return back button object
+ * @brief
  */
-lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb);
-
-/**
- * @brief executes callback on back and enter button
- * @param[in,out] parent screen parent object
- * @param[in] cb callback to execute
- */
-static inline void jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb) {
-    jolt_gui_scr_set_enter_action(parent, cb);
-    jolt_gui_scr_set_enter_action(parent, cb);
+static inline void jolt_gui_obj_set_event_cb(lv_obj_t *obj, lv_event_cb_t event_cb) {
+    jolt_gui_obj_set_event_cb(obj, event_cb);
 }
 
 /**
- * @brief Set lv_action_t cb
- */
-void jolt_gui_obj_set_action(lv_obj_t *obj, lv_action_t cb);
-
-/**
- * @brief Get the free obj pointer in user_data
+ * @brief Get the event param pointer in user_data
  */
 static inline void *jolt_gui_obj_get_param( lv_obj_t *obj ){
     return lv_obj_get_user_data( obj )->param;
 }
 
 /**
- * @brief set the free obj pointer in user_data
+ * @brief set the event param pointer in user_data
  */
 static inline void jolt_gui_obj_set_param( lv_obj_t *obj, void *param ) {
     lv_obj_get_user_data(obj)->param = param;
 }
 
 /**
- * @brief pass an object to the back callback
- * @param[in,out] parent screen parent object
- * @param[in] object to pass
+ * @brief set the event param pointer in the active element of the screen
  */
-void jolt_gui_scr_set_back_param(lv_obj_t *parent, void *param);
-
-/**
- * @brief pass an object to the enter callback
- * @param[in,out] parent screen parent object
- * @param[in] object to pass
- */
-void jolt_gui_scr_set_enter_param(lv_obj_t *parent, void *param);
-
-/**
- * @brief pass an object to both the back and the enter callback
- * @param[in,out] parent screen parent object
- * @param[in] object to pass
- */
-static inline void jolt_gui_scr_set_param(lv_obj_t *parent, void *param) {
-    jolt_gui_scr_set_back_param(parent, param);
-    jolt_gui_scr_set_enter_param(parent, param);
-}
-
-/**
- * @brief Send an "Enter" signal to the main group.
- * @param[in] dummy; unused; only here for signature consistency
- * @return LV_RES_OK
- */
-lv_res_t jolt_gui_send_enter_main(lv_obj_t *dummy);
-
-/**
- * @brief Send a "Left" signal to the main group.
- * @param[in] dummy; unused; only here for signature consistency
- * @return LV_RES_OK
- */
-lv_res_t jolt_gui_send_left_main(lv_obj_t *dummy);
-
-/**
- * @brief Send an "Enter" signal to the back group.
- * @param[in] dummy; unused; only here for signature consistency
- * @return LV_RES_OK
- */
-lv_res_t jolt_gui_send_enter_back(lv_obj_t *dummy);
-
-/**
- * @brief Send an "Enter" signal to the enter group.
- * @param[in] dummy; unused; only here for signature consistency
- * @return LV_RES_OK
- */
-lv_res_t jolt_gui_send_enter_enter(lv_obj_t *dummy);
+void jolt_gui_scr_set_active_param( lv_obj_t *parent, void *param );
 
 /*****************
  * System Events *
@@ -319,20 +251,6 @@ const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val);
  */
 const char *jolt_gui_scr_id_str(jolt_gui_scr_id_t val);
 
-/**
- * @brief Forwards callback to:
- *
- * lv_obj_get_user_data(parent)->cb.short_clicked = cb;
- *
- * where the cb only takes in the object, not the event type.
- *
- * This provides the programmer less options, but simplifies common actions.
- *
- * @param[in,out] obj
- * @param event 
- */
-void jolt_gui_event_action_wrapper_cb( lv_obj_t *obj, lv_event_t event);
-
 /********************
  * Meta Programming *
  ********************/
@@ -368,15 +286,12 @@ void jolt_gui_event_action_wrapper_cb( lv_obj_t *obj, lv_event_t event);
 #define JOLT_GUI_SCR_PREAMBLE( title ) \
     lv_obj_t *parent = NULL, *label_title = NULL, *cont_body = NULL; \
     if( (parent = jolt_gui_obj_parent_create()) ) { \
-        if( (label_title = jolt_gui_obj_title_create(parent, title)) \
-                && (cont_body = jolt_gui_obj_cont_body_create( parent )) ) { \
-            jolt_gui_group_add( parent ); \
-        }\
-        else{ \
+        if( !((label_title = jolt_gui_obj_title_create(parent, title)) \
+                && (cont_body = jolt_gui_obj_cont_body_create( parent ))) ) { \
             jolt_gui_sem_take(); \
             lv_obj_del( parent ); \
             jolt_gui_sem_give(); \
-        } \
+        }\
     }
 
 /**
@@ -413,6 +328,5 @@ void jolt_gui_event_action_wrapper_cb( lv_obj_t *obj, lv_event_t event);
     MPP_DO_WHILE(2, false) \
     MPP_BREAK_HANDLER(3, if(parent) {lv_obj_del(parent); parent=NULL;})\
     MPP_FINALLY(4, jolt_gui_sem_give() )
-
 
 #endif

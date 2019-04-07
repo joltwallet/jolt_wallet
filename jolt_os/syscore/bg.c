@@ -132,18 +132,18 @@ exit:
     return ESP_FAIL;
 }
 
-static lv_res_t abort_cb( lv_obj_t *btn ) {
-    QueueHandle_t queue = jolt_gui_obj_get_param( btn );
-    jolt_bg_signal_t signal = JOLT_BG_ABORT;
-    switch( xQueueSend(queue, &signal, 0) ) {
-        case pdPASS:
-            break;
-        default:
-            ESP_LOGE(TAG, "Failed to send JOLT_BG_ABORT signal");
-            break;
+static void abort_cb( lv_obj_t *obj, lv_event_t event ) {
+    if( LV_EVENT_CANCEL == event ) {
+        QueueHandle_t queue = jolt_gui_obj_get_param( obj );
+        jolt_bg_signal_t signal = JOLT_BG_ABORT;
+        switch( xQueueSend(queue, &signal, 0) ) {
+            case pdPASS:
+                break;
+            default:
+                ESP_LOGE(TAG, "Failed to send JOLT_BG_ABORT signal");
+                break;
+        }
     }
-
-    return LV_RES_OK;
 }
 
 esp_err_t jolt_bg_create( jolt_bg_task_t task, void *param, lv_obj_t *scr ) {
@@ -173,13 +173,8 @@ esp_err_t jolt_bg_create( jolt_bg_task_t task, void *param, lv_obj_t *scr ) {
 
     /* Register the abort callback to the provided screen */
     if( NULL != scr ) {
-        lv_obj_t *back = jolt_gui_scr_set_back_action(scr, abort_cb);
-        if( NULL == back ) {
-            // failed to set back action
-            ESP_LOGE(TAG, "Failed to set back action");
-            goto exit;
-        }
-        jolt_gui_scr_set_back_param(scr, input_queue);
+        jolt_gui_scr_set_event_cb(scr, abort_cb);
+        jolt_gui_scr_set_active_param(scr, input_queue);
         ESP_LOGI(TAG, "Registered abort back action");
     }
 

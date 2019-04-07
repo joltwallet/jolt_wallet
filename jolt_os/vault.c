@@ -79,9 +79,8 @@ static void ps_state_cleanup();
 static esp_err_t ps_state_exec();
 static int ps_state_exec_task( jolt_bg_job_t *job );
 
-static lv_res_t pin_fail_cb( lv_obj_t *btn );
-static lv_res_t pin_enter_cb(lv_obj_t *scr);
-static lv_res_t pin_back_cb( lv_obj_t *scr );
+static void pin_fail_cb( lv_obj_t *num_entry, lv_event_t event );
+static void pin_entry_cb( lv_obj_t *num_entry, lv_event_t event );
 
 static void vault_watchdog_task();
 
@@ -161,8 +160,7 @@ static int ps_state_exec_task( jolt_bg_job_t *job ) {
                         title,
                         CONFIG_JOLT_GUI_PIN_LEN,
                         JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL ) );
-                jolt_gui_scr_set_back_action(ps.scr, pin_back_cb );
-                jolt_gui_scr_set_enter_action(ps.scr, pin_enter_cb);
+                jolt_gui_scr_set_event_cb(ps.scr, pin_entry_cb);
                 ps.state = PIN_STATE_STRETCH;
             }
             break;
@@ -218,8 +216,7 @@ static int ps_state_exec_task( jolt_bg_job_t *job ) {
                     lv_obj_t *scr = jolt_gui_scr_text_create(
                             gettext(JOLT_TEXT_PIN),
                             gettext(JOLT_TEXT_INCORRECT_PIN));
-                    jolt_gui_scr_set_back_action(scr, pin_fail_cb);
-                    jolt_gui_scr_set_enter_action(scr, pin_fail_cb);
+                    jolt_gui_scr_set_event_cb(scr, pin_fail_cb);
 
                     jolt_gui_sem_give();
                     ps.state = PIN_STATE_EMPTY;
@@ -305,37 +302,47 @@ static int ps_state_exec_task( jolt_bg_job_t *job ) {
     return 0;
 }
 
-static lv_res_t pin_fail_cb( lv_obj_t *btn ) {
-    /* Recreate the pin entry screen */
-    /* Delete the "incorrect pin" screen */
-    JOLT_GUI_CTX{
-        lv_obj_t *scr = lv_obj_get_parent(btn);
-        lv_obj_del(scr);
+/**
+ * @brief Event callback for the pin entrry screen
+ */
+static void pin_entry_cb( lv_obj_t *num_entry, lv_event_t event) {
+    switch(event){
+        case LV_EVENT_SHORT_CLICKED:
+            /* User pressed enter on the right-most roller */
+            if( ps.state != PIN_STATE_FAIL ) {
+                ps.state = PIN_STATE_STRETCH;
+                ps_state_exec();
+            }
+            break;
+        case LV_EVENT_CANCEL:
+            /* User pressed back on the left-most roller */
+            if( ps.state != PIN_STATE_FAIL ) {
+                ps.state = PIN_STATE_FAIL;
+                ps_state_exec();
+            }
+            break;
+        default:
+            break;
     }
-    if( ps.state != PIN_STATE_FAIL ) {
-        ps.state = PIN_STATE_CREATE;
-        ps_state_exec();
-    }
-    return LV_RES_INV;
 }
 
-/* gets triggered when user presses enter on last pin roller on pin screen */
-static lv_res_t pin_enter_cb(lv_obj_t *scr) {
-    if( ps.state != PIN_STATE_FAIL ) {
-        ps.state = PIN_STATE_STRETCH;
-        ps_state_exec();
+/**
+ * @brief Event callback for the "incorrect pin" text screen
+ */
+static void pin_fail_cb( lv_obj_t *num_entry, lv_event_t event ) {
+    switch(event) {
+        case LV_EVENT_SHORT_CLICKED:
+            /* Fall through */
+        case LV_EVENT_CANCEL:
+            jolt_gui_scr_del();
+            if( ps.state != PIN_STATE_FAIL ) {
+                ps.state = PIN_STATE_CREATE;
+                ps_state_exec();
+            }
+            break;
+        default:
+            break;
     }
-    return LV_RES_OK;
-}
-
-/* gets triggered when user presses back on first pin roller on pin screen */
-static lv_res_t pin_back_cb( lv_obj_t *scr) {
-    ESP_LOGD(TAG, "pin_back_cb");
-    if( ps.state != PIN_STATE_FAIL ) {
-        ps.state = PIN_STATE_FAIL;
-        ps_state_exec();
-    }
-    return LV_RES_OK;
 }
 
 #if ESP_LOG_LEVEL >= ESP_LOG_INFO

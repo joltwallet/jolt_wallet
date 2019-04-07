@@ -60,7 +60,7 @@ void jolt_gui_scr_slider_set_label(lv_obj_t *scr, const char *text){
  * slider, and will activate the callback everytime the slider value changes.
  *
  * Back button is set to screen delete by default. */
-lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_action_t cb) {
+lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_event_cb_t cb) {
     JOLT_GUI_SCR_CTX( title ) {
         jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_SLIDER);
         /* Create Slider */
@@ -70,7 +70,7 @@ lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_act
         lv_obj_set_size(slider,
                 CONFIG_JOLT_GUI_SLIDER_W, CONFIG_JOLT_GUI_SLIDER_H);
         lv_obj_align(slider, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -10);
-        jolt_gui_obj_set_action(slider, cb);
+        jolt_gui_obj_set_event_cb(slider, cb);
         lv_slider_set_value(slider, 0, true); // Default initial value
         // todo use CONFIG_JOLT_GUI_SLIDER_ANIM_MS
         //lv_slider_set_anim_time(slider, CONFIG_JOLT_GUI_SLIDER_ANIM_MS);
@@ -92,11 +92,7 @@ lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_act
         lv_obj_set_size(label, lv_obj_get_width(cont_body),
                 label_style->text.font->h_px);
         lv_obj_align(label, NULL, LV_ALIGN_OUT_TOP_MID, 0, -6);
-        /* todo: add upstream functionality to animate on button input */
 
-
-        BREAK_IF_NULL(jolt_gui_scr_set_enter_action(parent, NULL));
-        BREAK_IF_NULL(jolt_gui_scr_set_back_action(parent, jolt_gui_scr_del));
     }
     return parent;
 }

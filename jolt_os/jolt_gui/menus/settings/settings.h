@@ -12,6 +12,6 @@
  * @param btn The lv_btn of the parenting menu that triggered the settings menu creation.
  * @return jolt menu screen
  */
-lv_res_t menu_settings_create(lv_obj_t *btn);
+void menu_settings_create(lv_obj_t *btn, lv_event_t event);
 
 #endif

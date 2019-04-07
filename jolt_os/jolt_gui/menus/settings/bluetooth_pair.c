@@ -7,38 +7,41 @@ static const char TAG[] = "bluetooth_pair";
 static lv_obj_t *passkey_scr  = NULL;
 static lv_obj_t *scanning_scr = NULL;
 
-static lv_res_t scanning_scr_back_cb(lv_obj_t *btn) {
-    jolt_bluetooth_pair_mode = false;
-    jolt_bluetooth_adv_wht_start();
-    jolt_gui_scr_del();
-    scanning_scr = NULL;
-    return LV_RES_INV;
+static void scanning_scr_cb(lv_obj_t *btn, lv_event_t event) {
+    if( LV_EVENT_CANCEL == event ) {
+        jolt_bluetooth_pair_mode = false;
+        jolt_bluetooth_adv_wht_start();
+        jolt_gui_scr_del();
+        scanning_scr = NULL;
+    }
 }
 
-static lv_res_t passkey_scr_back_cb(lv_obj_t *btn) {
-    jolt_bluetooth_pair_mode = false;
-    jolt_bluetooth_adv_stop();
-    jolt_gui_obj_del(passkey_scr);
-    passkey_scr = NULL;
-    return LV_RES_INV;
+static void passkey_scr_cb(lv_obj_t *btn, lv_event_t event) {
+    if( LV_EVENT_CANCEL == event ) {
+        jolt_bluetooth_pair_mode = false;
+        jolt_bluetooth_adv_stop();
+        jolt_gui_obj_del(passkey_scr);
+        passkey_scr = NULL;
+    }
 }
 
-static lv_res_t menu_bluetooth_pair_common_create( lv_obj_t *btn ) {
+static void menu_bluetooth_pair_common_create( ) {
     jolt_bluetooth_pair_mode = true;
     jolt_bluetooth_adv_all_start();
     scanning_scr = jolt_gui_scr_preloading_create(gettext(JOLT_TEXT_PAIR), gettext(JOLT_TEXT_BROADCASTING));
-    jolt_gui_scr_set_back_action(scanning_scr, scanning_scr_back_cb);
-    return LV_RES_OK;
+    jolt_gui_scr_set_event_cb(scanning_scr, scanning_scr_cb);
 }
 
-lv_res_t menu_bluetooth_pair_create( lv_obj_t *btn ) {
-    jolt_bluetooth_config_security( true ); /* enable bonding */
-    return menu_bluetooth_pair_common_create( btn );
+void menu_bluetooth_pair_create( lv_obj_t *btn, lv_event_t event ) {
+    if( LV_EVENT_SHORT_CLICKED == event ) {
+        jolt_bluetooth_config_security( true ); /* enable bonding */
+        menu_bluetooth_pair_common_create( );
+    }
 }
 
-lv_res_t menu_bluetooth_temp_pair_create(lv_obj_t *btn) {
+void menu_bluetooth_temp_pair_create(lv_obj_t *btn, lv_event_t event) {
     jolt_bluetooth_config_security( false ); /* disable bonding */
-    return menu_bluetooth_pair_common_create( btn );
+    menu_bluetooth_pair_common_create( );
 }
 
 void jolt_gui_bluetooth_pair_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
@@ -60,7 +63,7 @@ void jolt_gui_bluetooth_pair_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb
 
             passkey_scr = jolt_gui_scr_bignum_create("Bluetooth Pair",
                     "Pairing Key", param->ble_security.key_notif.passkey, 6);
-            jolt_gui_scr_set_back_action(passkey_scr, passkey_scr_back_cb);
+            jolt_gui_scr_set_event_cb(passkey_scr, passkey_scr_cb);
             break;
         case ESP_GAP_BLE_AUTH_CMPL_EVT:
 #if !CONFIG_JOLT_BT_DEBUG_ALWAYS_ADV

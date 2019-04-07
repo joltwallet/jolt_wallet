@@ -32,49 +32,49 @@ static void destroy_list() {
      jolt_gui_scr_menu_remove(scr, 1, 0);
 }
 
-static lv_res_t sw_en_cb(lv_obj_t *btn) {
-    uint8_t state;
-    state = lv_sw_toggle(sw_en, true);
+static void sw_en_cb(lv_obj_t *btn, lv_event_t event) {
+    if( LV_EVENT_SHORT_CLICKED == event ) {
+        uint8_t state;
+        state = lv_sw_toggle(sw_en, true);
 
-    if( state ) {
-        create_enable_list();
-        if( ESP_OK != jolt_bluetooth_start() ) {
-            lv_sw_toggle(sw_en, false);
-            return LV_RES_OK;
+        if( state ) {
+            create_enable_list();
+            if( ESP_OK != jolt_bluetooth_start() ) {
+                lv_sw_toggle(sw_en, false);
+                return;
+            }
         }
-    }
-    else {
-        destroy_list();
-        create_disable_list();
-        if( ESP_OK != jolt_bluetooth_stop() ) {
-            /* Bluetooth wasn't successfully stopped */
-            lv_sw_toggle(sw_en, false);
-            return LV_RES_OK;
+        else {
+            destroy_list();
+            create_disable_list();
+            if( ESP_OK != jolt_bluetooth_stop() ) {
+                /* Bluetooth wasn't successfully stopped */
+                lv_sw_toggle(sw_en, false);
+                return;
+            }
         }
+
+        storage_set_u8(state, "user", "bluetooth_en");
     }
-
-    storage_set_u8(state, "user", "bluetooth_en");
-
-    return LV_RES_OK;
 }
 
-lv_res_t menu_bluetooth_create(lv_obj_t *btn) {
-    uint8_t bluetooth_en;
-    storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 0 );
+void menu_bluetooth_create(lv_obj_t *btn, lv_event_t event) {
+    if( LV_EVENT_SHORT_CLICKED == event ) {
+        uint8_t bluetooth_en;
+        storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 0 );
 
-    scr = jolt_gui_scr_menu_create(gettext(JOLT_TEXT_SETTINGS));
-    lv_obj_t *btn_en = jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_BLUETOOTH_ENABLE), sw_en_cb);
-    sw_en = jolt_gui_scr_menu_add_sw( btn_en );
+        scr = jolt_gui_scr_menu_create(gettext(JOLT_TEXT_SETTINGS));
+        lv_obj_t *btn_en = jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_BLUETOOTH_ENABLE), sw_en_cb);
+        sw_en = jolt_gui_scr_menu_add_sw( btn_en );
 
-    if( bluetooth_en ) {
-        lv_sw_on( sw_en, false );
-        create_enable_list();
+        if( bluetooth_en ) {
+            lv_sw_on( sw_en, false );
+            create_enable_list();
+        }
+        else{
+            lv_sw_off( sw_en, false);
+        }
     }
-    else{
-        lv_sw_off( sw_en, false);
-    }
-
-    return LV_RES_OK;
 }
 
 #endif

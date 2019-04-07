@@ -2,6 +2,15 @@
 #include <stdio.h>
 #include "sodium.h"
 
+/* Need to make the obj->event_cb NULL until at the first roller or the last roller.
+ * Need to somehow intercept the LV_EVENT_CANCEL at the last roller
+ * Need to somehow intercept the LV_EVENT_PRESSED at the first roller
+ *
+ * Maybe need to declare the lv_event_cb_t at creation.
+ * Maybe return a list of rollers
+ 
+ */
+
 /* Entry Screen Structures:
  * * SCREEN
  *   +--LABEL_0 (title)
@@ -191,8 +200,9 @@ lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
         /* Forward left/right actions get forwarded to the main group */
         ext->back_cb = &jolt_gui_scr_del;
         ext->enter_cb = NULL;
-        BREAK_IF_NULL(jolt_gui_scr_set_back_action(parent, &jolt_gui_send_left_main));
-        BREAK_IF_NULL(jolt_gui_scr_set_enter_action(parent, &jolt_gui_send_enter_main));
+        // todo 6.0
+        //BREAK_IF_NULL(jolt_gui_scr_set_back_action(parent, &jolt_gui_send_left_main));
+        //BREAK_IF_NULL(jolt_gui_scr_set_enter_action(parent, &jolt_gui_send_enter_main));
 
         jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_DIGIT_ENTRY);
 

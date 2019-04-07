@@ -265,10 +265,7 @@ typedef uint8_t (*lv_action_t)(struct _lv_obj_t * obj);
 typedef struct {
     uint8_t id:7;              /**< Either a screen id or an object id */
     uint8_t is_scr:1;          /**< 0=obj; 1=screen (parent object) */
-    struct {
-        lv_action_t short_clicked;            /**< cb to call when an option is clicked */
-    } cb;
-    void *param;               /**< parameters to pass to callbacks */
+    void *param;               /**< Free parameters. Consumer should only attach to the active object. */
 } lv_obj_user_data_t;          /*Declare the type of the user data of object (can be e.g. `void *`, `int`, `struct`)*/
 
 #define LV_OBJ_REALIGN          0           /*Enable `lv_obj_realign()` based on `lv_obj_align()` parameters*/

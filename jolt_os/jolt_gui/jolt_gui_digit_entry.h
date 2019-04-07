@@ -88,30 +88,6 @@ uint32_t jolt_gui_scr_digit_entry_get_int(lv_obj_t *parent);
  ******************/
 
 /**
- * @brief Sets the action when back is pressed on the left-most digit. 
- * 
- * It is the callback's responsibility to delete the PIN screen.
- *
- * The generic jolt_gui_scr_set_back_action() will detect this screen type and calls this function.
- *
- * @param[in] parent digit-entry screen
- * @param[in] callback
- */
-void jolt_gui_scr_digit_entry_set_back_action(lv_obj_t *parent, lv_action_t cb);
-
-/**
- * @brief Sets the action when enter is pressed on the right-most digit. 
- * 
- * It is the callback's responsibility to delete the PIN screen.
- *
- * The generic jolt_gui_scr_set_enter_action() will detect this screen type and calls this function.
- *
- * @param[in] parent digit-entry screen
- * @param[in] callback
- */
-void jolt_gui_scr_digit_entry_set_enter_action(lv_obj_t *parent, lv_action_t cb);
-
-/**
  * @brief Sets the currently focused digit pos digits from the right. 0 for the right most digit.
  * @param[in] parent digit-entry screen
  * @param[in] pos 0-indexed entry position from the right to focus on

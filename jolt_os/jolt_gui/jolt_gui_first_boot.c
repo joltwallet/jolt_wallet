@@ -27,10 +27,12 @@ static CONFIDENTIAL uint256_t pin_hash;
  * Static Functions *
  ********************/
 static void generate_mnemonic();
-static lv_res_t screen_pin_verify_create(lv_obj_t *num);
-static lv_res_t screen_mnemonic_create(lv_obj_t *btn);
+static void mismatch_cb(lv_obj_t *btn, lv_event_t event);
+static void screen_finish_create(lv_obj_t *verify_scr, lv_event_t event);
+static void screen_pin_verify_create(lv_obj_t *pin_scr, lv_event_t event);
+static void screen_pin_entry_create(lv_obj_t *btn, lv_event_t event);
+static void screen_mnemonic_create(lv_obj_t *btn, lv_event_t event);
 
-static lv_res_t screen_pin_entry_create(lv_obj_t *btn);
 static jolt_err_t get_nth_word(char buf[], size_t buf_len,
         const char *str, const uint32_t n);
 
@@ -124,94 +126,127 @@ static int bg_stretch_task(jolt_bg_job_t *job) {
     return 0;
 }
 
-static lv_res_t mismatch_cb(lv_obj_t *btn) {
-    // Delete text screen
-    jolt_gui_obj_del(lv_obj_get_parent(btn));
-    // Create pin entry screen
-    screen_pin_entry_create(NULL);
-    return LV_RES_INV;
+static void mismatch_cb(lv_obj_t *btn, lv_event_t event) {
+    switch(event) {
+        case LV_EVENT_SHORT_CLICKED:
+            /* Fall through */
+        case LV_EVENT_CANCEL:
+            jolt_gui_scr_del();
+            screen_pin_entry_create(NULL, LV_EVENT_SHORT_CLICKED);
+            break;
+        default:
+            break;
+    }
 }
 
 /* Verifies the re-entered pin-hash 
  *     Success: Creates the stretching screen.
  *     Failure: Creates the mismatch screen, sends user back to pin entry.*/
-static lv_res_t screen_finish_create(lv_obj_t *verify_scr) {
-    int res;
-    CONFIDENTIAL static uint256_t pin_hash_verify;
+static void screen_finish_create(lv_obj_t *verify_scr, lv_event_t event) {
+    switch(event){
+        case LV_EVENT_SHORT_CLICKED: {
+            int res;
+            CONFIDENTIAL static uint256_t pin_hash_verify;
 
-    /* Compute Verify Pin Hash */
-    jolt_gui_scr_digit_entry_get_hash(verify_scr, pin_hash_verify);
+            /* Compute Verify Pin Hash */
+            jolt_gui_scr_digit_entry_get_hash(verify_scr, pin_hash_verify);
 
-    // Delete verify pin entry screen
-    jolt_gui_obj_del(verify_scr);
+            // Delete verify pin entry screen
+            jolt_gui_obj_del(verify_scr);
 
-    res = memcmp(pin_hash, pin_hash_verify, sizeof(pin_hash_verify));
-    sodium_memzero(pin_hash_verify, sizeof(pin_hash_verify));
+            res = memcmp(pin_hash, pin_hash_verify, sizeof(pin_hash_verify));
+            sodium_memzero(pin_hash_verify, sizeof(pin_hash_verify));
 
-    /* Verify the pins match */
-    if( 0 ==  res ){
-        ESP_ERROR_CHECK( jolt_bg_create( bg_stretch_task, NULL, NULL) );
+            /* Verify the pins match */
+            if( 0 ==  res ){
+                ESP_ERROR_CHECK( jolt_bg_create( bg_stretch_task, NULL, NULL) );
+            }
+            else{
+                sodium_memzero( pin_hash, sizeof(pin_hash) );
+                lv_obj_t *scr = jolt_gui_scr_text_create("Pin Setup", "Pin Mismatch! Please try again.");
+                jolt_gui_scr_set_event_cb(scr, mismatch_cb);
+            }
+            break;
+        }
+        case LV_EVENT_CANCEL:
+            jolt_gui_scr_del();
+            break;
+        default:
+            break;
     }
-    else{
-        sodium_memzero( pin_hash, sizeof(pin_hash) );
-        lv_obj_t *scr = jolt_gui_scr_text_create("Pin Setup", "Pin Mismatch! Please try again.");
-        jolt_gui_scr_set_back_action(scr, mismatch_cb);
-    }
-
-    return LV_RES_INV;
 }
 
 /* Saves the entered pinhash. Creates the pin verify screen.
  * Creates StartupScreen 4 
  * */
-static lv_res_t screen_pin_verify_create(lv_obj_t *pin_scr) {
-    /* Get the has for the first screen */
-    jolt_gui_scr_digit_entry_get_hash(pin_scr, pin_hash);
-    /* Delete first PIN entry screen */
-    jolt_gui_obj_del(pin_scr);
+static void screen_pin_verify_create(lv_obj_t *pin_scr, lv_event_t event) {
+    switch(event){
+        case LV_EVENT_SHORT_CLICKED: {
+            /* Get the has for the first screen */
+            jolt_gui_scr_digit_entry_get_hash(pin_scr, pin_hash);
+            /* Delete first PIN entry screen */
+            jolt_gui_obj_del(pin_scr);
 
-    /* Create Verify PIN screen */
-    lv_obj_t *verify_scr = jolt_gui_scr_digit_entry_create( "PIN Verify",
-            CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL); 
-    if( NULL == verify_scr ){
-        esp_restart();
+            /* Create Verify PIN screen */
+            lv_obj_t *verify_scr = jolt_gui_scr_digit_entry_create( "PIN Verify",
+                    CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL); 
+            if( NULL == verify_scr ){
+                esp_restart();
+            }
+            jolt_gui_scr_set_event_cb(verify_scr, &screen_finish_create);
+            break;
+        }
+        case LV_EVENT_CANCEL:
+            jolt_gui_scr_del();
+            break;
+        default:
+            break;
     }
-    jolt_gui_scr_set_enter_action(verify_scr, &screen_finish_create);
-    return LV_RES_INV;
 }
 
 /* Prompts user for pin (first time).
  * Creates StartupScreen3
  */
-static lv_res_t screen_pin_entry_create(lv_obj_t *btn) {
-    lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "PIN",
-            CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL);
-    if( NULL == scr ){
-        esp_restart();
+static void screen_pin_entry_create(lv_obj_t *btn, lv_event_t event) {
+    if(event==LV_EVENT_SHORT_CLICKED) {
+        lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "PIN",
+                CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL);
+        if( NULL == scr ){
+            esp_restart();
+        }
+        jolt_gui_scr_set_event_cb(scr, &screen_pin_verify_create);
     }
-    jolt_gui_scr_set_enter_action(scr, &screen_pin_verify_create);
-    return LV_RES_OK;
 }
 
 /* Displays 24-word mnemonic.
  * Creates StartupScreen2
  */
-static lv_res_t screen_mnemonic_create(lv_obj_t *btn) {
-    const char title[] = "Write Down Mnemonic!";
-    lv_obj_t *scr = jolt_gui_scr_menu_create(title);
-    for(uint8_t i=0; i < 24; i++) {
-        char buf[15] = { 0 }; // todo define
-        get_nth_word(buf, sizeof(buf), mnemonic, i);
-        if( i == 0 ) {
-            jolt_gui_scr_menu_add(scr, NULL, buf, NULL);
+static void screen_mnemonic_create(lv_obj_t *btn, lv_event_t event) {
+    switch(event){
+        case LV_EVENT_SHORT_CLICKED: {
+            const char title[] = "Write Down Mnemonic!";
+            lv_obj_t *scr = jolt_gui_scr_menu_create(title);
+            for(uint8_t i=0; i < 24; i++) {
+                char buf[15] = { 0 }; // todo define
+                get_nth_word(buf, sizeof(buf), mnemonic, i);
+                if( i == 0 ) {
+                    jolt_gui_scr_menu_add(scr, NULL, buf, NULL);
+                }
+                else {
+                    jolt_gui_scr_menu_add(scr, NULL, buf, NULL);
+                }
+            }
+            jolt_gui_scr_menu_add(scr, NULL, "continue",
+                    screen_pin_entry_create);
+
+            break;
         }
-        else {
-            jolt_gui_scr_menu_add(scr, NULL, buf, NULL);
-        }
+        case LV_EVENT_CANCEL:
+            /* Do Nothing */
+            break;
+        default:
+            break;
     }
-    jolt_gui_scr_menu_add(scr, NULL, "continue",
-            screen_pin_entry_create);
-    return LV_RES_OK;
 }
 
 /* Called externally to begin the first-boot GUIi.
@@ -223,12 +258,11 @@ void jolt_gui_first_boot_create() {
     lv_obj_t *scr = jolt_gui_scr_text_create( "First Startup",
             "Welcome to Jolt, "
             "please backup the following secret mnemonic.");
-    jolt_gui_scr_set_enter_action(scr, &screen_mnemonic_create);
-    jolt_gui_scr_set_back_action(scr, NULL);
+    jolt_gui_scr_set_event_cb(scr, &screen_mnemonic_create);
 }
 
 /* Prompts user for pin and performs the rest of setup for a given entropy */
 void jolt_gui_restore_sequence(const uint256_t mnemonic) {
     memcpy(mnemonic_bin, mnemonic, 32);
-    screen_pin_entry_create( NULL );
+    screen_pin_entry_create( NULL, LV_EVENT_SHORT_CLICKED );
 }

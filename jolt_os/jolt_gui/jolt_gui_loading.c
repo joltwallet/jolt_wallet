@@ -1,6 +1,9 @@
 #include "jolt_gui.h"
 #include "jolt_gui_loading.h"
 
+// todo: need to declare a custom ext for this to hold autoupdate params
+
+
 /* Loading and Preloading Screen Structures:
  * * SCREEN
  *   +--LABEL_TITLE
@@ -126,8 +129,7 @@ lv_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
                 label_style->text.font->h_px);
         lv_obj_align(label, bar, LV_ALIGN_OUT_TOP_MID, 0, -10);
 
-        jolt_gui_scr_set_back_action(parent, NULL);
-        jolt_gui_scr_set_enter_action(parent, NULL);
+        jolt_gui_scr_set_event_cb(parent, NULL);
     }
     return parent;
 }
@@ -165,8 +167,7 @@ lv_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text) {
                 label_style->text.font->h_px);
         lv_obj_align(label, preload, LV_ALIGN_OUT_TOP_MID, 0, -6);
 
-        jolt_gui_scr_set_back_action(parent, NULL);
-        jolt_gui_scr_set_enter_action(parent, NULL);
+        jolt_gui_scr_set_event_cb(parent, NULL);
     }
     return parent;
 }

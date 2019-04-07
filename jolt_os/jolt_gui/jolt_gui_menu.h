@@ -32,7 +32,7 @@ lv_obj_t *jolt_gui_scr_menu_create(const char *title);
  * @return the btn object added to the menu
  */
 lv_obj_t *jolt_gui_scr_menu_add(lv_obj_t *par, const void *img_src,
-        const char *txt, lv_action_t rel_action);
+        const char *txt, lv_event_cb_t rel_action);
 
 /**
  * @brief Gets the list object of a menu screen 

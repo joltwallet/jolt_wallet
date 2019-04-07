@@ -1,4 +1,4 @@
-//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #include "esp_log.h"
 
 #include "stdio.h"
@@ -11,13 +11,6 @@
 /**********************
  *      TYPEDEFS
  **********************/
-typedef struct jolt_group_t {
-    lv_group_t *main; // Parent group for user input
-    lv_group_t *back; // Group used to handle back button
-    lv_group_t *enter;
-} jolt_group_t;
-
-jolt_group_t group;
 
 /**********************
  *  STATIC PROTOTYPES
@@ -26,6 +19,7 @@ jolt_group_t group;
 /**********************
  *  STATIC VARIABLES
  **********************/
+static lv_group_t *group;
 
 /**********************
  *      MACROS
@@ -47,9 +41,9 @@ jolt_group_t group;
 lv_res_t jolt_gui_scr_del() {
     lv_res_t res = LV_RES_OK;
     JOLT_GUI_CTX{
-        lv_obj_t *scrn = BREAK_IF_NULL(lv_group_get_focused(group.main));
-        lv_obj_t *parent = scrn;
-        lv_obj_t *tmp = scrn;
+        lv_obj_t *scr = BREAK_IF_NULL(lv_group_get_focused(group));
+        lv_obj_t *parent = scr;
+        lv_obj_t *tmp = scr;
         while( (tmp = lv_obj_get_parent(tmp)) ) {
             if( tmp != lv_scr_act() ) {
                 parent = tmp;
@@ -160,16 +154,6 @@ void jolt_gui_obj_del(lv_obj_t *obj){
     }
 
     JOLT_GUI_CTX{
-        /* Some objects may require special actions before deleting */
-        jolt_gui_scr_id_t id = jolt_gui_scr_id_get( obj );
-        switch( id ) {
-            case JOLT_GUI_SCR_ID_LOADINGBAR:
-                /* Check and Delete the auto updater task */
-                jolt_gui_scr_loadingbar_autoupdate_del( obj );
-                break;
-            default:
-                break;
-        }
         lv_obj_del(obj);
     }
 }
@@ -181,12 +165,8 @@ void jolt_gui_group_create() {
     /* Create Groups for user input */
     bool success = false;
     JOLT_GUI_CTX{
-        group.main = BREAK_IF_NULL(lv_group_create());
-        lv_group_set_refocus_policy(group.main, LV_GROUP_REFOCUS_POLICY_PREV);
-        group.back = BREAK_IF_NULL(lv_group_create());
-        lv_group_set_refocus_policy(group.back, LV_GROUP_REFOCUS_POLICY_PREV);
-        group.enter = BREAK_IF_NULL(lv_group_create());
-        lv_group_set_refocus_policy(group.enter, LV_GROUP_REFOCUS_POLICY_PREV);
+        group = BREAK_IF_NULL(lv_group_create());
+        lv_group_set_refocus_policy(group, LV_GROUP_REFOCUS_POLICY_PREV);
         success = true;
     }
     if( !success ){
@@ -196,168 +176,65 @@ void jolt_gui_group_create() {
 
 void jolt_gui_group_add( lv_obj_t *obj ){
     JOLT_GUI_CTX{
-        lv_group_add_obj(group.main, obj);
+        ESP_LOGD(TAG, "Adding %p to group", obj);
+        lv_group_add_obj(group, obj);
         lv_group_focus_obj( obj );
     }
 }
 
-lv_group_t *jolt_gui_group_main_get() {
-    return group.main;
+lv_group_t *jolt_gui_group_get() {
+    return group;
 }
-
-lv_group_t *jolt_gui_group_back_get() {
-    return group.back;
-}
-
-lv_group_t *jolt_gui_group_enter_get() {
-    return group.enter;
-}
-
 
 /**********
  * Action *
  **********/
 
-/* todo; change the lv_action_t return type to void */
-void jolt_gui_event_action_wrapper_cb( lv_obj_t *obj, lv_event_t event) {
-    ESP_LOGD(TAG, "Event %d", event);
-    switch(event){
-        case LV_EVENT_PRESSED:
-            break;
-        case LV_EVENT_SHORT_CLICKED:
-            lv_obj_get_user_data(obj)->cb.short_clicked( obj );
-            break;
-        default:
-            break;
-    }
-}
-
-lv_obj_t *_jolt_gui_scr_set_action(lv_obj_t *parent, lv_action_t cb, lv_group_t *g) {
-    lv_obj_t *btn = NULL;
+/**
+ * @brief Get the active element of the screen.
+ *
+ * The active element is the object that part of the indev group and actually
+ * takes action upon button input.
+ *
+ * @return Active object. Returns NULL if not found.
+ */
+static lv_obj_t *jolt_gui_scr_get_active(lv_obj_t *parent) {
+    lv_obj_t *obj = NULL;
     JOLT_GUI_CTX{
-        /* Remove any children buttons already in group g */
+        /* Find the BODY CONT */
+        lv_obj_t *cont_body = JOLT_GUI_FIND_AND_CHECK( obj, JOLT_GUI_OBJ_ID_CONT_BODY );
+
+        /* Find the child thats in the group */
         lv_obj_t *child = NULL;
-        lv_obj_type_t obj_type;
-        /* todo; change this find logic to our macro */
         while( NULL != (child = lv_obj_get_child(parent, child)) ) {
-            lv_obj_get_type(child, &obj_type);
-            if( 0==strcmp("lv_btn", obj_type.type[0]) && g==lv_obj_get_group(child) ) {
-                lv_obj_del(child);
-                child = NULL;
+            if( group == lv_obj_get_group(child) ) {
+                obj = child;
+                break;
             }
         }
-
-        btn = BREAK_IF_NULL(lv_btn_create(parent, NULL));
-        jolt_gui_obj_set_action(btn, cb);
-        lv_obj_set_size(btn, 0, 0);
-        lv_group_remove_obj(btn);
-        lv_group_add_obj(g, btn);
-        lv_group_focus_obj(btn);
-
-        if( g == group.enter ) {
-            ESP_LOGD(TAG, "Creating enter button");
-            jolt_gui_obj_id_set(btn, JOLT_GUI_OBJ_ID_ENTER);
-        }
-        else if ( g == group.back) {
-            ESP_LOGD(TAG, "Creating back button");
-            jolt_gui_obj_id_set(btn, JOLT_GUI_OBJ_ID_BACK);
-        }
     }
-    return btn;
+    if( NULL == obj ) {
+        ESP_LOGW(TAG, "Couldn't find screen's active object.");
+    }
+    return obj;
 }
 
-lv_obj_t *jolt_gui_scr_set_back_action(lv_obj_t *parent, lv_action_t cb) {
-    lv_obj_t *btn = NULL;
+void jolt_gui_scr_set_event_cb(lv_obj_t *parent, lv_event_cb_t event_cb) {
     JOLT_GUI_CTX{
-        jolt_gui_scr_id_t type = jolt_gui_scr_id_get( parent );
-        switch( type ) {
-            /* Some screens need to wrap callbacks. Wrapping them here 
-             * enables a unified interface for seting back actions. */
-            case JOLT_GUI_SCR_ID_INVALID:{
-                ESP_LOGE(TAG, "Not a screen");
-                abort();
-                break;
-            }
-            case JOLT_GUI_SCR_ID_DIGIT_ENTRY:{
-                jolt_gui_scr_digit_entry_set_back_action(parent, cb);
-                break;
-            }
-            default:{
-                /* Usually, just create a button in the back group as a child of the screen */
-                btn = _jolt_gui_scr_set_action(parent, cb, group.back);
-                break;
-            }
+        lv_obj_t *active = jolt_gui_scr_get_active(parent);
+        if( NULL != active ) {
+            jolt_gui_obj_set_event_cb(active, event_cb);
         }
     }
-    return btn;
 }
 
-lv_obj_t *jolt_gui_scr_set_enter_action(lv_obj_t *parent, lv_action_t cb) {
-    lv_obj_t *btn = NULL;
+void jolt_gui_scr_set_active_param( lv_obj_t *parent, void *param ) {
     JOLT_GUI_CTX{
-        jolt_gui_scr_id_t type = jolt_gui_scr_id_get( parent );
-        switch( type ) {
-            /* Some screens need to wrap callbacks. Wrapping them here 
-             * enables a unified interface for seting back actions. */
-            case JOLT_GUI_SCR_ID_INVALID:{
-                ESP_LOGE(TAG, "Not a screen");
-                abort();
-                break;
-            }
-            case JOLT_GUI_SCR_ID_DIGIT_ENTRY:{
-                jolt_gui_scr_digit_entry_set_enter_action(parent, cb);
-                break;
-            }
-            default:{
-                /* Usually, just create a button in the back group as a child of the screen */
-                btn = _jolt_gui_scr_set_action(parent, cb, group.enter);
-                break;
-            }
+        lv_obj_t *active = jolt_gui_scr_get_active(parent);
+        if( NULL != active ) {
+            jolt_gui_obj_set_param(active, param);
         }
     }
-    return btn;
-}
-
-void jolt_gui_obj_set_action(lv_obj_t *obj, lv_action_t cb) {
-    lv_obj_set_event_cb(obj, jolt_gui_event_action_wrapper_cb);
-    ESP_LOGD(TAG, "Setting cb.short_clicked to %p", cb);
-    lv_obj_get_user_data(obj)->cb.short_clicked = cb;
-}
-
-void jolt_gui_scr_set_back_param(lv_obj_t *parent, void *param) {
-    lv_obj_t *btn = NULL;
-    JOLT_GUI_CTX{
-        btn = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_BACK);
-        jolt_gui_obj_set_param(btn, param);
-    }
-}
-
-void jolt_gui_scr_set_enter_param(lv_obj_t *parent, void *param) {
-    lv_obj_t *btn = NULL;
-    JOLT_GUI_CTX{
-        btn = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_ENTER);
-        jolt_gui_obj_set_param(btn, param);
-    }
-}
-
-lv_res_t jolt_gui_send_enter_main(lv_obj_t *dummy) {
-    ESP_LOGD(TAG, "Sending LV_GROUP_KEY_ENTER to group.main");
-    return lv_group_send_data(group.main, LV_GROUP_KEY_ENTER);
-}
-
-lv_res_t jolt_gui_send_left_main(lv_obj_t *dummy) {
-    ESP_LOGD(TAG, "Sending LV_GROUP_KEY_LEFT to group.main");
-    return lv_group_send_data(group.main, LV_GROUP_KEY_LEFT);
-}
-
-lv_res_t jolt_gui_send_enter_back(lv_obj_t *dummy) {
-    ESP_LOGD(TAG, "Sending LV_GROUP_KEY_ENTER to group.back");
-    return lv_group_send_data(group.back, LV_GROUP_KEY_ENTER);
-
-}
-lv_res_t jolt_gui_send_enter_enter(lv_obj_t *dummy) {
-    ESP_LOGD(TAG, "Sending LV_GROUP_KEY_ENTER to group.enter");
-    return lv_group_send_data(group.enter, LV_GROUP_KEY_ENTER);
 }
 
 /********
