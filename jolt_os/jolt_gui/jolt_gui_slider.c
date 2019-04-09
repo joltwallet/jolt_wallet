@@ -37,7 +37,7 @@ int16_t jolt_gui_scr_slider_get_value(lv_obj_t *scr) {
 void jolt_gui_scr_slider_set_value(lv_obj_t *scr, int16_t value) {
     JOLT_GUI_CTX{
         lv_obj_t *slider = jolt_gui_scr_slider_get_slider(scr);
-        lv_slider_set_value(slider, value, true);
+        lv_slider_set_value(slider, value, false);
     }
 }
 
