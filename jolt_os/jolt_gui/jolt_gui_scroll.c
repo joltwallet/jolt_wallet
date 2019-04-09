@@ -40,6 +40,7 @@ lv_obj_t *jolt_gui_scr_scroll_create(const char *title) {
 
         jolt_gui_group_add( page );
         lv_group_focus_obj(page);
+        jolt_gui_scr_set_event_cb(parent, jolt_gui_event_del);
     }
     return parent;
 }

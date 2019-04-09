@@ -43,6 +43,9 @@ lv_obj_t *jolt_gui_scr_bignum_create(const char *title, const char *subtitle, ui
 
         /* Align Big Number to Center bottom of screen */
         lv_obj_align(number_label, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
+
+        /* Default back action is to delete screen */
+        jolt_gui_scr_set_event_cb(parent, jolt_gui_event_del);
     }
 
     return parent;
