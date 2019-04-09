@@ -80,7 +80,7 @@ static lv_res_t new_roller_signal(lv_obj_t *roller, lv_signal_t sign, void * par
 
         call_ancestor_signal = false;
         switch(c){
-            case LV_GROUP_KEY_LEFT: {
+            case LV_KEY_LEFT: {
                 /* Preserve the currently selected roller value */
                 rol_ext->ddlist.sel_opt_id_ori = rol_ext->ddlist.sel_opt_id;
 
@@ -94,7 +94,7 @@ static lv_res_t new_roller_signal(lv_obj_t *roller, lv_signal_t sign, void * par
                 }
                 break;
             }
-            case LV_GROUP_KEY_ENTER: {
+            case LV_KEY_ENTER: {
                 /* Preserve the currently selected roller value */
                 rol_ext->ddlist.sel_opt_id_ori = rol_ext->ddlist.sel_opt_id;
                 if(ext->sel < ext->num_rollers-1) {

@@ -1,6 +1,8 @@
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
+#include "esp_log.h"
 #include "jolt_gui.h"
 #include "jolt_gui_slider.h"
-#include "esp_log.h"
 
 /* Slider Screen Structure:
  * * SCREEN
@@ -71,7 +73,8 @@ lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_eve
                 CONFIG_JOLT_GUI_SLIDER_W, CONFIG_JOLT_GUI_SLIDER_H);
         lv_obj_align(slider, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -10);
         jolt_gui_obj_set_event_cb(slider, cb);
-        lv_slider_set_value(slider, 0, true); // Default initial value
+        lv_slider_set_value(slider, 0, false); // Default initial value
+
         // todo use CONFIG_JOLT_GUI_SLIDER_ANIM_MS
         //lv_slider_set_anim_time(slider, CONFIG_JOLT_GUI_SLIDER_ANIM_MS);
 
@@ -92,7 +95,6 @@ lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_eve
         lv_obj_set_size(label, lv_obj_get_width(cont_body),
                 label_style->text.font->h_px);
         lv_obj_align(label, NULL, LV_ALIGN_OUT_TOP_MID, 0, -6);
-
     }
     return parent;
 }

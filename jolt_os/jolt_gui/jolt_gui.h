@@ -66,7 +66,7 @@ extern lv_theme_t *jolt_gui_theme;
  *********************/
 /**
  * @brief Deletes the currently focused screen.
- *
+ * todo: change to void
  * Internally it gets the currently focused object, and recursively finds the
  * parent, then deletes that parent.
  */

@@ -49,6 +49,7 @@ lv_res_t jolt_gui_scr_del() {
                 parent = tmp;
             }
         }
+        ESP_LOGD(TAG, "Deleting screen %p", parent);
         jolt_gui_obj_del(parent);
         res = LV_RES_INV;
     }
@@ -241,8 +242,10 @@ void jolt_gui_scr_set_active_param( lv_obj_t *parent, void *param ) {
 }
 
 void jolt_gui_event_del( lv_obj_t *obj, lv_event_t event) {
+    ESP_LOGD(TAG, "%s: event %d", __func__, event);
     if( LV_EVENT_CANCEL == event ) {
         jolt_gui_scr_del();
+        ESP_LOGD(TAG, "Screen Deleted");
     }
 }
 

@@ -1,3 +1,5 @@
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
 #include "esp_log.h"
 #include "jolt_gui/jolt_gui.h"
 #include "hal/storage/storage.h"
@@ -7,6 +9,7 @@ static const char TAG[] = "menus/settings/screen_brightness";
 
 
 static void screen_brightness_cb(lv_obj_t *slider, lv_event_t event) {
+    ESP_LOGD(TAG, "screen_brightness_cb event %d", event);
     if( LV_EVENT_VALUE_CHANGED == event ) {
         int16_t slider_pos = lv_slider_get_value(slider);
         set_display_brightness(slider_pos);
@@ -14,6 +17,7 @@ static void screen_brightness_cb(lv_obj_t *slider, lv_event_t event) {
     else if( LV_EVENT_SHORT_CLICKED == event || LV_EVENT_CANCEL == event ) {
         int16_t slider_pos = lv_slider_get_value(slider);
         save_display_brightness(slider_pos);
+        ESP_LOGE(TAG, "deleting screen");
         jolt_gui_scr_del();
     }
 }

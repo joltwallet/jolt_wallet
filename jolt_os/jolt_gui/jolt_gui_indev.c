@@ -31,21 +31,19 @@ static bool easy_input_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
         data->state = LV_INDEV_STATE_PR;
         if(input_buf & (1ULL << EASY_INPUT_BACK)){
             ESP_LOGD(TAG, "back");
-            //jolt_gui_send_enter_back( NULL );
-            data->key = LV_GROUP_KEY_ESC;
+            data->key = LV_KEY_ESC;
         }
         else if(input_buf & (1ULL << EASY_INPUT_UP)){
             ESP_LOGD(TAG, "up");
-            data->key = LV_GROUP_KEY_UP;
+            data->key = LV_KEY_UP;
         }
         else if(input_buf & (1ULL << EASY_INPUT_DOWN)){
             ESP_LOGD(TAG, "down");
-            data->key = LV_GROUP_KEY_DOWN;
+            data->key = LV_KEY_DOWN;
         }
         else if(input_buf & (1ULL << EASY_INPUT_ENTER)){
             ESP_LOGD(TAG, "enter");
-            //jolt_gui_send_enter_enter( NULL );
-            data->key = LV_GROUP_KEY_ENTER;
+            data->key = LV_KEY_ENTER;
         }
         else {
         }
