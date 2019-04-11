@@ -61,7 +61,7 @@ lv_obj_t *jolt_gui_scr_menu_create(const char *title) {
         lv_obj_t *menu = BREAK_IF_NULL(lv_list_create(cont_body, NULL));
         ESP_LOGD(TAG, "Menu created %p", menu);
         if ( NULL == old_list_signal ) {
-            old_list_signal = lv_obj_get_signal_func(menu);
+            old_list_signal = lv_obj_get_signal_cb(menu);
         }
         lv_style_t *sb_style = lv_obj_get_style(menu);
 

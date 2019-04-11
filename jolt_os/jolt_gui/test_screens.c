@@ -36,7 +36,7 @@ void jolt_gui_test_json_create(lv_obj_t *btn, lv_event_t event) {
     }
 
 exit:
-    if(!json) jolt_json_del(json);
+    if(json) jolt_json_del(json);
 #undef EXIT_IF_NULL
 }
 
@@ -55,7 +55,7 @@ static void jolt_gui_test_number_enter_cb(lv_obj_t *parent, lv_event_t event){
 
 void jolt_gui_test_number_create(lv_obj_t *btn, lv_event_t event) {
     if( LV_EVENT_SHORT_CLICKED == event ) {
-        lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "Number Test", 7, 2); 
+        lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "Number Test", 5, 2);
         /* Set the digit left of the dp */
         jolt_gui_scr_digit_entry_set_pos(scr, 2);
         jolt_gui_scr_set_event_cb(scr, jolt_gui_test_number_enter_cb);

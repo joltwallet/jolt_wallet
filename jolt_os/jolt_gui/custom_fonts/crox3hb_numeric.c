@@ -1,7 +1,7 @@
 
 #include "lvgl/src/lv_misc/lv_font.h"
 
-#if USE_LV_FONT_CROX3HB_NUMERIC != 0  /*Can be enabled in lv_conf.h*/
+#if LV_USE_FONT_CROX3HB_NUMERIC != 0  /*Can be enabled in lv_conf.h*/
 
 static const uint8_t crox3hb_glyph_bitmap[] =
 {
@@ -235,7 +235,6 @@ static const uint32_t crox3hb_unicode_list[] = {
     0x37,
     0x38,
     0x39,
-    0,    /*End indicator*/
 };
 
 lv_font_t lv_font_crox3hb_numeric =
@@ -251,6 +250,7 @@ lv_font_t lv_font_crox3hb_numeric =
     .bpp = 1,				/*Bit per pixel*/
     .monospace = 0,				/*Fix width (0: if not used)*/
     .next_page = NULL,		/*Pointer to a font extension*/
+    .glyph_cnt = 13,
 };
 
 #endif

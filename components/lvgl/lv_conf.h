@@ -186,12 +186,12 @@ typedef void * lv_indev_drv_user_data_t;                /*Type of user data in t
  * #define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(my_font_1) \
  *                                LV_FONT_DECLARE(my_font_2) \
  */
-#define USE_LV_FONT_CROX3HB_NUMERIC 1 /* Used for Pin Entry Roller Digits */
-#define USE_LV_FONT_DEJAVU_40_NUMERIC 1 /* Used for Misc big numbers */
-#define USE_LV_FONT_PIXELMIX_7 1
+#define LV_USE_FONT_CROX3HB_NUMERIC 1 /* Used for Pin Entry Roller Digits */
+#define LV_USE_FONT_DEJAVU_40_NUMERIC 1 /* Used for Misc big numbers */
+#define LV_USE_FONT_PIXELMIX_7 1 /* Default small font */
 
-#if CONFIG_JOLT_LANG_ENGLISH_EN ||CONFIG_JOLT_LANG_SPANISH_EN
-    #define USE_LV_FONT_PIXELMIX_7_LATIN_SUP 1
+#if CONFIG_JOLT_LANG_ENGLISH_EN || CONFIG_JOLT_LANG_SPANISH_EN
+    #define LV_USE_FONT_PIXELMIX_7_LATIN_SUP 1
 #endif
 
 #define LV_FONT_CUSTOM_DECLARE \
@@ -229,7 +229,8 @@ typedef void * lv_indev_drv_user_data_t;                /*Type of user data in t
     x(JOLT_GUI_OBJ_ID_LIST)             /**<  */ \
     x(JOLT_GUI_OBJ_ID_ROLLER)           /**<  */ \
     x(JOLT_GUI_OBJ_ID_DECIMAL_POINT)    /**<  */ \
-    x(JOLT_GUI_OBJ_ID_MAX)
+    x(JOLT_GUI_OBJ_ID_DIGIT_ENTRY)      /**<  */ \
+    x(JOLT_GUI_OBJ_ID_MAX)              /**<  */
 
 
 #define GENERATE_ENUM(ENUM) ENUM,

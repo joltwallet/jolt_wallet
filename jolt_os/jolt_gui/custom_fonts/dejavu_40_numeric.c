@@ -1,7 +1,7 @@
 
 #include "../lv_misc/lv_font.h"
 
-#if USE_LV_FONT_DEJAVU_40_NUMERIC != 0  /*Can be enabled in lv_conf.h*/
+#if LV_USE_FONT_DEJAVU_40_NUMERIC != 0  /*Can be enabled in lv_conf.h*/
 
 /***********************************************************************************
  * DejaVuSans.ttf 40 px Font in U+0020 ( ) .. U+007e (~)  range with 1 bpp

@@ -1,7 +1,7 @@
 
 #include "lvgl/src/lv_misc/lv_font.h"
 
-#if USE_LV_FONT_PIXELMIX_7 != 0  /*Can be enabled in lv_conf.h*/
+#if LV_USE_FONT_PIXELMIX_7 != 0  /*Can be enabled in lv_conf.h*/
 
 /***********************************************************************************
  * pixelmix.ttf 7 px Font in U+0020 ( ) .. U+007f ()  range with 1 bpp
