@@ -21,6 +21,7 @@ void menu_storage_create(lv_obj_t *btn, lv_event_t event) {
         goto exit;
     }
     jolt_gui_scr_loadingbar_update(scr, NULL, subtitle, percentage);
+    jolt_gui_scr_set_event_cb(scr, jolt_gui_event_del);
 
 exit:
     return;

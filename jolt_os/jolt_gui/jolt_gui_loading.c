@@ -110,6 +110,7 @@ lv_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
         /* Create Loading Bar */
         lv_obj_t *bar = BREAK_IF_NULL(lv_bar_create(cont_body, NULL));
         jolt_gui_obj_id_set(bar, JOLT_GUI_OBJ_ID_LOADINGBAR);
+        jolt_gui_group_add(bar);
         lv_obj_set_size(bar, 
                 CONFIG_JOLT_GUI_LOADINGBAR_W, CONFIG_JOLT_GUI_LOADINGBAR_H);
         lv_obj_align(bar, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -10);
@@ -147,6 +148,7 @@ lv_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text) {
         /* Create PreLoading Object */
         lv_obj_t *preload = BREAK_IF_NULL(lv_preload_create(cont_body, NULL));
         jolt_gui_obj_id_set(preload, JOLT_GUI_OBJ_ID_PRELOADING);
+        jolt_gui_group_add(preload);
         lv_obj_set_size(preload, 30, 30);
         lv_obj_align(preload, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
 
