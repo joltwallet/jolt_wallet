@@ -11,6 +11,10 @@
 
 /**
  * @brief Create a scrollable screen
+ *
+ * This basically creates an lv_page in a screen (active object) that additional 
+ * elements can be added to.
+ *
  * @param[in] title title-bar string
  * @return scroll screen
  */

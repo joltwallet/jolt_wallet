@@ -106,12 +106,16 @@ lv_obj_t *test_battery_scr = NULL;
 void jolt_gui_test_battery_del(lv_obj_t *btn, lv_event_t event) {
     if( LV_EVENT_CANCEL == event ) {
         lv_task_del(test_battery_task_h);
-        lv_obj_del(test_battery_scr);
+        if(NULL != test_battery_scr){
+            lv_obj_del(test_battery_scr);
+            test_battery_scr = NULL;
+        }
     }
 }
 void jolt_gui_test_battery_task(void *param) {
     if(NULL != test_battery_scr) {
         lv_obj_del(test_battery_scr);
+        test_battery_scr = NULL;
     }
     int val = adc1_get_raw(JOLT_ADC1_VBATT);
     char buf[40];

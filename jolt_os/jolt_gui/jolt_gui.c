@@ -116,7 +116,7 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
 
         label = BREAK_IF_NULL(lv_label_create(title_cont, NULL));
         jolt_gui_obj_id_set(label, JOLT_GUI_OBJ_ID_LABEL_0);
-        lv_style_t *label_style = lv_obj_get_style(label);
+        const lv_style_t *label_style = lv_obj_get_style(label);
         lv_label_set_long_mode(label, LV_LABEL_LONG_ROLL);
         lv_label_set_body_draw(label, false); // dont draw background
         lv_obj_align(label, NULL, LV_ALIGN_IN_LEFT_MID, 0, 0);

@@ -63,7 +63,7 @@ lv_obj_t *jolt_gui_scr_menu_create(const char *title) {
         if ( NULL == old_list_signal ) {
             old_list_signal = lv_obj_get_signal_cb(menu);
         }
-        lv_style_t *sb_style = lv_obj_get_style(menu);
+        const lv_style_t *sb_style = lv_obj_get_style(menu);
 
         lv_obj_set_signal_cb(menu, new_list_signal);
 

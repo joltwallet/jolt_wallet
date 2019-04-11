@@ -22,8 +22,6 @@ lv_obj_t *jolt_gui_scr_scroll_get_page(lv_obj_t *scr){
     return page;
 }
 
-/* Creates a simple screen with a single scrollable text body
- * */
 lv_obj_t *jolt_gui_scr_scroll_create(const char *title) {
     JOLT_GUI_SCR_CTX(title){
         /* Set screen ID */
@@ -40,7 +38,7 @@ lv_obj_t *jolt_gui_scr_scroll_create(const char *title) {
 
         jolt_gui_group_add( page );
         lv_group_focus_obj(page);
-        jolt_gui_scr_set_event_cb(parent, jolt_gui_event_del);
+        jolt_gui_scr_set_event_cb(parent, jolt_gui_event_del); /* By default, back just deletes screen */
     }
     return parent;
 }

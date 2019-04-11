@@ -78,7 +78,6 @@ void jolt_gui_scr_loadingbar_autoupdate(lv_obj_t *parent, int8_t *progress) {
         return;
     }
     JOLT_GUI_CTX{
-        // todo: maybe set this as the loadingbar object param
         jolt_gui_obj_set_param(parent, param);
         param->scr      = parent;
         param->progress = progress;
@@ -124,7 +123,7 @@ lv_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
         lv_label_set_long_mode(label, LV_LABEL_LONG_ROLL);
 
         /* Set Label Size and Position */
-        lv_style_t *label_style = lv_obj_get_style(label);
+        const lv_style_t *label_style = lv_obj_get_style(label);
         lv_obj_set_size(label, lv_obj_get_width(cont_body),
                 label_style->text.font->h_px);
         lv_obj_align(label, bar, LV_ALIGN_OUT_TOP_MID, 0, -10);
@@ -162,7 +161,7 @@ lv_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text) {
             lv_label_set_text(label, text);
         }
         lv_label_set_long_mode(label, LV_LABEL_LONG_ROLL);
-        lv_style_t *label_style = lv_obj_get_style(label);
+        const lv_style_t *label_style = lv_obj_get_style(label);
         lv_obj_set_size(label, lv_obj_get_width(cont_body),
                 label_style->text.font->h_px);
         lv_obj_align(label, preload, LV_ALIGN_OUT_TOP_MID, 0, -6);

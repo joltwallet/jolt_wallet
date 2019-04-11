@@ -57,11 +57,6 @@ void jolt_gui_scr_slider_set_label(lv_obj_t *scr, const char *text){
     }
 }
 
-
-/* Creates a screen with the given title, creates a slider, a label above the 
- * slider, and will activate the callback everytime the slider value changes.
- *
- * Back button is set to screen delete by default. */
 lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_event_cb_t cb) {
     JOLT_GUI_SCR_CTX( title ) {
         jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_SLIDER);
@@ -91,7 +86,7 @@ lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_eve
             lv_label_set_text(label, text);
         }
         lv_label_set_long_mode(label, LV_LABEL_LONG_ROLL);
-        lv_style_t *label_style = lv_obj_get_style(label);
+        const lv_style_t *label_style = lv_obj_get_style(label);
         lv_obj_set_size(label, lv_obj_get_width(cont_body),
                 label_style->text.font->h_px);
         lv_obj_align(label, NULL, LV_ALIGN_OUT_TOP_MID, 0, -6);
