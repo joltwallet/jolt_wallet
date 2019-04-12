@@ -63,6 +63,7 @@ void jolt_gui_menu_home_create() {
     jolt_gui_scr_menu_add(main_menu, NULL, "JSON", jolt_gui_test_json_create);
     jolt_gui_scr_menu_add(main_menu, NULL, "QR", jolt_gui_test_qrcode_create);
     jolt_gui_scr_menu_add(main_menu, NULL, "Loading", jolt_gui_test_loading_create);
+    jolt_gui_scr_menu_add(main_menu, NULL, "Preloading", jolt_gui_test_preloading_create);
     jolt_gui_scr_menu_add(main_menu, NULL, "Number", jolt_gui_test_number_create);
     jolt_gui_scr_menu_add(main_menu, NULL, "Battery", jolt_gui_test_battery_create);
     jolt_gui_scr_menu_add(main_menu, NULL, "Alphabet", jolt_gui_test_alphabet_create);

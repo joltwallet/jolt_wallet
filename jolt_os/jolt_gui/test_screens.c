@@ -69,6 +69,14 @@ void jolt_gui_test_qrcode_create(lv_obj_t *btn, lv_event_t event) {
     }
 }
 
+void jolt_gui_test_preloading_create(lv_obj_t *btn, lv_event_t event){
+    if( LV_EVENT_SHORT_CLICKED == event ) {
+        lv_obj_t *scr = NULL;
+        scr = jolt_gui_scr_preloading_create("Preloading", "Status Message");
+        jolt_gui_scr_set_event_cb(scr, jolt_gui_event_del);
+    }
+}
+
 void test_loading_task(void *param) {
     lv_obj_t *scr = (lv_obj_t *)param;
     for(uint8_t i=0;i < 101; vTaskDelay(pdMS_TO_TICKS(1000)), i+=10){

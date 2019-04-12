@@ -166,8 +166,11 @@ void jolt_gui_group_create() {
     /* Create Groups for user input */
     bool success = false;
     JOLT_GUI_CTX{
+        lv_theme_t * th = lv_theme_get_current();
         group = BREAK_IF_NULL(lv_group_create());
         lv_group_set_refocus_policy(group, LV_GROUP_REFOCUS_POLICY_PREV);
+        lv_group_set_style_mod_cb(group, th->group.style_mod);
+        lv_group_set_style_mod_edit_cb(group, th->group.style_mod_edit);
         success = true;
     }
     if( !success ){

@@ -109,6 +109,17 @@ void app_main() {
         ESP_LOGI(TAG, "Initializing LVGL graphics system");
         lv_init();
         display_init();
+
+        /* Set GUI Language 
+         * This must be done before setting up indev so that the group 
+         * style editors can be properly initialized from the theme. */
+        {
+            ESP_LOGI(TAG, "Creating GUI");
+            jolt_lang_t lang;
+            storage_get_u8( &lang, "user", "lang", CONFIG_JOLT_LANG_DEFAULT );
+            jolt_lang_set( lang ); // Internally initializes the theme
+        }
+
         jolt_gui_indev_init();
     }
 
@@ -136,14 +147,6 @@ void app_main() {
         xTaskCreate(jolt_hw_monitor_task,
                 "HW_Monitor", CONFIG_JOLT_TASK_STACK_SIZE_HW_MONITORS,
                 NULL, CONFIG_JOLT_TASK_PRIORITY_HW_MONITORS, NULL);
-    }
-
-    /* Set GUI Language */
-    {
-        ESP_LOGI(TAG, "Creating GUI");
-        jolt_lang_t lang;
-        storage_get_u8( &lang, "user", "lang", CONFIG_JOLT_LANG_DEFAULT );
-        jolt_lang_set( lang ); // Internally initializes the theme
     }
 
     /* Create GUI Drawing Loop */

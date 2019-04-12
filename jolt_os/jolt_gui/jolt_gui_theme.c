@@ -142,11 +142,9 @@ static void basic_init(void)
 static void style_mod(lv_group_t * group, lv_style_t * style) {
     /* Do Nothing */
     (void) group;
-    //(void) style;
-    style->body.border.opa = LV_OPA_COVER;
-    style->body.border.color = LV_COLOR_BLACK;
-    style->body.border.width = 5;
+    (void) style;
 }
+
 static void style_mod_edit(lv_group_t * group, lv_style_t * style) {
     /* Do Nothing */
     (void) group;
@@ -360,6 +358,13 @@ static void page_init(void)
 #endif
 }
 
+static void preload_init(void)
+{
+#if LV_USE_PRELOAD
+    theme.style.preload = &def;
+#endif
+}
+
 static void ta_init(void)
 {
 #if LV_USE_TA
@@ -493,6 +498,7 @@ lv_theme_t * jolt_gui_theme_init(uint16_t hue, const lv_font_t * font)
     lmeter_init();
     mbox_init();
     page_init();
+    preload_init();
     roller_init();
     slider_init();
     sw_init();
