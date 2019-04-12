@@ -218,7 +218,8 @@ static void screen_pin_entry_create(lv_obj_t *btn, lv_event_t event) {
     }
 }
 
-/* Displays 24-word mnemonic.
+/**
+ * Displays 24-word mnemonic.
  * Creates StartupScreen2
  */
 static void screen_mnemonic_create(lv_obj_t *btn, lv_event_t event) {
@@ -242,19 +243,22 @@ static void screen_mnemonic_create(lv_obj_t *btn, lv_event_t event) {
             break;
         }
         case LV_EVENT_CANCEL:
-            /* Do Nothing */
+            /* Do Nothing - delete action handled by default */
             break;
         default:
             break;
     }
 }
 
-/* Called externally to begin the first-boot GUIi.
+/**
+ * Called externally to begin the first-boot GUI.
+ *
  * Creates StartupScreen1
  */
 void jolt_gui_first_boot_create() {
     generate_mnemonic();
 
+    // todo: localization
     lv_obj_t *scr = jolt_gui_scr_text_create( "First Startup",
             "Welcome to Jolt, "
             "please backup the following secret mnemonic.");

@@ -173,6 +173,15 @@ lv_group_t *jolt_gui_group_get();
 /**********
  * Action *
  **********/
+/**
+ * @brief Get the active element of the screen.
+ *
+ * The active element is the object that part of the indev group and actually
+ * takes action upon button input.
+ *
+ * @return Active object. Returns NULL if not found.
+ */
+lv_obj_t *jolt_gui_scr_get_active(lv_obj_t *parent);
 
 /**
  * @brief Set the event callback for the active element of the screen

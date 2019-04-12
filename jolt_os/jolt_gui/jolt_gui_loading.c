@@ -14,11 +14,39 @@
 
 static const char TAG[] = "scr_loading";
 
+static lv_signal_cb_t old_bar_signal = NULL;     /*Store the old signal function*/
+
 typedef struct autoupdate_param_t {
     lv_obj_t *scr;
     lv_task_t *task;
     int8_t *progress;
 } autoupdate_param_t;
+
+typedef struct {
+    lv_bar_ext_t cont;       /*The ancestor container structure*/
+    autoupdate_param_t *autoupdate;
+} loadingbar_ext_t;
+
+static lv_res_t new_bar_signal(lv_obj_t *bar, lv_signal_t sign, void * param)
+{
+    lv_res_t res;
+    char c;
+
+    loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar);
+
+    if(sign == LV_SIGNAL_CLEANUP) {
+        if( NULL != ext->autoupdate ) {
+            lv_task_del( ext->autoupdate->task );
+            free( ext->autoupdate );
+        }
+    }
+
+    res = old_bar_signal(bar, sign, param);
+    if(res != LV_RES_OK) return res;
+
+    return res;
+}
+
 
 
 /* Update the loading screen.
@@ -62,11 +90,14 @@ void jolt_gui_scr_loadingbar_update(lv_obj_t *parent,
 /* lv_task that periodically updates the loading screen */
 static void autoupdate_task(void *input) {
     lv_obj_t *scr = input;
-    autoupdate_param_t *param = jolt_gui_obj_get_param( scr );
-    if( *(param->progress) <= 100 && *(param->progress) >= 0 ) {
-        // The +10 makes it look better
-        jolt_gui_scr_loadingbar_update(scr, NULL, NULL,
-                *(param->progress) + 10);
+    JOLT_GUI_CTX{
+        lv_obj_t *bar = BREAK_IF_NULL(jolt_gui_scr_get_active(scr));
+        loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar);
+        if( *(ext->autoupdate->progress) <= 100 && *(ext->autoupdate->progress) >= 0 ) {
+            // The +10 makes it look better
+            jolt_gui_scr_loadingbar_update(scr, NULL, NULL,
+                    *(ext->autoupdate->progress) + 10);
+        }
     }
 }
 
@@ -78,24 +109,12 @@ void jolt_gui_scr_loadingbar_autoupdate(lv_obj_t *parent, int8_t *progress) {
         return;
     }
     JOLT_GUI_CTX{
-        jolt_gui_obj_set_param(parent, param);
+        lv_obj_t *bar = BREAK_IF_NULL(jolt_gui_scr_get_active(parent));
+        loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar);
+        ext->autoupdate = param;
         param->scr      = parent;
         param->progress = progress;
         param->task = lv_task_create(autoupdate_task, 100, LV_TASK_PRIO_HIGH, parent);
-    }
-}
-
-/* Deletes the update task and free's its parameters. DOES NOT delete parent */
-void jolt_gui_scr_loadingbar_autoupdate_del(lv_obj_t *parent) {
-    JOLT_GUI_CTX{
-        autoupdate_param_t *param = jolt_gui_obj_get_param( parent );
-        if( NULL == param ) {
-            break;
-        }
-        if( NULL != param->task ) {
-            lv_task_del( param->task );
-        }
-        free( param );
     }
 }
 
@@ -109,6 +128,13 @@ lv_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
 
         /* Create Loading Bar */
         lv_obj_t *bar = BREAK_IF_NULL(lv_bar_create(cont_body, NULL));
+        BREAK_IF_NULL(lv_obj_allocate_ext_attr(bar, sizeof(loadingbar_ext_t)));
+        loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar);
+        ext->autoupdate = NULL;
+        if( NULL == old_bar_signal ) {
+            old_bar_signal = lv_obj_get_signal_cb(bar);       /*Save to old signal function*/
+        }
+        lv_obj_set_signal_cb(bar, new_bar_signal);
         jolt_gui_obj_id_set(bar, JOLT_GUI_OBJ_ID_LOADINGBAR);
         jolt_gui_group_add(bar);
         lv_obj_set_size(bar, 
