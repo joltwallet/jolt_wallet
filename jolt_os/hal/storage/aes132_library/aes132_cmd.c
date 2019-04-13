@@ -26,9 +26,6 @@ static uint8_t lin2bin(uint8_t bin) {
 
 uint8_t aes132_auth(const uint8_t *key, uint16_t key_id,
         struct aes132h_nonce_s *nonce) {
-    /* Used to check a PIN attempt. Upon successful attempt, unlocks the 
-     * corresponding UserZone. 
-     */
     uint8_t res;
     uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = { 0 };
     uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = { 0 };
@@ -102,15 +99,6 @@ exit:
 
 uint8_t aes132_blockread(uint8_t *data, const uint16_t address,
         const uint8_t count) {
-    /* BlockRead Command reads 1~32 bytes of plaintext from userzone or 
-     * configuration memory. Standard eeprom read commands can also read userzone
-     * data if authentication nor encryption is required. Standard eeprom read
-     * commands cannot read configuration memory.
-     *
-     * Requested data cannot cross page boundaries.
-     *
-     * Configuration memory can only be read via the blockread command.
-     */
     uint8_t res;
     uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
     uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
@@ -130,7 +118,6 @@ uint8_t aes132_blockread(uint8_t *data, const uint16_t address,
 }
 
 uint8_t aes132_check_configlock(bool *status) {
-    /* Returns true if device configuratoin is locked */
     uint8_t data = 0x55;
     uint8_t res;
     res = aes132_blockread(&data, AES132_LOCK_CONFIG_ADDR, sizeof(data));
@@ -210,15 +197,7 @@ exit:
 
 uint8_t aes132_encrypt(const uint8_t *in, uint8_t len, uint8_t key_id,
         uint8_t *out_data, uint8_t *out_mac, struct aes132h_nonce_s *nonce) {
-    /* Only used in key stretching!
-     *
-     * Encrypts upto 32 bytes of data (*in with length len) using key_id
-     * returns cipher text (*out)
-     * len must be <=32.
-     * out_data must be able to handle 16 bytes (<=16byte in) or 
-     * 32 bytes (<=32 byte in)
-     *
-     * todo: something with the output MAC*/
+    /* todo: something with the output MAC*/
     uint8_t res;
     uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = { 0 };
     uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = { 0 };
@@ -337,9 +316,6 @@ exit:
 }
 
 uint8_t aes132_legacy(const uint8_t key_id, uint8_t *data) {
-    /* Only used for key stretching.
-     * Passes 16-bytes of data through the AES engine using key at key_id.
-     * Results are returned in data. */
     uint8_t res;
     uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
     CONFIDENTIAL uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
@@ -363,12 +339,7 @@ exit:
 }
 
 uint8_t aes132_lock_device() {
-    /* Locks smallzone, config memory, key memory, and makes the master
-     * UserZone read-only 
-     *
-     * Warning; this function has permament physical impacts.
-     * */
-    // Configuration Memory MUST be locked before Key Memory
+    // note: Configuration Memory MUST be locked before Key Memory
     uint8_t res;
     uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
     uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
@@ -434,7 +405,6 @@ exit:
 }
 
 uint8_t aes132_mac_count(uint8_t *count) {
-    /* Gets the maccount */
     uint8_t res;
     uint8_t tx_buffer[AES132_COMMAND_SIZE_MAX] = {0};
     uint8_t rx_buffer[AES132_RESPONSE_SIZE_MAX] = {0};
