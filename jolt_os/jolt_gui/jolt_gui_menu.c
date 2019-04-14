@@ -171,3 +171,16 @@ void jolt_gui_scr_menu_remove(lv_obj_t *par, uint16_t start, uint16_t end) {
         }
     }
 }
+
+void jolt_gui_scr_menu_set_param( lv_obj_t *par, void *param ) {
+    JOLT_GUI_CTX{
+        lv_obj_t *list = NULL;
+        lv_obj_t *btn = NULL;
+        list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list(par));
+        jolt_gui_obj_set_param(list, param);
+        while( NULL != (btn = lv_list_get_next_btn(list, btn)) ) {
+            jolt_gui_obj_set_param(btn, param);
+        }
+    }
+
+}

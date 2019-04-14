@@ -75,4 +75,12 @@ void jolt_gui_scr_menu_set_btn_selected(lv_obj_t *par, lv_obj_t *btn);
  */
 void jolt_gui_scr_menu_remove(lv_obj_t *par, uint16_t start, uint16_t end);
 
+/**
+ * @brief Set the active object param and all of the buttons
+ * @param[in] par Menu screen
+ * @param[in] param param to set.
+ */
+void jolt_gui_scr_menu_set_param( lv_obj_t *par, void *param );
+
+
 #endif

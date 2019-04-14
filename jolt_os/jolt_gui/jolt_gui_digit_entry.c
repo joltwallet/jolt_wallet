@@ -14,7 +14,7 @@
  *
  */
 
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include "esp_log.h"
 
@@ -71,6 +71,12 @@ static lv_res_t digit_entry_signal(lv_obj_t *digit_entry, lv_signal_t sign, void
 
     if(sign == LV_SIGNAL_CONTROL){
         char c = *((char *)param);
+        /* Deactivate the User's Callback */
+        if( NULL != digit_entry->event_cb ){
+            ext->user_cb = digit_entry->event_cb;
+            digit_entry->event_cb = NULL;
+        }
+
         switch(c){
             case LV_KEY_ENTER: {
                 if( ext->sel == ext->num_rollers - 1 ){
@@ -79,11 +85,6 @@ static lv_res_t digit_entry_signal(lv_obj_t *digit_entry, lv_signal_t sign, void
                     lv_obj_set_event_cb(digit_entry, ext->user_cb);
                 }
                 else{
-                    /* Deactivate the User's Callback */
-                    if( NULL != digit_entry->event_cb ) {
-                        ext->user_cb = digit_entry->event_cb;
-                        digit_entry->event_cb = NULL;
-                    }
                     /* Change the selected roller */
                     lv_roller_set_visible_row_count(ext->rollers[ext->sel], 1);
                     (ext->sel)++;
@@ -98,12 +99,6 @@ static lv_res_t digit_entry_signal(lv_obj_t *digit_entry, lv_signal_t sign, void
                     lv_obj_set_event_cb(digit_entry, ext->user_cb);
                 }
                 else{
-                    /* Deactivate the User's Callback */
-                    if( NULL != digit_entry->event_cb ){
-                        ext->user_cb = digit_entry->event_cb;
-                        digit_entry->event_cb = NULL;
-                    }
-
                     /* Change the selected roller */
                     lv_roller_set_visible_row_count(ext->rollers[ext->sel], 1);
                     (ext->sel)--;
@@ -168,7 +163,6 @@ static lv_obj_t *digit_create(lv_obj_t *parent) {
     lv_roller_set_options(roller, "0\n9\n8\n7\n6\n5\n4\n3\n2\n1", true);
     lv_roller_set_visible_row_count(roller, 1);
     lv_roller_set_align(roller, LV_LABEL_ALIGN_CENTER);
-    lv_obj_set_auto_realign(roller, false);
     return roller;
 }
 
@@ -305,6 +299,7 @@ uint8_t jolt_gui_scr_digit_entry_get_hash(lv_obj_t *digit_entry, uint8_t *hash) 
     uint8_t res = 1;
     JOLT_GUI_CTX{
         uint32_t val = jolt_gui_scr_digit_entry_get_int(digit_entry);
+        ESP_LOGD(TAG, "Hashing value %d", val);
 
         /* Convert pin into a 256-bit key */
         crypto_generichash_blake2b_state hs;

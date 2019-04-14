@@ -215,6 +215,11 @@ static inline void jolt_gui_obj_set_param( lv_obj_t *obj, void *param ) {
 void jolt_gui_scr_set_active_param( lv_obj_t *parent, void *param );
 
 /**
+ * @brief get the event param pointer in the active element of the screen
+ */
+void *jolt_gui_scr_get_active_param( lv_obj_t *parent );
+
+/**
  * @brief Event handler that deletes the current screen
  *
  * Used primarily as the default event handler for certain screen types.

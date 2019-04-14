@@ -236,6 +236,17 @@ void jolt_gui_scr_set_active_param( lv_obj_t *parent, void *param ) {
     }
 }
 
+void *jolt_gui_scr_get_active_param( lv_obj_t *parent ) {
+    void *param = NULL;
+    JOLT_GUI_CTX{
+        lv_obj_t *active = jolt_gui_scr_get_active(parent);
+        if( NULL != active ) {
+            param = jolt_gui_obj_get_param( active );
+        }
+    }
+    return param;
+}
+
 void jolt_gui_event_del( lv_obj_t *obj, lv_event_t event) {
     ESP_LOGD(TAG, "%s: event %d", __func__, event);
     if( LV_EVENT_CANCEL == event ) {
