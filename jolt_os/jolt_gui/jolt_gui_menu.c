@@ -182,5 +182,12 @@ void jolt_gui_scr_menu_set_param( lv_obj_t *par, void *param ) {
             jolt_gui_obj_set_param(btn, param);
         }
     }
+}
 
+int32_t jolt_gui_scr_menu_get_btn_index( lv_obj_t *btn ) {
+    int32_t index = -1;
+    JOLT_GUI_CTX{
+        index = lv_list_get_btn_index(NULL, btn);
+    }
+    return index;
 }

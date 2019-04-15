@@ -82,5 +82,14 @@ void jolt_gui_scr_menu_remove(lv_obj_t *par, uint16_t start, uint16_t end);
  */
 void jolt_gui_scr_menu_set_param( lv_obj_t *par, void *param );
 
+/**
+ * @brief Get the index of a button
+ *
+ * Useful for getting button position within a callback.
+ *
+ * @param btn Button that belongs to a menu.
+ * @return 0-Index of button. Returns -1 on error.
+ */
+int32_t jolt_gui_scr_menu_get_btn_index( lv_obj_t *btn );
 
 #endif

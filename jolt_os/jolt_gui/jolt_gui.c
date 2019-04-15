@@ -316,3 +316,23 @@ const char *jolt_gui_scr_id_str(jolt_gui_scr_id_t val) {
     return names[val];
 }
 
+/************
+ * Wrappers *
+ ************/
+lv_obj_t *jolt_gui_obj_get_parent( const lv_obj_t *obj ){
+    return lv_obj_get_parent(obj);
+}
+
+void jolt_gui_obj_set_event_cb(lv_obj_t *obj, lv_event_cb_t event_cb) {
+    lv_obj_set_event_cb(obj, event_cb);
+}
+
+void *jolt_gui_obj_get_param( lv_obj_t *obj ){
+    return lv_obj_get_user_data( obj )->param;
+}
+
+void jolt_gui_obj_set_param( lv_obj_t *obj, void *param ) {
+    lv_obj_get_user_data(obj)->param = param;
+}
+
+

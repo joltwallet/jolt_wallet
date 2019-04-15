@@ -189,25 +189,19 @@ lv_obj_t *jolt_gui_scr_get_active(lv_obj_t *parent);
 void jolt_gui_scr_set_event_cb(lv_obj_t *parent, lv_event_cb_t event_cb);
 
 /**
- * @brief
+ * @brief Wrapper for lv_obj_set_event_cb
  */
-static inline void jolt_gui_obj_set_event_cb(lv_obj_t *obj, lv_event_cb_t event_cb) {
-    lv_obj_set_event_cb(obj, event_cb);
-}
+void jolt_gui_obj_set_event_cb(lv_obj_t *obj, lv_event_cb_t event_cb);
 
 /**
  * @brief Get the event param pointer in user_data
  */
-static inline void *jolt_gui_obj_get_param( lv_obj_t *obj ){
-    return lv_obj_get_user_data( obj )->param;
-}
+void *jolt_gui_obj_get_param( lv_obj_t *obj );
 
 /**
  * @brief set the event param pointer in user_data
  */
-static inline void jolt_gui_obj_set_param( lv_obj_t *obj, void *param ) {
-    lv_obj_get_user_data(obj)->param = param;
-}
+void jolt_gui_obj_set_param( lv_obj_t *obj, void *param );
 
 /**
  * @brief set the event param pointer in the active element of the screen
@@ -271,6 +265,11 @@ const char *jolt_gui_obj_id_str(jolt_gui_obj_id_t val);
  * @param[in] screen ID value
  */
 const char *jolt_gui_scr_id_str(jolt_gui_scr_id_t val);
+
+/************
+ * Wrappers *
+ ************/
+lv_obj_t *jolt_gui_obj_get_parent( const lv_obj_t *obj );
 
 /********************
  * Meta Programming *
