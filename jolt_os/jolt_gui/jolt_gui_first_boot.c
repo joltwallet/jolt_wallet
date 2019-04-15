@@ -164,7 +164,7 @@ static void screen_finish_create(lv_obj_t *digit_entry, lv_event_t event) {
             CONFIDENTIAL uint256_t pin_hash_verify;
 
             /* Compute Verify Pin Hash */
-            jolt_gui_scr_digit_entry_get_hash(digit_entry, pin_hash_verify);
+            jolt_gui_obj_digit_entry_get_hash(digit_entry, pin_hash_verify);
 
             param = jolt_gui_obj_get_param( digit_entry );
 
@@ -204,7 +204,7 @@ static void screen_pin_verify_create(lv_obj_t *digit_entry, lv_event_t event) {
             /* Get the hash for the first screen */
             param = jolt_gui_obj_get_param( digit_entry );
             ESP_LOGD(TAG, "Got param %p", param);
-            jolt_gui_scr_digit_entry_get_hash(digit_entry, param->pin_hash);
+            jolt_gui_obj_digit_entry_get_hash(digit_entry, param->pin_hash);
 
             /* Delete first PIN entry screen */
             jolt_gui_scr_del();

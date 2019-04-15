@@ -40,10 +40,10 @@ exit:
 #undef EXIT_IF_NULL
 }
 
-static void jolt_gui_test_number_enter_cb(lv_obj_t *parent, lv_event_t event){
+static void jolt_gui_test_number_enter_cb(lv_obj_t *digit_entry, lv_event_t event){
     if( LV_EVENT_SHORT_CLICKED == event ) {
-        double d_val = jolt_gui_scr_digit_entry_get_double(parent);
-        uint32_t i_val = jolt_gui_scr_digit_entry_get_int(parent);
+        double d_val = jolt_gui_obj_digit_entry_get_double(digit_entry);
+        uint32_t i_val = jolt_gui_obj_digit_entry_get_int(digit_entry);
         ESP_LOGI(TAG, "Entry as Double: %f", d_val);
         ESP_LOGI(TAG, "Entry as Integer: %d", i_val);
         jolt_gui_scr_del( );

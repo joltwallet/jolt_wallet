@@ -46,20 +46,41 @@ lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
  *
  * Decimal position has no impact on this function.
  *
- * @param[in] digit_entry digit-entry object
+ * @param[in] digit_entry active digit-entry object
  * @param[out] arr array buffer to populate
  * @param[in] arr_len length of provided array buffer
  * @return number of elements (digits) returned. Returns -1 if the provided buffer is too small. 
  */
-int8_t jolt_gui_scr_digit_entry_get_arr(lv_obj_t *digit_entry, uint8_t *arr, uint8_t arr_len);
+int8_t jolt_gui_obj_digit_entry_get_arr(lv_obj_t *digit_entry, uint8_t *arr, uint8_t arr_len);
+
+/**
+ * @brief Get current digits as an array.
+ *
+ * Decimal position has no impact on this function.
+ *
+ * @param[in] scr digit-entry screen
+ * @param[out] arr array buffer to populate
+ * @param[in] arr_len length of provided array buffer
+ * @return number of elements (digits) returned. Returns -1 if the provided buffer is too small. 
+ */
+int8_t jolt_gui_scr_digit_entry_get_arr(lv_obj_t *scr, uint8_t *arr, uint8_t arr_len);
+
 
 /**
  * @brief Get the 256-bit Blake2b hash of the current value
- * @param[in] digit_entry digit-entry object
+ * @param[in] digit_entry active digit-entry object
  * @param[out] pointer to a 256-bit buffer
  * @return 0 on success, -1 on failure.
  */
-uint8_t jolt_gui_scr_digit_entry_get_hash(lv_obj_t *digit_entry, uint8_t *hash);
+uint8_t jolt_gui_obj_digit_entry_get_hash(lv_obj_t *digit_entry, uint8_t *hash);
+
+/**
+ * @brief Get the 256-bit Blake2b hash of the current value
+ * @param[in] digit_entry digit-entry screen
+ * @param[out] pointer to a 256-bit buffer
+ * @return 0 on success, -1 on failure.
+ */
+uint8_t jolt_gui_scr_digit_entry_get_hash(lv_obj_t *scr, uint8_t *hash);
 
 /**
  * @brief Get entered value as a double, taking into account the decimal point.
@@ -68,20 +89,43 @@ uint8_t jolt_gui_scr_digit_entry_get_hash(lv_obj_t *digit_entry, uint8_t *hash);
  * Floats/Doubles may not be the precise value specified.
  * Exercise heavy caution if using the returned value in signed transactions.
  *
- * @param[in] digit_entry digit-entry screen
+ * @param[in] digit_entry active digit-entry object
  * @return entered value
  */
-double jolt_gui_scr_digit_entry_get_double(lv_obj_t *digit_entry);
+double jolt_gui_obj_digit_entry_get_double(lv_obj_t *digit_entry);
+
+/**
+ * @brief Get entered value as a double, taking into account the decimal point.
+ *
+ * WARNING: Primarily used for display purposes only, not financial computation.
+ * Floats/Doubles may not be the precise value specified.
+ * Exercise heavy caution if using the returned value in signed transactions.
+ *
+ * @param[in] scr digit_entry screen
+ * @return entered value
+ */
+double jolt_gui_scr_digit_entry_get_double(lv_obj_t *scr);
 
 /**
  * @brief Get the entered value as an integer, decimal point has no impact on this function.
  *
  * All entered values are concatenated.
  *
- * @param[in] digit_entry digit-entry object
+ * @param[in] digit_entry active digit-entry object
  * @return entered value.
  */
-uint32_t jolt_gui_scr_digit_entry_get_int(lv_obj_t *digit_entry);
+uint32_t jolt_gui_obj_digit_entry_get_int(lv_obj_t *digit_entry);
+
+/**
+ * @brief Get the entered value as an integer, decimal point has no impact on this function.
+ *
+ * All entered values are concatenated.
+ *
+ * @param[in] scr digit-entry object
+ * @return entered value.
+ */
+uint32_t jolt_gui_scr_digit_entry_get_int(lv_obj_t *scr);
+
 
 /******************
  * Value Setters *
@@ -89,9 +133,9 @@ uint32_t jolt_gui_scr_digit_entry_get_int(lv_obj_t *digit_entry);
 
 /**
  * @brief Sets the currently focused digit pos digits from the right. 0 for the right most digit.
- * @param[in] parent digit-entry *screen*
+ * @param[in] scr digit-entry *screen*
  * @param[in] pos 0-indexed entry position from the right to focus on
  */
-void jolt_gui_scr_digit_entry_set_pos(lv_obj_t *parent, int8_t pos);
+void jolt_gui_scr_digit_entry_set_pos(lv_obj_t *scr, int8_t pos);
 
 #endif

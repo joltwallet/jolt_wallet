@@ -216,7 +216,6 @@ typedef void * lv_indev_drv_user_data_t;                /*Type of user data in t
     x(JOLT_GUI_OBJ_ID_BACK)             /**< The inivisible back button */ \
     x(JOLT_GUI_OBJ_ID_ENTER)            /**< The invisible enter button */ \
     x(JOLT_GUI_OBJ_ID_PAGE)             /**< page */ \
-    x(JOLT_GUI_OBJ_ID_LABEL_TITLE)      /**< Title Label */ \
     x(JOLT_GUI_OBJ_ID_LABEL_0)          /**< Primary text */ \
     x(JOLT_GUI_OBJ_ID_LABEL_1)          /**< Secondary text */ \
     x(JOLT_GUI_OBJ_ID_LABEL_2)          /**< 3rd text */ \
