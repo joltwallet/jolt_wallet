@@ -133,7 +133,14 @@ def read_export_list():
         major = int(major)
         minor = int(minor)
         patch = int(patch)
-        export_list = [line.rstrip() for line in f]
+        export_list = [line.rstrip().lstrip() for line in f]
+
+    # Only care about the first word
+    export_list = [x.split(' ')[0] for x in export_list]
+
+    # Ignore comments
+    export_list = [x for x in export_list if x[0] != '#' ]
+
     return export_list, major, minor, patch
 
 def write_export_file(export_list, major, minor, patch, release):
