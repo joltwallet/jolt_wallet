@@ -2,6 +2,9 @@
  Copyright (C) 2018  Brian Pugh, James Coxon, Michael Smaili
  https://www.joltwallet.com/
  */
+
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
 #include "sdkconfig.h"
 
 #include <stdio.h>

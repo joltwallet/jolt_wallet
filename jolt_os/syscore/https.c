@@ -1,3 +1,5 @@
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"

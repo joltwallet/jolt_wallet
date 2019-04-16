@@ -286,6 +286,7 @@ typedef struct {
 #if LV_USE_LABEL != 0
 #  define LV_LABEL_SCROLL_SPEED       20     /*Hor, or ver. scroll speed [px/sec] in 'LV_LABEL_LONG_SCROLL/ROLL' mode*/
 #  define LV_LABEL_SELECTION_EN       0
+#  define LV_LABEL_WAIT_CHAR_COUNT    10
 #endif
 
 /*Image (dependencies: lv_label*/
