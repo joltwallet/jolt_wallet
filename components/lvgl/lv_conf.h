@@ -270,6 +270,8 @@ typedef struct {
 
 #define LV_OBJ_REALIGN          0           /*Enable `lv_obj_realign()` based on `lv_obj_align()` parameters*/
 
+#define LV_USE_EXT_CLICK_AREA  LV_EXT_CLICK_AREA_OFF
+
 /*==================
  *  LV OBJ X USAGE
  *================*/

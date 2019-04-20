@@ -4,7 +4,7 @@
 #include "syscore/set_wifi_credentials.h"
 #include "syscore/console_helpers.h"
 #include "jolt_gui/jolt_gui.h"
-#include "console.h"
+#include "syscore/cli.h"
 
 int jolt_cmd_wifi_update(int argc, char** argv) {
     int return_code = 0;
@@ -21,7 +21,7 @@ int jolt_cmd_wifi_update(int argc, char** argv) {
     }
     set_wifi_credentials( ssid, pass );
 
-    return_code = JOLT_CONSOLE_NON_BLOCKING;
+    return_code = JOLT_CLI_NON_BLOCKING;
 
 exit:
     return return_code;

@@ -28,7 +28,6 @@
 #include "lvgl/lvgl.h"
 #include "jolt_gui/jolt_gui.h"
 
-#include "console.h"
 #include "hal/radio/bluetooth.h"
 #include "hal/radio/wifi.h"
 #include "hal/display.h"
@@ -37,6 +36,9 @@
 #include "hal/hw_monitor.h"
 #include "hal/led.h"
 #include "syscore/filesystem.h"
+#include "syscore/cli.h"
+#include "syscore/cli_ble.h"
+#include "syscore/cli_uart.h"
 #include "vault.h"
 
 #include "esp_ota_ops.h"
@@ -205,7 +207,6 @@ void app_main() {
         }
     }
 
-
     /* Capacitive Touch LED Setup */
     {
         jolt_led_setup();
@@ -213,6 +214,7 @@ void app_main() {
 
     /* Initialize Bluetooth */
     {
+        esp_vfs_dev_ble_spp_register();
         uint8_t bluetooth_en;
         storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 1 );
         if( 1 == bluetooth_en ) {
@@ -227,9 +229,9 @@ void app_main() {
     /* Initialize Console */
     {
         ESP_LOGI(TAG, "Initializing Console");
-        console_init();
-        ESP_LOGI(TAG, "Starting Console");
-        console_start();
+        jolt_cli_init();
+        jolt_cli_uart_init();
+        jolt_cli_ble_init();
     }
 
     /* Setup Power Management */

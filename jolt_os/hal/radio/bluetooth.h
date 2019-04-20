@@ -31,6 +31,11 @@ extern FILE *ble_stderr;
 #endif
 
 /**
+ * @brief Register the bluetooth spp driver
+ */
+void esp_vfs_dev_ble_spp_register();
+
+/**
  * @brief Start bluetooth and related services
  * @return ESP_OK on success; otherwise the error code of whatever component failed.
  */

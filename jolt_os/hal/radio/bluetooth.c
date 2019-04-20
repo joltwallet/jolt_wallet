@@ -31,7 +31,6 @@
 #include "esp_bt_main.h"
 
 #include "esp_console.h"
-#include "console.h"
 
 #include "hal/radio/spp_recv_buf.h"
 #include "linenoise/linenoise.h"
@@ -382,7 +381,11 @@ static void ble_end_select() {
 }
 #endif
 
-static void esp_vfs_dev_ble_spp_register() {
+void esp_vfs_dev_ble_spp_register() {
+    if ( NULL == ble_in_queue ) {
+        ble_in_queue = xQueueCreate(10, sizeof(char *));
+    }
+
     esp_vfs_t vfs = {
         .flags = ESP_VFS_FLAG_DEFAULT,
         .write = &ble_write,
@@ -398,42 +401,6 @@ static void esp_vfs_dev_ble_spp_register() {
     ESP_ERROR_CHECK(esp_vfs_register("/dev/ble", &vfs, NULL));
 }
 /* END DRIVER STUFF */
-
-static void spp_cmd_task(void * arg) {
-    esp_vfs_dev_ble_spp_register();
-    ble_stdin  = fopen("/dev/ble/0", "r");
-    ble_stdout = fopen("/dev/ble/0", "w");
-    ble_stderr = fopen("/dev/ble/0", "w");
-
-    char *buf = NULL;
-    for(;;){
-        if ( NULL == buf ) {
-            buf = calloc(1, CONFIG_JOLT_CONSOLE_MAX_CMD_LEN);
-        }
-        char *ptr = buf;
-        uint16_t i;
-        for(i=0; i<CONFIG_JOLT_CONSOLE_MAX_CMD_LEN-1; i++, ptr++){
-            fread(ptr, 1, 1, ble_stdin);
-            if('\n' == *ptr){
-                *ptr = '\0';
-                break;
-            }
-        }
-        if(i>0){
-#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
-            {
-                const char buf[] = "sending command from ble\n";
-                uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-            }
-#endif
-
-            jolt_cmd_process(buf, ble_stdin, ble_stdout, ble_stderr);
-            buf = NULL;
-        }
-    }
-
-    vTaskDelete(NULL);
-}
 
 static void add_all_bonded_to_whitelist() {
     int dev_num = esp_ble_get_bond_device_num();
@@ -873,14 +840,6 @@ esp_err_t jolt_bluetooth_start() {
     /* Configure Bluetooth Security Parameters */
     jolt_bluetooth_config_security( true );
 
-    if ( NULL == ble_in_queue ) {
-        ble_in_queue = xQueueCreate(10, sizeof(char *));
-    }
-    if ( NULL == ble_in_task) {
-        xTaskCreate(&spp_cmd_task, "ble_spp_cmd_task", 
-                CONFIG_JOLT_TASK_STACK_SIZE_BLE_CONSOLE, NULL,
-                CONFIG_JOLT_TASK_PRIORITY_BLE_CONSOLE, &ble_in_task);
-    }
 
 exit:
     return ESP_OK;

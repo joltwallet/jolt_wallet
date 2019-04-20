@@ -18,7 +18,7 @@
 #include "esp_spiffs.h"
 #include "jelfloader.h"
 
-#include "console.h"
+#include "syscore/cli.h"
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_helpers.h"
 #include "vault.h"
@@ -232,7 +232,7 @@ static void launch_app_from_store(void *dummy) {
     }
     else{
         /* Application returns a return code */
-        jolt_cmd_return( res );
+        jolt_cli_return( res );
         launch_dec_ref_ctr();
     }
 

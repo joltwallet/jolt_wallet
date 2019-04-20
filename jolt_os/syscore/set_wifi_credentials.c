@@ -7,7 +7,7 @@
 #include "syscore/set_wifi_credentials.h"
 #include "jolt_helpers.h"
 #include "jolt_gui/jolt_gui.h"
-#include "console.h"
+#include "syscore/cli.h"
 
 #define JOLT_WIFI_SSID_LEN_MAX 32
 #define JOLT_WIFI_PASS_LEN_MAX 64
@@ -38,7 +38,7 @@ static void clear_vars() {
 static void vault_fail_cb(void *dummy) {
     ESP_LOGI(TAG, "vault_fail_cb");
     clear_vars();
-    jolt_cmd_return(-1);
+    jolt_cli_return(-1);
 }
 
 static void vault_success_cb(void *dummy) {
@@ -52,7 +52,7 @@ static void vault_success_cb(void *dummy) {
     if( wifi_en ) {
         jolt_wifi_start();
     }
-    jolt_cmd_return(0);
+    jolt_cli_return(0);
 }
 
 static void prompt_1_cb(lv_obj_t *btn, lv_event_t event){
@@ -63,7 +63,7 @@ static void prompt_1_cb(lv_obj_t *btn, lv_event_t event){
     else if( LV_EVENT_CANCEL == event ) {
         clear_vars();
         jolt_gui_scr_del( );
-        jolt_cmd_return(-1);
+        jolt_cli_return(-1);
     }
 }
 

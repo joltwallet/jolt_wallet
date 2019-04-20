@@ -14,7 +14,7 @@
 
 #include "bipmnemonic.h"
 
-#include "console.h"
+#include "syscore/cli.h"
 #include "vault.h"
 #include "jolt_helpers.h"
 #include "hal/radio/wifi.h"
@@ -32,9 +32,22 @@
 
 static const char* TAG = "mnemonic_restore";
 
-static QueueHandle_t cmd_q;
-static CONFIDENTIAL uint8_t idx[24];
-static CONFIDENTIAL char user_words[24][11];
+#if 0
+enum{
+    MNEMONIC_RESTORE_UNDEFINED=0,
+    MNEMONIC_RESTORE_CONFIRM_START, /**< */\
+    MNEMONIC_RESTORE_RANDOMIZE,     /**< */\
+    MNEMONIC_RESTORE_24WORDS,       /**< */\
+    MNEMONIC_RESTORE_PROCESS,       /**< */\
+    MNEMONIC_RESTORE_MAX,
+};
+typedef uint8_t mnemonic_restore_state_t;
+
+typedef struct {
+    mnemonic_restore_state_t state;
+    CONFIDENTIAL uint8_t idx[24];
+    CONFIDENTIAL char user_words[24][11];
+} mnemonic_restore_job_param_t;
 
 static lv_obj_t *jolt_gui_scr_mnemonic_restore_num_create(int n) {
     assert( n <= 24 );
@@ -53,6 +66,41 @@ static void jolt_cmd_mnemonic_restore_cb( lv_obj_t *btn, lv_event_t event ) {
     }
 }
 
+
+static int32_t jolt_mnemonic_restore_task( jolt_bg_job_t *job){
+    mnemonic_restore_job_param_t *param = NULL;
+    param = jolt_bg_get_param(job);
+    if( NULL == param ){
+        param = malloc(sizeof mnemonic_restore_job_param_t);
+        if( NULL == param ) {
+            // todo error handling
+        }
+        param->state = MNEMONIC_RESTORE_RANDOMIZE;
+    }
+    
+    switch(param->state){
+        case MNEMONIC_RESTORE_CONFIRM_START:
+            break;
+        case MNEMONIC_RESTORE_RANDOMIZE:
+            /* Generate Random Order for user to input mnemonic */
+            for(uint8_t i=0; i< sizeof(param->idx); i++){
+                param->idx[i] = i;
+            }
+            shuffle_arr(param->idx, sizeof(param->idx));
+            param->MNEMONIC_RESTORE_24WORDS
+            /* Fall Through */
+        case MNEMONIC_RESTORE_24WORDS:
+            break;
+        case MNEMONIC_RESTORE_PROCESS:
+            break;
+        default:
+            break;
+    }
+}
+
+
+
+
 /* Goal: populate the 24 words in ordered */
 static void linenoise_task( void *h ) {
     uint8_t val_to_send = MNEMONIC_RESTORE_BACK;
@@ -64,9 +112,7 @@ static void linenoise_task( void *h ) {
         JOLT_GUI_CTX{
             jolt_gui_scr_del();
             scr = BREAK_IF_NULL(jolt_gui_scr_mnemonic_restore_num_create(j+1)); /*Human-friendly 1-idxing */
-            // todo set actions here
-            //BREAK_IF_NULL(jolt_gui_scr_set_back_action(scr,  jolt_cmd_mnemonic_restore_back));
-            //BREAK_IF_NULL(jolt_gui_scr_set_enter_action(scr,  NULL));
+            jolt_gui_scr_set_event_cb(scr,  jolt_cmd_mnemonic_restore_cb);
         }
 
         int8_t in_wordlist = 0;
@@ -111,22 +157,24 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
     memset( idx, 0, sizeof( idx ) );
     memset(user_words, 0, sizeof(user_words));
 
-    cmd_q = xQueueCreate( 3, sizeof( uint8_t  )  );
-
     /* Create prompt screen */
     printf("To begin mnemonic restore, approve prompt on device.\n");
     lv_obj_t *scr = NULL;
     JOLT_GUI_CTX{
-        scr = BREAK_IF_NULL(jolt_gui_scr_text_create(gettext(JOLT_TEXT_RESTORE), gettext(JOLT_TEXT_BEGIN_MNEMONIC_RESTORE)));
+        scr = BREAK_IF_NULL(jolt_gui_scr_text_create(gettext(JOLT_TEXT_RESTORE),
+                gettext(JOLT_TEXT_BEGIN_MNEMONIC_RESTORE)));
         jolt_gui_scr_set_event_cb(scr, jolt_cmd_mnemonic_restore_cb);
-        //btn = BREAK_IF_NULL(jolt_gui_scr_set_back_action(scr,  jolt_cmd_mnemonic_restore_back));
-        //btn = BREAK_IF_NULL(jolt_gui_scr_set_enter_action(scr, jolt_cmd_mnemonic_restore_enter));
     }
     if( NULL == scr ){
         jolt_gui_obj_del(scr);
         return_code = -1;
         goto exit;
     }
+
+    jolt_bg_create(jolt_mnemonic_restore_task, NULL, NULL);
+
+
+
 
     /* Wait until user made a choice */
     uint8_t response;
@@ -140,11 +188,6 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
         goto exit;
     }
 
-    /* Generate Random Order for user to input mnemonic */
-    for(uint8_t i=0; i< sizeof(idx); i++){
-        idx[i] = i;
-    }
-    shuffle_arr(idx, sizeof(idx));
 
     /* Create cmd-line monitoring task */
     xTaskCreate(linenoise_task, "m_restore_cmd", 4096,
@@ -160,7 +203,7 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
     else if ( MNEMONIC_RESTORE_COMPLETE == response ) {
     }
 
-    // Join Mnemonic into single buffer
+    /* Join Mnemonic into single buffer */
     CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];
     size_t offset=0;
     for(uint8_t i=0; i < sizeof(idx); i++){
@@ -191,5 +234,11 @@ exit:
     sodium_memzero(bin, sizeof(bin));
     return return_code;
 }
+#else
 
+int jolt_cmd_mnemonic_restore(int argc, char** argv) {
+    /* Stub */
+    return 0;
+}
 
+#endif
