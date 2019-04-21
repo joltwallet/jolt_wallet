@@ -1,4 +1,4 @@
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include "esp_log.h"
 
@@ -25,12 +25,16 @@ static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job);
 static void jolt_cli_cmds_register();
 static bool jolt_cli_get_src(jolt_cli_src_t *src, int16_t timeout);
 
+static bool jolt_cli_take_src_lock(TickType_t ticks_to_wait);
+static bool jolt_cli_give_src_lock();
+
 /********************
  * STATIC VARIABLES *
  ********************/
 static const char TAG[] = "syscore/cli";
 static SemaphoreHandle_t src_lock = NULL;        /**< Only allow one source at a time while executing */
-static SemaphoreHandle_t job_in_progress = NULL; /**< Recursive Mutex indicates if a job is underway or not */
+static FILE * src_lock_in = NULL; /**< Pointer to the stdin stream that took the src_lock */
+static SemaphoreHandle_t job_in_progress = NULL; /**< Mutex indicates if a job is underway or not */
 static QueueHandle_t msg_queue = NULL;           /**< Queue that holds char ptrs to data sent over CLI. */
 static QueueHandle_t ret_val_queue = NULL;       /**< Queue that the cmd populates when complete. */
 
@@ -41,7 +45,7 @@ void jolt_cli_init() {
     job_in_progress = xSemaphoreCreateMutex();
     if( NULL == job_in_progress ) goto exit;
 
-    src_lock = xSemaphoreCreateRecursiveMutex();
+    src_lock = xSemaphoreCreateBinary();
     if( NULL == src_lock ) goto exit;
 
     ret_val_queue = xQueueCreate(1, sizeof(int));
@@ -100,10 +104,8 @@ char *jolt_cli_get_line(int16_t timeout){
     }
     else {
         /* There is currently a cmd being executed. For convenience, we are
-         * freeing the recursive src_lock here so the user doesn't have to.*/
-        ESP_LOGD(TAG, "Giving src_lock; stdin: %p", src.in);
-        xSemaphoreGiveRecursive( src_lock );
-        ESP_LOGD(TAG, "Gave src_lock; stdin: %p", src.in);
+         * freeing the src_lock here so the user doesn't have to.*/
+        jolt_cli_give_src_lock();
     }
     return src.line;
 }
@@ -116,25 +118,71 @@ char *jolt_cli_get_line(int16_t timeout){
  */
 static bool jolt_cli_get_src(jolt_cli_src_t *src, int16_t timeout){
     TickType_t delay;
+    bool res;
 
     /* Convert timeout into ticks */
     if(timeout < 0) delay = portMAX_DELAY;
     else delay = pdMS_TO_TICKS(timeout);
 
-    if( pdTRUE != xQueueReceive(msg_queue, src, delay) ) {
-        return false;
+    portMUX_TYPE myMutex = portMUX_INITIALIZER_UNLOCKED;
+    ESP_LOGD(TAG, "MEOW1");
+    portENTER_CRITICAL(&myMutex);
+    if( xQueueReceive(msg_queue, src, 0) ) {
+        portEXIT_CRITICAL(&myMutex);
+        ESP_LOGD(TAG, "MEOW4");
+        res = true;
+    }
+    else {
+        if(!jolt_cli_give_src_lock()){
+            //ESP_LOGD(TAG, "Failed to give src lock");
+        }
+        portEXIT_CRITICAL(&myMutex);
+        ESP_LOGD(TAG, "MEOW7");
+        res = (pdTRUE == xQueueReceive(msg_queue, src, delay));
     }
 
-    return true;
+    return res;
+}
+
+static bool jolt_cli_take_src_lock(TickType_t ticks_to_wait){
+    bool res;
+    //ESP_LOGD(TAG, "Taking src_lock;");
+    res = xSemaphoreTake(src_lock, ticks_to_wait);
+    //if(res) ESP_LOGD(TAG, "Took src_lock");
+    //else ESP_LOGD(TAG, "Failed to take src_lock");
+    return res;
+}
+
+static bool jolt_cli_give_src_lock(){
+    bool res;
+    //ESP_LOGD(TAG, "Giving src_lock;");
+    res = xSemaphoreGive( src_lock );
+    //ESP_LOGD(TAG, "Gave src_lock");
+    return res;
 }
 
 void jolt_cli_set_src(jolt_cli_src_t *src) {
     /* Only allow a queue of commands from a single input source at a time */
-    ESP_LOGD(TAG, "Taking src_lock; stdin: %p", src->in);
-    xSemaphoreTakeRecursive(src_lock, portMAX_DELAY);
-    ESP_LOGD(TAG, "Took src_lock; stdin: %p", src->in);
-
-    xQueueSend(msg_queue, src, 0);
+    portMUX_TYPE myMutex = portMUX_INITIALIZER_UNLOCKED;
+    portENTER_CRITICAL(&myMutex);
+    if( jolt_cli_take_src_lock(0) ) {
+        /* Successfully taken */
+        src_lock_in = src->in;
+        xQueueSend(msg_queue, src, 0);
+        portEXIT_CRITICAL(&myMutex);
+    }
+    else {
+        if( src->in == src_lock_in ){
+            xQueueSend(msg_queue, src, 0);
+            portEXIT_CRITICAL(&myMutex);
+        }
+        else {
+            portEXIT_CRITICAL(&myMutex);
+            jolt_cli_take_src_lock(portMAX_DELAY);
+            src_lock_in = src->in;
+            xQueueSend(msg_queue, src, 0);
+        }
+    }
 }
 
 void jolt_cli_pause(){
@@ -177,9 +225,7 @@ static void jolt_cli_dispatcher_task( void *param ) {
         //printf("%d\n", ret_val); // todo only print on nonzero
 
         /* Release source mutex */
-        ESP_LOGD(TAG, "Giving src_lock; stdin: %p", src.in);
-        xSemaphoreGiveRecursive( src_lock );
-        ESP_LOGD(TAG, "Gave src_lock; stdin: %p", src.in);
+        jolt_cli_give_src_lock();
 
         /* Cmd Finished */
         xSemaphoreGive(job_in_progress);
