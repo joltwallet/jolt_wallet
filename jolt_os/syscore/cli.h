@@ -58,7 +58,7 @@ void jolt_cli_set_src(jolt_cli_src_t *src);
  *
  * Used if complete control over the stream is required.
  */
-void jolt_cli_pause();
+void jolt_cli_suspend();
 
 /**
  * @brief Resume the paused task

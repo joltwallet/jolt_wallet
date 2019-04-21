@@ -11,6 +11,8 @@
 
 #include "syscore/bg.h"
 #include "syscore/cli.h"
+#include "syscore/cli_uart.h"
+#include "syscore/cli_ble.h"
 #include "syscore/ota.h"
 #include "syscore/launcher.h"
 #include "syscore/cmd/jolt_cmds.h"
@@ -185,10 +187,16 @@ void jolt_cli_set_src(jolt_cli_src_t *src) {
     }
 }
 
-void jolt_cli_pause(){
+void jolt_cli_suspend(){
+    /* Pause all CLI Tasks */
+    jolt_cli_uart_suspend();
+    jolt_cli_ble_suspend();
 }
 
 void jolt_cli_resume(){
+    /* Resume all CLI Tasks */
+    jolt_cli_uart_resume();
+    jolt_cli_ble_resume();
 }
 
 void jolt_cli_return( int val ) {

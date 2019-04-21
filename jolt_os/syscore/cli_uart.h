@@ -11,4 +11,14 @@
  */
 void jolt_cli_uart_init();
 
+/**
+ * @brief Pause the UART listener task
+ */
+void jolt_cli_uart_suspend();
+
+/**
+ * @brief Resume the UART listener task
+ */
+void jolt_cli_uart_resume();
+
 #endif

@@ -51,11 +51,6 @@ extern uint16_t spp_handle_table[SPP_IDX_NB];
 extern xQueueHandle ble_in_queue;
 
 /**
- * @brief Task that aggregates BLE messages into commands to be processed.
- */
-extern xTaskHandle ble_in_task;
-
-/**
  * @brief True if currently in pairing mode, false otherwise
  */
 extern bool jolt_bluetooth_pair_mode;

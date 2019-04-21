@@ -11,4 +11,14 @@
  */
 void jolt_cli_ble_init();
 
+/**
+ * @brief Pause the BLEd listener task
+ */
+void jolt_cli_ble_suspend();
+
+/**
+ * @brief Resume the BLE listener task
+ */
+void jolt_cli_ble_resume();
+
 #endif

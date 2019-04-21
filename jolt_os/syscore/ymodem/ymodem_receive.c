@@ -38,6 +38,7 @@
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
 
+#include "syscore/cli.h"
 #include "syscore/ymodem.h"
 #include "syscore/ymodem/ymodem_common.h"
 #include <driver/uart.h>
@@ -153,6 +154,8 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
     if(NULL == packet_data){
         goto exit;
     }
+
+    jolt_cli_suspend();
     
     for (session_done = 0, errors = 0; ;) {
         for (packets_received = 0, file_done = 0; ;) {
@@ -330,6 +333,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
     #endif
 
 exit:
+    jolt_cli_resume();
     if(NULL != packet_data) {
         free(packet_data);
     }

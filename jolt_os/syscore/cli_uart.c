@@ -24,7 +24,7 @@ static void jolt_cli_uart_listener_task( void *param);
  * STATIC VARIABLES *
  ********************/
 static const char TAG[] = "syscore/cli_uart";
-static TaskHandle_t console_h = NULL;
+static TaskHandle_t listener_task_h = NULL;
 static const char prompt[] = "jolt> ";
 
 
@@ -61,7 +61,7 @@ void jolt_cli_uart_init() {
     xTaskCreate(jolt_cli_uart_listener_task,
                 "uart_listener", CONFIG_JOLT_TASK_STACK_SIZE_UART_CONSOLE,
                 NULL, CONFIG_JOLT_TASK_PRIORITY_UART_CONSOLE,
-                (TaskHandle_t *) &console_h);
+                (TaskHandle_t *) &listener_task_h);
 }
 
 static void jolt_cli_uart_listener_task( void *param) {
@@ -119,7 +119,14 @@ static void jolt_cli_uart_listener_task( void *param) {
     esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
 #endif
 
-    console_h = NULL;
+    listener_task_h = NULL;
     vTaskDelete( NULL );
 }
 
+void jolt_cli_uart_suspend(){
+    vTaskSuspend( listener_task_h );
+}
+
+void jolt_cli_uart_resume(){
+    vTaskResume( listener_task_h );
+}
