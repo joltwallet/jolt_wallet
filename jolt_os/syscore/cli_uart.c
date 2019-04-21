@@ -1,4 +1,4 @@
-//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include "esp_log.h"
 
@@ -12,6 +12,8 @@
 #include "esp_vfs_dev.h"
 #include "esp_log.h"
 #include "syscore/cli.h"
+
+#include "esp_heap_trace.h"
 
 /********************
  * STATIC FUNCTIONS *
@@ -86,6 +88,7 @@ static void jolt_cli_uart_listener_task( void *param) {
         linenoiseSetDumbMode(1);
     }
     
+    heap_trace_start(HEAP_TRACE_LEAKS);
     /* Main loop */
     for(;;vTaskDelay(pdMS_TO_TICKS(80))) {
         /* Get a line using linenoise.
@@ -95,9 +98,11 @@ static void jolt_cli_uart_listener_task( void *param) {
 
         jolt_cli_src_t src;
         char* line;
-        
+
         line = linenoise(prompt);
         if (line == NULL) continue; /* Ignore empty lines */
+
+        ESP_LOGD(TAG, "UART line at %p", line);
 
         /* Add the command to the history */
         linenoiseHistoryAdd(line);

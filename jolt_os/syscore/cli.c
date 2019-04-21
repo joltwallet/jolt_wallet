@@ -15,10 +15,12 @@
 #include "syscore/launcher.h"
 #include "syscore/cmd/jolt_cmds.h"
 
+#include "esp_heap_trace.h"
+
 /********************
  * STATIC FUNCTIONS *
  ********************/
-static void jolt_cli_task( void *param );
+static void jolt_cli_dispatcher_task( void *param );
 static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job);
 static void jolt_cli_cmds_register();
 static bool jolt_cli_get_src(jolt_cli_src_t *src, int16_t timeout);
@@ -46,7 +48,7 @@ void jolt_cli_init() {
     if( NULL == ret_val_queue) goto exit;
 
     BaseType_t res;
-    res = xTaskCreate( jolt_cli_task, "cli_dispatcher",
+    res = xTaskCreate( jolt_cli_dispatcher_task, "cli_dispatcher",
             2048, NULL, 6, NULL);
     if( pdPASS != res ) goto exit;
 
@@ -122,6 +124,7 @@ static bool jolt_cli_get_src(jolt_cli_src_t *src, int16_t timeout){
     if( pdTRUE != xQueueReceive(msg_queue, src, delay) ) {
         return false;
     }
+
     return true;
 }
 
@@ -130,6 +133,7 @@ void jolt_cli_set_src(jolt_cli_src_t *src) {
     ESP_LOGD(TAG, "Taking src_lock; stdin: %p", src->in);
     xSemaphoreTakeRecursive(src_lock, portMAX_DELAY);
     ESP_LOGD(TAG, "Took src_lock; stdin: %p", src->in);
+
     xQueueSend(msg_queue, src, 0);
 }
 
@@ -153,7 +157,7 @@ void jolt_cli_return( int val ) {
  * @brief FreeRTOS task function that dequeues CLI lines and dispatches them
  * to the BG task for execution
  */
-static void jolt_cli_task( void *param ) {
+static void jolt_cli_dispatcher_task( void *param ) {
     for(;;){
         int ret_val;
         jolt_cli_src_t src = { 0 };
@@ -188,8 +192,13 @@ static void jolt_cli_task( void *param ) {
  */
 static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job) {
     jolt_cli_src_t *src = jolt_bg_get_param(bg_job); 
+    jolt_cli_src_t src_obj;
     int ret = 0;
     esp_err_t err;
+
+    /* Make a local copy of src */
+    memcpy(&src_obj, src, sizeof(jolt_cli_src_t));
+    src = &src_obj;
 
     if(NULL == src->line) goto exit;
 
@@ -224,6 +233,7 @@ static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job) {
             jolt_cli_return(-1);
             break;
         case ESP_OK:
+
             if( JOLT_CLI_NON_BLOCKING == ret ) {
                 break;
             }
@@ -236,8 +246,10 @@ static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job) {
 
 exit:
     /* De-allocate memory */
-    ESP_LOGD(TAG, "%d: Freeing src->line", __LINE__);
-    free(src->line);
+    if( src->line ) {
+        ESP_LOGD(TAG, "%d: Freeing src->line %p", __LINE__, src->line);
+        free(src->line);
+    }
     return 0;
 }
 

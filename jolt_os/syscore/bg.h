@@ -65,7 +65,7 @@ typedef uint8_t jolt_bg_signal_t;
  * Upon task completion, the Job will clean up itself.
  *
  * @param[in] task function to execute.
- * @param[in] param free parameter to pass to the task
+ * @param[in] param user parameter to pass to the task
  * @param[in,out] scr Screen for cancel actions.
  *
  * @return ESP_OK on success, ESP_FAIL otherwise
@@ -92,9 +92,9 @@ esp_err_t jolt_bg_create_app( jolt_bg_task_t task, void *param, lv_obj_t *scr);
 jolt_bg_signal_t jolt_bg_get_signal( jolt_bg_job_t *job );
 
 /**
- * @brief get the free param pointer
- * @param[in] job Job to get free param from
- * @return the free param pointer
+ * @brief get the user param pointer
+ * @param[in] job Job to get user param from
+ * @return the user param pointer
  */
 void *jolt_bg_get_param(jolt_bg_job_t *job);
 
