@@ -40,8 +40,6 @@
 #include "jolt_gui/jolt_gui.h"
 
 #define GATTS_SEND_REQUIRE_CONFIRM false
-#define WHITELIST_ADD    true
-#define WHITELIST_REMOVE false
 
 FILE *ble_stdin;
 FILE *ble_stdout;
@@ -407,7 +405,7 @@ static void add_all_bonded_to_whitelist() {
     esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
     esp_ble_get_bond_device_list(&dev_num, dev_list);
     for (int i = 0; i < dev_num; i++) {
-        esp_ble_gap_update_whitelist(true, dev_list[i].bd_addr);
+        esp_ble_gap_update_whitelist(JOLT_BLE_WHITELIST_ADD, dev_list[i].bd_addr, JOLT_BLE_WHITELIST_ADDR_TYPE);
     }
 
     free(dev_list);
@@ -561,7 +559,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                 esp_bd_addr_t bd_addr;
                 memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr,
                         sizeof(esp_bd_addr_t));
-                err = esp_ble_gap_update_whitelist(WHITELIST_ADD, bd_addr);
+                err = esp_ble_gap_update_whitelist(JOLT_BLE_WHITELIST_ADD, bd_addr, JOLT_BLE_WHITELIST_ADDR_TYPE);
                 if( ESP_OK != err ){
                     ESP_LOGE(TAG, "Failed to add bd_addr to whitelist");
                 }

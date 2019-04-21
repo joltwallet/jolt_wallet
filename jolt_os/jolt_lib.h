@@ -6,8 +6,8 @@
  *     * Currently versioning isn't used.
  */
 
-#ifndef __JOLT_LIB_H__
-#define __JOLT_LIB_H__
+#ifndef JOLT_LIB_H__
+#define JOLT_LIB_H__
 
 /* It's not excellent practice to have all these in a header file like this,
  * but it makes app development significantly easier */

@@ -347,7 +347,7 @@ double jolt_gui_scr_digit_entry_get_double(lv_obj_t *scr) {
         digit_entry = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY);
         res = jolt_gui_obj_digit_entry_get_double(digit_entry);
     }
-    return 0;
+    return res;
 }
 
 double jolt_gui_obj_digit_entry_get_double(lv_obj_t *digit_entry){
@@ -373,7 +373,7 @@ uint32_t jolt_gui_scr_digit_entry_get_int(lv_obj_t *scr) {
         digit_entry = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY);
         res = jolt_gui_obj_digit_entry_get_int(digit_entry);
     }
-    return 0;
+    return res;
 }
 
 uint32_t jolt_gui_obj_digit_entry_get_int(lv_obj_t *digit_entry) {

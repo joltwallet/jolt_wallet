@@ -24,6 +24,9 @@ static void factory_reset_yes( lv_obj_t *btn, lv_event_t event ) {
 
         esp_err_t err;
         err = jolt_bg_create( factory_reset, NULL, NULL);
+        if(ESP_OK != err) {
+            esp_restart();
+        }
     }
 }
 

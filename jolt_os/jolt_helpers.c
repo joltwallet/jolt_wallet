@@ -25,7 +25,7 @@
 #include "syscore/https.h"
 
 
-static const char* TAG = "jolt_helpers";
+//static const char* TAG = "jolt_helpers";
 
 /* todo: unified randombytes functions that takes both from libsodium and 
  * ataes132a */

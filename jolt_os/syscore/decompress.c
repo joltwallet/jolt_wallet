@@ -1,7 +1,7 @@
 #include "esp_spiffs.h"
 #include "esp_vfs_dev.h"
 #include "filesystem.h"
-#include "rom/miniz.h"
+#include "esp32/rom/miniz.h"
 #include "decompress.h"
 
 #include "esp_log.h"

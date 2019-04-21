@@ -14,7 +14,7 @@
 #include "sodium.h"
 
 #if ESP_PLATFORM
-#include "rom/miniz.h"
+#include "esp32/rom/miniz.h"
 #else
 #include "miniz.h"
 #endif

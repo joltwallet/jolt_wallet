@@ -141,7 +141,6 @@ static void mismatch_cb(lv_obj_t *btn, lv_event_t event) {
         case LV_EVENT_SHORT_CLICKED:
             /* Fall through */
         case LV_EVENT_CANCEL: {
-            lv_obj_t *scr;
             mnemonic_setup_t *param;
             param = jolt_gui_obj_get_param( btn );
             jolt_gui_scr_del();

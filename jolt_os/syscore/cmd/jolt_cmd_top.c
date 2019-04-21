@@ -1,7 +1,7 @@
 #include "stdio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 
 int jolt_cmd_top(int argc, char** argv) {
     /* Gets Task CPU usage statistics */

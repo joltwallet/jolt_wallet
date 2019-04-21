@@ -30,7 +30,7 @@
 #define MNEMONIC_RESTORE_ENTER 1
 #define MNEMONIC_RESTORE_COMPLETE 2
 
-static const char* TAG = "mnemonic_restore";
+//static const char* TAG = "mnemonic_restore";
 
 #if 0
 enum{

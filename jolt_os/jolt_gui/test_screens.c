@@ -65,7 +65,7 @@ void jolt_gui_test_number_create(lv_obj_t *btn, lv_event_t event) {
 void jolt_gui_test_qrcode_create(lv_obj_t *btn, lv_event_t event) {
     if( LV_EVENT_SHORT_CLICKED == event ) {
         const char data[] = "Meow";
-        lv_obj_t *scr = jolt_gui_scr_qr_create("QR Test", "Meow", sizeof(data));
+        jolt_gui_scr_qr_create("QR Test", "Meow", sizeof(data));
     }
 }
 

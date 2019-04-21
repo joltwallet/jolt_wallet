@@ -66,7 +66,7 @@ typedef const void* lv_uart_handle_t;
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 
 /**
  * Delay the given number of microseconds
@@ -74,7 +74,6 @@ typedef const void* lv_uart_handle_t;
  */
 static inline void lv_delay_us(const uint32_t us)
 {
-    //Do the dependant port here
     ets_delay_us(us);
 }
 
@@ -100,7 +99,6 @@ static inline void lv_delay_ms(const uint32_t ms)
  */
 static inline uint32_t lv_get_ms()
 {
-    //Do the dependant port here
     return xTaskGetTickCount()*portTICK_PERIOD_MS;
 }
 

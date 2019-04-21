@@ -30,7 +30,6 @@ typedef struct {
 static lv_res_t new_bar_signal(lv_obj_t *bar, lv_signal_t sign, void * param)
 {
     lv_res_t res;
-    char c;
 
     loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar);
 

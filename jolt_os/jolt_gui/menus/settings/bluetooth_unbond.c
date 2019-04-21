@@ -5,6 +5,7 @@
 #if CONFIG_BT_ENABLED
 
 #include "esp_gap_ble_api.h"
+#include "hal/radio/bluetooth.h"
 
 static const char TAG[] = "bt_unbond";
 
@@ -16,7 +17,7 @@ static void remove_all_bonded_devices() {
     esp_ble_get_bond_device_list(&dev_num, dev_list);
     for (int i = 0; i < dev_num; i++) {
         /* Attempt to remove it from the whitelist */
-        esp_ble_gap_update_whitelist(false, dev_list[i].bd_addr);
+        esp_ble_gap_update_whitelist(JOLT_BLE_WHITELIST_REMOVE, dev_list[i].bd_addr, JOLT_BLE_WHITELIST_ADDR_TYPE);
         esp_ble_remove_bond_device(dev_list[i].bd_addr);
     }
 

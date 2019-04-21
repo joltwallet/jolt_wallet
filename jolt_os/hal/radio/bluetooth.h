@@ -12,6 +12,10 @@
 
 #include "sdkconfig.h"
 
+#define JOLT_BLE_WHITELIST_ADD    true
+#define JOLT_BLE_WHITELIST_REMOVE false
+#define JOLT_BLE_WHITELIST_ADDR_TYPE BLE_WL_ADDR_TYPE_RANDOM
+
 #if CONFIG_BT_ENABLED
 /**
  * @brief Stream for BLE STDIN

@@ -26,6 +26,9 @@
 #include "esp_log.h"
 #include "hal/storage/storage.h"
 
+#undef assert
+#define assert(x) if(x) esp_restart();
+
 static const char* TAG = "JelfLoader";
 
 #define MSG(...)  ESP_LOGD(TAG, __VA_ARGS__);
@@ -479,7 +482,10 @@ static bool app_hash_init(jelfLoaderContext_t *ctx,
     /* Copy over the app signature into the context.
      * The Signature is always the first raw 64 bytes.
      * No compression is performed on the signature. */
-    LOADER_GETDATA_RAW(ctx, ctx->app_signature, JELF_SIGNATURE_LEN);
+    {
+        int n = LOADER_GETDATA_RAW(ctx, ctx->app_signature, JELF_SIGNATURE_LEN);
+        assert( JELF_SIGNATURE_LEN == n );
+    }
 #if ESP_LOG_LEVEL >= ESP_LOG_INFO
     {
         char sig_hex[129] = { 0 };

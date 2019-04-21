@@ -17,10 +17,10 @@
 /* todo; prevent other stuff from calling esp_modem_sleep_exit */
 
 static const char TAG[] = "radio.h";
-static portMUX_TYPE radio_lock = portMUX_INITIALIZER_UNLOCKED;
+//static portMUX_TYPE radio_lock = portMUX_INITIALIZER_UNLOCKED;
 
-static bool reinit_wifi = false;
-static bool reinit_bt   = false;
+//static bool reinit_wifi = false;
+//static bool reinit_bt   = false;
 
 #define JOLT_RADIO_CONTROL_ENABLE 0
 
