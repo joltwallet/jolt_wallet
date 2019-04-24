@@ -2,7 +2,7 @@
  Copyright (C) 2018  Brian Pugh, James Coxon, Michael Smaili
  https://www.joltwallet.com/
  */
-//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include "sodium.h"
 #include "freertos/FreeRTOS.h"
@@ -64,10 +64,9 @@ static int32_t jolt_mnemonic_restore_process( jolt_bg_job_t *job );
  * @brief Create the screen displaying the word index to enter
  */
 static void jolt_cmd_mnemonic_restore_num_create( mnemonic_restore_job_param_t *param ) {
-    assert( param->idx <= 24 );
-    assert( param->idx >= 1 );
+    assert( param->idx < 24 );
     param->scr = jolt_gui_scr_bignum_create( gettext(JOLT_TEXT_RESTORE),
-            gettext(JOLT_TEXT_ENTER_MNEMONIC_WORD), param->idx, -1);
+            gettext(JOLT_TEXT_ENTER_MNEMONIC_WORD), param->mapping[param->idx] + 1, -1);
     jolt_gui_scr_set_active_param(param->scr, param);
     jolt_gui_scr_set_event_cb(param->scr, jolt_cmd_mnemonic_restore_index_cb);
 }
@@ -145,7 +144,7 @@ static int32_t jolt_mnemonic_restore_process( jolt_bg_job_t *job ){
         case MNEMONIC_RESTORE_24WORDS:{
             char *line = NULL;
             int16_t word_idx;
-            if(  NULL == param->scr ) {
+            if( NULL == param->scr ) {
                 jolt_cmd_mnemonic_restore_num_create(param);
             }
             line = jolt_cli_get_line(0);
@@ -153,6 +152,7 @@ static int32_t jolt_mnemonic_restore_process( jolt_bg_job_t *job ){
             if( 0 == strcmp(line, "exit_restore") ) {
                 free(line);
                 param->state = MNEMONIC_RESTORE_CLEANUP;
+                break;
             }
             strlcpy(param->user_words[param->idx], line, sizeof(param->user_words[param->idx]));
             free(line);
@@ -164,7 +164,7 @@ static int32_t jolt_mnemonic_restore_process( jolt_bg_job_t *job ){
                 jolt_gui_obj_del(param->scr);
                 param->scr = NULL;
             }
-            if( 24 >= param->idx ) {
+            if( param->idx >= 24 ) {
                 param->state = MNEMONIC_RESTORE_PROCESS;
                 /* Fall Through */
             }
@@ -179,12 +179,13 @@ static int32_t jolt_mnemonic_restore_process( jolt_bg_job_t *job ){
 
             /* Join Mnemonic into single buffer */
             size_t offset=0;
-            for(uint8_t i=0; i < sizeof(param->idx); i++){
+            for(uint8_t i=0; i < 24; i++){
                 strlcpy(mnemonic + offset, param->user_words[i], sizeof(mnemonic) - offset);
                 offset += strlen(param->user_words[i]);
                 mnemonic[offset++] = ' ';
             }
             mnemonic[offset - 1] = '\0'; //null-terminate, remove last space
+            ESP_LOGD(TAG, "Entered Mnemonic: %s", mnemonic);
 
             jolt_err_t err = bm_mnemonic_to_bin(bin, sizeof(bin), mnemonic);
             sodium_memzero(mnemonic, sizeof(mnemonic));
