@@ -169,8 +169,8 @@ void jolt_gui_group_create() {
         lv_theme_t * th = lv_theme_get_current();
         group = BREAK_IF_NULL(lv_group_create());
         lv_group_set_refocus_policy(group, LV_GROUP_REFOCUS_POLICY_PREV);
-        lv_group_set_style_mod_cb(group, th->group.style_mod);
-        lv_group_set_style_mod_edit_cb(group, th->group.style_mod_edit);
+        lv_group_set_style_mod_cb(group, th->group.style_mod_cb);
+        lv_group_set_style_mod_edit_cb(group, th->group.style_mod_edit_cb);
         success = true;
     }
     if( !success ){

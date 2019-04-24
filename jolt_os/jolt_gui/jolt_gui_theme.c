@@ -507,8 +507,8 @@ lv_theme_t * jolt_gui_theme_init(uint16_t hue, const lv_font_t * font)
     win_init();
 
 #if LV_USE_GROUP
-    theme.group.style_mod = style_mod;
-    theme.group.style_mod_edit = style_mod_edit;
+    theme.group.style_mod_cb = style_mod;
+    theme.group.style_mod_edit_cb = style_mod_edit;
 #endif
 
     return &theme;

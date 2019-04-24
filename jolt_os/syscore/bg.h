@@ -27,7 +27,7 @@ typedef struct jolt_bg_job_t jolt_bg_job_t;
  * If the function relies on network events, it should be as non-blocking as possible.
  * If the function should be a state-machine if it is requeued multiple times (returns a non-zero value).
  *
- * @return Minimum number of seconds before calling again. Return 0 to clean up job.
+ * @return Minimum number of seconds before calling again. Return 0 to clean up job and not repeat.
  */
 typedef int32_t (*jolt_bg_task_t)( jolt_bg_job_t *job );
 
