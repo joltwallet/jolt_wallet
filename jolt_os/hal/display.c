@@ -9,7 +9,7 @@ static ssd1306_t disp_hal = { 0 };
 void display_init() {
     static lv_disp_drv_t lv_disp_drv;
     static lv_disp_buf_t disp_buf;
-    static lv_color_t buf[LV_HOR_RES_MAX*8];
+    static DRAM_ATTR lv_color_t buf[LV_HOR_RES_MAX*8];
 
     /* Set reset pin as output */
     gpio_config_t io_config;

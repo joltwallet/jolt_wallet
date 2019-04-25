@@ -48,7 +48,7 @@
 /* Dbg to test muzzle */
 #include "hal/radio/radio.h"
 
-#if CONFIG_HEAP_TRACING
+#if CONFIG_HEAP_TASK_TRACING
 #include "esp_heap_trace.h"
 #define HEAP_TRACING_NUM_RECORDS 100
 static heap_trace_record_t trace_records[HEAP_TRACING_NUM_RECORDS];

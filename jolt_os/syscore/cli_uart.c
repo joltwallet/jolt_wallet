@@ -13,8 +13,6 @@
 #include "esp_log.h"
 #include "syscore/cli.h"
 
-#include "esp_heap_trace.h"
-
 /********************
  * STATIC FUNCTIONS *
  ********************/
@@ -88,7 +86,6 @@ static void jolt_cli_uart_listener_task( void *param) {
         linenoiseSetDumbMode(1);
     }
     
-    heap_trace_start(HEAP_TRACE_LEAKS);
     /* Main loop */
     for(;;vTaskDelay(pdMS_TO_TICKS(80))) {
         /* Get a line using linenoise.
