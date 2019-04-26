@@ -134,7 +134,9 @@ void jolt_gui_test_battery_task(void *param) {
 }
 
 void jolt_gui_test_battery_create(lv_obj_t *btn, lv_event_t event) {
-    test_battery_task_h = lv_task_create(jolt_gui_test_battery_task, 300, LV_TASK_PRIO_LOW, NULL);
+    if( LV_EVENT_SHORT_CLICKED == event ) {
+        test_battery_task_h = lv_task_create(jolt_gui_test_battery_task, 300, LV_TASK_PRIO_LOW, NULL);
+    }
 }
 
 void jolt_gui_test_alphabet_create(lv_obj_t * list_btn, lv_event_t event) {
