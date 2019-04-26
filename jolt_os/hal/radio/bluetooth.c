@@ -3,6 +3,8 @@
  * What doesn't work:
  *    *select
 */
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
 #include "sdkconfig.h"
 #include "esp_spiffs.h"
 
@@ -109,28 +111,49 @@ static int ble_open(const char * path, int flags, int mode) {
 }
 
 static ssize_t ble_write(int fd, const void *data, size_t size) {
+    size_t remaining = size;
     const char *data_c = (const char *)data;
     _lock_acquire_recursive(&s_ble_write_lock);
 
+#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
+        {
+            char *buf[100] = { 0 };
+            sprintf(buf, "%s write %d bytes\n", __func__, size);
+            uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+        }
+#endif
+
     int idx = 0;
     do{
-        uint16_t print_len = size;
+        esp_err_t res;
+        size_t print_len = remaining;
         if( print_len > 512 ) {
             print_len = 512;
         }
-        esp_err_t res;
+
+#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
+        {
+            char *buf[100] = { 0 };
+            sprintf(buf, "Sending %d bytes: ", print_len);
+            uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+            uart_write_bytes(UART_NUM_0, &data_c[idx], print_len);
+            uart_write_bytes(UART_NUM_0, "\n", 1);
+        }
+#endif
+
         res = esp_ble_gatts_send_indicate(
                 spp_profile_tab[SPP_PROFILE_A_APP_ID].gatts_if,
                 spp_profile_tab[SPP_PROFILE_A_APP_ID].conn_id,
                 spp_handle_table[SPP_IDX_SPP_DATA_NOTIFY_VAL],
                 print_len, (uint8_t*) &data_c[idx], GATTS_SEND_REQUIRE_CONFIRM);
+
         if( ESP_OK != res ){
             // todo: res error handling
             esp_restart();
         }
         idx += print_len;
-        size -= print_len;
-    } while(size>0);
+        remaining -= print_len;
+    } while(remaining>0);
 
     _lock_release_recursive(&s_ble_write_lock);
     return size;

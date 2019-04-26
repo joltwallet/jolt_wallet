@@ -40,6 +40,7 @@ int jolt_cmd_free(int argc, char** argv) {
     response = cJSON_Print(json);
     printf(response);
     printf("\n");
+    printf("meowmeowmeopwmeowmeowmeoemwoemoemowerjldfgjkjdfhfgbsdfjahbdfjlagljkdfhvjkadfhgjkdfhkgldfhghldfvjdfbldfhbkjnvufhvbadmnzldfbadfnbdfbzdf\n");
 
     return_code = 0;
 
