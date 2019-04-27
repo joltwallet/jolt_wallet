@@ -22,12 +22,12 @@
 
 #if ESP_PLATFORM
 
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
 #include "jolt_lib.h"
 #include "esp_log.h"
 #include "hal/storage/storage.h"
 
-#undef assert
-#define assert(x) if(x) esp_restart();
 
 static const char* TAG = "JelfLoader";
 
@@ -473,6 +473,7 @@ static bool app_hash_init(jelfLoaderContext_t *ctx,
     /* Initialize Signature Check Hashing */
     ctx->hs = LOADER_ALLOC_DATA(sizeof(crypto_hash_sha512_state));
     if(NULL == ctx->hs){
+        ERR("Failed to allocate memory for sha512 hash state");
         goto err;
     }
     crypto_hash_sha512_init(ctx->hs);
@@ -486,6 +487,7 @@ static bool app_hash_init(jelfLoaderContext_t *ctx,
         int n = LOADER_GETDATA_RAW(ctx, ctx->app_signature, JELF_SIGNATURE_LEN);
         assert( JELF_SIGNATURE_LEN == n );
     }
+
 #if ESP_LOG_LEVEL >= ESP_LOG_INFO
     {
         char sig_hex[129] = { 0 };
@@ -895,19 +897,19 @@ int jelfLoaderRun(jelfLoaderContext_t *ctx, int argc, char **argv) {
 
     /* Free up loading cache */
     if( NULL != ctx->sht_cache ) {
-        free( ctx->sht_cache );
+        LOADER_FREE( ctx->sht_cache );
         ctx->sht_cache = NULL;
     }
     if( NULL != ctx->symtab_cache ) {
-        free( ctx->symtab_cache );
+        LOADER_FREE( ctx->symtab_cache );
         ctx->symtab_cache = NULL;
     }
     if( NULL != ctx->inf_stream.in_buf ) {
-        free(ctx->inf_stream.in_buf);
+        LOADER_FREE(ctx->inf_stream.in_buf);
         ctx->inf_stream.in_buf = NULL;
     }
     if( NULL != ctx->inf_stream.out_buf ) {
-        free(ctx->inf_stream.out_buf);
+        LOADER_FREE(ctx->inf_stream.out_buf);
         ctx->inf_stream.out_buf = NULL;
     }
     {
@@ -947,7 +949,7 @@ jelfLoaderStatus_t jelfLoaderInit(jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd,
     /***********************************************
      * Initialize the context object with pointers *
      ***********************************************/
-    *ctx_ptr = malloc(sizeof(jelfLoaderContext_t));
+    *ctx_ptr = LOADER_ALLOC_DATA(sizeof(jelfLoaderContext_t));
     ctx = *ctx_ptr;
     if( NULL == ctx ) {
         ERR( "Insufficient memory for ElfLoaderContext_t" );
@@ -959,8 +961,9 @@ jelfLoaderStatus_t jelfLoaderInit(jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd,
     ctx->env = env;
 
     /* Initialize Inflator */
+    MSG("Initializing Inflator");
     tinfl_init(&(ctx->inf_stream.inf));
-    ctx->inf_stream.in_buf = malloc(CONFIG_JELFLOADER_INPUTBUF_LEN);
+    ctx->inf_stream.in_buf = LOADER_ALLOC_DATA(CONFIG_JELFLOADER_INPUTBUF_LEN);
     if(NULL == ctx->inf_stream.in_buf) {
         ERR( "Insufficient memory for miniz input buffer" );
         response = JELF_LOADER_OOM;
@@ -970,7 +973,7 @@ jelfLoaderStatus_t jelfLoaderInit(jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd,
     ctx->inf_stream.in_next = ctx->inf_stream.in_buf;
     ctx->inf_stream.in_avail = 0;
 
-    ctx->inf_stream.out_buf = malloc(CONFIG_JOLT_COMPRESSION_OUTPUT_BUFFER);
+    ctx->inf_stream.out_buf = LOADER_ALLOC_DATA(CONFIG_JOLT_COMPRESSION_OUTPUT_BUFFER);
     if(NULL == ctx->inf_stream.out_buf) {
         ERR( "Insufficient memory for miniz output buffer" );
         response = JELF_LOADER_OOM;
@@ -986,6 +989,7 @@ jelfLoaderStatus_t jelfLoaderInit(jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd,
      * Initialize App Signature Check *
      **********************************/
     /* Will populate the main JELF header */
+    MSG("Initializing Signature Checker");
     if( !app_hash_init(ctx, &header, name) ) {
         response = JELF_LOADER_INVALID_KEY;
         goto err;
@@ -1000,6 +1004,7 @@ jelfLoaderStatus_t jelfLoaderInit(jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd,
     }
 
     /* Version Compatability Check */
+    MSG("Checking Version Compatability");
     switch( check_version_compatability( &header ) ) {
         case 0:
             /* success */
@@ -1025,7 +1030,7 @@ jelfLoaderStatus_t jelfLoaderInit(jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd,
          * Cache sectionheadertable to memory *
          **************************************/
         size_t sht_size = header.e_shnum * JELF_SHDR_SIZE;
-        ctx->sht_cache = malloc(sht_size);
+        ctx->sht_cache = LOADER_ALLOC_DATA(sht_size);
         if( NULL == ctx->sht_cache  ) {
             ERR("Insufficient memory for section header table cache");
             response = JELF_LOADER_OOM;
@@ -1097,7 +1102,7 @@ jelfLoaderStatus_t jelfLoaderLoad(jelfLoaderContext_t *ctx) {
             } 
             else {
                 /* Allocate space for Section Struct (not data) */
-                jelfLoaderSection_t* section = malloc(sizeof(jelfLoaderSection_t));
+                jelfLoaderSection_t* section = LOADER_ALLOC_DATA(sizeof(jelfLoaderSection_t));
                 if( NULL == section ) {
                     ERR("Error allocating space for SHF_ALLOC section");
                     response = JELF_LOADER_OOM;
@@ -1189,7 +1194,7 @@ jelfLoaderStatus_t jelfLoaderLoad(jelfLoaderContext_t *ctx) {
             /**************************
              * Cache symtab to memory *
              **************************/
-            ctx->symtab_cache = malloc(sectHdr.sh_size);
+            ctx->symtab_cache = LOADER_ALLOC_DATA(sectHdr.sh_size);
             if( NULL == ctx->symtab_cache){
                 ERR("Error allocating space for SymbolTable cache");
                 response = JELF_LOADER_OOM;
@@ -1268,7 +1273,7 @@ jelfLoaderStatus_t jelfLoaderRelocate(jelfLoaderContext_t *ctx) {
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
     /* Populate the hash field */
     crypto_hash_sha512_final(ctx->hs, ctx->hash);
-    free(ctx->hs);
+    LOADER_FREE(ctx->hs);
     ctx->hs = NULL;
 #endif
     ctx->state = JELF_CTX_READY;
@@ -1289,25 +1294,25 @@ void jelfLoaderFree(jelfLoaderContext_t *ctx) {
 
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
     if( NULL != ctx->hs ) {
-        free(ctx->hs);
+        LOADER_FREE(ctx->hs);
         ctx->hs = NULL;
     }
 #endif
 
     if( NULL != ctx->sht_cache ) {
-        free( ctx->sht_cache );
+        LOADER_FREE( ctx->sht_cache );
         ctx->sht_cache = NULL;
     }
     if( NULL != ctx->symtab_cache ) {
-        free( ctx->symtab_cache );
+        LOADER_FREE( ctx->symtab_cache );
         ctx->symtab_cache = NULL;
     }
     if( NULL != ctx->inf_stream.in_buf ) {
-        free(ctx->inf_stream.in_buf);
+        LOADER_FREE(ctx->inf_stream.in_buf);
         ctx->inf_stream.in_buf = NULL;
     }
     if( NULL != ctx->inf_stream.out_buf ) {
-        free(ctx->inf_stream.out_buf);
+        LOADER_FREE(ctx->inf_stream.out_buf);
         ctx->inf_stream.out_buf = NULL;
     }
 
