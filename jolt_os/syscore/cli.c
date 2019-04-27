@@ -17,8 +17,6 @@
 #include "syscore/launcher.h"
 #include "syscore/cmd/jolt_cmds.h"
 
-#include "esp_heap_trace.h"
-
 /********************
  * STATIC FUNCTIONS *
  ********************/
@@ -127,11 +125,9 @@ static bool jolt_cli_get_src(jolt_cli_src_t *src, int16_t timeout){
     else delay = pdMS_TO_TICKS(timeout);
 
     portMUX_TYPE myMutex = portMUX_INITIALIZER_UNLOCKED;
-    ESP_LOGD(TAG, "MEOW1");
     portENTER_CRITICAL(&myMutex);
     if( xQueueReceive(msg_queue, src, 0) ) {
         portEXIT_CRITICAL(&myMutex);
-        ESP_LOGD(TAG, "MEOW4");
         res = true;
     }
     else {
@@ -139,7 +135,6 @@ static bool jolt_cli_get_src(jolt_cli_src_t *src, int16_t timeout){
             //ESP_LOGD(TAG, "Failed to give src lock");
         }
         portEXIT_CRITICAL(&myMutex);
-        ESP_LOGD(TAG, "MEOW7");
         res = (pdTRUE == xQueueReceive(msg_queue, src, delay));
     }
 
@@ -203,9 +198,21 @@ void jolt_cli_return( int val ) {
     if( JOLT_CLI_NON_BLOCKING == val ) {
         return;
     }
-    xQueueSend(ret_val_queue, &val, portMAX_DELAY);
-    if( 0 != val ) {
-        printf("Command returned non-zero error code: %d\n", val);
+
+    portMUX_TYPE myMutex = portMUX_INITIALIZER_UNLOCKED;
+    portENTER_CRITICAL(&myMutex);
+    if( xSemaphoreTake(job_in_progress, 0) ) {
+        /* No cmd currently executed */
+        xSemaphoreGive(job_in_progress);
+        portEXIT_CRITICAL(&myMutex);
+    }
+    else {
+        /* There is currently a cmd being executed. Queue up the value. */
+        portEXIT_CRITICAL(&myMutex);
+        xQueueSend(ret_val_queue, &val, portMAX_DELAY);
+        if( 0 != val ) {
+            printf("Command returned non-zero error code: %d\n", val);
+        }
     }
 }
 
@@ -279,6 +286,10 @@ static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job) {
             if( launch_file(argv[0], argc-1, &argv[1], "") ) {
                 printf("Unsuccessful command\n");
                 jolt_cli_return(-1);
+            }
+            else if( 1 == argc ){
+                /* Just launch the GUI */
+                jolt_cli_return(0);
             }
             break;
         }
