@@ -4,3 +4,4 @@ build/
 *.DS_Store
 .*project
 .settings
+jolt_os/jolt_commit.c
