@@ -13,22 +13,22 @@ static const char TAG[] = "jolt_gui_scroll";
 static lv_style_t monospace_style_obj;
 static lv_style_t *monospace_style = NULL;
 
-lv_obj_t *jolt_gui_scr_scroll_get_page(lv_obj_t *scr){
-    lv_obj_t *page = NULL;
+jolt_gui_obj_t *jolt_gui_scr_scroll_get_page(jolt_gui_obj_t *scr){
+    jolt_gui_obj_t *page = NULL;
     JOLT_GUI_CTX{
-        lv_obj_t *cont_body = JOLT_GUI_FIND_AND_CHECK(scr, JOLT_GUI_OBJ_ID_CONT_BODY);
+        jolt_gui_obj_t *cont_body = JOLT_GUI_FIND_AND_CHECK(scr, JOLT_GUI_OBJ_ID_CONT_BODY);
         page = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_PAGE);
     }
     return page;
 }
 
-lv_obj_t *jolt_gui_scr_scroll_create(const char *title) {
+jolt_gui_obj_t *jolt_gui_scr_scroll_create(const char *title) {
     JOLT_GUI_SCR_CTX(title){
         /* Set screen ID */
         jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_SCROLL);
 
         /* Create Scrollable Page */
-        lv_obj_t *page = BREAK_IF_NULL(lv_page_create(cont_body, NULL));
+        jolt_gui_obj_t *page = BREAK_IF_NULL(lv_page_create(cont_body, NULL));
         jolt_gui_obj_id_set(page, JOLT_GUI_OBJ_ID_PAGE);
         lv_obj_set_size(page, LV_HOR_RES, LV_VER_RES - CONFIG_JOLT_GUI_STATUSBAR_H);
         lv_obj_align(page, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
@@ -44,10 +44,10 @@ lv_obj_t *jolt_gui_scr_scroll_create(const char *title) {
 }
 
 /* Add a text container to a scrollable screen */
-lv_obj_t *jolt_gui_scr_scroll_add_text(lv_obj_t *scr, const char *text){
-    lv_obj_t *label = NULL;
+jolt_gui_obj_t *jolt_gui_scr_scroll_add_text(jolt_gui_obj_t *scr, const char *text){
+    jolt_gui_obj_t *label = NULL;
     JOLT_GUI_CTX{
-        lv_obj_t *page = BREAK_IF_NULL( jolt_gui_scr_scroll_get_page(scr) );
+        jolt_gui_obj_t *page = BREAK_IF_NULL( jolt_gui_scr_scroll_get_page(scr) );
         /* Create Text Label on Page */
         label = BREAK_IF_NULL(lv_label_create(page, NULL));
         lv_label_set_long_mode(label, LV_LABEL_LONG_BREAK);
@@ -59,10 +59,10 @@ lv_obj_t *jolt_gui_scr_scroll_add_text(lv_obj_t *scr, const char *text){
 }
 
 /* Add a monospace text container to a scrollable screen */
-lv_obj_t *jolt_gui_scr_scroll_add_monospace_text(lv_obj_t *scr, const char *text){
-    lv_obj_t *label = NULL;
+jolt_gui_obj_t *jolt_gui_scr_scroll_add_monospace_text(jolt_gui_obj_t *scr, const char *text){
+    jolt_gui_obj_t *label = NULL;
     JOLT_GUI_CTX{
-        lv_obj_t *page = BREAK_IF_NULL( jolt_gui_scr_scroll_get_page(scr) );
+        jolt_gui_obj_t *page = BREAK_IF_NULL( jolt_gui_scr_scroll_get_page(scr) );
         /* Create Text Label on Page */
         label = BREAK_IF_NULL(lv_label_create(page, NULL));
         lv_label_set_long_mode(label, LV_LABEL_LONG_BREAK);

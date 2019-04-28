@@ -24,10 +24,10 @@ static void remove_all_bonded_devices() {
     free(dev_list);
 }
 
-void menu_bluetooth_unbond_create(lv_obj_t *btn, lv_event_t event) {
+void menu_bluetooth_unbond_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
     /* todo: confirmation screens.
      * todo: internationalization */
-    if( LV_EVENT_SHORT_CLICKED == event ) {
+    if( jolt_gui_event.short_clicked == event ) {
         jolt_gui_scr_text_create(gettext(JOLT_TEXT_UNBONDS), "All saved bluetooth devices wiped.");
         remove_all_bonded_devices();
     }

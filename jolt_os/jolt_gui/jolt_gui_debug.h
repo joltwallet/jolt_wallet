@@ -21,7 +21,7 @@
  *
  * @param[in] obj LVGL object
  */
-void jolt_gui_debug_obj_print(lv_obj_t *obj);
+void jolt_gui_debug_obj_print(jolt_gui_obj_t *obj);
 
 #endif
 #endif

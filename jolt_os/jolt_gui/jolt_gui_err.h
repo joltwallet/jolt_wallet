@@ -30,6 +30,6 @@ char *jolt_gui_err_to_str( jolt_gui_err_t err );
  * @param[in] err GUI error code
  * @return error screen
  */
-lv_obj_t *jolt_gui_scr_err_create( jolt_gui_err_t err );
+jolt_gui_obj_t *jolt_gui_scr_err_create( jolt_gui_err_t err );
 
 #endif

@@ -8,8 +8,8 @@
  *
  * Event Handling:
  *     * lv_event_cb is set on the digit_entry (lv_cont) object
- *     * On the first roller, LV_EVENT_CANCEL gets forwarded to the callback
- *     * On the last roller, LV_EVENT_SHORT_CLICKED gets forwarded to the callback
+ *     * On the first roller, jolt_gui_event.cancel gets forwarded to the callback
+ *     * On the last roller, jolt_gui_event.short_clicked gets forwarded to the callback
  *     * Any time a roller value changes, LV_EVENT_VALUE_CHANGED is sent to the callback
  *
  */
@@ -33,13 +33,13 @@
  *
  *
  * Typical workflow:
- * lv_obj_t *scr = jolt_gui_scr_digit_entry_create("Title", 10, -1, cb);
+ * jolt_gui_obj_t *scr = jolt_gui_scr_digit_entry_create("Title", 10, -1, cb);
  */
 
 typedef struct {
     lv_cont_ext_t cont;       /*The ancestor container structure*/
-    lv_obj_t *rollers[CONFIG_JOLT_GUI_SCR_DIGIT_ENTRY_MAX_LEN];
-    lv_obj_t *decimal_point;
+    jolt_gui_obj_t *rollers[CONFIG_JOLT_GUI_SCR_DIGIT_ENTRY_MAX_LEN];
+    jolt_gui_obj_t *decimal_point;
     lv_event_cb_t user_cb;
     uint8_t sel;
     uint8_t num_rollers;
@@ -52,11 +52,11 @@ static lv_signal_cb_t old_roller_signal = NULL;     /*Store the old signal funct
 static lv_signal_cb_t old_cont_signal = NULL;
 
 /* Static Functions Declarations */
-static lv_obj_t *digit_create(lv_obj_t *parent);
+static jolt_gui_obj_t *digit_create(jolt_gui_obj_t *parent);
 static unsigned concat_int(unsigned x, unsigned y);
-static lv_obj_t *create_dp(lv_obj_t *parent);
+static jolt_gui_obj_t *create_dp(jolt_gui_obj_t *parent);
 
-static lv_res_t digit_entry_signal(lv_obj_t *digit_entry, lv_signal_t sign, void *param) {
+static lv_res_t digit_entry_signal(jolt_gui_obj_t *digit_entry, lv_signal_t sign, void *param) {
     ESP_LOGD(TAG, "%s signal %d", __func__, sign);
     lv_res_t res = LV_RES_OK;
     digit_entry_cont_ext_t *ext = lv_obj_get_ext_attr( digit_entry );
@@ -107,7 +107,7 @@ static lv_res_t digit_entry_signal(lv_obj_t *digit_entry, lv_signal_t sign, void
             case LV_KEY_RIGHT:
                 ESP_LOGD(TAG, "Roller value updated");
                 lv_signal_send(ext->rollers[ext->sel], sign, param);
-                res = lv_event_send(digit_entry, LV_EVENT_VALUE_CHANGED, NULL);
+                res = lv_event_send(digit_entry, jolt_gui_event.value_changed, NULL);
                 break;
             default:
                 break;
@@ -122,7 +122,7 @@ static lv_res_t digit_entry_signal(lv_obj_t *digit_entry, lv_signal_t sign, void
     return res;
 }
 
-static lv_res_t new_roller_signal(lv_obj_t *roller, lv_signal_t sign, void * param) {
+static lv_res_t new_roller_signal(jolt_gui_obj_t *roller, lv_signal_t sign, void * param) {
     lv_res_t res = LV_RES_OK;
 
     lv_roller_ext_t *ext = lv_obj_get_ext_attr(roller);
@@ -143,8 +143,8 @@ static lv_res_t new_roller_signal(lv_obj_t *roller, lv_signal_t sign, void * par
 }
 
 /* Create and return a lv_roller */
-static lv_obj_t *digit_create(lv_obj_t *parent) {
-    lv_obj_t *roller;
+static jolt_gui_obj_t *digit_create(jolt_gui_obj_t *parent) {
+    jolt_gui_obj_t *roller;
     roller = lv_roller_create(parent, NULL);
     jolt_gui_obj_id_set(roller, JOLT_GUI_OBJ_ID_ROLLER);
     if( NULL == old_roller_signal) {
@@ -161,8 +161,8 @@ static lv_obj_t *digit_create(lv_obj_t *parent) {
 /**
  * @brief Create the decimal point label object 
  */
-static lv_obj_t *create_dp(lv_obj_t *parent){
-    lv_obj_t *label = NULL;
+static jolt_gui_obj_t *create_dp(jolt_gui_obj_t *parent){
+    jolt_gui_obj_t *label = NULL;
     JOLT_GUI_CTX{
         label = lv_label_create(parent, NULL);
         jolt_gui_obj_id_set(label, JOLT_GUI_OBJ_ID_DECIMAL_POINT);
@@ -186,7 +186,7 @@ static lv_obj_t *create_dp(lv_obj_t *parent){
     return label;
 }
 
-lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
+jolt_gui_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
         int8_t n, int8_t pos){
 
     /* Validate number of digits/rollers */
@@ -206,7 +206,7 @@ lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
         jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_DIGIT_ENTRY);
 
         /* Create digit_entry object */
-        lv_obj_t *digit_entry = lv_cont_create(cont_body, cont_body);
+        jolt_gui_obj_t *digit_entry = lv_cont_create(cont_body, cont_body);
         BREAK_IF_NULL(lv_obj_allocate_ext_attr(digit_entry, sizeof(digit_entry_cont_ext_t)));
         digit_entry_cont_ext_t *ext = lv_obj_get_ext_attr(digit_entry);
         jolt_gui_obj_id_set(digit_entry, JOLT_GUI_OBJ_ID_DIGIT_ENTRY);
@@ -257,11 +257,11 @@ lv_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
     return parent;
 }
 
-int8_t jolt_gui_scr_digit_entry_get_arr(lv_obj_t *scr, uint8_t *arr, uint8_t arr_len) {
+int8_t jolt_gui_scr_digit_entry_get_arr(jolt_gui_obj_t *scr, uint8_t *arr, uint8_t arr_len) {
     int8_t n_entries = -1;
     JOLT_GUI_CTX{
-        lv_obj_t *cont_body = NULL;
-        lv_obj_t *digit_entry = NULL;
+        jolt_gui_obj_t *cont_body = NULL;
+        jolt_gui_obj_t *digit_entry = NULL;
         cont_body = JOLT_GUI_FIND_AND_CHECK(scr, JOLT_GUI_OBJ_ID_CONT_BODY);
         digit_entry = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY);
         n_entries = jolt_gui_obj_digit_entry_get_arr(digit_entry, arr, arr_len);
@@ -270,7 +270,7 @@ int8_t jolt_gui_scr_digit_entry_get_arr(lv_obj_t *scr, uint8_t *arr, uint8_t arr
 }
 
 
-int8_t jolt_gui_obj_digit_entry_get_arr(lv_obj_t *digit_entry, uint8_t *arr, uint8_t arr_len) {
+int8_t jolt_gui_obj_digit_entry_get_arr(jolt_gui_obj_t *digit_entry, uint8_t *arr, uint8_t arr_len) {
     int8_t n_entries = -1;
     digit_entry_cont_ext_t *ext = NULL;
     JOLT_GUI_CTX{
@@ -299,11 +299,11 @@ int8_t jolt_gui_obj_digit_entry_get_arr(lv_obj_t *digit_entry, uint8_t *arr, uin
     return n_entries;
 }
 
-uint8_t jolt_gui_scr_digit_entry_get_hash(lv_obj_t *scr, uint8_t *hash) {
+uint8_t jolt_gui_scr_digit_entry_get_hash(jolt_gui_obj_t *scr, uint8_t *hash) {
     uint8_t res = 0;
     JOLT_GUI_CTX{
-        lv_obj_t *cont_body = NULL;
-        lv_obj_t *digit_entry = NULL;
+        jolt_gui_obj_t *cont_body = NULL;
+        jolt_gui_obj_t *digit_entry = NULL;
         cont_body = JOLT_GUI_FIND_AND_CHECK(scr, JOLT_GUI_OBJ_ID_CONT_BODY);
         digit_entry = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY);
         res = jolt_gui_obj_digit_entry_get_hash(digit_entry, hash);
@@ -311,7 +311,7 @@ uint8_t jolt_gui_scr_digit_entry_get_hash(lv_obj_t *scr, uint8_t *hash) {
     return res;
 }
 
-uint8_t jolt_gui_obj_digit_entry_get_hash(lv_obj_t *digit_entry, uint8_t *hash) {
+uint8_t jolt_gui_obj_digit_entry_get_hash(jolt_gui_obj_t *digit_entry, uint8_t *hash) {
     /* todo: error handling */
     uint8_t res = 1;
     JOLT_GUI_CTX{
@@ -338,11 +338,11 @@ static unsigned concat_int(unsigned x, unsigned y) {
     return x * pow + y;        
 }
 
-double jolt_gui_scr_digit_entry_get_double(lv_obj_t *scr) {
+double jolt_gui_scr_digit_entry_get_double(jolt_gui_obj_t *scr) {
     double res = 0;
     JOLT_GUI_CTX{
-        lv_obj_t *cont_body = NULL;
-        lv_obj_t *digit_entry = NULL;
+        jolt_gui_obj_t *cont_body = NULL;
+        jolt_gui_obj_t *digit_entry = NULL;
         cont_body = JOLT_GUI_FIND_AND_CHECK(scr, JOLT_GUI_OBJ_ID_CONT_BODY);
         digit_entry = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY);
         res = jolt_gui_obj_digit_entry_get_double(digit_entry);
@@ -350,7 +350,7 @@ double jolt_gui_scr_digit_entry_get_double(lv_obj_t *scr) {
     return res;
 }
 
-double jolt_gui_obj_digit_entry_get_double(lv_obj_t *digit_entry){
+double jolt_gui_obj_digit_entry_get_double(jolt_gui_obj_t *digit_entry){
     double res = 0;
     JOLT_GUI_CTX{
         digit_entry_cont_ext_t *ext = lv_obj_get_ext_attr( digit_entry );
@@ -364,11 +364,11 @@ double jolt_gui_obj_digit_entry_get_double(lv_obj_t *digit_entry){
     return res;
 }
 
-uint32_t jolt_gui_scr_digit_entry_get_int(lv_obj_t *scr) {
+uint32_t jolt_gui_scr_digit_entry_get_int(jolt_gui_obj_t *scr) {
     uint32_t res = 0;
     JOLT_GUI_CTX{
-        lv_obj_t *cont_body = NULL;
-        lv_obj_t *digit_entry = NULL;
+        jolt_gui_obj_t *cont_body = NULL;
+        jolt_gui_obj_t *digit_entry = NULL;
         cont_body = JOLT_GUI_FIND_AND_CHECK(scr, JOLT_GUI_OBJ_ID_CONT_BODY);
         digit_entry = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY);
         res = jolt_gui_obj_digit_entry_get_int(digit_entry);
@@ -376,7 +376,7 @@ uint32_t jolt_gui_scr_digit_entry_get_int(lv_obj_t *scr) {
     return res;
 }
 
-uint32_t jolt_gui_obj_digit_entry_get_int(lv_obj_t *digit_entry) {
+uint32_t jolt_gui_obj_digit_entry_get_int(jolt_gui_obj_t *digit_entry) {
     uint32_t res = 0;
     JOLT_GUI_CTX{
         digit_entry_cont_ext_t *ext = lv_obj_get_ext_attr(digit_entry);
@@ -397,10 +397,10 @@ uint32_t jolt_gui_obj_digit_entry_get_int(lv_obj_t *digit_entry) {
     return res;
 }
 
-void jolt_gui_scr_digit_entry_set_pos(lv_obj_t *scr, int8_t pos) {
+void jolt_gui_scr_digit_entry_set_pos(jolt_gui_obj_t *scr, int8_t pos) {
     JOLT_GUI_CTX{
-        lv_obj_t *cont_body = NULL;
-        lv_obj_t *digit_entry = NULL;
+        jolt_gui_obj_t *cont_body = NULL;
+        jolt_gui_obj_t *digit_entry = NULL;
         cont_body = JOLT_GUI_FIND_AND_CHECK(scr, JOLT_GUI_OBJ_ID_CONT_BODY);
         digit_entry = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY);
         digit_entry_cont_ext_t *ext = lv_obj_get_ext_attr(digit_entry);

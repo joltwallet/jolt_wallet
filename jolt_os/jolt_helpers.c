@@ -22,6 +22,7 @@
 #include "jolt_helpers.h"
 #include "hal/storage/storage.h"
 #include "jolt_gui/jolt_gui.h"
+#include "jolt_gui/menus/home.h"
 #include "syscore/https.h"
 
 

@@ -5,8 +5,8 @@
 
 static const char TAG[] = "gui_storage";
 
-void menu_storage_create(lv_obj_t *btn, lv_event_t event) {
-    if( LV_EVENT_SHORT_CLICKED == event ) {
+void menu_storage_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
+    if( jolt_gui_event.short_clicked == event ) {
         uint32_t tot, used;
         uint8_t percentage;
         char subtitle[50];
@@ -16,7 +16,7 @@ void menu_storage_create(lv_obj_t *btn, lv_event_t event) {
 
         snprintf(subtitle, sizeof(subtitle), "%dKB Free / %dKB Total", used/1024, tot/1024);
 
-        lv_obj_t *scr;
+        jolt_gui_obj_t *scr;
         scr = jolt_gui_scr_loadingbar_create( gettext(JOLT_TEXT_STORAGE) );
         if( NULL == scr ){
             goto exit;

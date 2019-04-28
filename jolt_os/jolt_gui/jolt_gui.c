@@ -21,6 +21,31 @@
  **********************/
 static lv_group_t *group;
 
+/* Only EVER append values to this struct */
+const jolt_gui_event_enum_t jolt_gui_event = {
+    .pressed = LV_EVENT_PRESSED,       /*The object has been pressed*/
+    .pressing = LV_EVENT_PRESSING,      /*The object is being pressed (called continuously while pressing)*/
+    .press_list = LV_EVENT_PRESS_LOST,    /*Still pressing but slid from the objects*/
+    .short_clicked = LV_EVENT_SHORT_CLICKED, /*Released before long press time. Not called if dragged.*/
+    .long_pressed = LV_EVENT_LONG_PRESSED, /*Pressing for `LV_INDEV_LONG_PRESS_TIME` time.  Not called if dragged.*/
+    .long_pressed_repeat = LV_EVENT_LONG_PRESSED_REPEAT, /*Called after `LV_INDEV_LONG_PRESS_TIME` in every
+                                     `LV_INDEV_LONG_PRESS_REP_TIME` ms.  Not called if dragged.*/
+    .clicked = LV_EVENT_CLICKED,             /*Called on release if not dragged (regardless to long press)*/
+    .released = LV_EVENT_RELEASED,            /*Called in every cases when the object has been released*/
+    .drag_begin = LV_EVENT_DRAG_BEGIN,
+    .drag_end = LV_EVENT_DRAG_END,
+    .drag_throw_begin = LV_EVENT_DRAG_THROW_BEGIN,
+    .focused = LV_EVENT_FOCUSED,
+    .defocused = LV_EVENT_DEFOCUSED,
+    .value_changed = LV_EVENT_VALUE_CHANGED,
+    .insert = LV_EVENT_INSERT,
+    .selected = LV_EVENT_SELECTED,
+    .refresh = LV_EVENT_REFRESH,
+    .apply = LV_EVENT_APPLY,  /*"Ok", "Apply" or similar specific button has clicked*/
+    .cancel = LV_EVENT_CANCEL, /*"Close", "Cancel" or similar specific button has clicked*/
+    .delete = LV_EVENT_DELETE,
+};
+
 /**********************
  *      MACROS
  **********************/
@@ -249,7 +274,7 @@ void *jolt_gui_scr_get_active_param( lv_obj_t *parent ) {
 
 void jolt_gui_event_del( lv_obj_t *obj, lv_event_t event) {
     ESP_LOGD(TAG, "%s: event %d", __func__, event);
-    if( LV_EVENT_CANCEL == event ) {
+    if( jolt_gui_event.cancel == event ) {
         jolt_gui_scr_del();
         ESP_LOGD(TAG, "Screen Deleted");
     }

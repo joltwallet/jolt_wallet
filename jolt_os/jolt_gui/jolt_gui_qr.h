@@ -40,7 +40,7 @@ static const uint8_t lv_img_color_header[] = {
  * @param[in] data_len length of data
  * @return image object representing the QR code
  */
-lv_obj_t *jolt_gui_scr_scroll_add_qr(lv_obj_t *scr, const char *data, uint16_t data_len);
+jolt_gui_obj_t *jolt_gui_scr_scroll_add_qr(jolt_gui_obj_t *scr, const char *data, uint16_t data_len);
 
 /**
  * @brief Convenience function to create scroll screen with a QR code
@@ -49,7 +49,7 @@ lv_obj_t *jolt_gui_scr_scroll_add_qr(lv_obj_t *scr, const char *data, uint16_t d
  * @param[in] data_len length of data
  * @return scroll screen
  */
-lv_obj_t *jolt_gui_scr_qr_create(const char *title, const char *data,
+jolt_gui_obj_t *jolt_gui_scr_qr_create(const char *title, const char *data,
         uint16_t data_len);
 
 #endif

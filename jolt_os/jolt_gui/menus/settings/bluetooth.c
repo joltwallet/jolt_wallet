@@ -9,8 +9,8 @@
 #include "hal/radio/bluetooth.h"
 #include "hal/storage/storage.h"
 
-static lv_obj_t *scr = NULL;
-static lv_obj_t *sw_en = NULL;
+static jolt_gui_obj_t *scr = NULL;
+static jolt_gui_obj_t *sw_en = NULL;
 
 static void create_enable_list();
 static void create_disable_list();
@@ -32,8 +32,8 @@ static void destroy_list() {
      jolt_gui_scr_menu_remove(scr, 1, 0);
 }
 
-static void sw_en_cb(lv_obj_t *btn, lv_event_t event) {
-    if( LV_EVENT_SHORT_CLICKED == event ) {
+static void sw_en_cb(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
+    if( jolt_gui_event.short_clicked == event ) {
         uint8_t state;
         state = lv_sw_toggle(sw_en, true);
 
@@ -58,13 +58,13 @@ static void sw_en_cb(lv_obj_t *btn, lv_event_t event) {
     }
 }
 
-void menu_bluetooth_create(lv_obj_t *btn, lv_event_t event) {
-    if( LV_EVENT_SHORT_CLICKED == event ) {
+void menu_bluetooth_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
+    if( jolt_gui_event.short_clicked == event ) {
         uint8_t bluetooth_en;
         storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 0 );
 
         scr = jolt_gui_scr_menu_create(gettext(JOLT_TEXT_SETTINGS));
-        lv_obj_t *btn_en = jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_BLUETOOTH_ENABLE), sw_en_cb);
+        jolt_gui_obj_t *btn_en = jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_BLUETOOTH_ENABLE), sw_en_cb);
         sw_en = jolt_gui_scr_menu_add_sw( btn_en );
 
         if( bluetooth_en ) {

@@ -17,15 +17,15 @@ static const char TAG[] = "scr_menu";
 
 static lv_signal_cb_t old_list_signal = NULL;     /*Store the old signal function*/
 
-static void set_selected_label_long_mode(lv_obj_t *list, lv_label_long_mode_t mode){
+static void set_selected_label_long_mode(jolt_gui_obj_t *list, lv_label_long_mode_t mode){
     JOLT_GUI_CTX{
-        lv_obj_t *btn = BREAK_IF_NULL(lv_list_get_btn_selected(list));
-        lv_obj_t *label = BREAK_IF_NULL(lv_list_get_btn_label(btn));
+        jolt_gui_obj_t *btn = BREAK_IF_NULL(lv_list_get_btn_selected(list));
+        jolt_gui_obj_t *label = BREAK_IF_NULL(lv_list_get_btn_label(btn));
         lv_label_set_long_mode(label, mode);
     }
 }
 
-static lv_res_t new_list_signal(lv_obj_t *list, lv_signal_t sign, void * param)
+static lv_res_t new_list_signal(jolt_gui_obj_t *list, lv_signal_t sign, void * param)
 {
     lv_res_t res;
     char c;
@@ -55,10 +55,10 @@ static lv_res_t new_list_signal(lv_obj_t *list, lv_signal_t sign, void * param)
 }
 
 /* Creates a standard Jolt Menu Screen */
-lv_obj_t *jolt_gui_scr_menu_create(const char *title) {
+jolt_gui_obj_t *jolt_gui_scr_menu_create(const char *title) {
     JOLT_GUI_SCR_CTX( title ){
         jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_MENU);
-        lv_obj_t *menu = BREAK_IF_NULL(lv_list_create(cont_body, NULL));
+        jolt_gui_obj_t *menu = BREAK_IF_NULL(lv_list_create(cont_body, NULL));
         ESP_LOGD(TAG, "Menu created %p", menu);
         if ( NULL == old_list_signal ) {
             old_list_signal = lv_obj_get_signal_cb(menu);
@@ -81,33 +81,33 @@ lv_obj_t *jolt_gui_scr_menu_create(const char *title) {
 }
 
 /* Gets the list object of a menu screen */
-lv_obj_t *jolt_gui_scr_menu_get_list(lv_obj_t *parent) {
-    lv_obj_t *menu = NULL;
+jolt_gui_obj_t *jolt_gui_scr_menu_get_list(jolt_gui_obj_t *parent) {
+    jolt_gui_obj_t *menu = NULL;
     JOLT_GUI_CTX{
-        lv_obj_t *cont_body = NULL;
+        jolt_gui_obj_t *cont_body = NULL;
         cont_body  = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_CONT_BODY);
         menu       = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_LIST);
     }
     return menu;
 }
 
-lv_obj_t *jolt_gui_scr_menu_get_scr( lv_obj_t *btn ) {
-    lv_obj_t *scr = NULL;
+jolt_gui_obj_t *jolt_gui_scr_menu_get_scr( jolt_gui_obj_t *btn ) {
+    jolt_gui_obj_t *scr = NULL;
     JOLT_GUI_CTX{
-        lv_obj_t *list = lv_obj_get_parent(lv_obj_get_parent(btn));
+        jolt_gui_obj_t *list = lv_obj_get_parent(lv_obj_get_parent(btn));
         scr = lv_obj_get_parent(lv_obj_get_parent(list));
     }
     return scr;
 }
 
 /* Adds an item to a Jolt Menu Screen */
-lv_obj_t *jolt_gui_scr_menu_add(lv_obj_t *par, const void *img_src,
+jolt_gui_obj_t *jolt_gui_scr_menu_add(jolt_gui_obj_t *par, const void *img_src,
         const char *txt, lv_event_cb_t rel_action) {
-    lv_obj_t *btn = NULL;
+    jolt_gui_obj_t *btn = NULL;
     JOLT_GUI_CTX{
-        lv_obj_t *list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list( par ));
+        jolt_gui_obj_t *list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list( par ));
         btn = BREAK_IF_NULL(lv_list_add(list, img_src, txt, rel_action));
-        lv_obj_t *label = BREAK_IF_NULL(lv_list_get_btn_label(btn));
+        jolt_gui_obj_t *label = BREAK_IF_NULL(lv_list_get_btn_label(btn));
         if( 1 == lv_list_get_size(list) ){
             lv_label_set_long_mode(label, LABEL_LONG_MODE_SELECTED);
         }
@@ -120,14 +120,14 @@ lv_obj_t *jolt_gui_scr_menu_add(lv_obj_t *par, const void *img_src,
 }
 
 /* Adds and returns a lv_sw to the specified menu button */
-lv_obj_t *jolt_gui_scr_menu_add_sw( lv_obj_t *btn ) {
-    lv_obj_t *sw = NULL;
+jolt_gui_obj_t *jolt_gui_scr_menu_add_sw( jolt_gui_obj_t *btn ) {
+    jolt_gui_obj_t *sw = NULL;
     JOLT_GUI_CTX{
-        lv_obj_t *label = lv_list_get_btn_label( btn );
+        jolt_gui_obj_t *label = lv_list_get_btn_label( btn );
         lv_coord_t width = lv_obj_get_width( label );
         lv_obj_set_width( label, width - JOLT_GUI_SW_CONT_WIDTH );
 
-        lv_obj_t *cont = lv_cont_create(btn, NULL);
+        jolt_gui_obj_t *cont = lv_cont_create(btn, NULL);
         lv_coord_t height = lv_obj_get_height( btn );
         lv_obj_set_protect(cont, LV_PROTECT_POS);
         lv_obj_set_size(cont, JOLT_GUI_SW_CONT_WIDTH, height);
@@ -141,9 +141,9 @@ lv_obj_t *jolt_gui_scr_menu_add_sw( lv_obj_t *btn ) {
     return sw;
 }
 
-void jolt_gui_scr_menu_set_btn_selected(lv_obj_t *par, lv_obj_t *btn){
+void jolt_gui_scr_menu_set_btn_selected(jolt_gui_obj_t *par, jolt_gui_obj_t *btn){
     JOLT_GUI_CTX{
-        lv_obj_t *list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list(par));
+        jolt_gui_obj_t *list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list(par));
         set_selected_label_long_mode(list, LABEL_LONG_MODE_DEFAULT);
         uint16_t anim_time = lv_list_get_anim_time(list);
         lv_list_set_anim_time(list, 0);
@@ -153,7 +153,7 @@ void jolt_gui_scr_menu_set_btn_selected(lv_obj_t *par, lv_obj_t *btn){
     }
 }
 
-void jolt_gui_scr_menu_remove(lv_obj_t *par, uint16_t start, uint16_t end) {
+void jolt_gui_scr_menu_remove(jolt_gui_obj_t *par, uint16_t start, uint16_t end) {
     if( 0 == end ) {
         end = UINT16_MAX;
     }
@@ -162,7 +162,7 @@ void jolt_gui_scr_menu_remove(lv_obj_t *par, uint16_t start, uint16_t end) {
     }
 
     JOLT_GUI_CTX{
-        lv_obj_t *list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list(par));
+        jolt_gui_obj_t *list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list(par));
         for(uint16_t i=start; i<end; i++) {
             bool res = lv_list_remove(list, start);
             if(!res) {
@@ -172,10 +172,10 @@ void jolt_gui_scr_menu_remove(lv_obj_t *par, uint16_t start, uint16_t end) {
     }
 }
 
-void jolt_gui_scr_menu_set_param( lv_obj_t *par, void *param ) {
+void jolt_gui_scr_menu_set_param( jolt_gui_obj_t *par, void *param ) {
     JOLT_GUI_CTX{
-        lv_obj_t *list = NULL;
-        lv_obj_t *btn = NULL;
+        jolt_gui_obj_t *list = NULL;
+        jolt_gui_obj_t *btn = NULL;
         list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list(par));
         jolt_gui_obj_set_param(list, param);
         while( NULL != (btn = lv_list_get_next_btn(list, btn)) ) {
@@ -184,7 +184,7 @@ void jolt_gui_scr_menu_set_param( lv_obj_t *par, void *param ) {
     }
 }
 
-int32_t jolt_gui_scr_menu_get_btn_index( lv_obj_t *btn ) {
+int32_t jolt_gui_scr_menu_get_btn_index( jolt_gui_obj_t *btn ) {
     int32_t index = -1;
     JOLT_GUI_CTX{
         index = lv_list_get_btn_index(NULL, btn);

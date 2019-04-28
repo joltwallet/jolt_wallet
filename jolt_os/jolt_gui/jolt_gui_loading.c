@@ -17,7 +17,7 @@ static const char TAG[] = "scr_loading";
 static lv_signal_cb_t old_bar_signal = NULL;     /*Store the old signal function*/
 
 typedef struct autoupdate_param_t {
-    lv_obj_t *scr;
+    jolt_gui_obj_t *scr;
     lv_task_t *task;
     int8_t *progress;
 } autoupdate_param_t;
@@ -27,7 +27,7 @@ typedef struct {
     autoupdate_param_t *autoupdate;
 } loadingbar_ext_t;
 
-static lv_res_t new_bar_signal(lv_obj_t *bar, lv_signal_t sign, void * param)
+static lv_res_t new_bar_signal(jolt_gui_obj_t *bar, lv_signal_t sign, void * param)
 {
     lv_res_t res;
 
@@ -50,22 +50,22 @@ static lv_res_t new_bar_signal(lv_obj_t *bar, lv_signal_t sign, void * param)
 
 /* Update the loading screen.
  * Title and Text are optional.*/
-void jolt_gui_scr_loadingbar_update(lv_obj_t *parent,
+void jolt_gui_scr_loadingbar_update(jolt_gui_obj_t *parent,
         const char *title, const char *text,
         uint8_t percentage) {
     JOLT_GUI_CTX{
         /* Find Objects */
-        lv_obj_t *label_title   = NULL;
+        jolt_gui_obj_t *label_title   = NULL;
         {
-            lv_obj_t *cont_title = NULL;
+            jolt_gui_obj_t *cont_title = NULL;
             cont_title  = JOLT_GUI_FIND_AND_CHECK(parent,     JOLT_GUI_OBJ_ID_CONT_TITLE);
             label_title = JOLT_GUI_FIND_AND_CHECK(cont_title, JOLT_GUI_OBJ_ID_LABEL_0);
         }
 
-        lv_obj_t *bar_loading   = NULL;
-        lv_obj_t *label_loading = NULL;
+        jolt_gui_obj_t *bar_loading   = NULL;
+        jolt_gui_obj_t *label_loading = NULL;
         {
-            lv_obj_t *cont_body = NULL;
+            jolt_gui_obj_t *cont_body = NULL;
             cont_body     = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_CONT_BODY);
             bar_loading   = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_LOADINGBAR);
             label_loading = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_LABEL_0);
@@ -88,9 +88,9 @@ void jolt_gui_scr_loadingbar_update(lv_obj_t *parent,
 
 /* lv_task that periodically updates the loading screen */
 static void autoupdate_task(void *input) {
-    lv_obj_t *scr = input;
+    jolt_gui_obj_t *scr = input;
     JOLT_GUI_CTX{
-        lv_obj_t *bar = BREAK_IF_NULL(jolt_gui_scr_get_active(scr));
+        jolt_gui_obj_t *bar = BREAK_IF_NULL(jolt_gui_scr_get_active(scr));
         loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar);
         if( *(ext->autoupdate->progress) <= 100 && *(ext->autoupdate->progress) >= 0 ) {
             // The +10 makes it look better
@@ -100,7 +100,7 @@ static void autoupdate_task(void *input) {
     }
 }
 
-void jolt_gui_scr_loadingbar_autoupdate(lv_obj_t *parent, int8_t *progress) {
+void jolt_gui_scr_loadingbar_autoupdate(jolt_gui_obj_t *parent, int8_t *progress) {
     autoupdate_param_t *param;
     param = malloc( sizeof(autoupdate_param_t) );
     if( NULL == param ) {
@@ -108,7 +108,7 @@ void jolt_gui_scr_loadingbar_autoupdate(lv_obj_t *parent, int8_t *progress) {
         return;
     }
     JOLT_GUI_CTX{
-        lv_obj_t *bar = BREAK_IF_NULL(jolt_gui_scr_get_active(parent));
+        jolt_gui_obj_t *bar = BREAK_IF_NULL(jolt_gui_scr_get_active(parent));
         loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar);
         ext->autoupdate = param;
         param->scr      = parent;
@@ -120,13 +120,13 @@ void jolt_gui_scr_loadingbar_autoupdate(lv_obj_t *parent, int8_t *progress) {
 /* Creates and returns a loading screen.
  * Defaults the back and enter action to NULL.
  * */
-lv_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
+jolt_gui_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
     JOLT_GUI_SCR_CTX(title){
         /* Set screen ID */
         jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_LOADINGBAR);
 
         /* Create Loading Bar */
-        lv_obj_t *bar = BREAK_IF_NULL(lv_bar_create(cont_body, NULL));
+        jolt_gui_obj_t *bar = BREAK_IF_NULL(lv_bar_create(cont_body, NULL));
         BREAK_IF_NULL(lv_obj_allocate_ext_attr(bar, sizeof(loadingbar_ext_t)));
         loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar);
         ext->autoupdate = NULL;
@@ -142,7 +142,7 @@ lv_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
         lv_bar_set_value(bar, 1, true);
 
         /* Create Loading Label */
-        lv_obj_t *label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
+        jolt_gui_obj_t *label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
         jolt_gui_obj_id_set(label, JOLT_GUI_OBJ_ID_LABEL_0);
         lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
         lv_label_set_text(label, "Initializing");
@@ -165,20 +165,20 @@ lv_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
  *
  * Defaults the back and enter action to NULL.
   * */
-lv_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text) {
+jolt_gui_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text) {
     JOLT_GUI_SCR_CTX( title ){
         /* Set screen ID */
         jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_PRELOADING);
 
         /* Create PreLoading Object */
-        lv_obj_t *preload = BREAK_IF_NULL(lv_preload_create(cont_body, NULL));
+        jolt_gui_obj_t *preload = BREAK_IF_NULL(lv_preload_create(cont_body, NULL));
         jolt_gui_obj_id_set(preload, JOLT_GUI_OBJ_ID_PRELOADING);
         jolt_gui_group_add(preload);
         lv_obj_set_size(preload, 30, 30);
         lv_obj_align(preload, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
 
         /* Create Loading Label */
-        lv_obj_t *label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
+        jolt_gui_obj_t *label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
         jolt_gui_obj_id_set(label, JOLT_GUI_OBJ_ID_LABEL_0);
         lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
         if( NULL == text ){
@@ -198,22 +198,22 @@ lv_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text) {
     return parent;
 }
 
-void jolt_gui_scr_preloading_update(lv_obj_t *parent,
+void jolt_gui_scr_preloading_update(jolt_gui_obj_t *parent,
         const char *title, const char *text) {
     JOLT_GUI_CTX{
         /* Find Objects */
-        lv_obj_t *label_title   = NULL;
+        jolt_gui_obj_t *label_title   = NULL;
         {
-            lv_obj_t *cont_title = NULL;
+            jolt_gui_obj_t *cont_title = NULL;
             cont_title  = JOLT_GUI_FIND_AND_CHECK(parent,
                     JOLT_GUI_OBJ_ID_CONT_TITLE);
             label_title = JOLT_GUI_FIND_AND_CHECK(cont_title,
                     JOLT_GUI_OBJ_ID_LABEL_0);
         }
 
-        lv_obj_t *label_loading = NULL;
+        jolt_gui_obj_t *label_loading = NULL;
         {
-            lv_obj_t *cont_body = NULL;
+            jolt_gui_obj_t *cont_body = NULL;
             cont_body     = JOLT_GUI_FIND_AND_CHECK(parent,
                     JOLT_GUI_OBJ_ID_CONT_BODY);
             label_loading = JOLT_GUI_FIND_AND_CHECK(cont_body,

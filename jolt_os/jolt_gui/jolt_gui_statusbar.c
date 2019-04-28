@@ -6,8 +6,8 @@
 
 static const char TAG[] = "statusbar";
 static lv_style_t header_style;
-static lv_obj_t *statusbar_cont;
-static lv_obj_t *statusbar_label;
+static jolt_gui_obj_t *statusbar_cont;
+static jolt_gui_obj_t *statusbar_label;
 
 static lv_coord_t get_symbol_width( char *sym ) {
     const lv_font_t *font = header_style.text.font;
@@ -146,6 +146,6 @@ void statusbar_create() {
             LV_TASK_PRIO_LOW, NULL);
 }
 
-lv_obj_t *statusbar_get_label() {
+jolt_gui_obj_t *statusbar_get_label() {
     return statusbar_label;
 }

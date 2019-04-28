@@ -6,7 +6,7 @@ static lv_style_t bignum_style;
 
 #define BUF_LEN 11
 
-lv_obj_t *jolt_gui_scr_bignum_create(const char *title, const char *subtitle, uint32_t n, int8_t n_digits) {
+jolt_gui_obj_t *jolt_gui_scr_bignum_create(const char *title, const char *subtitle, uint32_t n, int8_t n_digits) {
     if(n_digits > BUF_LEN-1){
         /* Insufficient Buffer */
         return NULL;
@@ -14,7 +14,7 @@ lv_obj_t *jolt_gui_scr_bignum_create(const char *title, const char *subtitle, ui
     JOLT_GUI_SCR_CTX(title){
         /* Create text for above the big number */
         if( NULL != subtitle ){
-            lv_obj_t *header_label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
+            jolt_gui_obj_t *header_label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
             lv_label_set_text(header_label, subtitle);
             lv_obj_align(header_label, NULL, LV_ALIGN_IN_TOP_MID, 0, 6);
         }
@@ -27,7 +27,7 @@ lv_obj_t *jolt_gui_scr_bignum_create(const char *title, const char *subtitle, ui
         else{
             itoa( n, number_str, 10 );
         }
-        lv_obj_t *number_label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
+        jolt_gui_obj_t *number_label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
         lv_label_set_text(number_label, number_str);
         jolt_gui_group_add(number_label);
 

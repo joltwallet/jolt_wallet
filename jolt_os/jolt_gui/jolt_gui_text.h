@@ -13,6 +13,6 @@
  * @param[in] body Text to display
  * @return scroll screen object containing text
  */
-lv_obj_t *jolt_gui_scr_text_create(const char *title, const char *body);
+jolt_gui_obj_t *jolt_gui_scr_text_create(const char *title, const char *body);
 
 #endif

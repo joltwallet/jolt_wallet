@@ -4,10 +4,10 @@
  * @author Brian Pugh
  */
 
-#ifndef __JOLT_GUI_STATUSBAR_H__
-#define __JOLT_GUI_STATUSBAR_H__
+#ifndef JOLT_GUI_STATUSBAR_H__
+#define JOLT_GUI_STATUSBAR_H__
 
-#include "lvgl/lvgl.h"
+#include "jolt_gui/jolt_gui.h"
 
 #ifndef CONFIG_JOLT_GUI_STATUSBAR_H
     #define CONFIG_JOLT_GUI_STATUSBAR_H 12
@@ -25,6 +25,6 @@ void statusbar_create();
  * @brief Get the statusbar label that displays symbols
  * @return lv_label object
  */
-lv_obj_t *statusbar_get_label();
+jolt_gui_obj_t *statusbar_get_label();
 
 #endif

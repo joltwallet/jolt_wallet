@@ -12,54 +12,66 @@
  *
  * @author Brian Pugh
  */
-#ifndef __JOLT_LVGL_GUI_H__
-#define __JOLT_LVGL_GUI_H__
+#ifndef JOLT_GUI_H__
+#define JOLT_GUI_H__
 
 #include "lvgl/lvgl.h"
 #include "lv_conf.h"
-#include "jolt_gui_digit_entry.h"
-#include "jolt_gui_first_boot.h"
-#include "jolt_gui_loading.h"
-#include "jolt_gui_menu.h"
-#include "jolt_gui_qr.h"
-#include "jolt_gui_scroll.h"
-#include "jolt_gui_slider.h"
-#include "jolt_gui_statusbar.h"
-#include "jolt_gui_symbols.h"
-#include "jolt_gui_text.h"
-#include "jolt_gui_debug.h"
-#include "jolt_gui_theme.h"
-#include "jolt_gui_bignum.h"
-#include "jolt_gui_err.h"
-
-#include "jolt_gui_indev.h"
-
-#include "menus/home.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "hal/hw_monitor.h"
-#include "esp_log.h"
 #include "jolttypes.h"
-#include "bipmnemonic.h"
 
 #include "jelfloader.h"
 #include "mp.h"
 #include "lang/lang.h"
 
-
 #ifndef CONFIG_JOLT_GUI_LOADING_BUF_SIZE
     #define CONFIG_JOLT_GUI_LOADING_BUF_SIZE 30
 #endif
-
 
 /**********************
  *   GLOBAL VARIABLES
  **********************/
 
 extern lv_theme_t *jolt_gui_theme;
+
+/********************
+ * LVGL Abstraction *
+ ********************/
+// Insulate possible upstream LVGL changes from applications
+
+/* Abstract away LVGL events and obj for apps */
+#define JOLT_GUI_EVENT_BITFIELD_LEN 5
+/* Only EVER append values to this struct */
+typedef struct jolt_gui_event_enum_t{
+    uint32_t pressed:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t pressing:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t press_list:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t short_clicked:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t long_pressed:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t long_pressed_repeat:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t clicked:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t released:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t drag_begin:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t drag_end:JOLT_GUI_EVENT_BITFIELD_LEN; 
+    uint32_t drag_throw_begin:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t focused:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t defocused:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t value_changed:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t insert:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t selected:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t refresh:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t apply:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t cancel:JOLT_GUI_EVENT_BITFIELD_LEN;
+    uint32_t delete:JOLT_GUI_EVENT_BITFIELD_LEN;
+} jolt_gui_event_enum_t; /* Only used for constant mapping */
+extern const jolt_gui_event_enum_t jolt_gui_event;
+typedef uint8_t jolt_gui_event_t;
+typedef lv_obj_t jolt_gui_obj_t;
+typedef void (*jolt_gui_event_cb_t)(jolt_gui_obj_t *obj, jolt_gui_event_t event);
 
 /*********************
  * Screen Management *
@@ -348,5 +360,22 @@ lv_obj_t *jolt_gui_obj_get_parent( const lv_obj_t *obj );
     MPP_DO_WHILE(2, false) \
     MPP_BREAK_HANDLER(3, if(parent) {lv_obj_del(parent); parent=NULL;})\
     MPP_FINALLY(4, jolt_gui_sem_give() )
+
+#include "jolt_gui_digit_entry.h"
+#include "jolt_gui_first_boot.h"
+#include "jolt_gui_loading.h"
+#include "jolt_gui_menu.h"
+#include "jolt_gui_qr.h"
+#include "jolt_gui_scroll.h"
+#include "jolt_gui_slider.h"
+#include "jolt_gui_statusbar.h"
+#include "jolt_gui_symbols.h"
+#include "jolt_gui_text.h"
+#include "jolt_gui_debug.h"
+#include "jolt_gui_theme.h"
+#include "jolt_gui_bignum.h"
+#include "jolt_gui_err.h"
+#include "jolt_gui_indev.h"
+
 
 #endif

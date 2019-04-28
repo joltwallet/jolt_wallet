@@ -117,7 +117,7 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
 
 #if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
         {
-            char *buf[100] = { 0 };
+            char buf[100] = { 0 };
             sprintf(buf, "%s write %d bytes\n", __func__, size);
             uart_write_bytes(UART_NUM_0, buf, strlen(buf));
         }
@@ -133,7 +133,7 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
 
 #if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
         {
-            char *buf[100] = { 0 };
+            char buf[100] = { 0 };
             sprintf(buf, "Sending %d bytes: ", print_len);
             uart_write_bytes(UART_NUM_0, buf, strlen(buf));
             uart_write_bytes(UART_NUM_0, &data_c[idx], print_len);

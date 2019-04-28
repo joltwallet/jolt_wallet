@@ -25,7 +25,7 @@
  * @param[in] parent slider screen
  * @return lv_slider object
  */
-lv_obj_t *jolt_gui_scr_slider_get_slider(lv_obj_t *parent);
+jolt_gui_obj_t *jolt_gui_scr_slider_get_slider(jolt_gui_obj_t *parent);
 
 /**
  * @brief Create a slider screen
@@ -34,28 +34,28 @@ lv_obj_t *jolt_gui_scr_slider_get_slider(lv_obj_t *parent);
  * @param[in] cb callback to execute when slider changes position
  * @return slider screen
  */
-lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_event_cb_t cb);
+jolt_gui_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, jolt_gui_event_cb_t cb);
 
 /**
  * @brief Set the current slider value of a slider screen
  * @param[in,out] scr slider screen
  * @param value new slider value/position.
  */
-void jolt_gui_scr_slider_set_value(lv_obj_t *scr, int16_t value);
+void jolt_gui_scr_slider_set_value(jolt_gui_obj_t *scr, int16_t value);
 
 /**
  * @brief Get the current slider value
  * @param[in] scr slider screen
  * @return current slider value
  */
-int16_t jolt_gui_scr_slider_get_value(lv_obj_t *scr);
+int16_t jolt_gui_scr_slider_get_value(jolt_gui_obj_t *scr);
 
 /**
  * @brief Set the slider screen's subtitle
  * @param[in,out] scr slider screen
  * @param[in] text new subtitle NULL-terminated string
  */
-void jolt_gui_scr_slider_set_label(lv_obj_t *scr, const char *text);
+void jolt_gui_scr_slider_set_label(jolt_gui_obj_t *scr, const char *text);
 
 /**
  * @brief Set the lower and upper limits of a slider screen
@@ -63,6 +63,6 @@ void jolt_gui_scr_slider_set_label(lv_obj_t *scr, const char *text);
  * @param[in] min slider minimum value
  * @param[in] max slider maximum value
  */
-void jolt_gui_scr_slider_set_range(lv_obj_t *scr, int16_t min, int16_t max);
+void jolt_gui_scr_slider_set_range(jolt_gui_obj_t *scr, int16_t min, int16_t max);
 
 #endif

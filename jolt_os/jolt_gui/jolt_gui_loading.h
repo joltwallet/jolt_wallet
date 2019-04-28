@@ -4,8 +4,8 @@
  * @author Brian Pugh
  */
 
-#ifndef __JOLT_GUI_LOADING_H__
-#define __JOLT_GUI_LOADING_H__
+#ifndef JOLT_GUI_LOADING_H__
+#define JOLT_GUI_LOADING_H__
 
 #include "lvgl/lvgl.h"
 
@@ -27,7 +27,7 @@
  * @param[in] title Statusbar title string
  * @return loading-bar screen
  */
-lv_obj_t *jolt_gui_scr_loadingbar_create(const char *title);
+jolt_gui_obj_t *jolt_gui_scr_loadingbar_create(const char *title);
 
 /**
  * @brief Update the loading-bar progress
@@ -36,7 +36,7 @@ lv_obj_t *jolt_gui_scr_loadingbar_create(const char *title);
  * @param[in] text subtitle text displayed above the loading-bar. NULL for an empty subtitle.
  * @param[in] percentage Current progress [0~100]
  */
-void jolt_gui_scr_loadingbar_update(lv_obj_t *parent,
+void jolt_gui_scr_loadingbar_update(jolt_gui_obj_t *parent,
         const char *title, const char *text,
         uint8_t percentage);
 /**
@@ -44,7 +44,7 @@ void jolt_gui_scr_loadingbar_update(lv_obj_t *parent,
  * @param[in,out] parent loading-bar screen
  * @param[in] progress Pointer to current progress [0~100] which will be periodically read from.
  */
-void jolt_gui_scr_loadingbar_autoupdate(lv_obj_t *parent, int8_t *progress);
+void jolt_gui_scr_loadingbar_autoupdate(jolt_gui_obj_t *parent, int8_t *progress);
 
 /**
  * @brief Cleanup the autoupdate task.
@@ -53,7 +53,7 @@ void jolt_gui_scr_loadingbar_autoupdate(lv_obj_t *parent, int8_t *progress);
  *
  * @param[in,out] parent loading-bar screen
  */
-void jolt_gui_scr_loadingbar_autoupdate_del(lv_obj_t *parent);
+void jolt_gui_scr_loadingbar_autoupdate_del(jolt_gui_obj_t *parent);
 
 /**
  * @brief Creates a spinning arc preloading screen.
@@ -65,7 +65,7 @@ void jolt_gui_scr_loadingbar_autoupdate_del(lv_obj_t *parent);
 
  * @return preloading screen
  */
-lv_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text);
+jolt_gui_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text);
 
 /**
  * @brief Update the preloading screen's text fields.
@@ -73,7 +73,7 @@ lv_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text);
  * @param[in] title Statusbar title string. NULL to not update title.
  * @param[in] text subtitle text displayed above the spinning arc. NULL to not update subtitle.
  */
-void jolt_gui_scr_preloading_update(lv_obj_t *parent,
+void jolt_gui_scr_preloading_update(jolt_gui_obj_t *parent,
         const char *title, const char *text);
 
 #endif

@@ -19,13 +19,13 @@ static uint8_t led_brightness_get() {
     return val;
 }
 
-static void led_brightness_cb(lv_obj_t *slider, lv_event_t event) {
-    if( LV_EVENT_VALUE_CHANGED == event ) {
+static void led_brightness_cb(jolt_gui_obj_t *slider, jolt_gui_event_t event) {
+    if( jolt_gui_event.value_changed == event ) {
         int16_t slider_pos = lv_slider_get_value(slider);
         uint8_t brightness = brightness_levels[slider_pos];
         jolt_led_set(brightness);
     }
-    else if( LV_EVENT_SHORT_CLICKED == event ) {
+    else if( jolt_gui_event.short_clicked == event ) {
         int16_t slider_pos = lv_slider_get_value(slider);
         uint8_t brightness = brightness_levels[slider_pos];
         storage_set_u8(brightness, "user", "led_val");
@@ -33,9 +33,9 @@ static void led_brightness_cb(lv_obj_t *slider, lv_event_t event) {
     }
 }
 
-void menu_led_brightness_create(lv_obj_t *btn, lv_event_t event) {
+void menu_led_brightness_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
     
-    if( LV_EVENT_SHORT_CLICKED == event ) {
+    if( jolt_gui_event.short_clicked == event ) {
         uint8_t brightness = led_brightness_get();
         int16_t slider_pos;
         ESP_LOGI(TAG, "Stored brightness: %d", brightness);
@@ -51,7 +51,7 @@ void menu_led_brightness_create(lv_obj_t *btn, lv_event_t event) {
 #endif
         }
 
-        lv_obj_t *scr = jolt_gui_scr_slider_create(gettext(JOLT_TEXT_BRIGHTNESS), NULL, led_brightness_cb);
+        jolt_gui_obj_t *scr = jolt_gui_scr_slider_create(gettext(JOLT_TEXT_BRIGHTNESS), NULL, led_brightness_cb);
         jolt_gui_scr_slider_set_range(scr, 0, sizeof(brightness_levels)-1);
         jolt_gui_scr_slider_set_value(scr, slider_pos);
     }

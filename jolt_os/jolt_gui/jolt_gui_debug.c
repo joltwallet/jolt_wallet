@@ -6,11 +6,11 @@
 static const char TAG[] = "gui_debug";
 
 /* Prints out debug information about an object */
-void jolt_gui_debug_obj_print(lv_obj_t *obj) {
+void jolt_gui_debug_obj_print(jolt_gui_obj_t *obj) {
     if( NULL == obj ) {
         return;
     }
-    lv_obj_t *parent = NULL;
+    jolt_gui_obj_t *parent = NULL;
     lv_obj_type_t parent_type, obj_type;
     JOLT_GUI_CTX{
         parent = lv_obj_get_parent(obj);

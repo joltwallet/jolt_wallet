@@ -15,53 +15,53 @@
 
 static const char TAG[] = "scr_slider";
 
-lv_obj_t *jolt_gui_scr_slider_get_slider(lv_obj_t *parent) {
-    lv_obj_t *slider = NULL;
+jolt_gui_obj_t *jolt_gui_scr_slider_get_slider(jolt_gui_obj_t *parent) {
+    jolt_gui_obj_t *slider = NULL;
     JOLT_GUI_CTX{
-        lv_obj_t *cont_body = NULL;
+        jolt_gui_obj_t *cont_body = NULL;
         cont_body  = JOLT_GUI_FIND_AND_CHECK(parent, JOLT_GUI_OBJ_ID_CONT_BODY);
         slider     = JOLT_GUI_FIND_AND_CHECK(cont_body, JOLT_GUI_OBJ_ID_SLIDER);
     }
     return slider;
 }
 
-int16_t jolt_gui_scr_slider_get_value(lv_obj_t *scr) {
+int16_t jolt_gui_scr_slider_get_value(jolt_gui_obj_t *scr) {
     uint16_t val = 0;
     JOLT_GUI_CTX{
-        lv_obj_t *slider = BREAK_IF_NULL(jolt_gui_scr_slider_get_slider(scr));
+        jolt_gui_obj_t *slider = BREAK_IF_NULL(jolt_gui_scr_slider_get_slider(scr));
         val = lv_slider_get_value(slider);
     }
     return val;
 }
 
-void jolt_gui_scr_slider_set_value(lv_obj_t *scr, int16_t value) {
+void jolt_gui_scr_slider_set_value(jolt_gui_obj_t *scr, int16_t value) {
     JOLT_GUI_CTX{
-        lv_obj_t *slider = jolt_gui_scr_slider_get_slider(scr);
+        jolt_gui_obj_t *slider = jolt_gui_scr_slider_get_slider(scr);
         lv_slider_set_value(slider, value, false);
     }
 }
 
-void jolt_gui_scr_slider_set_range(lv_obj_t *scr, int16_t min, int16_t max) {
+void jolt_gui_scr_slider_set_range(jolt_gui_obj_t *scr, int16_t min, int16_t max) {
     JOLT_GUI_CTX{
-        lv_obj_t *slider = jolt_gui_scr_slider_get_slider(scr);
+        jolt_gui_obj_t *slider = jolt_gui_scr_slider_get_slider(scr);
         lv_slider_set_range(slider, min, max);
     }
 }
 
-void jolt_gui_scr_slider_set_label(lv_obj_t *scr, const char *text){
+void jolt_gui_scr_slider_set_label(jolt_gui_obj_t *scr, const char *text){
     JOLT_GUI_CTX{
-        lv_obj_t *slider = jolt_gui_scr_slider_get_slider(scr);
-        lv_obj_t *label = NULL;
+        jolt_gui_obj_t *slider = jolt_gui_scr_slider_get_slider(scr);
+        jolt_gui_obj_t *label = NULL;
         label = JOLT_GUI_FIND_AND_CHECK(slider, JOLT_GUI_OBJ_ID_LABEL_0);
         lv_label_set_text(label, text);
     }
 }
 
-lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_event_cb_t cb) {
+jolt_gui_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, jolt_gui_event_cb_t cb) {
     JOLT_GUI_SCR_CTX( title ) {
         jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_SLIDER);
         /* Create Slider */
-        lv_obj_t *slider = lv_slider_create(cont_body, NULL);
+        jolt_gui_obj_t *slider = lv_slider_create(cont_body, NULL);
         jolt_gui_obj_id_set(slider, JOLT_GUI_OBJ_ID_SLIDER);
         lv_slider_set_range(slider, 0, 10); // Default Slider Range
         lv_obj_set_size(slider,
@@ -76,7 +76,7 @@ lv_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, lv_eve
         jolt_gui_group_add( slider );
 
         /* Create Label */
-        lv_obj_t *label = BREAK_IF_NULL(lv_label_create(slider, NULL));
+        jolt_gui_obj_t *label = BREAK_IF_NULL(lv_label_create(slider, NULL));
         jolt_gui_obj_id_set(label, JOLT_GUI_OBJ_ID_LABEL_0);
         lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
         if( NULL == text ){

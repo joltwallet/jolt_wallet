@@ -27,6 +27,7 @@
 #include "lv_conf.h"
 #include "lvgl/lvgl.h"
 #include "jolt_gui/jolt_gui.h"
+#include "jolt_gui/menus/home.h"
 
 #include "hal/radio/bluetooth.h"
 #include "hal/radio/wifi.h"
