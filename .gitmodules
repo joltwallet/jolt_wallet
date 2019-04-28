@@ -19,3 +19,6 @@
 [submodule "components/lvgl/lvgl"]
 	path = components/lvgl/lvgl
 	url = https://github.com/littlevgl/lvgl.git
+[submodule "components/json/cJSON"]
+	path = components/json/cJSON
+	url = https://github.com/DaveGamble/cJSON.git
