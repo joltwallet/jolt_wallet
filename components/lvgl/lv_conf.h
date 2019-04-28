@@ -144,7 +144,7 @@ typedef void * lv_group_user_data_t;
 #define LV_USE_FILESYSTEM       0
 
 /* 1: Enable indexed (palette) images */
-#define LV_IMG_CF_INDEXED   0
+#define LV_IMG_CF_INDEXED   1
 
 /* 1: Enable alpha indexed images */
 #define LV_IMG_CF_ALPHA     0
@@ -196,7 +196,7 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
  *===============*/
 
 /*1: Enable the log module*/
-#define LV_USE_LOG      0
+#define LV_USE_LOG      1
 #if LV_USE_LOG
 /* How important log should be added:
  * LV_LOG_LEVEL_TRACE       A lot of logs to give detailed information
@@ -208,7 +208,7 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
 
 /* 1: Print the log with 'printf';
  * 0: user need to register a callback with `lv_log_register_print`*/
-#  define LV_LOG_PRINTF   0
+#  define LV_LOG_PRINTF   1
 #endif  /*LV_USE_LOG*/
 
 /*================

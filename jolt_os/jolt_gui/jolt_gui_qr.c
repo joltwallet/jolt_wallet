@@ -17,10 +17,10 @@ typedef struct {
     uint8_t img_data[JOLT_GUI_QR_LVGL_IMG_BUF_SIZE];
 } qr_img_ext_t;
 
-lv_obj_t *jolt_gui_scr_scroll_add_qr(lv_obj_t *scr, const char *data, uint16_t data_len){
-    lv_obj_t *img = NULL;
+jolt_gui_obj_t *jolt_gui_scr_scroll_add_qr(jolt_gui_obj_t *scr, const char *data, uint16_t data_len){
+    jolt_gui_obj_t *img = NULL;
     JOLT_GUI_CTX{
-        lv_obj_t *page = BREAK_IF_NULL( jolt_gui_scr_scroll_get_page(scr) );
+        jolt_gui_obj_t *page = BREAK_IF_NULL( jolt_gui_scr_scroll_get_page(scr) );
         img = BREAK_IF_NULL( lv_img_create(page, NULL) );
 
         BREAK_IF_NULL(lv_obj_allocate_ext_attr(img, sizeof(qr_img_ext_t)));
@@ -62,11 +62,11 @@ lv_obj_t *jolt_gui_scr_scroll_add_qr(lv_obj_t *scr, const char *data, uint16_t d
     return img;
 }
 
-lv_obj_t *jolt_gui_scr_qr_create(const char *title, const char *data,
+jolt_gui_obj_t *jolt_gui_scr_qr_create(const char *title, const char *data,
         uint16_t data_len){
-    lv_obj_t *parent = jolt_gui_scr_scroll_create(title);
+    jolt_gui_obj_t *parent = jolt_gui_scr_scroll_create(title);
     if( NULL != parent ) {
-        lv_obj_t *label = jolt_gui_scr_scroll_add_qr(parent, data, data_len);
+        jolt_gui_obj_t *label = jolt_gui_scr_scroll_add_qr(parent, data, data_len);
         if( NULL == label ) {
             jolt_gui_obj_del(parent);
         }
