@@ -41,6 +41,9 @@ void jolt_gui_scr_loadingbar_update(jolt_gui_obj_t *parent,
         uint8_t percentage);
 /**
  * @brief Automatically updates the loading bar according to the value of progress [0~100]
+ * 
+ * Will send an JOLT_GUI_EVENT_APPLY to the active element's event_cb upon 100%
+ *
  * @param[in,out] parent loading-bar screen
  * @param[in] progress Pointer to current progress [0~100] which will be periodically read from.
  */

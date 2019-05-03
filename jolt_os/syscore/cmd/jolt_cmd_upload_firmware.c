@@ -42,10 +42,16 @@ int jolt_cmd_upload_firmware(int argc, char** argv) {
     progress = 0;
     task = NULL;
 
+    // todo: create loading screen
+    // set autoupdate
+    // set event_cb
+
+    /*
     cmd_upload_firmware_progress_update_lv_task( NULL );
     task = lv_task_create(cmd_upload_firmware_progress_update_lv_task,
                 100, LV_TASK_PRIO_HIGH, NULL);
     vTaskDelay(pdMS_TO_TICKS(80)); // Give the GL a moment to draw screen
+    */
 
     err = jolt_ota_ymodem( &progress );
 

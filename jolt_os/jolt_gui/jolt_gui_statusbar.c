@@ -39,7 +39,7 @@ static lv_coord_t statusbar_icons_get_max_width() {
     return w;
 }
 
-static void statusbar_update() {
+static void statusbar_update( lv_task_t task ) {
     /* Gets called from a lv_task to update the graphics according to 
      * jolt_gui_store.statusbar.indicators */
 
@@ -141,9 +141,9 @@ void statusbar_create() {
             header_style.text.font->h_px);
 
     /* Periodically update the statusbar symbols */
-    statusbar_update();
-    lv_task_create(&statusbar_update, CONFIG_JOLT_GUI_STATUSBAR_UPDATE_PERIOD_MS,
+    lv_task_t *task = lv_task_create(&statusbar_update, CONFIG_JOLT_GUI_STATUSBAR_UPDATE_PERIOD_MS,
             LV_TASK_PRIO_LOW, NULL);
+    lv_task_ready( task );
 }
 
 jolt_gui_obj_t *statusbar_get_label() {

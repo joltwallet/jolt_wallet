@@ -1,7 +1,9 @@
+
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
 #include "jolt_gui.h"
 #include "jolt_gui_loading.h"
-
-// todo: need to declare a custom ext for this to hold autoupdate params
+#include "esp_log.h"
 
 
 /* Loading and Preloading Screen Structures:
@@ -87,15 +89,19 @@ void jolt_gui_scr_loadingbar_update(jolt_gui_obj_t *parent,
 }
 
 /* lv_task that periodically updates the loading screen */
-static void autoupdate_task(void *input) {
-    jolt_gui_obj_t *scr = input;
+static void autoupdate_task(lv_task_t *input) {
+    jolt_gui_obj_t *scr = input->user_data;
     JOLT_GUI_CTX{
+        ESP_LOGD(TAG, "%d: Loading bar screen %p", __LINE__, scr);
         jolt_gui_obj_t *bar = BREAK_IF_NULL(jolt_gui_scr_get_active(scr));
         loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar);
         if( *(ext->autoupdate->progress) <= 100 && *(ext->autoupdate->progress) >= 0 ) {
             // The +10 makes it look better
             jolt_gui_scr_loadingbar_update(scr, NULL, NULL,
                     *(ext->autoupdate->progress) + 10);
+        }
+        if( *(ext->autoupdate->progress) == 100 ) {
+            lv_event_send(bar, jolt_gui_event.apply, NULL);
         }
     }
 }
@@ -107,6 +113,7 @@ void jolt_gui_scr_loadingbar_autoupdate(jolt_gui_obj_t *parent, int8_t *progress
         ESP_LOGE(TAG, "Unable to allocate memory for autoupdate params");
         return;
     }
+    ESP_LOGD(TAG, "%d: Enabling autoupdate on screen %p", __LINE__, parent);
     JOLT_GUI_CTX{
         jolt_gui_obj_t *bar = BREAK_IF_NULL(jolt_gui_scr_get_active(parent));
         loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar);
@@ -124,6 +131,7 @@ jolt_gui_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
     JOLT_GUI_SCR_CTX(title){
         /* Set screen ID */
         jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_LOADINGBAR);
+        ESP_LOGD(TAG, "%d: Created loadingbar screen %p", __LINE__, parent);
 
         /* Create Loading Bar */
         jolt_gui_obj_t *bar = BREAK_IF_NULL(lv_bar_create(cont_body, NULL));
@@ -140,6 +148,7 @@ jolt_gui_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
                 CONFIG_JOLT_GUI_LOADINGBAR_W, CONFIG_JOLT_GUI_LOADINGBAR_H);
         lv_obj_align(bar, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -10);
         lv_bar_set_value(bar, 1, true);
+        ESP_LOGD(TAG, "%d: Created loadingbar %p", __LINE__, bar);
 
         /* Create Loading Label */
         jolt_gui_obj_t *label = BREAK_IF_NULL(lv_label_create(cont_body, NULL));
