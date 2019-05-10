@@ -121,7 +121,7 @@ void jolt_gui_test_battery_del(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
         }
     }
 }
-void jolt_gui_test_battery_task(void *param) {
+void jolt_gui_test_battery_task(lv_task_t *task) {
     if(NULL != test_battery_scr) {
         lv_obj_del(test_battery_scr);
         test_battery_scr = NULL;

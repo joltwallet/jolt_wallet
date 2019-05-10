@@ -48,8 +48,6 @@ static lv_res_t new_bar_signal(jolt_gui_obj_t *bar, lv_signal_t sign, void * par
     return res;
 }
 
-
-
 /* Update the loading screen.
  * Title and Text are optional.*/
 void jolt_gui_scr_loadingbar_update(jolt_gui_obj_t *parent,

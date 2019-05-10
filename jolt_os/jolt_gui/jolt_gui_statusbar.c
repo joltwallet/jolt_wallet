@@ -39,7 +39,7 @@ static lv_coord_t statusbar_icons_get_max_width() {
     return w;
 }
 
-static void statusbar_update( lv_task_t task ) {
+static void statusbar_update( lv_task_t *task ) {
     /* Gets called from a lv_task to update the graphics according to 
      * jolt_gui_store.statusbar.indicators */
 

@@ -7,6 +7,9 @@
 /*********************
  *      DEFINES
  *********************/
+#define ID_MASK 0x1F
+#define IS_SCR_SHIFT 4
+#define IS_SCR_MASK ( 1 << IS_SCR_SHIFT )
 
 /**********************
  *      TYPEDEFS
@@ -81,28 +84,64 @@ lv_res_t jolt_gui_scr_del() {
     return res;
 }
 
-void jolt_gui_obj_id_set( lv_obj_t *obj, jolt_gui_obj_id_t id) {
-    lv_obj_get_user_data( obj )->id = id;
-    lv_obj_get_user_data( obj )->is_scr = 0;
+static void jolt_gui_obj_id_is_scr_set( lv_obj_t *obj, bool val){
+#if JOLT_GUI_USE_RESERVED
+    obj->reserved = (val << IS_SCR_SHIFT) | (~IS_SCR_MASK & obj->reserved);
+#else
+    lv_obj_get_user_data_ptr( obj )->is_scr = val;
+#endif
+}
+
+static bool jolt_gui_obj_id_is_scr_get( const lv_obj_t *obj ){
+#if JOLT_GUI_USE_RESERVED
+    return IS_SCR_MASK & obj->reserved;
+#else
+    return lv_obj_get_user_data_ptr((lv_obj_t *)obj)->is_scr;
+#endif
+}
+
+
+void jolt_gui_obj_id_set( lv_obj_t *obj, jolt_gui_obj_id_t id ) {
+#if JOLT_GUI_USE_RESERVED
+    obj->reserved = (id & ID_MASK) | (obj->reserved & ~ID_MASK);
+#else
+    lv_obj_get_user_data_ptr( obj )->id = id;
+#endif
+    jolt_gui_obj_id_is_scr_set( obj, false);
 } 
 
 jolt_gui_obj_id_t jolt_gui_obj_id_get( const lv_obj_t *obj ) {
-    if( lv_obj_get_user_data((lv_obj_t *)obj)->is_scr ){
+    jolt_gui_obj_id_t id;
+    if( jolt_gui_obj_id_is_scr_get( obj ) ){
         return JOLT_GUI_OBJ_ID_INVALID;
     }
-    return lv_obj_get_user_data((lv_obj_t *)obj)->id;
+#if JOLT_GUI_USE_RESERVED
+    id = obj->reserved & ID_MASK;
+#else
+    id = lv_obj_get_user_data_ptr( (lv_obj_t *)obj )->id;
+#endif
+    return id;
 }
 
-void jolt_gui_scr_id_set( lv_obj_t *obj, jolt_gui_scr_id_t id) {
-    lv_obj_get_user_data( obj )->id = id;
-    lv_obj_get_user_data( obj )->is_scr = 1;
+void jolt_gui_scr_id_set( lv_obj_t *obj, jolt_gui_scr_id_t id ) {
+#if JOLT_GUI_USE_RESERVED
+#else
+    lv_obj_get_user_data_ptr( obj )->id = id;
+#endif
+    jolt_gui_obj_id_is_scr_set( obj, true);
 }
 
 jolt_gui_scr_id_t jolt_gui_scr_id_get( const lv_obj_t *obj ) {
-    if( !lv_obj_get_user_data((lv_obj_t *)obj)->is_scr ){
+    jolt_gui_scr_id_t id;
+    if( !jolt_gui_obj_id_is_scr_get( obj ) ){
         return JOLT_GUI_SCR_ID_INVALID;
     }
-    return lv_obj_get_user_data((lv_obj_t *)obj)->id;
+#if JOLT_GUI_USE_RESERVED
+    id = obj->reserved & ID_MASK;
+#else
+    id = lv_obj_get_user_data_ptr((lv_obj_t *)obj)->id;
+#endif
+    return id;
 }
 
 /**************************************
@@ -353,11 +392,11 @@ void jolt_gui_obj_set_event_cb(lv_obj_t *obj, lv_event_cb_t event_cb) {
 }
 
 void *jolt_gui_obj_get_param( lv_obj_t *obj ){
-    return lv_obj_get_user_data( obj )->param;
+    return lv_obj_get_user_data_ptr( obj )->param;
 }
 
 void jolt_gui_obj_set_param( lv_obj_t *obj, void *param ) {
-    lv_obj_get_user_data(obj)->param = param;
+    lv_obj_get_user_data_ptr(obj)->param = param;
 }
 
 

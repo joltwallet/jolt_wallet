@@ -359,11 +359,19 @@ typedef uint8_t jolt_gui_scr_id_t;
 struct _lv_obj_t;
 typedef uint8_t (*lv_action_t)(struct _lv_obj_t * obj);
 
+#define JOLT_GUI_USE_RESERVED 1 /* Use the `reserved` field of lv_obj_t. Reserved must be at least 6 bits */
+
+#if JOLT_GUI_USE_RESERVED
 typedef struct {
-    uint8_t id:7;              /**< Either a screen id or an object id */
-    uint8_t is_scr:1;          /**< 0=obj; 1=screen (parent object) */
     void *param;               /**< Free parameters. Consumer should only attach to the active object. */
 } lv_obj_user_data_t;          /*Declare the type of the user data of object (can be e.g. `void *`, `int`, `struct`)*/
+#else
+typedef struct {
+    void *param;               /**< Free parameters. Consumer should only attach to the active object. */
+    uint8_t id:5;              /**< Either a screen id or an object id */
+    uint8_t is_scr:1;          /**< 0=obj; 1=screen (parent object) */
+} lv_obj_user_data_t;          /*Declare the type of the user data of object (can be e.g. `void *`, `int`, `struct`)*/
+#endif
 
 /*1: enable `lv_obj_realaign()` based on `lv_obj_align()` parameters*/
 #define LV_USE_OBJ_REALIGN          0
