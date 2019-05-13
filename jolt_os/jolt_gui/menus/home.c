@@ -70,7 +70,6 @@ void jolt_gui_menu_home_create() {
     jolt_gui_scr_menu_add(main_menu, NULL, "Https", jolt_gui_test_https_create);
 #endif
     jolt_gui_scr_set_event_cb(main_menu, NULL); // don't allow the home screen to be deleted.
-    ESP_LOGD(TAG, "LV_OBJ_T size: %d\n", sizeof(lv_obj_t));
 }
 
 /* Refreshes the home menu.

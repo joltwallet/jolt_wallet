@@ -359,7 +359,7 @@ typedef uint8_t jolt_gui_scr_id_t;
 struct _lv_obj_t;
 typedef uint8_t (*lv_action_t)(struct _lv_obj_t * obj);
 
-#define JOLT_GUI_USE_RESERVED 0 /* Use the `reserved` field of lv_obj_t. Reserved must be at least 6 bits. Saves potentially 4 bytes per lv_obj */
+#define JOLT_GUI_USE_RESERVED 1 /* Use the `reserved` field of lv_obj_t. Reserved must be at least 6 bits. Saves potentially 4 bytes per lv_obj */
 
 #if JOLT_GUI_USE_RESERVED
 typedef struct {

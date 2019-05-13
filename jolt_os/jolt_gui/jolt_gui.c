@@ -8,8 +8,7 @@
  *      DEFINES
  *********************/
 #define ID_MASK 0x1F
-#define IS_SCR_SHIFT 4
-#define IS_SCR_MASK ( 1 << IS_SCR_SHIFT )
+#define IS_SCR_MASK 0x20
 
 /**********************
  *      TYPEDEFS
@@ -96,7 +95,13 @@ lv_res_t jolt_gui_scr_del() {
 
 static void jolt_gui_obj_id_is_scr_set( lv_obj_t *obj, bool val){
 #if JOLT_GUI_USE_RESERVED
-    obj->reserved = (val << IS_SCR_SHIFT) | (~IS_SCR_MASK & obj->reserved);
+    if( val ){
+        obj->reserved = IS_SCR_MASK | (~IS_SCR_MASK & obj->reserved);
+    }
+    else {
+        obj->reserved = ~IS_SCR_MASK & obj->reserved;
+    }
+    ESP_LOGD(TAG, "set_scr: 0x%02X; reserved: 0x%02X", val, obj->reserved);
 #else
     lv_obj_get_user_data_ptr( obj )->is_scr = val;
 #endif
@@ -114,15 +119,17 @@ static bool jolt_gui_obj_id_is_scr_get( const lv_obj_t *obj ){
 void jolt_gui_obj_id_set( lv_obj_t *obj, jolt_gui_obj_id_t id ) {
 #if JOLT_GUI_USE_RESERVED
     obj->reserved = (id & ID_MASK) | (obj->reserved & ~ID_MASK);
+    ESP_LOGD(TAG, "obj id: 0x%02X; reserved: 0x%02X", id, obj->reserved);
 #else
     lv_obj_get_user_data_ptr( obj )->id = id;
 #endif
-    jolt_gui_obj_id_is_scr_set( obj, false);
+    jolt_gui_obj_id_is_scr_set(obj, false);
 } 
 
 jolt_gui_obj_id_t jolt_gui_obj_id_get( const lv_obj_t *obj ) {
     jolt_gui_obj_id_t id;
     if( jolt_gui_obj_id_is_scr_get( obj ) ){
+        ESP_LOGE(TAG, "Attempted to get object ID from screen");
         return JOLT_GUI_OBJ_ID_INVALID;
     }
 #if JOLT_GUI_USE_RESERVED
@@ -135,6 +142,8 @@ jolt_gui_obj_id_t jolt_gui_obj_id_get( const lv_obj_t *obj ) {
 
 void jolt_gui_scr_id_set( lv_obj_t *obj, jolt_gui_scr_id_t id ) {
 #if JOLT_GUI_USE_RESERVED
+    obj->reserved = (id & ID_MASK) | (obj->reserved & ~ID_MASK);
+    ESP_LOGD(TAG, "scr id: 0x%02X; reserved: 0x%02X", id, obj->reserved);
 #else
     lv_obj_get_user_data_ptr( obj )->id = id;
 #endif
@@ -144,6 +153,7 @@ void jolt_gui_scr_id_set( lv_obj_t *obj, jolt_gui_scr_id_t id ) {
 jolt_gui_scr_id_t jolt_gui_scr_id_get( const lv_obj_t *obj ) {
     jolt_gui_scr_id_t id;
     if( !jolt_gui_obj_id_is_scr_get( obj ) ){
+        ESP_LOGE(TAG, "Attempted to get screen ID from an object");
         return JOLT_GUI_SCR_ID_INVALID;
     }
 #if JOLT_GUI_USE_RESERVED
