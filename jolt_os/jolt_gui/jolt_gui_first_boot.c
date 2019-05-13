@@ -105,7 +105,7 @@ static void generate_mnemonic( mnemonic_setup_t *param ) {
 
 /* BG Task for stretching */
 static int bg_stretch_task(jolt_bg_job_t *job) {
-    int8_t progress = 0;
+    int8_t *progress = NULL;
     lv_obj_t *loading_scr;
     mnemonic_setup_t *param;
 
@@ -113,10 +113,10 @@ static int bg_stretch_task(jolt_bg_job_t *job) {
 
     /* Create Loading Bar */
     loading_scr = jolt_gui_scr_loadingbar_create("Saving");
-    jolt_gui_scr_loadingbar_autoupdate( loading_scr, &progress );
+    progress = jolt_gui_scr_loadingbar_autoupdate( loading_scr );
 
     /* Perform the lengthy stretching */
-    storage_stretch( param->pin_hash, &progress );
+    storage_stretch( param->pin_hash, progress );
 
     /* Delete the loading bar screen */
     jolt_gui_obj_del( loading_scr );

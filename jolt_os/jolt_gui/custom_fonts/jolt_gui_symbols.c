@@ -149,6 +149,17 @@ static const uint8_t jolt_gui_symbols_glyph_bitmap[] =
     0xFC,   //@@@@@@
     0xFC,   //@@@@@@
     0x00,   //......
+
+    /* Unicode: U+F00D (JOLT_GUI_SYMBOL_CHIP), Width: 9 */
+    0x14, 0x00,   //...@.@...
+    0x14, 0x00,   //...@.@...
+    0x3D, 0x00,   //..@@@@@..
+    0xD3, 0x80,   //@@@...@@@
+    0x22, 0x00,   //..@...@..
+    0xD3, 0x80,   //@@@...@@@
+    0x3D, 0x00,   //..@@@@@..
+    0x14, 0x00,   //...@.@...
+    0x14, 0x00,   //...@.@...
 };
 
 static const lv_font_glyph_dsc_t jolt_gui_symbols_dsc[] =
@@ -166,16 +177,17 @@ static const lv_font_glyph_dsc_t jolt_gui_symbols_dsc[] =
   {.w_px=9,  .glyph_index=171}, /*Unicode: U+F00A (JOLT_GUI_SYMBOL_WIFI_3)*/
   {.w_px=9,  .glyph_index=189}, /*Unicode: U+F00B (JOLT_GUI_SYMBOL_WIFI_DISCONN)*/
   {.w_px=6,  .glyph_index=207}, /*Unicode: U+F00C (JOLT_GUI_SYMBOL_LOCK)*/
+  {.w_px=9,  .glyph_index=216}, /*Unicode: U+F00D (JOLT_GUI_SYMBOL_CHIP)*/
 };
 
 lv_font_t jolt_gui_symbols = 
 {    
     .unicode_first = 0xF000,	/*First Unicode letter in this font*/
-    .unicode_last = 0xF00C,	/*Last Unicode letter in this font*/
+    .unicode_last = 0xF00D,	/*Last Unicode letter in this font*/
     .h_px = 9,				/*Font height in pixels*/
     .glyph_bitmap = jolt_gui_symbols_glyph_bitmap,	/*Bitmap of glyphs*/
     .glyph_dsc = jolt_gui_symbols_dsc,		/*Description of glyphs*/
-    .glyph_cnt = 13,			/*Number of glyphs in the font*/
+    .glyph_cnt = 14,			/*Number of glyphs in the font*/
     .unicode_list = NULL,	/*Every character in the font from 'unicode_first' to 'unicode_last'*/
     .get_bitmap = lv_font_get_bitmap_continuous,	/*Function pointer to get glyph's bitmap*/
     .get_width = lv_font_get_width_continuous,	/*Function pointer to get glyph's width*/

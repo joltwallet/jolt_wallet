@@ -24,4 +24,6 @@
 
 #define JOLT_GUI_SYMBOL_LOCK "\xEF\x80\x8C"
 
+#define JOLT_GUI_SYMBOL_CHIP "\xEF\x80\x8D"
+
 #endif

@@ -76,6 +76,16 @@ typedef void (*jolt_gui_event_cb_t)(jolt_gui_obj_t *obj, jolt_gui_event_t event)
 /*********************
  * Screen Management *
  *********************/
+
+/**
+ * Get the parenting screen for some object.
+ * If object is NULL, return the currently active screen.
+ *
+ * @param obj object to get screen object of.
+ * @return the parent screen object.
+ */
+jolt_gui_obj_t *jolt_gui_scr_get( jolt_gui_obj_t *obj );
+
 /**
  * @brief Deletes the currently focused screen.
  * todo: change to void

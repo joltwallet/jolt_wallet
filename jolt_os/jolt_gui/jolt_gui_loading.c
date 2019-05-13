@@ -21,7 +21,7 @@ static lv_signal_cb_t old_bar_signal = NULL;     /*Store the old signal function
 typedef struct autoupdate_param_t {
     jolt_gui_obj_t *scr;
     lv_task_t *task;
-    int8_t *progress;
+    int8_t progress;
 } autoupdate_param_t;
 
 typedef struct {
@@ -52,8 +52,11 @@ static lv_res_t new_bar_signal(jolt_gui_obj_t *bar, lv_signal_t sign, void * par
  * Title and Text are optional.*/
 void jolt_gui_scr_loadingbar_update(jolt_gui_obj_t *parent,
         const char *title, const char *text,
-        uint8_t percentage) {
+        int8_t percentage) {
     JOLT_GUI_CTX{
+        /* Make sure that the parent is a screen */
+        parent = jolt_gui_scr_get(parent);
+
         /* Find Objects */
         jolt_gui_obj_t *label_title   = NULL;
         {
@@ -77,6 +80,13 @@ void jolt_gui_scr_loadingbar_update(jolt_gui_obj_t *parent,
         // todo: set animation time based on config value
         //lv_bar_set_value_anim(bar_loading, percentage, CONFIG_JOLT_GUI_LOADINGBAR_ANIM_MS);
         lv_bar_set_value(bar_loading, percentage, true);
+        loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar_loading);
+        if( percentage >= 0 ){
+            if( ext->autoupdate ) {
+                ext->autoupdate->progress = percentage;
+            }
+            lv_event_send(bar_loading, jolt_gui_event.value_changed, NULL);
+        }
         if( text ) {
             lv_label_set_text(label_loading, text);
         }
@@ -93,33 +103,38 @@ static void autoupdate_task(lv_task_t *input) {
         ESP_LOGD(TAG, "%d: Loading bar screen %p", __LINE__, scr);
         jolt_gui_obj_t *bar = BREAK_IF_NULL(jolt_gui_scr_get_active(scr));
         loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar);
-        if( *(ext->autoupdate->progress) <= 100 && *(ext->autoupdate->progress) >= 0 ) {
+        if( ext->autoupdate->progress <= 100 && ext->autoupdate->progress >= 0 ) {
             // The +10 makes it look better
             jolt_gui_scr_loadingbar_update(scr, NULL, NULL,
-                    *(ext->autoupdate->progress) + 10);
+                    ext->autoupdate->progress + 10);
         }
-        if( *(ext->autoupdate->progress) == 100 ) {
+        if( ext->autoupdate->progress == 100 ) {
             lv_event_send(bar, jolt_gui_event.apply, NULL);
         }
     }
 }
 
-void jolt_gui_scr_loadingbar_autoupdate(jolt_gui_obj_t *parent, int8_t *progress) {
+int8_t  *jolt_gui_scr_loadingbar_autoupdate(jolt_gui_obj_t *parent) {
     autoupdate_param_t *param;
     param = malloc( sizeof(autoupdate_param_t) );
     if( NULL == param ) {
         ESP_LOGE(TAG, "Unable to allocate memory for autoupdate params");
-        return;
+        return NULL;
     }
     ESP_LOGD(TAG, "%d: Enabling autoupdate on screen %p", __LINE__, parent);
+
     JOLT_GUI_CTX{
+        /* Make sure that the parent is a screen */
+        parent = jolt_gui_scr_get(parent);
+
         jolt_gui_obj_t *bar = BREAK_IF_NULL(jolt_gui_scr_get_active(parent));
         loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar);
         ext->autoupdate = param;
         param->scr      = parent;
-        param->progress = progress;
+        param->progress = 0;
         param->task = lv_task_create(autoupdate_task, 100, LV_TASK_PRIO_HIGH, parent);
     }
+    return &param->progress;
 }
 
 /* Creates and returns a loading screen.
@@ -166,6 +181,18 @@ jolt_gui_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
     return parent;
 }
 
+int8_t *jolt_gui_scr_loadingbar_progress_get( lv_obj_t *obj ){
+    int8_t *progress = NULL;
+    JOLT_GUI_CTX{
+        jolt_gui_obj_t *scr = jolt_gui_scr_get(obj);
+        jolt_gui_obj_t *bar = BREAK_IF_NULL(jolt_gui_scr_get_active(scr));
+        loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar);
+        if(NULL == ext->autoupdate) break;
+        progress = &ext->autoupdate->progress;
+    }
+    return progress;
+}
+
 /* Creates and returns a preloading screen.
  * A preloading screen has no progression and is used for tasks of unknown 
  * lenth and/or progression.
@@ -208,6 +235,9 @@ jolt_gui_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *te
 void jolt_gui_scr_preloading_update(jolt_gui_obj_t *parent,
         const char *title, const char *text) {
     JOLT_GUI_CTX{
+        /* Make sure that the parent is a screen */
+        parent = jolt_gui_scr_get(parent);
+
         /* Find Objects */
         jolt_gui_obj_t *label_title   = NULL;
         {
@@ -235,3 +265,4 @@ void jolt_gui_scr_preloading_update(jolt_gui_obj_t *parent,
         }
     }
 }
+

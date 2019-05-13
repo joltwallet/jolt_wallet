@@ -66,17 +66,27 @@ const jolt_gui_event_enum_t jolt_gui_event = {
  * Screen Management *
  *********************/
 
-lv_res_t jolt_gui_scr_del() {
-    lv_res_t res = LV_RES_OK;
+jolt_gui_obj_t *jolt_gui_scr_get( jolt_gui_obj_t *obj ){
+    jolt_gui_obj_t *scr = obj;
     JOLT_GUI_CTX{
-        lv_obj_t *scr = BREAK_IF_NULL(lv_group_get_focused(group));
-        lv_obj_t *parent = scr;
-        lv_obj_t *tmp = scr;
+        if( NULL == obj ) {
+            obj = BREAK_IF_NULL(lv_group_get_focused(group));
+        }
+        lv_obj_t *tmp = obj;
         while( (tmp = lv_obj_get_parent(tmp)) ) {
             if( tmp != lv_scr_act() ) {
-                parent = tmp;
+                scr = tmp;
             }
         }
+    }
+    return scr;
+}
+
+lv_res_t jolt_gui_scr_del() {
+    lv_res_t res = LV_RES_OK;
+    jolt_gui_obj_t *parent = NULL;
+    JOLT_GUI_CTX{
+        parent = BREAK_IF_NULL( jolt_gui_scr_get(NULL) );
         ESP_LOGD(TAG, "Deleting screen %p", parent);
         jolt_gui_obj_del(parent);
         res = LV_RES_INV;

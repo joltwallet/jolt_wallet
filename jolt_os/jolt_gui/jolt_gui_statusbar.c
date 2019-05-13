@@ -96,6 +96,11 @@ static void statusbar_update( lv_task_t *task ) {
         ptr += 3;
     }
 
+#if CONFIG_JOLT_STORE_ATAES132A
+    strcpy(ptr, JOLT_GUI_SYMBOL_CHIP);
+    ptr += 3;
+#endif
+
     int8_t battery_level = statusbar_indicators[JOLT_HW_MONITOR_INDEX_BATTERY].val; 
     if( battery_level > 100 ) {
         strcpy(ptr, JOLT_GUI_SYMBOL_BATTERY_CHARGING);

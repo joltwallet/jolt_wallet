@@ -170,7 +170,7 @@ static int ps_state_exec_task( jolt_bg_job_t *job ) {
             /* Converts a pin guess into the mnemonic string.
              * Loops back to PIN_STATE_CREATE on an erroneous PIN attempt. */
 
-            int8_t progress = 0;
+            int8_t *progress = NULL;
             lv_obj_t *loading_scr;
             CONFIDENTIAL char mnemonic[265] = { 0 }; // change this to macro
             CONFIDENTIAL uint512_t master_seed;
@@ -190,11 +190,11 @@ static int ps_state_exec_task( jolt_bg_job_t *job ) {
                     gettext(JOLT_TEXT_CHECKING_PIN), 0);
             jolt_gui_sem_give();
             ESP_LOGD(TAG, "Creating stretch autoupdate lv_task");
-            jolt_gui_scr_loadingbar_autoupdate( loading_scr, &progress );
+            progress = jolt_gui_scr_loadingbar_autoupdate( loading_scr );
 
             /* Stretch directly here */
             ESP_LOGD(TAG, "Beginning stretch");
-            storage_stretch( ps.pin_hash, &progress );
+            storage_stretch( ps.pin_hash, progress );
             ESP_LOGD(TAG, "Finished stretch");
 
             /* Delete Loading Screen */
@@ -243,11 +243,11 @@ static int ps_state_exec_task( jolt_bg_job_t *job ) {
                     gettext(JOLT_TEXT_PIN),
                     gettext(JOLT_TEXT_UNLOCKING), 0);
             jolt_gui_sem_give();
-            jolt_gui_scr_loadingbar_autoupdate( loading_scr, &progress );
+            progress = jolt_gui_scr_loadingbar_autoupdate( loading_scr );
 
             /* Do the lengthy master seed derivation */
             bm_mnemonic_to_master_seed_progress(master_seed, 
-                    mnemonic, vault->passphrase, &progress);
+                    mnemonic, vault->passphrase, progress);
 
             /* We no longer need the mnemonic */
             sodium_memzero(mnemonic, sizeof(mnemonic));
