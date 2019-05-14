@@ -1,5 +1,4 @@
-
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include "jolt_gui.h"
 #include "jolt_gui_loading.h"
@@ -79,9 +78,11 @@ void jolt_gui_scr_loadingbar_update(jolt_gui_obj_t *parent,
         }
         // todo: set animation time based on config value
         //lv_bar_set_value_anim(bar_loading, percentage, CONFIG_JOLT_GUI_LOADINGBAR_ANIM_MS);
-        lv_bar_set_value(bar_loading, percentage, true);
-        loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar_loading);
-        if( percentage >= 0 ){
+        int16_t current_val = lv_bar_get_value(bar_loading);
+        if(current_val != percentage && percentage>=0){
+            ESP_LOGD(TAG, "(%d) Progress: %d", __LINE__, percentage);
+            lv_bar_set_value(bar_loading, percentage, true);
+            loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar_loading);
             if( ext->autoupdate ) {
                 ext->autoupdate->progress = percentage;
             }
@@ -100,15 +101,13 @@ void jolt_gui_scr_loadingbar_update(jolt_gui_obj_t *parent,
 static void autoupdate_task(lv_task_t *input) {
     jolt_gui_obj_t *scr = input->user_data;
     JOLT_GUI_CTX{
-        ESP_LOGD(TAG, "%d: Loading bar screen %p", __LINE__, scr);
         jolt_gui_obj_t *bar = BREAK_IF_NULL(jolt_gui_scr_get_active(scr));
         loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar);
         if( ext->autoupdate->progress <= 100 && ext->autoupdate->progress >= 0 ) {
-            // The +10 makes it look better
             jolt_gui_scr_loadingbar_update(scr, NULL, NULL,
-                    ext->autoupdate->progress + 10);
+                    ext->autoupdate->progress);
         }
-        if( ext->autoupdate->progress == 100 ) {
+        if( ext->autoupdate->progress >= 100 ) {
             lv_event_send(bar, jolt_gui_event.apply, NULL);
         }
     }
@@ -134,6 +133,7 @@ int8_t  *jolt_gui_scr_loadingbar_autoupdate(jolt_gui_obj_t *parent) {
         param->progress = 0;
         param->task = lv_task_create(autoupdate_task, 100, LV_TASK_PRIO_HIGH, parent);
     }
+    ESP_LOGD(TAG, "Autoupdate create progress address: %p", &param->progress);
     return &param->progress;
 }
 
@@ -150,6 +150,7 @@ jolt_gui_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
         jolt_gui_obj_t *bar = BREAK_IF_NULL(lv_bar_create(cont_body, NULL));
         BREAK_IF_NULL(lv_obj_allocate_ext_attr(bar, sizeof(loadingbar_ext_t)));
         loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar);
+        ESP_LOGD(TAG, "loadingbar ext: %p", ext);
         ext->autoupdate = NULL;
         if( NULL == old_bar_signal ) {
             old_bar_signal = lv_obj_get_signal_cb(bar);       /*Save to old signal function*/

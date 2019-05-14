@@ -375,6 +375,14 @@ static void jolt_cli_cmds_register() {
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
     cmd = (esp_console_cmd_t) {
+        .command = "lv_obj",
+        .help = "Get information about lv_obj's",
+        .hint = NULL,
+        .func = &jolt_cmd_lv_obj,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
         .command = "jolt_cast_update",
         .help = "Update jolt_cast URI.",
         .hint = NULL,

@@ -8,6 +8,7 @@ void jolt_gui_test_json_create(jolt_gui_obj_t *btn, jolt_gui_event_t event);
 void jolt_gui_test_qrcode_create(jolt_gui_obj_t *btn, jolt_gui_event_t event);
 void jolt_gui_test_preloading_create(jolt_gui_obj_t *btn, jolt_gui_event_t event);
 void jolt_gui_test_loading_create(jolt_gui_obj_t *btn, jolt_gui_event_t event);
+void jolt_gui_test_autoloading_create(jolt_gui_obj_t *btn, jolt_gui_event_t event);
 void jolt_gui_test_number_create(jolt_gui_obj_t *btn, jolt_gui_event_t event);
 void jolt_gui_test_battery_create(jolt_gui_obj_t *btn, jolt_gui_event_t event);
 void jolt_gui_test_alphabet_create(jolt_gui_obj_t * list_btn, jolt_gui_event_t event);

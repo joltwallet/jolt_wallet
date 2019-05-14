@@ -1,4 +1,6 @@
 #if JOLT_GUI_TEST_MENU
+#define LOG_LOCAL_LEVEL ESP_LOG_INFO
+#include "esp_log.h"
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_gui/test_screens.h"
 #include "jolt_helpers.h"
@@ -78,7 +80,7 @@ void jolt_gui_test_preloading_create(jolt_gui_obj_t *btn, jolt_gui_event_t event
     }
 }
 
-void test_loading_task(void *param) {
+static void test_loading_task(void *param) {
     jolt_gui_obj_t *scr = (jolt_gui_obj_t *)param;
     for(uint8_t i=0;i < 101; vTaskDelay(pdMS_TO_TICKS(1000)), i+=10){
         if(i==50){
@@ -103,6 +105,52 @@ void jolt_gui_test_loading_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
         }
         xTaskCreate(test_loading_task,
                     "TestLoading", 4096,
+                    (void *) scr, 10, NULL);
+    }
+}
+
+static void test_autoloading_cb( lv_obj_t *bar, lv_event_t event ){
+    if( jolt_gui_event.apply == event ){
+        ESP_LOGD(TAG, "(%d; %s) autoloading complete!", __LINE__, __func__);
+        jolt_gui_obj_del(jolt_gui_scr_get(bar));
+    }
+    else if( jolt_gui_event.value_changed == event ){
+        char buf[30];
+        int8_t *progress = NULL;
+        progress = jolt_gui_scr_loadingbar_progress_get( bar );
+        snprintf(buf, sizeof(buf), "Progress: %d%%", *progress);
+        ESP_LOGD(TAG, "(%d): %s", __LINE__, buf);
+        if(*progress > 0) {
+            jolt_gui_scr_loadingbar_update(bar, NULL, buf, -1);
+        }
+    }
+}
+
+static void test_autoloading_task(void *param) {
+    jolt_gui_obj_t *scr = (jolt_gui_obj_t *)param;
+    int8_t *progress = jolt_gui_scr_loadingbar_progress_get( scr );
+    ESP_LOGI(TAG, "Progress: %d", *progress);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    for(uint8_t i=0;i <= 100; i+=10){
+        *progress = i;
+        ESP_LOGI(TAG, "Progress: %d", *progress);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+    vTaskDelete(NULL);
+}
+
+void jolt_gui_test_autoloading_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
+    if( jolt_gui_event.short_clicked == event ) {
+        jolt_gui_obj_t *scr = jolt_gui_scr_loadingbar_create("Autoloading Test");
+        jolt_gui_scr_set_event_cb(scr, test_autoloading_cb);
+        jolt_gui_scr_loadingbar_autoupdate(scr);
+        jolt_gui_scr_loadingbar_update(scr, NULL, "Initializing", 0);
+
+        if(NULL == scr){
+            ESP_LOGE(TAG, "NULL Loading Screen");
+        }
+        xTaskCreate(test_autoloading_task,
+                    "TestAutoloading", 4096,
                     (void *) scr, 10, NULL);
     }
 }

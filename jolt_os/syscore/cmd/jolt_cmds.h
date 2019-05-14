@@ -51,6 +51,13 @@ int jolt_cmd_download(int argc, char** argv);
 int jolt_cmd_free(int argc, char** argv);
 
 /**
+ * @brief Get the number of lv_objs
+ *
+ * Takes no arguments
+ */
+int jolt_cmd_lv_obj(int argc, char** argv);
+
+/**
  * @brief Update jolt_cast URI.
  *
  * Takes 1 argument: the new URI

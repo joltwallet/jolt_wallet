@@ -334,6 +334,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
 
 exit:
     jolt_cli_resume();
+    esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
     if(NULL != packet_data) {
         free(packet_data);
     }

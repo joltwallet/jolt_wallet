@@ -88,6 +88,7 @@ def main(args):
     else:
         log.debug('Sending "upload" command')
         ser.write(b"upload\n")
+    time.sleep(1)
     consume(ser)
 
     log.info("Sending File")
