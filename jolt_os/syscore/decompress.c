@@ -42,7 +42,6 @@ void decompress_obj_del( decomp_t *d ) {
     if( NULL == d ) {
         return;
     }
-    /* todo; flush */
     if(d->buf) {
         free(d->buf);
     }
