@@ -87,12 +87,13 @@ typedef void (*jolt_gui_event_cb_t)(jolt_gui_obj_t *obj, jolt_gui_event_t event)
 jolt_gui_obj_t *jolt_gui_scr_get( jolt_gui_obj_t *obj );
 
 /**
- * @brief Deletes the currently focused screen.
- * todo: change to void
- * Internally it gets the currently focused object, and recursively finds the
- * parent, then deletes that parent.
+ * @brief Deletes the screen of obj or currently focused screen.
+ *
+ * If no object is specificed, will delete currently focused screen.
+ *
+ * @param obj Object who's screen we want to delete. NULL for currently focused screen.
  */
-lv_res_t jolt_gui_scr_del();
+lv_res_t jolt_gui_scr_del( jolt_gui_obj_t *obj );
 
 /**
  * @brief Sets object id

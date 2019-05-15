@@ -4,9 +4,8 @@
 #include "hal/led.h"
 #include "sdkconfig.h"
 
-// todo: combine the callbacks under different events
-
 static const char TAG[] = "menus/settings/screen_brightness";
+
 #if CONFIG_JOLT_TOUCH_LED_INVERT
 static const uint8_t brightness_levels[] = {255, 150, 70, 30, 10, 0};
 #else
@@ -29,7 +28,7 @@ static void led_brightness_cb(jolt_gui_obj_t *slider, jolt_gui_event_t event) {
         int16_t slider_pos = lv_slider_get_value(slider);
         uint8_t brightness = brightness_levels[slider_pos];
         storage_set_u8(brightness, "user", "led_val");
-        jolt_gui_scr_del();
+        jolt_gui_scr_del( slider );
     }
 }
 

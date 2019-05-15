@@ -60,5 +60,5 @@ Use `jolt_gui_scr_set_back_param` and `jolt_gui_scr_set_enter_param` to pass poi
 
 # Deleting a screen
 
-A screen can be deleted via `jolt_gui_scr_del()` or by `jolt_gui_obj_del(parent)`. Do not delete screens via `lv_scr_del` as there is additional cleanup that needs to be performed on some screens.
+A screen can be deleted via `jolt_gui_scr_del( NULL )` or by `jolt_gui_obj_del(parent)`. Do not delete screens via `lv_scr_del` as there is additional cleanup that needs to be performed on some screens.
 

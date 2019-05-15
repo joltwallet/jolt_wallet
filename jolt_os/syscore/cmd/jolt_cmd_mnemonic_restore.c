@@ -85,12 +85,12 @@ static void jolt_cmd_mnemonic_restore_begin_cb( lv_obj_t *btn, lv_event_t event 
 
     if( LV_EVENT_SHORT_CLICKED == event ) {
         /* Proceed with the mnemonic restore process */
-        jolt_gui_scr_del();
         param->state = MNEMONIC_RESTORE_RANDOMIZE;
         jolt_bg_create( jolt_mnemonic_restore_process, param, NULL);
+        jolt_gui_scr_del( btn );
     }
     else if( LV_EVENT_CANCEL == event ) {
-        jolt_gui_scr_del();
+        jolt_gui_scr_del( btn );
         jolt_cli_return(-1);
     }
 }
@@ -106,7 +106,7 @@ static void jolt_cmd_mnemonic_restore_index_cb( lv_obj_t *btn, lv_event_t event 
     }
     else if( LV_EVENT_CANCEL == event ) {
         param->scr = NULL;
-        jolt_gui_scr_del();
+        jolt_gui_scr_del( btn );
         param->return_code = -1;
         param->state = MNEMONIC_RESTORE_CLEANUP;
     }

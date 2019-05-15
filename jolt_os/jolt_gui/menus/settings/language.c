@@ -8,7 +8,7 @@ static void language_enter( jolt_gui_obj_t *btn, jolt_gui_event_t event ) {
         uint8_t index = lv_list_get_btn_index(NULL, btn);
         ESP_LOGI(TAG, "Setting language id %d", jolt_lang_order[index]);
         jolt_lang_set( jolt_lang_order[index] );
-        jolt_gui_scr_del();
+        jolt_gui_scr_del( btn );
     }
 }
 

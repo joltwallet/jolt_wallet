@@ -1,4 +1,4 @@
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include "esp_log.h"
 #include "jolt_gui/jolt_gui.h"
@@ -17,8 +17,8 @@ static void screen_brightness_cb(jolt_gui_obj_t *slider, jolt_gui_event_t event)
     else if( jolt_gui_event.short_clicked == event || jolt_gui_event.cancel == event ) {
         int16_t slider_pos = lv_slider_get_value(slider);
         save_display_brightness(slider_pos);
-        ESP_LOGE(TAG, "deleting screen");
-        jolt_gui_scr_del();
+        ESP_LOGD(TAG, "deleting screen");
+        jolt_gui_scr_del( slider );
     }
 }
 

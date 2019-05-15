@@ -334,7 +334,7 @@ static void pin_fail_cb( lv_obj_t *num_entry, lv_event_t event ) {
         case LV_EVENT_SHORT_CLICKED:
             /* Fall through */
         case LV_EVENT_CANCEL:
-            jolt_gui_scr_del();
+            jolt_gui_scr_del( num_entry );
             if( ps.state != PIN_STATE_FAIL ) {
                 ps.state = PIN_STATE_CREATE;
                 ps_state_exec();

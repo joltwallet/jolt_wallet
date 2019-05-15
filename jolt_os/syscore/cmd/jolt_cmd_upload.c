@@ -18,7 +18,7 @@ static const char progress_label_2[] = "Installing...";
 static void jolt_cmd_upload_cb( lv_obj_t *bar, lv_event_t event ) {
     if( jolt_gui_event.apply == event ){
         jolt_gui_scr_loadingbar_update(bar, NULL, progress_label_2, -1);
-        jolt_gui_scr_del();
+        jolt_gui_scr_del( bar );
     }
     else if( jolt_gui_event.value_changed == event ){
         int8_t *progress = NULL;

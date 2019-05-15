@@ -143,8 +143,8 @@ static void mismatch_cb(lv_obj_t *btn, lv_event_t event) {
         case LV_EVENT_CANCEL: {
             mnemonic_setup_t *param;
             param = jolt_gui_obj_get_param( btn );
-            jolt_gui_scr_del();
             screen_pin_entry_create_( param );
+            jolt_gui_scr_del( btn );
             break;
         }
         default:
@@ -167,9 +167,6 @@ static void screen_finish_create(lv_obj_t *digit_entry, lv_event_t event) {
 
             param = jolt_gui_obj_get_param( digit_entry );
 
-            /* Delete verify pin entry screen */
-            jolt_gui_scr_del();
-
             res = memcmp(param->pin_hash, pin_hash_verify, sizeof(pin_hash_verify));
             sodium_memzero(pin_hash_verify, sizeof(pin_hash_verify));
 
@@ -183,10 +180,14 @@ static void screen_finish_create(lv_obj_t *digit_entry, lv_event_t event) {
                 jolt_gui_scr_set_active_param(scr, param);
                 jolt_gui_scr_set_event_cb(scr, mismatch_cb);
             }
+
+            /* Delete verify pin entry screen */
+            jolt_gui_scr_del( digit_entry );
+
             break;
         }
         case LV_EVENT_CANCEL:
-            jolt_gui_scr_del();
+            jolt_gui_scr_del( digit_entry );
             break;
         default:
             break;
@@ -205,9 +206,6 @@ static void screen_pin_verify_create(lv_obj_t *digit_entry, lv_event_t event) {
             ESP_LOGD(TAG, "Got param %p", param);
             jolt_gui_obj_digit_entry_get_hash(digit_entry, param->pin_hash);
 
-            /* Delete first PIN entry screen */
-            jolt_gui_scr_del();
-
             /* Create Verify PIN screen */
             lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "PIN Verify",
                     CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL); 
@@ -216,10 +214,14 @@ static void screen_pin_verify_create(lv_obj_t *digit_entry, lv_event_t event) {
             }
             jolt_gui_scr_set_active_param(scr, param);
             jolt_gui_scr_set_event_cb(scr, &screen_finish_create);
+
+            /* Delete first PIN entry screen */
+            jolt_gui_scr_del( digit_entry );
+
             break;
         }
         case LV_EVENT_CANCEL:
-            jolt_gui_scr_del();
+            jolt_gui_scr_del( digit_entry );
             break;
         default:
             break;

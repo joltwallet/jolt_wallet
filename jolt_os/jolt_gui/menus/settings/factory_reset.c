@@ -14,7 +14,7 @@ static int factory_reset( jolt_bg_job_t *job ) {
 
 static void factory_reset_no( jolt_gui_obj_t *btn, jolt_gui_event_t event ) {
     if( jolt_gui_event.short_clicked == event) {
-        jolt_gui_scr_del();
+        jolt_gui_scr_del( btn );
     }
 }
 

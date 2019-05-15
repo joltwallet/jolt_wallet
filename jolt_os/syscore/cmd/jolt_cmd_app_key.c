@@ -26,7 +26,7 @@ static void set_app_key_cb(lv_obj_t *btn, lv_event_t event) {
         //storage_factory_reset( false, set_app_key_post_factory_reset );
     }
     else if(LV_EVENT_CANCEL == event) {
-        jolt_gui_scr_del();
+        jolt_gui_scr_del( btn );
     }
 }
 

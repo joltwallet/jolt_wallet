@@ -49,10 +49,10 @@ static void jolt_gui_test_number_enter_cb(jolt_gui_obj_t *digit_entry, jolt_gui_
         uint32_t i_val = jolt_gui_obj_digit_entry_get_int(digit_entry);
         ESP_LOGI(TAG, "Entry as Double: %f", d_val);
         ESP_LOGI(TAG, "Entry as Integer: %d", i_val);
-        jolt_gui_scr_del( );
+        jolt_gui_scr_del( digit_entry );
     }
     else if ( jolt_gui_event.cancel == event ) {
-        jolt_gui_scr_del();
+        jolt_gui_scr_del( digit_entry );
     }
 }
 

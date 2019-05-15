@@ -11,7 +11,7 @@ static void scanning_scr_cb(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
     if( jolt_gui_event.cancel == event ) {
         jolt_bluetooth_pair_mode = false;
         jolt_bluetooth_adv_wht_start();
-        jolt_gui_scr_del();
+        jolt_gui_scr_del( btn );
         scanning_scr = NULL;
     }
 }
