@@ -41,6 +41,7 @@ int jolt_cmd_about(int argc, char** argv) {
     if( NULL == (json = cJSON_CreateObject()) ) goto end;
 
     if( 1 == argc ) {
+        /* General "about" information */
         if( !add_semver_to_object(json, "hardware", JOLT_HW_VERSION.major, JOLT_HW_VERSION.minor, JOLT_HW_VERSION.patch)) goto end;
         if( !add_semver_to_object(json, "jolt_os", JOLT_OS_VERSION.major, JOLT_OS_VERSION.minor, JOLT_OS_VERSION.patch)) goto end;
         if( NULL == cJSON_AddStringToObject(json, "jolt_os_commit", JOLT_OS_COMMIT)) goto end; 
@@ -51,7 +52,6 @@ int jolt_cmd_about(int argc, char** argv) {
     if( !console_check_equal_argc(argc, 2) ) {
         goto end;
     }
-
 
     if( 0 == strcmp(argv[1], "wifi") ) {
         char ssid[32];
@@ -68,6 +68,7 @@ int jolt_cmd_about(int argc, char** argv) {
         }
         if( NULL == cJSON_AddStringToObject(json, "ssid", ssid) ) goto end;
 
+        /* Get strength */
 #if !CONFIG_NO_BLOBS
         {
             wifi_mode_t mode;
@@ -83,7 +84,10 @@ int jolt_cmd_about(int argc, char** argv) {
             PRINT_AND_END(json);
         }
 #else
-        printf("No wifi drivers installed.\n"); // todo: update to json output
+        {
+            if(NULL == cJSON_AddNumberToObject(json, "rssi", 0)) goto end;
+            PRINT_AND_END(json);
+        }
 #endif
     }
 
