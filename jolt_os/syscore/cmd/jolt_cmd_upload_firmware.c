@@ -2,6 +2,7 @@
 #include "hal/storage/storage.h"
 #include "syscore/ota.h"
 #include "syscore/console_helpers.h"
+#include "syscore/cli.h"
 
 static const char TAG[] = "cmd_upload_firmware";
 static const char progress_label_0[] = "Connecting...";
@@ -27,13 +28,13 @@ int jolt_cmd_upload_firmware(int argc, char** argv) {
     int8_t *progress = NULL;
     jolt_gui_obj_t *loading_scr = NULL;
 
+    jolt_cli_suspend();
+
     /* Create loading screen */
     loading_scr = jolt_gui_scr_loadingbar_create("JoltOS Update");
     jolt_gui_scr_set_event_cb(loading_scr, jolt_cmd_upload_firmware_cb);
     progress = jolt_gui_scr_loadingbar_autoupdate(loading_scr);
     jolt_gui_scr_loadingbar_update(loading_scr, NULL, progress_label_0, 0);
-
-    vTaskDelay(pdMS_TO_TICKS(80)); // Give the GL a moment to draw screen
 
     /* Begin transfer */
     err = jolt_ota_ymodem( progress );

@@ -1,3 +1,8 @@
+/*
+ * Known bugs:
+ *     * suspending the uart listener task while it's in the linenoise function causes a deadlock on UART. Internally, linenoise calls fread which takes the uart_read_lock mutex. Need an elegant way of releasing that mutex if taken on suspend. Current workaround: the 200mS delay; if the process that needs to take over the UART communication before the 200mS delay is over, everything is ok.
+ */
+
 //#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include "esp_log.h"
@@ -87,7 +92,7 @@ static void jolt_cli_uart_listener_task( void *param) {
     }
     
     /* Main loop */
-    for(;;vTaskDelay(pdMS_TO_TICKS(80))) {
+    for(;;vTaskDelay(pdMS_TO_TICKS(200))) {
         /* Get a line using linenoise.
          * The line is returned when ENTER is pressed.
          */

@@ -6,7 +6,28 @@
 #include "syscore/ymodem.h"
 #include "jolt_helpers.h"
 
+#include "jolt_gui/jolt_gui.h"
+
 static const char TAG[] = "cmd_upload";
+
+static const char progress_label_0[] = "Connecting...";
+static const char progress_label_1[] = "Transfering...";
+static const char progress_label_2[] = "Installing...";
+
+
+static void jolt_cmd_upload_cb( lv_obj_t *bar, lv_event_t event ) {
+    if( jolt_gui_event.apply == event ){
+        jolt_gui_scr_loadingbar_update(bar, NULL, progress_label_2, -1);
+        jolt_gui_scr_del();
+    }
+    else if( jolt_gui_event.value_changed == event ){
+        int8_t *progress = NULL;
+        progress = jolt_gui_scr_loadingbar_progress_get( bar );
+        if(*progress > 0) {
+            jolt_gui_scr_loadingbar_update(bar, NULL, progress_label_1, -1);
+        }
+    }
+}
 
 int jolt_cmd_upload(int argc, char** argv) {
 
@@ -18,6 +39,12 @@ int jolt_cmd_upload(int argc, char** argv) {
     char tmp_fn[CONFIG_SPIFFS_OBJ_NAME_LEN] = SPIFFS_BASE_PATH;
     char orig_fn[CONFIG_SPIFFS_OBJ_NAME_LEN] = SPIFFS_BASE_PATH;
 
+    /* Create loading screen */
+    jolt_gui_obj_t *loading_scr = jolt_gui_scr_loadingbar_create("Install");
+    jolt_gui_scr_set_event_cb(loading_scr, jolt_cmd_upload_cb);
+    int8_t *progress = jolt_gui_scr_loadingbar_autoupdate(loading_scr);
+    jolt_gui_scr_loadingbar_update(loading_scr, NULL, progress_label_0, 0);
+
     strcat(tmp_fn, "/tmp");
     if( jolt_fs_exists(tmp_fn) ) {
         remove(tmp_fn);
@@ -28,7 +55,7 @@ int jolt_cmd_upload(int argc, char** argv) {
                 "sz --ymodem cat.jpg > /dev/ttyUSB0 < /dev/ttyUSB0\n"
                 "Ready to receive file, please start YModem transfer on host ...\n");
         strcat(orig_fn, "/");
-        rec_res = ymodem_receive(ffd, max_fsize, orig_fn + strlen(orig_fn), NULL);
+        rec_res = ymodem_receive(ffd, max_fsize, orig_fn + strlen(orig_fn), progress);
         fclose(ffd);
         printf("\r\n");
         if (rec_res > 0) {

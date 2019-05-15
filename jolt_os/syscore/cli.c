@@ -237,7 +237,6 @@ static void jolt_cli_dispatcher_task( void *param ) {
 
         /* Block until job finished. */
         xQueueReceive(ret_val_queue, &ret_val, portMAX_DELAY);
-        //printf("%d\n", ret_val); // todo only print on nonzero
 
         /* Release source mutex */
         jolt_cli_give_src_lock();
