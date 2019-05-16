@@ -208,8 +208,9 @@ bool storage_set_str(const char *str, const char *namespace, const char *key);
 bool storage_erase_key(const char *namespace, const char *key);
 
 /**
- * @brief Clear all keys
+ * @brief Clear all keys and filesystems.
+ * @param reset Reset after clearing data.
  */
-void storage_factory_reset();
+void storage_factory_reset( bool reset );
 
 #endif

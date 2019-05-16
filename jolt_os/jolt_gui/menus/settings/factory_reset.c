@@ -8,7 +8,7 @@
 static const char TAG[] = "jolt_gui/menus/settings/factory_reset.c";
 
 static int factory_reset( jolt_bg_job_t *job ) {
-    storage_factory_reset();
+    storage_factory_reset( true );
     return 0;
 }
 

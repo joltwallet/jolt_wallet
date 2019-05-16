@@ -1,31 +1,43 @@
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
 #include "sodium.h"
 #include "esp_log.h"
 #include "jolt_gui/jolt_gui.h"
 #include "syscore/console_helpers.h"
 #include "syscore/launcher.h"
+#include "syscore/bg.h"
 #include "hal/storage/storage.h"
 
 static const char TAG[] = "cmd_app_key";
 static uint256_t app_key;
 
-#if 0
-static lv_res_t set_app_key_post_factory_reset(lv_obj_t *dummy) {
+static int factory_reset_job( jolt_bg_job_t *job ){
+    ESP_LOGD(TAG, "Performing factory reset");
+    storage_factory_reset( false );
+
+    ESP_LOGD(TAG, "Setting app_key");
     if(!storage_set_blob(app_key, sizeof(app_key), "user", "app_key")){
         printf("Error setting app_key.\n");
     }
     printf("Successfully set App Key.\n");
     esp_restart();
 
-    return LV_RES_INV;
 }
-#endif
 
 static void set_app_key_cb(lv_obj_t *btn, lv_event_t event) {
-    if( LV_EVENT_SHORT_CLICKED == event ){
-        // todo: sort out factory reset
-        //storage_factory_reset( false, set_app_key_post_factory_reset );
+    if( jolt_gui_event.short_clicked == event ){
+        ESP_LOGD(TAG, "Creating preloading screen");
+        jolt_gui_scr_preloading_create("App Key", "Erasing...");
+        //jolt_gui_scr_del(btn);
+
+        esp_err_t err;
+        ESP_LOGD(TAG, "Dispatching factory reset job");
+        err = jolt_bg_create( factory_reset_job, NULL, NULL);
+        if(ESP_OK != err) {
+            esp_restart();
+        }
     }
-    else if(LV_EVENT_CANCEL == event) {
+    else if( jolt_gui_event.cancel == event ) {
         jolt_gui_scr_del( btn );
     }
 }

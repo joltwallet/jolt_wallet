@@ -261,13 +261,15 @@ bool storage_set_str(const char *str, const char *namespace, const char *key) {
 }
 
 /* Performs the factory reset in a blocking manner */
-void storage_factory_reset( ) {
+void storage_factory_reset( bool reset ) {
 #if CONFIG_JOLT_STORE_INTERNAL
     storage_internal_factory_reset();
 #elif CONFIG_JOLT_STORE_ATAES132A
     storage_ataes132a_factory_reset(); 
 #endif
-    esp_restart();
+    if( reset ) {
+        esp_restart();
+    }
 }
 
 bool storage_erase_key(const char *namespace, const char *key) {

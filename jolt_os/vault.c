@@ -118,7 +118,7 @@ static int ps_state_exec_task( jolt_bg_job_t *job ) {
                     storage_get_pin_count() - storage_get_pin_last();
             if( pin_attempts >= CONFIG_JOLT_PIN_DEFAULT_MAX_ATTEMPT ) {
                 ESP_LOGE(TAG, "MAX PIN Attempts exceeded; factory resetting");
-                storage_factory_reset( );
+                storage_factory_reset( true );
             }
 
             /* Assemble Title */

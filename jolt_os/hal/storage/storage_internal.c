@@ -129,7 +129,7 @@ bool storage_internal_get_mnemonic(uint256_t mnemonic, const uint256_t pin_hash)
     ESP_LOGI(TAG, "Last Counter Before attempting decrypt: %d", last_count);
     if(pin_count - last_count > CONFIG_JOLT_PIN_DEFAULT_MAX_ATTEMPT) {
         ESP_LOGE(TAG, "Max PIN attempt limit reached. Factory Resetting.");
-        storage_factory_reset( true, NULL );
+        storage_factory_reset( true );
     }
 
     if(pin_count > pin_count + 1) {
@@ -160,14 +160,14 @@ uint32_t storage_internal_get_pin_count() {
      * Factory resets on failure to retrieve pin_count value. */
     uint32_t pin_count;
     if( !storage_get_u32(&pin_count, "secret", "pin_count", UINT32_MAX) ) {
-        storage_factory_reset( true, NULL );
+        storage_factory_reset( true );
     }
     return pin_count;
 }
 
 void storage_internal_set_pin_count(uint32_t count) {
     if( !storage_set_u32(count, "secret", "pin_count") ) {
-        storage_factory_reset( true, NULL );
+        storage_factory_reset( true );
     }
 }
 
@@ -176,14 +176,14 @@ uint32_t storage_internal_get_pin_last() {
      */
     uint32_t pin_last;
     if( !storage_get_u32(&pin_last, "secret", "pin_last", 0) ) {
-        storage_factory_reset( true, NULL );
+        storage_factory_reset( true );
     }
     return pin_last;
 }
 
 void storage_internal_set_pin_last(uint32_t count) {
     if( !storage_set_u32(count, "secret", "pin_last") ) {
-        storage_factory_reset( true, NULL );
+        storage_factory_reset( true );
     }
 }
 

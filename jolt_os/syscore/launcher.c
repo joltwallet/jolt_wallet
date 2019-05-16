@@ -257,10 +257,10 @@ static void launch_app_cb(lv_obj_t *btn, lv_event_t event) {
 
 bool launch_in_app(){
     if( 0 == app_cache.ref_ctr) {
-        return true;
+        return false;
     }
     else {
-        return false;
+        return true;
     }
 }
 
