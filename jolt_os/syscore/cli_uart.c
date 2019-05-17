@@ -17,6 +17,8 @@
 #include "esp_vfs_dev.h"
 #include "esp_log.h"
 #include "syscore/cli.h"
+#include "syscore/cli_uart.h"
+
 
 /********************
  * STATIC FUNCTIONS *
@@ -93,6 +95,7 @@ static void jolt_cli_uart_listener_task( void *param) {
     
     /* Main loop */
     for(;;vTaskDelay(pdMS_TO_TICKS(200))) {
+        bool suspend = false;
         /* Get a line using linenoise.
          * The line is returned when ENTER is pressed.
          */
@@ -109,12 +112,21 @@ static void jolt_cli_uart_listener_task( void *param) {
         /* Add the command to the history */
         linenoiseHistoryAdd(line);
 
+        if( 0 == strcmp(line, "upload_firmware") || 0 == strcmp(line, "upload") ){
+            suspend = true;
+        }
+
         /* Send the command to the command queue */
         src.line = line;
         src.in = stdin;
         src.out = stdout;
         src.err = stderr;
         jolt_cli_set_src( &src );
+
+        if( suspend ){
+            /* Extra safety precaution for firmware upload */
+            jolt_cli_uart_suspend();
+        }
     }
     
 #if CONFIG_JOLT_CONSOLE_OVERRIDE_LOGGING
