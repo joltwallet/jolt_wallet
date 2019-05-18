@@ -8,12 +8,9 @@
 #include "jolttypes.h"
 
 #include "sodium.h"
+#include "jolt_helpers.h"
 #include "hal/storage/storage.h"
 #include "syscore/bg.h"
-
-#if CONFIG_JOLT_STORE_ATAES132A
-#include "aes132_cmd.h"
-#endif
 
 #define MNEMONIC_STRENGTH 256
 #define SINGLE_WORD_BUF_LEN 15
@@ -83,21 +80,7 @@ static jolt_err_t get_nth_word(char buf[], size_t buf_len,
  * Computes mnemonic string mnemonic from mnemonic_bin. The string is
  * used for display/backup purposes only.*/
 static void generate_mnemonic( mnemonic_setup_t *param ) {
-    bm_entropy256(param->mnemonic_bin);
-#if CONFIG_JOLT_STORE_ATAES132A
-    {
-        /* Mix in entropy from ataes132a */
-        CONFIDENTIAL uint256_t aes132_entropy;
-        uint8_t res = aes132_rand(aes132_entropy, sizeof(aes132_entropy));
-        if( ESP_OK != res ) {
-            esp_restart();
-        }
-        for(uint8_t i=0; i<sizeof(aes132_entropy); i++) {
-            param->mnemonic_bin[i] ^= aes132_entropy[i];
-        }
-        sodium_memzero(aes132_entropy, sizeof(aes132_entropy));
-    }
-#endif
+    jolt_get_random(param->mnemonic_bin, MNEMONIC_STRENGTH / 8);
     bm_bin_to_mnemonic(param->mnemonic, sizeof(param->mnemonic),
             param->mnemonic_bin, MNEMONIC_STRENGTH);
     ESP_LOGI(TAG, "mnemonic %s", param->mnemonic);

@@ -26,10 +26,35 @@
 #include "syscore/https.h"
 
 
-//static const char* TAG = "jolt_helpers";
+static const char* TAG = "jolt_helpers";
 
-/* todo: unified randombytes functions that takes both from libsodium and 
- * ataes132a */
+void jolt_get_random(uint8_t *buf, uint8_t n_bytes){
+
+#if CONFIG_JOLT_STORE_ATAES132A
+    {
+        ESP_LOGD(TAG, "Getting %d bytes from ATAES132A RNG Source", n_bytes);
+        uint8_t res = aes132_rand(buf, n_bytes);
+        if( ESP_OK != res ) {
+            esp_restart();
+        }
+    }
+#endif
+
+    /* ESP32 Strong RNG source */
+    {
+        ESP_LOGD(TAG, "Getting %d bytes from ESP32 RNG Source", n_bytes);
+        CONFIDENTIAL uint8_t rand_buffer[4];
+        for(uint8_t i=0, j=0; i<n_bytes; i+=4){
+            *(uint32_t *)rand_buffer = randombytes_random();
+            for(uint8_t k=0; k < 4; k++){
+                buf[j] ^= rand_buffer[k];
+                j++;
+                if(j==n_bytes) break;
+            }
+        }
+        sodium_memzero(rand_buffer, sizeof(rand_buffer));
+    }
+}
 
 void shuffle_arr(uint8_t *arr, int arr_len) {
     uint8_t tmp;

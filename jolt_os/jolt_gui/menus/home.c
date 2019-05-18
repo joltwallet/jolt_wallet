@@ -44,13 +44,6 @@ void jolt_gui_menu_home_create() {
     if( NULL == main_menu ){
         esp_restart();
     }
-    /* todo: disable the delete on the main screen
-     *
-    lv_obj_t *btn = jolt_gui_scr_set_back_action(main_menu, NULL);
-    if( NULL == btn ){
-        esp_restart();
-    }
-    */
 
     for(uint16_t i=0; i<n_fns; i++) {
         ESP_LOGD(TAG, "Registering App \"%s\" into the GUI", fns[i]);

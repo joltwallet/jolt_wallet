@@ -556,7 +556,9 @@ uint8_t aes132_rand(uint8_t *out, const size_t n_bytes) {
         else {
             n_copy = n_bytes - out_head;
         }
-        memcpy(&out[out_head], &rx_buffer[AES132_RESPONSE_INDEX_DATA], n_copy);
+        for(uint8_t i=0; i < n_copy; i++){
+            out[out_head + i] ^= rx_buffer[AES132_RESPONSE_INDEX_DATA + i];
+        }
         out_head += n_copy;
     } while( n_copy > 0 );
 

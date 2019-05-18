@@ -49,6 +49,16 @@ static const char JOLT_OS_DERIVATION_BIP32_KEY[] = "JOLT_OS";
 static const char JOLT_OS_DERIVATION_PASSPHRASE[] = "";
 
 /**
+ * @brief Get a random number of bytes of cryptographically secure entropy.
+ *
+ * Uses as many RNG sources as possible.
+ *
+ * @param[out] buf Store random bytes.
+ * @param[in] n_bytes Number of random bytes to generate.
+ */
+void jolt_get_random(uint8_t *buf, uint8_t n_bytes);
+
+/**
  * @brief Fisher Yates random shuffling for an array of uint8_t
  * @param[in,out] arr pointer to array to shuffle
  * @param[in] arr_len number of elements in arr
