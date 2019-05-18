@@ -1,4 +1,4 @@
-//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #include "esp_log.h"
 
 #include "stdio.h"
@@ -67,9 +67,11 @@ const jolt_gui_event_enum_t jolt_gui_event = {
 
 jolt_gui_obj_t *jolt_gui_scr_get( jolt_gui_obj_t *obj ){
     jolt_gui_obj_t *scr = obj;
+    ESP_LOGD(TAG, "(%d) Getting screen of %p", __LINE__, obj);
     JOLT_GUI_CTX{
         if( NULL == obj ) {
             obj = BREAK_IF_NULL(lv_group_get_focused(group));
+            ESP_LOGD(TAG, "(%d) Inferring currently focused object: %p", __LINE__, obj);
         }
         lv_obj_t *tmp = obj;
         while( (tmp = lv_obj_get_parent(tmp)) ) {
@@ -78,6 +80,7 @@ jolt_gui_obj_t *jolt_gui_scr_get( jolt_gui_obj_t *obj ){
             }
         }
     }
+    ESP_LOGD(TAG, "(%d) Screen of %p is %p", __LINE__, obj, scr);
     return scr;
 }
 

@@ -1,4 +1,4 @@
-//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include "jolt_gui.h"
 #include "jolt_gui_first_boot.h"
@@ -119,7 +119,7 @@ static int bg_stretch_task(jolt_bg_job_t *job) {
     storage_stretch( param->pin_hash, progress );
 
     /* Delete the loading bar screen */
-    jolt_gui_obj_del( loading_scr );
+    jolt_gui_scr_del( loading_scr );
 
     /* Saves setup information to storage */
     storage_set_mnemonic(param->mnemonic_bin, param->pin_hash);
@@ -198,33 +198,27 @@ static void screen_finish_create(lv_obj_t *digit_entry, lv_event_t event) {
  * Creates StartupScreen 4 
  * */
 static void screen_pin_verify_create(lv_obj_t *digit_entry, lv_event_t event) {
-    switch(event){
-        case LV_EVENT_SHORT_CLICKED: {
-            mnemonic_setup_t *param;
-            /* Get the hash for the first screen */
-            param = jolt_gui_obj_get_param( digit_entry );
-            ESP_LOGD(TAG, "Got param %p", param);
-            jolt_gui_obj_digit_entry_get_hash(digit_entry, param->pin_hash);
+    if( jolt_gui_event.short_clicked == event ){
+        mnemonic_setup_t *param;
+        /* Get the hash for the first screen */
+        param = jolt_gui_obj_get_param( digit_entry );
+        ESP_LOGD(TAG, "Got param %p", param);
+        jolt_gui_obj_digit_entry_get_hash(digit_entry, param->pin_hash);
 
-            /* Create Verify PIN screen */
-            lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "PIN Verify",
-                    CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL); 
-            if( NULL == scr ){
-                esp_restart();
-            }
-            jolt_gui_scr_set_active_param(scr, param);
-            jolt_gui_scr_set_event_cb(scr, &screen_finish_create);
-
-            /* Delete first PIN entry screen */
-            jolt_gui_scr_del( digit_entry );
-
-            break;
+        /* Create Verify PIN screen */
+        lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "PIN Verify",
+                CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL); 
+        if( NULL == scr ){
+            esp_restart();
         }
-        case LV_EVENT_CANCEL:
-            jolt_gui_scr_del( digit_entry );
-            break;
-        default:
-            break;
+        jolt_gui_scr_set_active_param(scr, param);
+        jolt_gui_scr_set_event_cb(scr, &screen_finish_create);
+
+        /* Delete first PIN entry screen */
+        jolt_gui_scr_del( digit_entry );
+    }
+    else if ( jolt_gui_event.cancel == event ) {
+        jolt_gui_scr_del( digit_entry );
     }
 }
 
@@ -234,6 +228,7 @@ static lv_obj_t *screen_pin_entry_create_( mnemonic_setup_t *param ) {
     if( NULL == scr ){
         esp_restart();
     }
+    ESP_LOGD(TAG, "(%d) Created PIN entry screen at %p", __LINE__, scr);
     jolt_gui_scr_set_active_param(scr, param);
     jolt_gui_scr_set_event_cb(scr, &screen_pin_verify_create);
     return scr;
@@ -255,32 +250,26 @@ static void screen_pin_entry_create(lv_obj_t *btn, lv_event_t event) {
  * Creates StartupScreen2
  */
 static void screen_mnemonic_create(lv_obj_t *btn, lv_event_t event) {
-    switch(event){
-        case LV_EVENT_SHORT_CLICKED: {
-            const char title[] = "Write Down Mnemonic!";
-            mnemonic_setup_t *param;
-            param = jolt_gui_obj_get_param( btn );
+    if( jolt_gui_event.short_clicked == event ){
+        const char title[] = "Write Down Mnemonic!";
+        mnemonic_setup_t *param;
+        param = jolt_gui_obj_get_param( btn );
 
-            lv_obj_t *scr = jolt_gui_scr_menu_create( title );
-            for(uint8_t i=0; i < 24; i++) {
-                char buf[SINGLE_WORD_BUF_LEN] = { 0 };
-                get_nth_word(buf, sizeof(buf), param->mnemonic, i);
-                if( i == 0 ) {
-                    jolt_gui_scr_menu_add(scr, NULL, buf, NULL);
-                }
-                else {
-                    jolt_gui_scr_menu_add(scr, NULL, buf, NULL);
-                }
-            }
-            jolt_gui_scr_menu_add(scr, NULL, "continue", screen_pin_entry_create);
-            jolt_gui_scr_menu_set_param( scr, param );
-            break;
+        lv_obj_t *scr = jolt_gui_scr_menu_create( title );
+        for(uint8_t i=0; i < 24; i++) {
+            char buf[SINGLE_WORD_BUF_LEN] = { 0 };
+            get_nth_word(buf, sizeof(buf), param->mnemonic, i);
+#if JOLT_GUI_TEST_MENU
+            jolt_gui_scr_menu_add(scr, NULL, buf, screen_pin_entry_create); // so devs dont have to scroll down every time
+#else
+            jolt_gui_scr_menu_add(scr, NULL, buf, NULL);
+#endif
         }
-        case LV_EVENT_CANCEL:
-            /* Do Nothing - delete action handled by default */
-            break;
-        default:
-            break;
+        jolt_gui_scr_menu_add(scr, NULL, "continue", screen_pin_entry_create);
+        jolt_gui_scr_menu_set_param( scr, param );
+    }
+    else if ( jolt_gui_event.cancel == event ) {
+            /* Do Nothing - delete action handled by default menu action */
     }
 }
 
