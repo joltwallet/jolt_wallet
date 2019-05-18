@@ -102,7 +102,7 @@
  * Can be changed in the Input device driver (`lv_indev_drv_t`)*/
 
 /* Input device read period in milliseconds */
-#define LV_INDEV_DEF_READ_PERIOD          50
+#define LV_INDEV_DEF_READ_PERIOD          33
 
 /* Drag threshold in pixels */
 #define LV_INDEV_DEF_DRAG_LIMIT           10
@@ -116,7 +116,7 @@
 
 /* Repeated trigger period in long press [ms]
  * Time between `LV_EVENT_LONG_PRESSED_REPEAT */
-#define LV_INDEV_DEF_LONG_PRESS_REP_TIME  100
+#define LV_INDEV_DEF_LONG_PRESS_REP_TIME  50
 
 /*==================
  * Feature usage
@@ -452,8 +452,8 @@ typedef struct {
 #if LV_USE_LABEL != 0
 /*Hor, or ver. scroll speed [px/sec] in 'LV_LABEL_LONG_ROLL/ROLL_CIRC' mode*/
 #  define LV_LABEL_DEF_SCROLL_SPEED       25
-#  define LV_LABEL_WAIT_CHAR_COUNT        3 /* Waiting period at beginning/end of animation cycle */
-#  define LV_LABEL_TEXT_SEL               1  /*Enable selecting text of the label */
+#  define LV_LABEL_WAIT_CHAR_COUNT        4 /* Waiting period at beginning/end of animation cycle */
+#  define LV_LABEL_TEXT_SEL               0 /*Enable selecting text of the label */
 #endif
 
 /*LED (dependencies: -)*/
@@ -466,7 +466,7 @@ typedef struct {
 #define LV_USE_LIST     1
 #if LV_USE_LIST != 0
 /*Default animation time of focusing to a list element [ms] (0: no animation)  */
-#  define LV_LIST_DEF_ANIM_TIME  100
+#  define LV_LIST_DEF_ANIM_TIME  50
 #endif
 
 /*Line meter (dependencies: *;)*/
@@ -490,7 +490,7 @@ typedef struct {
 #define LV_USE_ROLLER    1
 #if LV_USE_ROLLER != 0
 /*Focus animation time [ms] (0: no animation)*/
-#  define LV_ROLLER_DEF_ANIM_TIME     200
+#  define LV_ROLLER_DEF_ANIM_TIME     100
 
 /*Number of extra "pages" when the roller is infinite*/
 #  define LV_ROLLER_INF_PAGES         3
