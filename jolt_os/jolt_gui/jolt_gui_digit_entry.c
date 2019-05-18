@@ -65,8 +65,8 @@ static lv_res_t digit_entry_signal(jolt_gui_obj_t *digit_entry, lv_signal_t sign
         char c = *((char *)param);
         /* Deactivate the User's Callback */
         if( NULL != digit_entry->event_cb ){
-            ext->user_cb = digit_entry->event_cb;
-            digit_entry->event_cb = NULL;
+            ext->user_cb = lv_obj_get_event_cb(digit_entry);
+            lv_obj_set_event_cb(digit_entry, NULL);
         }
 
         switch(c){
@@ -75,6 +75,7 @@ static lv_res_t digit_entry_signal(jolt_gui_obj_t *digit_entry, lv_signal_t sign
                     /* Activate the User's Callback */
                     ESP_LOGD(TAG, "Activating User Callback");
                     lv_obj_set_event_cb(digit_entry, ext->user_cb);
+                    /* Will get triggered when old_cont_signal is processed */
                 }
                 else{
                     /* Change the selected roller */
@@ -89,6 +90,7 @@ static lv_res_t digit_entry_signal(jolt_gui_obj_t *digit_entry, lv_signal_t sign
                     /* Activate the User's Callback */
                     ESP_LOGD(TAG, "Activating User Callback");
                     lv_obj_set_event_cb(digit_entry, ext->user_cb);
+                    /* Will get triggered when old_cont_signal is processed */
                 }
                 else{
                     /* Change the selected roller */
@@ -115,6 +117,7 @@ static lv_res_t digit_entry_signal(jolt_gui_obj_t *digit_entry, lv_signal_t sign
     }
 
     if( res == LV_RES_OK ){
+        ESP_LOGD(TAG, "Old cont signal: %p", old_cont_signal);
         res = old_cont_signal(digit_entry, sign, param);
         if(res != LV_RES_OK) return res;
     }
@@ -135,6 +138,7 @@ static lv_res_t new_roller_signal(jolt_gui_obj_t *roller, lv_signal_t sign, void
 
     /* Call Ancestor Signal Func */
     if( res == LV_RES_OK ){
+        ESP_LOGD(TAG, "Old roller signal: %p", old_roller_signal);
         res = old_roller_signal(roller, sign, param);
         if(res != LV_RES_OK) return res;
     }

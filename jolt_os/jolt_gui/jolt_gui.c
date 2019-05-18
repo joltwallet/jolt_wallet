@@ -1,4 +1,4 @@
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #include "esp_log.h"
 
 #include "stdio.h"
@@ -335,7 +335,7 @@ void *jolt_gui_scr_get_active_param( lv_obj_t *parent ) {
 }
 
 void jolt_gui_event_del( lv_obj_t *obj, lv_event_t event) {
-    ESP_LOGD(TAG, "%s: event %d", __func__, event);
+    ESP_LOGD(TAG, "%s: (%d) event %s (%d)", __func__, __LINE__, jolt_gui_event_to_str(event), event);
     if( jolt_gui_event.cancel == event ) {
         jolt_gui_scr_del( obj );
         ESP_LOGD(TAG, "Screen Deleted");

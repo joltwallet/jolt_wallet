@@ -1,4 +1,4 @@
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include "jolt_gui.h"
 #include "jolt_gui_first_boot.h"
@@ -113,13 +113,13 @@ static int bg_stretch_task(jolt_bg_job_t *job) {
 
     /* Create Loading Bar */
     loading_scr = jolt_gui_scr_loadingbar_create("Saving");
+    jolt_gui_scr_loadingbar_update(loading_scr, NULL, "Processing", 0);
     progress = jolt_gui_scr_loadingbar_autoupdate( loading_scr );
 
     /* Perform the lengthy stretching */
     storage_stretch( param->pin_hash, progress );
 
-    /* Delete the loading bar screen */
-    jolt_gui_scr_del( loading_scr );
+    jolt_gui_scr_loadingbar_update(loading_scr, NULL, "Saving", 100);
 
     /* Saves setup information to storage */
     storage_set_mnemonic(param->mnemonic_bin, param->pin_hash);
@@ -164,11 +164,13 @@ static void screen_finish_create(lv_obj_t *digit_entry, lv_event_t event) {
 
             /* Compute Verify Pin Hash */
             jolt_gui_obj_digit_entry_get_hash(digit_entry, pin_hash_verify);
-
             param = jolt_gui_obj_get_param( digit_entry );
 
             res = memcmp(param->pin_hash, pin_hash_verify, sizeof(pin_hash_verify));
             sodium_memzero(pin_hash_verify, sizeof(pin_hash_verify));
+
+            /* Delete verify pin entry screen */
+            jolt_gui_scr_del( digit_entry );
 
             /* Verify the pins match */
             if( 0 ==  res ){
@@ -180,9 +182,6 @@ static void screen_finish_create(lv_obj_t *digit_entry, lv_event_t event) {
                 jolt_gui_scr_set_active_param(scr, param);
                 jolt_gui_scr_set_event_cb(scr, mismatch_cb);
             }
-
-            /* Delete verify pin entry screen */
-            jolt_gui_scr_del( digit_entry );
 
             break;
         }
@@ -198,12 +197,16 @@ static void screen_finish_create(lv_obj_t *digit_entry, lv_event_t event) {
  * Creates StartupScreen 4 
  * */
 static void screen_pin_verify_create(lv_obj_t *digit_entry, lv_event_t event) {
+    ESP_LOGD(TAG, "(%d) event: %s", __LINE__, jolt_gui_event_to_str(event) );
     if( jolt_gui_event.short_clicked == event ){
         mnemonic_setup_t *param;
         /* Get the hash for the first screen */
         param = jolt_gui_obj_get_param( digit_entry );
         ESP_LOGD(TAG, "Got param %p", param);
         jolt_gui_obj_digit_entry_get_hash(digit_entry, param->pin_hash);
+
+        /* Delete first PIN entry screen */
+        jolt_gui_scr_del( digit_entry );
 
         /* Create Verify PIN screen */
         lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "PIN Verify",
@@ -213,9 +216,6 @@ static void screen_pin_verify_create(lv_obj_t *digit_entry, lv_event_t event) {
         }
         jolt_gui_scr_set_active_param(scr, param);
         jolt_gui_scr_set_event_cb(scr, &screen_finish_create);
-
-        /* Delete first PIN entry screen */
-        jolt_gui_scr_del( digit_entry );
     }
     else if ( jolt_gui_event.cancel == event ) {
         jolt_gui_scr_del( digit_entry );
@@ -250,6 +250,7 @@ static void screen_pin_entry_create(lv_obj_t *btn, lv_event_t event) {
  * Creates StartupScreen2
  */
 static void screen_mnemonic_create(lv_obj_t *btn, lv_event_t event) {
+    ESP_LOGD(TAG, "(%d) event: %s", __LINE__, jolt_gui_event_to_str(event) );
     if( jolt_gui_event.short_clicked == event ){
         const char title[] = "Write Down Mnemonic!";
         mnemonic_setup_t *param;
@@ -312,5 +313,4 @@ void jolt_gui_restore_sequence(const uint256_t mnemonic) {
     }
     jolt_gui_scr_set_active_param( scr, param );
     jolt_gui_scr_set_event_cb(scr, &screen_pin_verify_create);
-
 }

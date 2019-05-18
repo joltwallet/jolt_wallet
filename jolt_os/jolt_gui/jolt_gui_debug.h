@@ -4,10 +4,8 @@
  * @author Brian Pugh
  */
 
-#if JOLT_GUI_DEBUG_FUNCTIONS
 #ifndef JOLT_GUI_DEBUG_H__
 #define JOLT_GUI_DEBUG_H__
-
 
 /**
  * @brief Prints out debug information about an object 
@@ -23,5 +21,11 @@
  */
 void jolt_gui_debug_obj_print(jolt_gui_obj_t *obj);
 
-#endif
+/**
+ * @brief Gets the string equivalent of an event
+ * @param event event to translate to a string
+ * @return pointer to a constant null-terminated string
+ */
+const char *jolt_gui_event_to_str( jolt_gui_event_t event );
+
 #endif
