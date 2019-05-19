@@ -20,6 +20,8 @@ typedef struct decomp_t{
 decomp_t *decompress_obj_init( write_fun_t writer, void *cookie){
     decomp_t *d;
 
+    ESP_LOGD(TAG, "Initializing decomp object");
+
     d = calloc(1, sizeof(decomp_t));
     if( NULL == d ) goto exit;
 

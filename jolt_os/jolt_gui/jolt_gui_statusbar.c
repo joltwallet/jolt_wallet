@@ -128,6 +128,8 @@ static void statusbar_update( lv_task_t *task ) {
 /* Assumes that hardware_monitors have been externally intialized and the 
  * hardware_monitor task is running */
 void statusbar_create() {
+    ESP_LOGD(TAG, "Creating Statusbar Object");
+
     /* Create StatusBar Container */
     statusbar_cont = lv_cont_create(lv_scr_act(), NULL);
     lv_style_copy(&header_style, lv_cont_get_style(statusbar_cont) );
@@ -146,6 +148,7 @@ void statusbar_create() {
             header_style.text.font->h_px);
 
     /* Periodically update the statusbar symbols */
+    ESP_LOGD(TAG, "Creating Statusbar Update lv_task");
     lv_task_t *task = lv_task_create(&statusbar_update, CONFIG_JOLT_GUI_STATUSBAR_UPDATE_PERIOD_MS,
             LV_TASK_PRIO_LOW, NULL);
     lv_task_ready( task );

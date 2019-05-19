@@ -68,5 +68,5 @@ void save_display_brightness(uint8_t level) {
 
 void set_display_brightness(uint8_t level) {
     ssd1306_set_contrast(&disp_hal, brightness_levels[level]);
-    ssd1306_set_precharge_period(&disp_hal, brightness_levels[level]);
+    ssd1306_set_precharge_period(&disp_hal, precharge_levels[level]);
 }

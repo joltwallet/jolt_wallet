@@ -30,8 +30,6 @@
 #include "sodium.h"
 #include "hal/storage/storage.h"
 
-static const char TAG[] = "aes132m";
-
 /** \brief This function sends data to the device.
  * \param[in] count number of bytes to send
  * \param[in] word_address word address

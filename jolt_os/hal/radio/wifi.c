@@ -171,16 +171,19 @@ esp_err_t jolt_wifi_stop() {
 
     err = esp_wifi_disconnect();
     switch(err){
-        /* These fall through are on purpose */
+        /* Falls through */
         case ESP_OK:
             esp_wifi_stop();
+        /* Falls through */
         case ESP_ERR_WIFI_NOT_STARTED:
             esp_wifi_set_mode(WIFI_MODE_NULL);
             esp_wifi_deinit();
+        /* Falls through */
         case ESP_ERR_WIFI_NOT_INIT:
             /* Do Nothing */
             err = ESP_OK;
             break;
+        /* Falls through */
         case ESP_FAIL:
             /* Do Nothing */
             break;

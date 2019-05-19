@@ -25,8 +25,6 @@
 #include "i2c_phys.h"
 #include "esp_log.h"
 
-static const char TAG[] = "aes132_i2c";
-
 /** \brief These enumerations are flags for I2C read or write addressing. */
 enum aes132_i2c_read_write_flag {
 	I2C_WRITE = (uint8_t) 0x00,	//!< write command id

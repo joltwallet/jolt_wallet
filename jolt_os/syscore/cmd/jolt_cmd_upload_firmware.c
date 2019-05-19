@@ -1,7 +1,7 @@
 #include "jolt_gui/jolt_gui.h"
 #include "hal/storage/storage.h"
 #include "syscore/ota.h"
-#include "syscore/console_helpers.h"
+#include "syscore/cli_helpers.h"
 #include "syscore/cli.h"
 
 static const char TAG[] = "cmd_upload_firmware";

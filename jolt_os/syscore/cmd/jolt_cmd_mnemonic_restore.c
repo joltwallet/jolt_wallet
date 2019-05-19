@@ -20,7 +20,7 @@
 #include "sodium.h"
 
 #include "jolt_gui/jolt_gui.h"
-#include "syscore/console_helpers.h"
+#include "syscore/cli_helpers.h"
 #include "syscore/bg.h"
 
 /* Communication between jolt/cmd_line inputs and cmd task */
@@ -140,7 +140,7 @@ static int32_t jolt_mnemonic_restore_process( jolt_bg_job_t *job ){
             }
             shuffle_arr(param->mapping, sizeof(param->mapping));
             param->state = MNEMONIC_RESTORE_24WORDS;
-            /* Fall Through */
+        /* Falls through */
         case MNEMONIC_RESTORE_24WORDS:{
             char *line = NULL;
             int16_t word_idx;
@@ -172,6 +172,7 @@ static int32_t jolt_mnemonic_restore_process( jolt_bg_job_t *job ){
                 break;
             }
         }
+        /* Falls through */
         case MNEMONIC_RESTORE_PROCESS:{
             /* Assemble the mnemonic */
             CONFIDENTIAL char mnemonic[BM_MNEMONIC_BUF_LEN];

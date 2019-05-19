@@ -9,8 +9,8 @@ int jolt_cmd_ls(int argc, char** argv) {
     DIR *dir = NULL;
     struct dirent *ent;
     char type;
-    char size[9];
-    char tpath[255];
+    char size[12];
+    char tpath[256];
     char tbuffer[80];
     struct stat sb;
     struct tm *tm_info;
@@ -50,8 +50,8 @@ int jolt_cmd_ls(int argc, char** argv) {
             if (statok) strcpy(size, "       ?");
             else {
                 total += sb.st_size;
-                if (sb.st_size < (1024*1024)) sprintf(size,"%8d", (int)sb.st_size);
-                else if ((sb.st_size/1024) < (1024*1024)) sprintf(size,"%6dKB", (int)(sb.st_size / 1024));
+                if (sb.st_size < (1024*1024)) snprintf(size, sizeof(size), "%8d", (int)sb.st_size);
+                else if ((sb.st_size/1024) < (1024*1024)) snprintf(size, sizeof(size), "%6dKB", (int)(sb.st_size / 1024));
                 else sprintf(size,"%6dMB", (int)(sb.st_size / (1024 * 1024)));
             }
         }

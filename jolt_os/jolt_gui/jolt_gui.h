@@ -387,6 +387,7 @@ lv_obj_t *jolt_gui_obj_get_parent( const lv_obj_t *obj );
 #include "jolt_gui_bignum.h"
 #include "jolt_gui_err.h"
 #include "jolt_gui_indev.h"
+#include "jolt_gui_yesno.h"
 
 
 #endif

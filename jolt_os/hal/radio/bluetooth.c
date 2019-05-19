@@ -782,7 +782,7 @@ esp_err_t jolt_bluetooth_start() {
         esp_bt_controller_status_t status;
         status = esp_bt_controller_get_status();
         switch(status) {
-            /* These fall through are on purpose */
+            /* Falls through */
             case ESP_BT_CONTROLLER_STATUS_IDLE:
                 err = esp_bt_controller_init( &cfg );
                 if( err ) {
@@ -790,6 +790,7 @@ esp_err_t jolt_bluetooth_start() {
                             "error code = %s\n", __func__, esp_err_to_name(err));
                     goto exit;
                 }
+            /* Falls through */
             case ESP_BT_CONTROLLER_STATUS_INITED:
                 err = esp_bt_controller_enable(ESP_BT_MODE_BLE);
                 if( err ) {
@@ -797,7 +798,7 @@ esp_err_t jolt_bluetooth_start() {
                             "error code = %s\n", __func__, esp_err_to_name(err));
                     goto exit;
                 }
-            /* These fall through are on purpose */
+            /* Falls through */
             case ESP_BT_CONTROLLER_STATUS_ENABLED:
                 /* do nothing */
             default:
@@ -811,7 +812,7 @@ esp_err_t jolt_bluetooth_start() {
         esp_bluedroid_status_t status;
         status = esp_bluedroid_get_status();
         switch(status){
-            /* These fall through are on purpose */
+            /* Falls through */
             case ESP_BLUEDROID_STATUS_UNINITIALIZED:
                 err = esp_bluedroid_init();
                 if ( err ) {
@@ -819,6 +820,7 @@ esp_err_t jolt_bluetooth_start() {
                             __func__, esp_err_to_name(err));
                     goto exit;
                 }
+            /* Falls through */
             case ESP_BLUEDROID_STATUS_INITIALIZED:
                 err = esp_bluedroid_enable();
                 if ( err ) {
@@ -826,7 +828,7 @@ esp_err_t jolt_bluetooth_start() {
                             __func__, esp_err_to_name(err));
                     goto exit;
                 }
-
+            /* Falls through */
             case ESP_BLUEDROID_STATUS_ENABLED:
                 /* do nothing */
             default:
@@ -874,7 +876,7 @@ esp_err_t jolt_bluetooth_stop() {
         esp_bluedroid_status_t status;
         status = esp_bluedroid_get_status();
         switch(status){
-            /* These fall through are on purpose */
+            /* Falls through */
             case ESP_BLUEDROID_STATUS_ENABLED:
                 err = esp_bluedroid_disable();
                 if ( ESP_OK != err ){
@@ -882,6 +884,7 @@ esp_err_t jolt_bluetooth_stop() {
                             "error code = %s\n", __func__, esp_err_to_name(err) );
                     goto exit;
                 }
+            /* Falls through */
             case ESP_BLUEDROID_STATUS_INITIALIZED:
                 err = esp_bluedroid_deinit();
                 if ( ESP_OK != err ){
@@ -890,6 +893,7 @@ esp_err_t jolt_bluetooth_stop() {
                             __func__, esp_err_to_name(err) );
                     goto exit;
                 }
+            /* Falls through */
             case ESP_BLUEDROID_STATUS_UNINITIALIZED:
                 /* do nothing */
             default:
@@ -903,7 +907,7 @@ esp_err_t jolt_bluetooth_stop() {
         esp_bt_controller_status_t status;
         status = esp_bt_controller_get_status();
         switch(status) {
-            /* These fall through are on purpose */
+            /* Falls through */
             case ESP_BT_CONTROLLER_STATUS_ENABLED:
                 err = esp_bt_controller_disable();
                 if ( ESP_OK != err ){
@@ -911,6 +915,7 @@ esp_err_t jolt_bluetooth_stop() {
                             "error code = %s\n", __func__, esp_err_to_name(err) );
                     goto exit;
                 }
+            /* Falls through */
             case ESP_BT_CONTROLLER_STATUS_INITED:
                 err = esp_bt_controller_deinit();
                 if ( ESP_OK != err ) {
@@ -918,7 +923,7 @@ esp_err_t jolt_bluetooth_stop() {
                             "error code = %s\n", __func__, esp_err_to_name(err) );
                     goto exit;
                 }
-
+            /* Falls through */
             case ESP_BT_CONTROLLER_STATUS_IDLE:
                 /* do nothing */
             default:

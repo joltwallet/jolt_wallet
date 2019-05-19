@@ -46,7 +46,6 @@
 #include "esp_log.h"
 #include "syscore/decompress.h"
 
-static const char TAG[] = __FILE__;
 
 /**
     * @brief    Receive a packet from sender

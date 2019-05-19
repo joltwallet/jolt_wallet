@@ -2,7 +2,7 @@
 #include "esp_spiffs.h"
 #include "esp_vfs_dev.h"
 #include "esp_log.h"
-#include "syscore/console_helpers.h"
+#include "syscore/cli_helpers.h"
 #include "syscore/filesystem.h"
 #include "syscore/ymodem.h"
 #include "freertos/FreeRTOS.h"

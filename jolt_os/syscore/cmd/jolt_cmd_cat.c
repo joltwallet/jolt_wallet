@@ -1,7 +1,7 @@
 #include "stdio.h"
 #include "esp_vfs.h"
 #include "syscore/filesystem.h"
-#include "syscore/console_helpers.h"
+#include "syscore/cli_helpers.h"
 
 int jolt_cmd_cat(int argc, char** argv) {
     int return_code = -1;

@@ -46,10 +46,12 @@ void menu_wifi_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
         sw_en = jolt_gui_scr_menu_add_sw( btn_en );
 
         if( wifi_en ) {
+            ESP_LOGD(TAG, "WiFi is already on");
             lv_sw_on( sw_en, false );
             create_list();
         }
         else{
+            ESP_LOGD(TAG, "WiFi is already off");
             lv_sw_off( sw_en, false );
         }
     }

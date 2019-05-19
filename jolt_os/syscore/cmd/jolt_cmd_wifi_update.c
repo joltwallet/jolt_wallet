@@ -2,7 +2,7 @@
 #include "stdio.h"
 #include "esp_system.h"
 #include "syscore/set_wifi_credentials.h"
-#include "syscore/console_helpers.h"
+#include "syscore/cli_helpers.h"
 #include "jolt_gui/jolt_gui.h"
 #include "syscore/cli.h"
 

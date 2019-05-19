@@ -3,7 +3,7 @@
 #include "sodium.h"
 #include "esp_log.h"
 #include "jolt_gui/jolt_gui.h"
-#include "syscore/console_helpers.h"
+#include "syscore/cli_helpers.h"
 #include "syscore/launcher.h"
 #include "syscore/bg.h"
 #include "hal/storage/storage.h"

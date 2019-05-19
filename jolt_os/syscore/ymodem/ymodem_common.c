@@ -44,7 +44,6 @@
 #include "esp_spiffs.h"
 #include "esp_log.h"
 
-static const char TAG[] = __FILE__;
 
 unsigned short IRAM_ATTR crc16(const unsigned char *buf, unsigned long count) {
     unsigned short crc = 0;

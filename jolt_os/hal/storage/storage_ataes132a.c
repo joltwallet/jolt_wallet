@@ -229,7 +229,6 @@ bool storage_ataes132a_set_blob(const unsigned char *buf, size_t len,
 void storage_ataes132a_factory_reset() {
     storage_internal_factory_reset();
     // todo: implement
-    return false;
 }
 
 bool storage_ataes132a_erase_key(const char *namespace, const char *key) {

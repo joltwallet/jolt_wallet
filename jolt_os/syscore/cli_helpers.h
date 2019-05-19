@@ -1,11 +1,11 @@
 /**
- * @file console_helpers.h
+ * @file cli_helpers.h
  * @brief Common CLI helpers
  * @author Brian Pugh
  */
 
-#ifndef JOLT_SYSCORE_CONSOLE_HELPERS_H__
-#define JOLT_SYSCORE_CONSOLE_HELPERS_H__
+#ifndef JOLT_SYSCORE_CLI_HELPERS_H__
+#define JOLT_SYSCORE_CLI_HELPERS_H__
 
 #include "stdint.h"
 #include "stdbool.h"

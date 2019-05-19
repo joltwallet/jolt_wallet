@@ -44,8 +44,6 @@
 #include "esp_spiffs.h"
 #include "esp_log.h"
 
-static const char TAG[] = __FILE__;
-
 //------------------------------------------------------------------------------------
 static void IRAM_ATTR ymodem_prepare_initial_packet(uint8_t *data, char *fileName, uint32_t length)
 {

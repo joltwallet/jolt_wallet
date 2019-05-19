@@ -35,6 +35,11 @@ jolt_cli_sub_t *jolt_cli_sub_init() {
 int jolt_cli_sub_cmd_register(jolt_cli_sub_t *subconsole, esp_console_cmd_t *cmd) {
     jolt_cli_sub_t *new;
     jolt_cli_sub_t *current = subconsole;
+
+    if( NULL==subconsole || NULL==cmd ) return -1;
+
+    ESP_LOGD(TAG, "Registering cmd \"%s\"", cmd->command);
+
     if( NULL != current->cmd.func ) { // check if this cmd is populated
         new = jolt_cli_sub_init();
         if( NULL == new ) {

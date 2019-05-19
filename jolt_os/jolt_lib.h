@@ -38,7 +38,7 @@
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_helpers.h"
 #include "json_config.h"
-#include "syscore/console_helpers.h"
+#include "syscore/cli_helpers.h"
 #include "syscore/cli.h"
 #include "syscore/cli_sub.h"
 #include "syscore/filesystem.h"

@@ -23,7 +23,7 @@
 
 static const char TAG[] = "storage_internal";
 
-static jolt_err_t init_nvs_namespace(nvs_handle *nvs_h, const const char *namespace) {
+static jolt_err_t init_nvs_namespace(nvs_handle *nvs_h, const char *namespace) {
     // Initialize NVS
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
