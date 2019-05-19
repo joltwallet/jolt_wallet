@@ -186,6 +186,10 @@ esp_err_t jolt_network_client_init_from_nvs() {
     else {
         storage_get_str(uri, &required_size, "user", "jc_uri", CONFIG_JOLT_CAST_URI);
         err = jolt_network_client_init( uri );
+        if( err != ESP_OK ){
+            ESP_LOGE(TAG, "Failed using JoltCast URI from NVS:\n%s\nUsing default URI.", uri);
+            err = jolt_network_client_init( CONFIG_JOLT_CAST_URI );
+        }
         free(uri);
     }
     return err;
