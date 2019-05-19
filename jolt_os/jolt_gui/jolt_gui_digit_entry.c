@@ -117,7 +117,7 @@ static lv_res_t digit_entry_signal(jolt_gui_obj_t *digit_entry, lv_signal_t sign
     }
 
     if( res == LV_RES_OK ){
-        ESP_LOGD(TAG, "Old cont signal: %p", old_cont_signal);
+        ESP_LOGV(TAG, "Old cont signal: %p", old_cont_signal);
         res = old_cont_signal(digit_entry, sign, param);
         if(res != LV_RES_OK) return res;
     }
@@ -138,7 +138,7 @@ static lv_res_t new_roller_signal(jolt_gui_obj_t *roller, lv_signal_t sign, void
 
     /* Call Ancestor Signal Func */
     if( res == LV_RES_OK ){
-        ESP_LOGD(TAG, "Old roller signal: %p", old_roller_signal);
+        ESP_LOGV(TAG, "Old roller signal: %p", old_roller_signal);
         res = old_roller_signal(roller, sign, param);
         if(res != LV_RES_OK) return res;
     }
@@ -208,10 +208,12 @@ jolt_gui_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
 
     JOLT_GUI_SCR_CTX(title){
         jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_DIGIT_ENTRY);
+        ESP_LOGD(TAG, "digit_entry screen created at: %p", parent);
 
         /* Create digit_entry object */
         jolt_gui_obj_t *digit_entry = lv_cont_create(cont_body, cont_body);
         BREAK_IF_NULL(lv_obj_allocate_ext_attr(digit_entry, sizeof(digit_entry_cont_ext_t)));
+        ESP_LOGD(TAG, "digit_entry object created at: %p", digit_entry);
         digit_entry_cont_ext_t *ext = lv_obj_get_ext_attr(digit_entry);
         jolt_gui_obj_id_set(digit_entry, JOLT_GUI_OBJ_ID_DIGIT_ENTRY);
         lv_obj_set_pos(digit_entry, 0, 0);

@@ -180,7 +180,7 @@ static void screen_finish_create(lv_obj_t *digit_entry, lv_event_t event) {
  * Creates StartupScreen 4 
  * */
 static void screen_pin_verify_create(lv_obj_t *digit_entry, lv_event_t event) {
-    ESP_LOGD(TAG, "(%d) event: %s", __LINE__, jolt_gui_event_to_str(event) );
+    ESP_LOGV(TAG, "(%d) event: %s", __LINE__, jolt_gui_event_to_str(event) );
     if( jolt_gui_event.short_clicked == event ){
         mnemonic_setup_t *param;
         /* Get the hash for the first screen */
@@ -189,15 +189,18 @@ static void screen_pin_verify_create(lv_obj_t *digit_entry, lv_event_t event) {
         jolt_gui_obj_digit_entry_get_hash(digit_entry, param->pin_hash);
 
         /* Delete first PIN entry screen */
+        ESP_LOGD(TAG, "Performig digit entry delete");
         jolt_gui_scr_del( digit_entry );
 
         /* Create Verify PIN screen */
+        ESP_LOGD(TAG, "Creating verify screen");
         lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "PIN Verify",
                 CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL); 
         if( NULL == scr ){
             esp_restart();
         }
         jolt_gui_scr_set_active_param(scr, param);
+        ESP_LOGD(TAG, "Setting CB");
         jolt_gui_scr_set_event_cb(scr, &screen_finish_create);
     }
     else if ( jolt_gui_event.cancel == event ) {
@@ -233,7 +236,7 @@ static void screen_pin_entry_create(lv_obj_t *btn, lv_event_t event) {
  * Creates StartupScreen2
  */
 static void screen_mnemonic_create(lv_obj_t *btn, lv_event_t event) {
-    ESP_LOGD(TAG, "(%d) event: %s", __LINE__, jolt_gui_event_to_str(event) );
+    ESP_LOGV(TAG, "(%d) event: %s", __LINE__, jolt_gui_event_to_str(event) );
     if( jolt_gui_event.short_clicked == event ){
         const char title[] = "Write Down Mnemonic!";
         mnemonic_setup_t *param;
