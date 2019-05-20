@@ -7,6 +7,10 @@
  * COPY THIS FILE AS `lv_conf.h` NEXT TO the `lvgl` FOLDER
  */
 
+#ifndef ESP_PLATFORM
+#define ESP_PLATFORM 0 // minimizes number of compiler warnings
+#endif
+
 #if ESP_PLATFORM
 
 #include "sdkconfig.h"
@@ -549,5 +553,9 @@ typedef struct {
 #include "lvgl/src/lv_conf_checker.h"
 
 #endif /*LV_CONF_H*/
+
+#else
+
+#include "lv_conf_pc_sim.h"
 
 #endif /*End of "Content enable"*/
