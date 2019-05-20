@@ -176,7 +176,10 @@ static int ps_state_exec_task( jolt_bg_job_t *job ) {
             CONFIDENTIAL uint512_t master_seed;
 
             /* Get the pin_hash from the pin screen */
-            jolt_gui_scr_digit_entry_get_hash(ps.scr, ps.pin_hash);
+            if( 0 != jolt_gui_scr_digit_entry_get_hash(ps.scr, ps.pin_hash) ) {
+                ESP_LOGE(TAG, "Failed to get PIN hash");
+                esp_restart(); // irrecoverable error
+            }
 
             /* Delete the Pin Entry Screen */
             jolt_gui_sem_take(); // Prevents flashing screen

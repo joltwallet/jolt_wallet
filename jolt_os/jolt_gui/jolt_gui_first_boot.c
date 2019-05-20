@@ -120,18 +120,11 @@ static int bg_stretch_task(jolt_bg_job_t *job) {
 }
 
 static void mismatch_cb(lv_obj_t *btn, lv_event_t event) {
-    switch(event) {
-        case LV_EVENT_SHORT_CLICKED:
-            /* Fall through */
-        case LV_EVENT_CANCEL: {
-            mnemonic_setup_t *param;
-            param = jolt_gui_obj_get_param( btn );
-            jolt_gui_scr_del( btn );
-            screen_pin_entry_create_( param );
-            break;
-        }
-        default:
-            break;
+    if( jolt_gui_event.short_clicked == event || jolt_gui_event.cancel == event ) {
+        mnemonic_setup_t *param;
+        param = jolt_gui_obj_get_param( btn );
+        jolt_gui_scr_del( btn );
+        screen_pin_entry_create_( param );
     }
 }
 
@@ -139,40 +132,37 @@ static void mismatch_cb(lv_obj_t *btn, lv_event_t event) {
  *     Success: Creates the stretching screen.
  *     Failure: Creates the mismatch screen, sends user back to pin entry.*/
 static void screen_finish_create(lv_obj_t *digit_entry, lv_event_t event) {
-    switch(event){
-        case LV_EVENT_SHORT_CLICKED: {
-            mnemonic_setup_t *param;
-            int res;
-            CONFIDENTIAL uint256_t pin_hash_verify;
+    if( jolt_gui_event.short_clicked == event ){
+        mnemonic_setup_t *param;
+        int res;
+        CONFIDENTIAL uint256_t pin_hash_verify;
 
-            /* Compute Verify Pin Hash */
-            jolt_gui_obj_digit_entry_get_hash(digit_entry, pin_hash_verify);
-            param = jolt_gui_obj_get_param( digit_entry );
-
-            res = memcmp(param->pin_hash, pin_hash_verify, sizeof(pin_hash_verify));
-            sodium_memzero(pin_hash_verify, sizeof(pin_hash_verify));
-
-            /* Delete verify pin entry screen */
-            jolt_gui_scr_del( digit_entry );
-
-            /* Verify the pins match */
-            if( 0 ==  res ){
-                ESP_ERROR_CHECK( jolt_bg_create( bg_stretch_task, param, NULL) );
-            }
-            else{
-                sodium_memzero( param->pin_hash, sizeof(param->pin_hash) );
-                lv_obj_t *scr = jolt_gui_scr_text_create("Pin Setup", "Pin Mismatch! Please try again.");
-                jolt_gui_scr_set_active_param(scr, param);
-                jolt_gui_scr_set_event_cb(scr, mismatch_cb);
-            }
-
-            break;
+        /* Compute Verify Pin Hash */
+        if( 0 != jolt_gui_obj_digit_entry_get_hash(digit_entry, pin_hash_verify) ) {
+            ESP_LOGE(TAG, "Failed to get PIN hash");
+            esp_restart(); // irrecoverable error
         }
-        case LV_EVENT_CANCEL:
-            jolt_gui_scr_del( digit_entry );
-            break;
-        default:
-            break;
+        param = jolt_gui_obj_get_param( digit_entry );
+
+        res = memcmp(param->pin_hash, pin_hash_verify, sizeof(pin_hash_verify));
+        sodium_memzero(pin_hash_verify, sizeof(pin_hash_verify));
+
+        /* Delete verify pin entry screen */
+        jolt_gui_scr_del( digit_entry );
+
+        /* Verify the pins match */
+        if( 0 ==  res ){
+            ESP_ERROR_CHECK( jolt_bg_create( bg_stretch_task, param, NULL) );
+        }
+        else{
+            sodium_memzero( param->pin_hash, sizeof(param->pin_hash) );
+            lv_obj_t *scr = jolt_gui_scr_text_create("Pin Setup", "Pin Mismatch! Please try again.");
+            jolt_gui_scr_set_active_param(scr, param);
+            jolt_gui_scr_set_event_cb(scr, mismatch_cb);
+        }
+    }
+    else if ( jolt_gui_event.cancel == event ) {
+        jolt_gui_scr_del( digit_entry );
     }
 }
 
@@ -186,7 +176,10 @@ static void screen_pin_verify_create(lv_obj_t *digit_entry, lv_event_t event) {
         /* Get the hash for the first screen */
         param = jolt_gui_obj_get_param( digit_entry );
         ESP_LOGD(TAG, "Got param %p", param);
-        jolt_gui_obj_digit_entry_get_hash(digit_entry, param->pin_hash);
+        if( 0 != jolt_gui_obj_digit_entry_get_hash(digit_entry, param->pin_hash) ) {
+            ESP_LOGE(TAG, "Failed to get PIN hash");
+            esp_restart(); // irrecoverable error
+        }
 
         /* Delete first PIN entry screen */
         ESP_LOGD(TAG, "Performig digit entry delete");
@@ -224,7 +217,7 @@ static lv_obj_t *screen_pin_entry_create_( mnemonic_setup_t *param ) {
  * Creates StartupScreen3
  */
 static void screen_pin_entry_create(lv_obj_t *btn, lv_event_t event) {
-    if(event==LV_EVENT_SHORT_CLICKED) {
+    if( jolt_gui_event.short_clicked == event ) {
         mnemonic_setup_t *param;
         param = jolt_gui_obj_get_param( btn );
         screen_pin_entry_create_( param );

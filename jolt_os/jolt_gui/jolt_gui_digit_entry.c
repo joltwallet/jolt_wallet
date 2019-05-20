@@ -283,7 +283,7 @@ int8_t jolt_gui_obj_digit_entry_get_arr(jolt_gui_obj_t *digit_entry, uint8_t *ar
         ext = lv_obj_get_ext_attr(digit_entry);
         if( arr_len < ext->num_rollers ) {
             /* insufficient output buffer */
-            ESP_LOGE(TAG, "%s: insufficient output buffer", __func__);
+            ESP_LOGE(TAG, "%s (%d): insufficient output buffer", __func__, __LINE__);
             break;
         }
         else{
@@ -308,6 +308,9 @@ int8_t jolt_gui_obj_digit_entry_get_arr(jolt_gui_obj_t *digit_entry, uint8_t *ar
 uint8_t jolt_gui_scr_digit_entry_get_hash(jolt_gui_obj_t *scr, uint8_t *hash) {
     uint8_t res = 0;
     JOLT_GUI_CTX{
+        /* Make sure that the scr is a screen */
+        scr = jolt_gui_scr_get( scr );
+
         jolt_gui_obj_t *cont_body = NULL;
         jolt_gui_obj_t *digit_entry = NULL;
         cont_body = JOLT_GUI_FIND_AND_CHECK(scr, JOLT_GUI_OBJ_ID_CONT_BODY);
@@ -318,11 +321,16 @@ uint8_t jolt_gui_scr_digit_entry_get_hash(jolt_gui_obj_t *scr, uint8_t *hash) {
 }
 
 uint8_t jolt_gui_obj_digit_entry_get_hash(jolt_gui_obj_t *digit_entry, uint8_t *hash) {
-    /* todo: error handling */
     uint8_t res = 1;
     JOLT_GUI_CTX{
-        uint32_t val = jolt_gui_obj_digit_entry_get_int(digit_entry);
-        ESP_LOGD(TAG, "Hashing value %d", val);
+        int32_t val = jolt_gui_obj_digit_entry_get_int(digit_entry);
+        if( val < 0 ){
+            ESP_LOGE(TAG, "Aborting hash; digit_entry returned a value of %d", val);
+            break;
+        }
+        else{
+            ESP_LOGD(TAG, "Hashing value %d", val);
+        }
 
         /* Convert pin into a 256-bit key */
         crypto_generichash_blake2b_state hs;
@@ -345,7 +353,7 @@ static unsigned concat_int(unsigned x, unsigned y) {
 }
 
 double jolt_gui_scr_digit_entry_get_double(jolt_gui_obj_t *scr) {
-    double res = 0;
+    double res = -1;
     JOLT_GUI_CTX{
         jolt_gui_obj_t *cont_body = NULL;
         jolt_gui_obj_t *digit_entry = NULL;
@@ -357,11 +365,13 @@ double jolt_gui_scr_digit_entry_get_double(jolt_gui_obj_t *scr) {
 }
 
 double jolt_gui_obj_digit_entry_get_double(jolt_gui_obj_t *digit_entry){
-    double res = 0;
+    double res = -1;
     JOLT_GUI_CTX{
         digit_entry_cont_ext_t *ext = lv_obj_get_ext_attr( digit_entry );
 
         res = (double)jolt_gui_obj_digit_entry_get_int(digit_entry);
+
+        if( res < 0 ) break;
 
         for(int8_t i = ext->decimal_point_pos; i>0; i--) {
             res /= 10; 
@@ -370,8 +380,8 @@ double jolt_gui_obj_digit_entry_get_double(jolt_gui_obj_t *digit_entry){
     return res;
 }
 
-uint32_t jolt_gui_scr_digit_entry_get_int(jolt_gui_obj_t *scr) {
-    uint32_t res = 0;
+int32_t jolt_gui_scr_digit_entry_get_int(jolt_gui_obj_t *scr) {
+    int32_t res = -1;
     JOLT_GUI_CTX{
         jolt_gui_obj_t *cont_body = NULL;
         jolt_gui_obj_t *digit_entry = NULL;
@@ -382,8 +392,8 @@ uint32_t jolt_gui_scr_digit_entry_get_int(jolt_gui_obj_t *scr) {
     return res;
 }
 
-uint32_t jolt_gui_obj_digit_entry_get_int(jolt_gui_obj_t *digit_entry) {
-    uint32_t res = 0;
+int32_t jolt_gui_obj_digit_entry_get_int(jolt_gui_obj_t *digit_entry) {
+    int32_t res = 0;
     JOLT_GUI_CTX{
         digit_entry_cont_ext_t *ext = lv_obj_get_ext_attr(digit_entry);
 
@@ -391,6 +401,7 @@ uint32_t jolt_gui_obj_digit_entry_get_int(jolt_gui_obj_t *digit_entry) {
         int8_t n = jolt_gui_obj_digit_entry_get_arr(digit_entry, array, sizeof(array));
 
         if( n <= 0 ){
+            res = -1;
             break;
         }
         for(uint8_t i=0; i < n; i++){

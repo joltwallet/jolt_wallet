@@ -49,7 +49,7 @@ jolt_gui_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
  * @param[in] digit_entry active digit-entry object
  * @param[out] arr array buffer to populate
  * @param[in] arr_len length of provided array buffer
- * @return number of elements (digits) returned. Returns -1 if the provided buffer is too small. 
+ * @return number of elements (digits) returned. Returns -1 on error. 
  */
 int8_t jolt_gui_obj_digit_entry_get_arr(jolt_gui_obj_t *digit_entry, uint8_t *arr, uint8_t arr_len);
 
@@ -61,16 +61,15 @@ int8_t jolt_gui_obj_digit_entry_get_arr(jolt_gui_obj_t *digit_entry, uint8_t *ar
  * @param[in] scr digit-entry screen
  * @param[out] arr array buffer to populate
  * @param[in] arr_len length of provided array buffer
- * @return number of elements (digits) returned. Returns -1 if the provided buffer is too small. 
+ * @return number of elements (digits) returned. Returns -1 on error. 
  */
 int8_t jolt_gui_scr_digit_entry_get_arr(jolt_gui_obj_t *scr, uint8_t *arr, uint8_t arr_len);
-
 
 /**
  * @brief Get the 256-bit Blake2b hash of the current value
  * @param[in] digit_entry active digit-entry object
  * @param[out] pointer to a 256-bit buffer
- * @return 0 on success, -1 on failure.
+ * @return 0 on success, 1 on failure.
  */
 uint8_t jolt_gui_obj_digit_entry_get_hash(jolt_gui_obj_t *digit_entry, uint8_t *hash);
 
@@ -78,7 +77,7 @@ uint8_t jolt_gui_obj_digit_entry_get_hash(jolt_gui_obj_t *digit_entry, uint8_t *
  * @brief Get the 256-bit Blake2b hash of the current value
  * @param[in] digit_entry digit-entry screen
  * @param[out] pointer to a 256-bit buffer
- * @return 0 on success, -1 on failure.
+ * @return 0 on success, 1 on failure.
  */
 uint8_t jolt_gui_scr_digit_entry_get_hash(jolt_gui_obj_t *scr, uint8_t *hash);
 
@@ -90,7 +89,7 @@ uint8_t jolt_gui_scr_digit_entry_get_hash(jolt_gui_obj_t *scr, uint8_t *hash);
  * Exercise heavy caution if using the returned value in signed transactions.
  *
  * @param[in] digit_entry active digit-entry object
- * @return entered value
+ * @return entered value. Returns -1 on error.
  */
 double jolt_gui_obj_digit_entry_get_double(jolt_gui_obj_t *digit_entry);
 
@@ -102,7 +101,7 @@ double jolt_gui_obj_digit_entry_get_double(jolt_gui_obj_t *digit_entry);
  * Exercise heavy caution if using the returned value in signed transactions.
  *
  * @param[in] scr digit_entry screen
- * @return entered value
+ * @return entered value. Returns -1 on error.
  */
 double jolt_gui_scr_digit_entry_get_double(jolt_gui_obj_t *scr);
 
@@ -112,9 +111,9 @@ double jolt_gui_scr_digit_entry_get_double(jolt_gui_obj_t *scr);
  * All entered values are concatenated.
  *
  * @param[in] digit_entry active digit-entry object
- * @return entered value.
+ * @return entered value. Returns -1 on error.
  */
-uint32_t jolt_gui_obj_digit_entry_get_int(jolt_gui_obj_t *digit_entry);
+int32_t jolt_gui_obj_digit_entry_get_int(jolt_gui_obj_t *digit_entry);
 
 /**
  * @brief Get the entered value as an integer, decimal point has no impact on this function.
@@ -122,9 +121,9 @@ uint32_t jolt_gui_obj_digit_entry_get_int(jolt_gui_obj_t *digit_entry);
  * All entered values are concatenated.
  *
  * @param[in] scr digit-entry object
- * @return entered value.
+ * @return entered value. Returns -1 on error.
  */
-uint32_t jolt_gui_scr_digit_entry_get_int(jolt_gui_obj_t *scr);
+int32_t jolt_gui_scr_digit_entry_get_int(jolt_gui_obj_t *scr);
 
 
 /******************
