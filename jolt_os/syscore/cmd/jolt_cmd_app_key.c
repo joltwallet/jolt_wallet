@@ -27,8 +27,8 @@ static int factory_reset_job( jolt_bg_job_t *job ){
 static void set_app_key_cb(lv_obj_t *btn, lv_event_t event) {
     if( jolt_gui_event.short_clicked == event ){
         ESP_LOGD(TAG, "Creating preloading screen");
+        jolt_gui_scr_del(btn);
         jolt_gui_scr_preloading_create("App Key", "Erasing...");
-        //jolt_gui_scr_del(btn);
 
         esp_err_t err;
         ESP_LOGD(TAG, "Dispatching factory reset job");

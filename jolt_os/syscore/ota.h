@@ -9,17 +9,6 @@
 
 #include "esp_ota_ops.h"
 
-/**
- * @brief Get the hash of the partition table
- * @param[out] 256-bit Blake2b hash of partition table
- */
-void jolt_ota_get_partition_table_hash( uint256_t hash );
-
-/**
- * @brief Get the hash of the bootloader
- * @param[out] 256-bit Blake2b hash of partition table
- */
-void jolt_ota_get_bootloader_hash( uint256_t hash );
 
 /**
  * @brief Initialize the OTA moduel
