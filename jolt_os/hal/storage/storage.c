@@ -142,7 +142,7 @@ bool storage_set_u8(uint8_t value, const char *namespace, const char *key) {
     /* Stores [value] into [key]. Primarily used for settings.
      *
      * Returns true on success, false on failure.
-     * todo: MACRO and function for all types*/
+     */
     bool res;
 #if CONFIG_JOLT_STORE_INTERNAL
     res = storage_internal_set_u8(value, namespace, key); 
@@ -171,7 +171,7 @@ bool storage_set_u16(uint16_t value, const char *namespace, const char *key) {
     /* Stores [value] into [key]. Primarily used for settings.
      *
      * Returns true on success, false on failure.
-     * todo: MACRO and function for all types*/
+     */
     bool res;
 #if CONFIG_JOLT_STORE_INTERNAL
     res = storage_internal_set_u16(value, namespace, key); 
@@ -201,7 +201,7 @@ bool storage_set_u32(uint32_t value, const char *namespace, const char *key) {
     /* Stores [value] into [key]. Primarily used for settings.
      *
      * Returns true on success, false on failure.
-     * todo: MACRO and function for all types*/
+     */
     bool res;
 #if CONFIG_JOLT_STORE_INTERNAL
     res = storage_internal_set_u32(value, namespace, key); 
@@ -230,7 +230,7 @@ bool storage_set_blob(const unsigned char *buf, size_t len, const char *namespac
     /* Stores [value] into [key]. Primarily used for settings.
      *
      * Returns true on success, false on failure.
-     * todo: MACRO and function for all types*/
+     */
     bool res;
 #if CONFIG_JOLT_STORE_INTERNAL
     res = storage_internal_set_blob(buf, len, namespace, key); 
