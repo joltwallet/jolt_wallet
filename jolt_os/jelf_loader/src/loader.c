@@ -485,6 +485,7 @@ static bool app_hash_init(jelfLoaderContext_t *ctx,
      * No compression is performed on the signature. */
     {
         int n = LOADER_GETDATA_RAW(ctx, ctx->app_signature, JELF_SIGNATURE_LEN);
+        (void) n;
         assert( JELF_SIGNATURE_LEN == n );
     }
 
@@ -811,12 +812,6 @@ static int relocateSection(jelfLoaderContext_t *ctx, jelfLoaderSection_t *s) {
 
         uint32_t from = 0, to = 0;
         if (relType == R_XTENSA_NONE || relType == R_XTENSA_ASM_EXPAND) {
-            #if 0
-            MSG("  %04X %04X %-20s %08X          %08X"
-                "                    %s + %X",
-                symEntry, relType, type2String(relType),
-                relAddr, sym.st_value, name, rel.r_addend);
-            #endif
         }
         else if ( (symAddr == 0xffffffff) && (get_st_value(ctx, &sym) == 0) ) {
             ERR("Relocation - undefined symAddr");
