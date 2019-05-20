@@ -75,7 +75,7 @@ static void bg_task( void *param ) {
                 j->timer = xTimerCreate("bgJob", pdMS_TO_TICKS(t), pdFALSE, j, job_timer_cb);
                 if( NULL == j->timer ) {
                     ESP_LOGE(TAG, "Failed to create timer");
-                    free(j); // todo: this will cause job memory leak
+                    esp_restart(); // unrecoverable without memory leak
                     continue;
                 }
             }
@@ -89,8 +89,7 @@ static void bg_task( void *param ) {
             ESP_LOGD(TAG, "Starting timer %p", j->timer);
             if( pdPASS != xTimerStart(j->timer, 0) ) {
                 ESP_LOGE(TAG, "timer could not be activated");
-                xTimerDelete(j->timer, 0);
-                free(j); // todo: this will cause job memory leak
+                esp_restart(); // unrecoverable without memory leak
                 continue;
             }
             continue;
@@ -219,12 +218,14 @@ static int32_t app_task_wrapper( jolt_bg_job_t *job ) {
     }
     return res;
 }
+
 esp_err_t jolt_bg_create_app( jolt_bg_task_t task, void *param, lv_obj_t *scr) {
     launch_inc_ref_ctr();
     app_wrapper_param_t *app_param = NULL;
     app_param = malloc(sizeof(app_wrapper_param_t));
     if( NULL == app_param ) {
-        // todo error handling
+        launch_dec_ref_ctr();
+        return ESP_FAIL;
     }
     app_param->task = task;
     app_param->param = param;
