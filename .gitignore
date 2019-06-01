@@ -5,3 +5,6 @@ build/
 .*project
 .settings
 jolt_os/jolt_commit.c
+docs/html/
+docs/latex/
+*.sh

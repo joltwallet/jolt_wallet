@@ -513,4 +513,14 @@ menu "JoltOS"
 
     endmenu
 
+    config JOLT_BOOTLOADER_CHECK
+        bool
+        prompt "Enable Bootloader Hash check"
+        default y
+
+    config JOLT_TABLE_CHECK
+        bool
+        prompt "Enable Partition Table Hash check"
+        default y
+
 endmenu

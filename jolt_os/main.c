@@ -40,6 +40,7 @@
 #include "syscore/cli.h"
 #include "syscore/cli_ble.h"
 #include "syscore/cli_uart.h"
+#include "syscore/partition.h"
 #include "vault.h"
 
 #include "esp_ota_ops.h"
@@ -93,13 +94,23 @@ void app_main() {
     }
     #endif
 
-    /* Check currently running partition */
+    /* Verify Partitions */
     {
-        const esp_partition_t *partition = esp_ota_get_running_partition();
-        ESP_LOGI(TAG, "Currently Running %s at 0x%08X.",
-                partition->label, partition->address);
-        ESP_LOGI(TAG, "Partition is %sencrypted.",
-                partition->encrypted ? "" : "not ");
+#if CONFIG_JOLT_TABLE_CHECK
+        jolt_partition_check_table();
+#endif
+#if CONFIG_JOLT_BOOTLOADER_CHECK
+        jolt_partition_check_bootloader();
+#endif
+
+        /* Check currently running partition */
+        {
+            const esp_partition_t *partition = esp_ota_get_running_partition();
+            ESP_LOGI(TAG, "Currently Running %s at 0x%08X.",
+                    partition->label, partition->address);
+            ESP_LOGI(TAG, "Partition is %sencrypted.",
+                    partition->encrypted ? "" : "NOT ");
+        }
     }
 
     /* Setup and Install I2C Driver */
