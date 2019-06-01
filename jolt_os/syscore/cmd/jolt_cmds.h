@@ -107,6 +107,15 @@ int jolt_cmd_reboot(int argc, char** argv);
 int jolt_cmd_rm(int argc, char** argv);
 
 /**
+ * @brief generate random data
+ *
+ * Takes 1 mandatory argument: Number of bytes of random data to generate. -1 for infinite.
+ *
+ * Takes 1 optional flag: "--hex" to output in hexidecimal
+ */
+int jolt_cmd_rng(int argc, char** argv);
+
+/**
  * @brief launch application
  *
  * Passes all arguments into the application's subconsole

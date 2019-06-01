@@ -438,6 +438,14 @@ static void jolt_cli_cmds_register() {
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
     cmd = (esp_console_cmd_t) {
+        .command = "rng",
+        .help = "generate cryptographically strong random values",
+        .hint = NULL,
+        .func = &jolt_cmd_rng,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
         .command = "run",
         .help = "launch application",
         .hint = NULL,
