@@ -15,18 +15,23 @@
 
 static void jolt_cli_ble_listener_task( void *param );
 
+#if CONFIG_BT_ENABLED
 static TaskHandle_t listener_task_h = NULL;
+#endif
 
 void jolt_cli_ble_init(){
+#if CONFIG_BT_ENABLED
     static TaskHandle_t ble_in_task = NULL;
     if( NULL == ble_in_task) {
         xTaskCreate(&jolt_cli_ble_listener_task, "ble_spp_listener", 
                 CONFIG_JOLT_TASK_STACK_SIZE_BLE_CONSOLE, NULL,
                 CONFIG_JOLT_TASK_PRIORITY_BLE_CONSOLE, &listener_task_h);
     }
+#endif
 }
 
 static void jolt_cli_ble_listener_task( void *param ) {
+#if CONFIG_BT_ENABLED
     esp_vfs_dev_ble_spp_register();
     ble_stdin  = fopen("/dev/ble/0", "r");
     ble_stdout = fopen("/dev/ble/0", "w");
@@ -66,12 +71,17 @@ static void jolt_cli_ble_listener_task( void *param ) {
     }
 
     vTaskDelete(NULL);
+#endif
 }
 
 void jolt_cli_ble_suspend(){
+#if CONFIG_BT_ENABLED
     vTaskSuspend( listener_task_h );
+#endif
 }
 
 void jolt_cli_ble_resume(){
+#if CONFIG_BT_ENABLED
     vTaskResume( listener_task_h );
+#endif
 }
