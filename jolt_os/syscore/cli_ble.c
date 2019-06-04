@@ -13,9 +13,9 @@
 
 #include "driver/uart.h"
 
-static void jolt_cli_ble_listener_task( void *param );
 
 #if CONFIG_BT_ENABLED
+static void jolt_cli_ble_listener_task( void *param );
 static TaskHandle_t listener_task_h = NULL;
 #endif
 
@@ -30,8 +30,8 @@ void jolt_cli_ble_init(){
 #endif
 }
 
-static void jolt_cli_ble_listener_task( void *param ) {
 #if CONFIG_BT_ENABLED
+static void jolt_cli_ble_listener_task( void *param ) {
     esp_vfs_dev_ble_spp_register();
     ble_stdin  = fopen("/dev/ble/0", "r");
     ble_stdout = fopen("/dev/ble/0", "w");
@@ -71,8 +71,8 @@ static void jolt_cli_ble_listener_task( void *param ) {
     }
 
     vTaskDelete(NULL);
-#endif
 }
+#endif
 
 void jolt_cli_ble_suspend(){
 #if CONFIG_BT_ENABLED
