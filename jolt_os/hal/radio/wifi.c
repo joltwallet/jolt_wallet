@@ -28,6 +28,11 @@ static const char TAG[] = "wifi_task";
 
 static uint8_t disconnect_ctr = 0;
 
+/**
+ * @brief Periodically attempt to connect to AP at a decreasing frequency.
+ *
+ * To be used as a callback for an esp_timer
+ */
 static void disconnect_timer_cb( void *arg ) {
     if( disconnect_ctr < 15 ){
         disconnect_ctr++;
