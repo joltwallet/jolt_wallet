@@ -1,1 +1,2 @@
 git+git://github.com/joltwallet/xmodem.git
+cookiecutter

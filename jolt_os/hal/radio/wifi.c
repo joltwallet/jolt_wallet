@@ -118,7 +118,13 @@ esp_err_t jolt_wifi_start(){
         initiate_tcpip_adapter = false;
     }
 
-    esp_wifi_stop();
+    {
+        /* Stop Wifi if running so config may be updated */
+        wifi_mode_t mode;
+        if( ESP_OK == esp_wifi_get_mode(&mode) ) {
+            esp_wifi_stop();
+        }
+    }
     
     /* Check for WiFi credentials in NVS */
     {

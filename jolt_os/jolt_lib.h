@@ -81,4 +81,7 @@ extern const jolt_version_t JOLT_HW_VERSION;   /**< To check hardware compatabil
 
 extern const jelfLoaderEnv_t jelf_loader_env;
 
+#define cJSON_Get cJSON_GetObjectItemCaseSensitive
+#define HARDEN 0x80000000
+
 #endif
