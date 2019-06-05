@@ -13,8 +13,8 @@
  *  STATIC PROTOTYPES
  **********************/
 static int launch_app_task(jolt_bg_job_t *job);
-static char *display_name_to_fn(char *display_name);
-static char *fn_to_display_name(char *fn);
+static char *display_name_to_fn(const char *display_name);
+static char *fn_to_display_name(const char *fn);
 
 /**********************
  *  STATIC VARIABLES
@@ -35,8 +35,8 @@ static int launch_app_task(jolt_bg_job_t *job){
  *
  * @param fn Filename; e.g. "Jolt_App.jelf"
  */
-static char *fn_to_display_name(char *fn) {
-    static char *display_name[65];
+static char *fn_to_display_name(const char *fn) {
+    static char display_name[65];
     strlcpy(display_name, fn, sizeof(display_name));
     for(char *c = display_name; *c!='\0'; c++) {
         if( *c == '_'){
@@ -55,10 +55,10 @@ static char *fn_to_display_name(char *fn) {
  *
  * @param fn Filename; e.g. "Jolt_App.jelf"
  */
-static char *display_name_to_fn(char *display_name) {
-    static char *fn[65];
+static char *display_name_to_fn(const char *display_name) {
+    static char fn[65];
     strlcpy(fn, display_name, sizeof(fn));
-    for(char *c = display_name; *c!='\0'; c++) {
+    for(char *c = fn; *c!='\0'; c++) {
         if( *c == ' '){
             *c = '_';
         }
