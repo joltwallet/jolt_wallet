@@ -169,6 +169,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_event ),
     EXPORT_SYMBOL( jolt_gui_find ),
     EXPORT_SYMBOL( jolt_gui_group_add ),
+    EXPORT_SYMBOL( jolt_gui_event_del ),
     EXPORT_SYMBOL( jolt_gui_obj_cont_body_create ),
     EXPORT_SYMBOL( jolt_gui_obj_del ),
     EXPORT_SYMBOL( jolt_gui_obj_digit_entry_get_arr ),
@@ -298,7 +299,7 @@ const jolt_version_t JOLT_JELF_VERSION = { 0 };
 const char *JOLT_OS_COMMIT = NULL;
 
 /* Dummy place holder */
-static const void *exports[246] = { 0 };
+static const void *exports[247] = { 0 };
 
 #endif
 
