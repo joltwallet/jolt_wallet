@@ -26,8 +26,7 @@ __status__  = 'development'
 import argparse
 import os, sys
 import logging
-from collections import OrderedDict, namedtuple
-import bitstruct as bs
+from collections import OrderedDict
 from common_structs import index_strtab
 import math
 import binascii
@@ -40,16 +39,11 @@ from nacl.bindings import \
         crypto_sign_ed25519ph_state, \
         crypto_sign_ed25519ph_update, \
         crypto_sign_ed25519ph_final_create
-
-from pprint import pprint
-import ipdb as pdb
+from nacl.hash import sha512
 
 this_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, this_path)
 
-repo = git.Repo(os.path.dirname(__file__), search_parent_directories=True)
-
-from jelf_loader import jelf_loader_hash
+repo = git.Repo(this_path, search_parent_directories=True)
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -766,13 +760,13 @@ def main():
 
     # Get the transversal hash
     name_to_sign = os.path.basename(output_fn[:-5]).encode('utf-8')
-    t_hash = jelf_loader_hash(output_fn.encode(), name_to_sign )
+    t_hash = sha512(name_to_sign + compressed_jelf)
 
     log.debug("Secret Key: %s", hexlify(sk).decode('utf-8'))
     log.info("Public Key: %s", hexlify(pk).decode('utf-8'))
     log.info("Signed application name: %s" % name_to_sign)
-    log.info("t_hash: %s" % t_hash.hex())
-    signature = signing_key.sign(t_hash).signature
+    log.info("t_hash: %s" % t_hash.decode())
+    signature = signing_key.sign(bytes.fromhex(t_hash.decode())).signature
     assert(len(signature) == 64)
     log.info("C Signature: %s", hexlify(signature).decode('utf-8'))
 

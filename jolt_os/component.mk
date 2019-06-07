@@ -23,8 +23,8 @@ COMPONENT_ADD_INCLUDEDIRS := . \
 
 jolt_lib.o: jolt_lib.c
 
-jolt_lib.c: $(COMPONENT_PATH)/../elf2jelf/export_list.txt $(COMPONENT_PATH)/../elf2jelf/jolt_lib_template.txt $(COMPONENT_PATH)/../elf2jelf/elf2jelf.py $(COMPONENT_PATH)/../elf2jelf/setup.py
-	cd $(COMPONENT_PATH)/../elf2jelf; python3 elf2jelf.py --export_only; python3 setup.py build_ext --inplace;
+jolt_lib.c: $(COMPONENT_PATH)/../elf2jelf/export_list.txt $(COMPONENT_PATH)/../elf2jelf/jolt_lib_template.txt $(COMPONENT_PATH)/../elf2jelf/elf2jelf.py
+	cd $(COMPONENT_PATH)/../elf2jelf; python3 elf2jelf.py --export_only;
 
 
 $(COMPONENT_PATH)/../elf2jelf/export_list.txt: ;
@@ -32,6 +32,4 @@ $(COMPONENT_PATH)/../elf2jelf/export_list.txt: ;
 $(COMPONENT_PATH)/../elf2jelf/jolt_lib_template.txt: ;
 
 $(COMPONENT_PATH)/../elf2jelf/elf2jelf.py: ;
-
-$(COMPONENT_PATH)/../elf2jelf/setup.py: ;
 
