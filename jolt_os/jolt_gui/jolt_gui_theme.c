@@ -406,7 +406,7 @@ static void roller_init(void)
     bg.body.padding.left = 3; // Width Padding of the entire roller
     bg.body.padding.right = 3; // Width Padding of the entire roller
     bg.body.padding.inner = 0;
-    bg.text.font = &lv_font_crox3hb_numeric;
+    bg.text.font = &lv_font_roboto_16;
     bg.text.line_space = 6; // Distance between options
 
     theme.style.roller.bg = &bg;

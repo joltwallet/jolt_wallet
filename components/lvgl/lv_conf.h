@@ -61,6 +61,9 @@
  * (Not so important, you can adjust it to modify default sizes and spaces)*/
 #define LV_DPI              147     /*[px]*/
 
+/* Type of coordinates. Should be `int16_t` (or `int32_t` for extreme cases) */
+typedef int16_t lv_coord_t;
+
 /*=========================
    Memory manager settings
  *=========================*/
@@ -173,6 +176,9 @@ typedef void * lv_img_decoder_user_data_t;
  * E.g. __attribute__((aligned(4))) */
 #define LV_ATTRIBUTE_MEM_ALIGN
 
+/* Attribute to mark large constant arrays for example
+ * font's bitmaps */
+#define LV_ATTRIBUTE_LARGE_CONST
 
 /* 1: Variable length array is supported*/
 #define LV_COMPILER_VLA_SUPPORTED            1
@@ -233,36 +239,22 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
  *    FONT USAGE
  *===================*/
 
-/* More info about fonts: https://docs.littlevgl.com/#Fonts
- * To enable a built-in font use 1,2,4 or 8 values
- * which will determine the bit-per-pixel. Higher value means smoother fonts */
-#define LV_USE_FONT_DEJAVU_10              0
-#define LV_USE_FONT_DEJAVU_10_LATIN_SUP    0
-#define LV_USE_FONT_DEJAVU_10_CYRILLIC     0
-#define LV_USE_FONT_SYMBOL_10              0
+/* The built-in fonts contains the ASCII range and some Symbols with  4 bit-per-pixel.
+ * The symbols are available via `LV_SYMBOL_...` defines
+ * More info about fonts: https://docs.littlevgl.com/#Fonts
+ * To create a new font go to: https://littlevgl.com/ttf-font-to-c-array
+ */
+#define LV_FONT_ROBOTO_12    1
+#define LV_FONT_ROBOTO_16    1
+#define LV_FONT_ROBOTO_22    0
+#define LV_FONT_ROBOTO_28    1
 
-#define LV_USE_FONT_DEJAVU_20              0
-#define LV_USE_FONT_DEJAVU_20_LATIN_SUP    0
-#define LV_USE_FONT_DEJAVU_20_CYRILLIC     0
-#define LV_USE_FONT_SYMBOL_20              0
-
-#define LV_USE_FONT_DEJAVU_30              0
-#define LV_USE_FONT_DEJAVU_30_LATIN_SUP    0
-#define LV_USE_FONT_DEJAVU_30_CYRILLIC     0
-#define LV_USE_FONT_SYMBOL_30              0
-
-#define LV_USE_FONT_DEJAVU_40              0
-#define LV_USE_FONT_DEJAVU_40_LATIN_SUP    0
-#define LV_USE_FONT_DEJAVU_40_CYRILLIC     0
-#define LV_USE_FONT_SYMBOL_40              0
-
-#define LV_USE_FONT_MONOSPACE_8            1
 
 /* Optionally declare your custom fonts here.
  * You can use these fonts as default font too
  * and they will be available globally. E.g.
  * #define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(my_font_1) \
- *                                LV_FONT_DECLARE(my_font_2) \
+ *                                LV_FONT_DECLARE(my_font_2)
  */
 #define LV_USE_FONT_CROX3HB_NUMERIC 1 /* Used for Pin Entry Roller Digits */
 #define LV_USE_FONT_DEJAVU_40_NUMERIC 1 /* Used for Misc big numbers */
@@ -273,14 +265,13 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
 #endif
 
 #define LV_FONT_CUSTOM_DECLARE \
-        LV_FONT_DECLARE(jolt_gui_symbols) \
-        LV_FONT_DECLARE(lv_font_jolt_gui_symbols) \
-        LV_FONT_DECLARE(lv_font_crox3hb_numeric) \
-        LV_FONT_DECLARE(lv_font_dejavu_40_numeric) \
-        LV_FONT_DECLARE(lv_font_pixelmix_7) \
-        LV_FONT_DECLARE(lv_font_pixelmix_7_latin_sup)
+        LV_FONT_DECLARE(jolt_gui_symbols)
 
-#define LV_FONT_DEFAULT        &lv_font_pixelmix_7
+#define LV_FONT_DEFAULT        &lv_font_roboto_16
+
+/*Declare the type of the user data of fonts (can be e.g. `void *`, `int`, `struct`)*/
+typedef void * lv_font_user_data_t;
+
 
 /*=================
  *  Text settings
@@ -404,7 +395,7 @@ typedef struct {
 #define LV_USE_BTN      1
 #if LV_USE_BTN != 0
 /*Enable button-state animations - draw a circle on click (dependencies: LV_USE_ANIMATION)*/
-#  define LV_BTN_INK_EFFECT   1
+#  define LV_BTN_INK_EFFECT   0
 #endif
 
 /*Button matrix (dependencies: -)*/

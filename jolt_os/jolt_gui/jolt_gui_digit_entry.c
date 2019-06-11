@@ -177,7 +177,7 @@ static jolt_gui_obj_t *create_dp(jolt_gui_obj_t *parent){
         if( NULL == dp_style ){
             dp_style = &dp_style_obj;
             lv_style_copy(dp_style, lv_label_get_style(label));
-            dp_style->text.font = &lv_font_crox3hb_numeric;
+            dp_style->text.font = &lv_font_roboto_16;
             dp_style->body.padding.left = 0;
             dp_style->body.padding.right = 0;
         }

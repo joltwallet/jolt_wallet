@@ -9,32 +9,33 @@ static lv_style_t header_style;
 static jolt_gui_obj_t *statusbar_cont;
 static jolt_gui_obj_t *statusbar_label;
 
-static lv_coord_t get_symbol_width( char *sym ) {
+#if 0
+static uint16_t get_symbol_width( char *sym ) {
     const lv_font_t *font = header_style.text.font;
     uint32_t i = 0;
     uint32_t letter;
     letter = lv_txt_encoded_next(sym, &i);
     return lv_font_get_width(font, letter);
+    return lv_font_get_glyph_width(font, uint32_t letter, uint32_t letter_next);
 }
+#endif
 
 static lv_coord_t statusbar_icons_get_max_width() {
-    static lv_coord_t w = 0;
+    lv_coord_t w = 0;
+    const lv_font_t *font = header_style.text.font;
 
     /* Add up all the widest symbols that could be displayed at once */
-    /* Only have to compute this once */
-    if( 0 == w ) {
-        w += get_symbol_width(JOLT_GUI_SYMBOL_LOCK);
-        w += header_style.text.letter_space;
+    w += lv_font_get_glyph_width(font, JOLT_GUI_SYMBOL_LOCK, JOLT_GUI_SYMBOL_BLUETOOTH_CONN);
+    w += header_style.text.letter_space;
 
-        w += get_symbol_width(JOLT_GUI_SYMBOL_BLUETOOTH_CONN);
-        w += header_style.text.letter_space;
+    w += lv_font_get_glyph_width(font, JOLT_GUI_SYMBOL_BLUETOOTH_CONN, JOLT_GUI_SYMBOL_WIFI_DISCONN);
+    w += header_style.text.letter_space;
 
-        w += get_symbol_width(JOLT_GUI_SYMBOL_WIFI_DISCONN);
-        w += header_style.text.letter_space;
+    w += lv_font_get_glyph_width(font, JOLT_GUI_SYMBOL_WIFI_DISCONN, JOLT_GUI_SYMBOL_CHARGING);
+    w += header_style.text.letter_space;
 
-        w += get_symbol_width(JOLT_GUI_SYMBOL_BATTERY_CHARGING);
-        w += header_style.text.letter_space;
-    }
+    w += lv_font_get_glyph_width(font, JOLT_GUI_SYMBOL_CHARGING, 0);
+    w += header_style.text.letter_space;
 
     return w;
 }
@@ -145,7 +146,7 @@ void statusbar_create() {
     lv_label_set_align(statusbar_label, LV_LABEL_ALIGN_RIGHT);
     lv_obj_set_size(statusbar_label,
             statusbar_icons_get_max_width(), 
-            header_style.text.font->h_px);
+            header_style.text.font->line_height);
 
     /* Periodically update the statusbar symbols */
     ESP_LOGD(TAG, "Creating Statusbar Update lv_task");

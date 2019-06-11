@@ -5,7 +5,7 @@
 ************************************************************/
 
 /*Store the image of the letters (glyph)*/
-static const uint8_t jolt_gui_symbols_glyph_bitmap[] = 
+static LV_ATTRIBUTE_LARGE_CONST const uint8_t jolt_gui_symbols_glyph_bitmap[] = 
 {
     /* Unicode: U+F000 (JOLT_GUI_SYMBOL_BATTERY_EMPTY), Width: 13 */
     0x00, 0x00,   //................

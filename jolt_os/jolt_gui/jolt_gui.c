@@ -213,7 +213,7 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
         else{
             lv_label_set_text(label, title);
         }
-        lv_obj_set_size(label, lv_obj_get_width(title_cont), label_style->text.font->h_px);
+        lv_obj_set_size(label, lv_obj_get_width(title_cont), label_style->text.font->line_height);
     }
     return label;
 }
