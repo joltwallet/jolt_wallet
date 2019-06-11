@@ -1,7 +1,7 @@
 <h1 align="center"> Jolt </h1> <br>
 <p align="center">
   <a href="https://joltwallet.com/">
-    <img alt="Jolt" title="Jolt" src="media/logo.png" width="800">
+    <img alt="Jolt" title="Jolt" src="media/logo.png" width="400">
   </a>
 </p>
 
@@ -9,7 +9,7 @@
   Crypto in your pocket.
 </p>
 
-![Alt text]("media/logo.png" "Jolt")
+[![Updates](https://pyup.io/repos/github/joltwallet/jolt_wallet/shield.svg)](https://pyup.io/repos/github/joltwallet/jolt_wallet/)
 
 ## Table of Contents
 
