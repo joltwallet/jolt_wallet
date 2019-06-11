@@ -70,10 +70,10 @@ jolt_gui_obj_t *jolt_gui_scr_scroll_add_monospace_text(jolt_gui_obj_t *scr, cons
 
         if( NULL == monospace_style ){
             monospace_style = &monospace_style_obj;
-            lv_style_copy(monospace_style, lv_label_get_style(label));
-            monospace_style->text.font = &lv_font_monospace_8;
+            lv_style_copy(monospace_style, lv_label_get_style(label, LV_LABEL_STYLE_MAIN));
+            monospace_style->text.font = &terminus_9;
         }
-        lv_label_set_style(label, monospace_style);
+        lv_label_set_style(label, LV_LABEL_STYLE_MAIN, monospace_style);
         lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);
 
         lv_label_set_text(label, text);

@@ -265,7 +265,7 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
 #endif
 
 #define LV_FONT_CUSTOM_DECLARE \
-        LV_FONT_DECLARE(jolt_gui_symbols)
+        LV_FONT_DECLARE(terminus_9)
 
 #define LV_FONT_DEFAULT        &lv_font_roboto_16
 

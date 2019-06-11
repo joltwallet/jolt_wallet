@@ -176,12 +176,12 @@ static jolt_gui_obj_t *create_dp(jolt_gui_obj_t *parent){
         static lv_style_t *dp_style = NULL;
         if( NULL == dp_style ){
             dp_style = &dp_style_obj;
-            lv_style_copy(dp_style, lv_label_get_style(label));
+            lv_style_copy(dp_style, lv_label_get_style(label, LV_LABEL_STYLE_MAIN));
             dp_style->text.font = &lv_font_roboto_16;
             dp_style->body.padding.left = 0;
             dp_style->body.padding.right = 0;
         }
-        lv_label_set_style(label, dp_style);
+        lv_label_set_style(label, LV_LABEL_STYLE_MAIN, dp_style);
         lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
 
         /* Label Content */
@@ -223,12 +223,12 @@ jolt_gui_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
         static lv_style_t *digit_entry_style = NULL;
         if( NULL == digit_entry_style ){
             digit_entry_style = &digit_entry_style_obj;
-            lv_style_copy(digit_entry_style, lv_cont_get_style(digit_entry));
+            lv_style_copy(digit_entry_style, lv_cont_get_style(digit_entry, LV_CONT_STYLE_MAIN));
             digit_entry_style->body.padding.inner = 1;
             digit_entry_style->body.padding.left = 0;
             digit_entry_style->body.padding.right = 0;
         }
-        lv_cont_set_style(digit_entry, digit_entry_style);
+        lv_cont_set_style(digit_entry, LV_CONT_STYLE_MAIN, digit_entry_style);
         lv_cont_set_layout(digit_entry, LV_LAYOUT_PRETTY ); // automatically handles object spacing
 
         /* Initialize ext params */

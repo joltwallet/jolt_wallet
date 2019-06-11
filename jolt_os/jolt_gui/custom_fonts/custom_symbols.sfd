@@ -1,0 +1,193 @@
+SplineFontDB: 3.0
+FontName: Untitled1
+FullName: Untitled1
+FamilyName: Untitled1
+Weight: Regular
+Copyright: Copyright (c) 2019, Brian Pugh,,,
+UComments: "2019-6-11: Created with FontForge (http://fontforge.org)"
+Version: 001.000
+ItalicAngle: 0
+UnderlinePosition: -100
+UnderlineWidth: 50
+Ascent: 800
+Descent: 200
+InvalidEm: 0
+LayerCount: 2
+Layer: 0 0 "Back" 1
+Layer: 1 0 "Fore" 0
+XUID: [1021 625 963893922 221514]
+StyleMap: 0x0000
+FSType: 0
+OS2Version: 0
+OS2_WeightWidthSlopeOnly: 0
+OS2_UseTypoMetrics: 1
+CreationTime: 1560266420
+ModificationTime: 1560284905
+OS2TypoAscent: 0
+OS2TypoAOffset: 1
+OS2TypoDescent: 0
+OS2TypoDOffset: 1
+OS2TypoLinegap: 90
+OS2WinAscent: 0
+OS2WinAOffset: 1
+OS2WinDescent: 0
+OS2WinDOffset: 1
+HheadAscent: 0
+HheadAOffset: 1
+HheadDescent: 0
+HheadDOffset: 1
+DEI: 91125
+Encoding: Custom
+UnicodeInterp: none
+NameList: AGL For New Fonts
+DisplaySize: 9
+AntiAlias: 1
+FitToEm: 0
+WidthSeparation: 300
+WinInfo: 0 32 6
+OnlyBitmaps: 1
+BeginChars: 14 14
+
+StartChar: battery_empty
+Encoding: 0 61440 0
+Width: 300
+VWidth: 0
+Flags: W
+LayerCount: 2
+EndChar
+
+StartChar: battery_1
+Encoding: 1 61441 1
+Width: 300
+VWidth: 0
+Flags: W
+LayerCount: 2
+EndChar
+
+StartChar: battery_2
+Encoding: 2 61442 2
+Width: 300
+VWidth: 0
+Flags: W
+LayerCount: 2
+EndChar
+
+StartChar: battery_3
+Encoding: 3 61443 3
+Width: 300
+VWidth: 0
+Flags: W
+LayerCount: 2
+EndChar
+
+StartChar: battery_charging
+Encoding: 4 61444 4
+Width: 300
+VWidth: 0
+Flags: W
+LayerCount: 2
+EndChar
+
+StartChar: battery_disconnect
+Encoding: 5 61445 5
+Width: 300
+VWidth: 0
+Flags: W
+LayerCount: 2
+EndChar
+
+StartChar: bluetooth
+Encoding: 6 61446 6
+Width: 300
+VWidth: 0
+Flags: W
+LayerCount: 2
+EndChar
+
+StartChar: bluetooth_con
+Encoding: 7 61447 7
+Width: 300
+VWidth: 0
+Flags: W
+LayerCount: 2
+EndChar
+
+StartChar: wifi_disconn
+Encoding: 11 61451 8
+Width: 300
+VWidth: 0
+Flags: W
+LayerCount: 2
+EndChar
+
+StartChar: wifi_1
+Encoding: 8 61448 9
+Width: 300
+VWidth: 0
+Flags: W
+LayerCount: 2
+EndChar
+
+StartChar: wifi_3
+Encoding: 10 61450 10
+Width: 300
+VWidth: 0
+Flags: W
+LayerCount: 2
+EndChar
+
+StartChar: wifi_2
+Encoding: 9 61449 11
+Width: 300
+VWidth: 0
+Flags: W
+LayerCount: 2
+EndChar
+
+StartChar: lock
+Encoding: 12 61452 12
+Width: 300
+VWidth: 0
+Flags: W
+LayerCount: 2
+EndChar
+
+StartChar: chip
+Encoding: 13 61453 13
+Width: 300
+VWidth: 0
+Flags: W
+LayerCount: 2
+EndChar
+EndChars
+BitmapFont: 9 14 7 2 1
+BDFChar: 0 0 9 0 12 0 6
+s6tOMJ/EeRJ/EeJs6p!g
+BDFChar: 1 1 3 -1 11 0 6
+s6tOMYSaS]YS_m%s6p!g
+BDFChar: 2 2 3 -1 11 0 6
+s6tOM[MZFi[MXN+s6p!g
+BDFChar: 3 3 3 -1 11 0 6
+s6tOM[b/%@[b-*As6p!g
+BDFChar: 4 4 3 -1 11 -1 7
+!W_r`N"D!dT9tBNK+RbG"98E%
+BDFChar: 5 5 3 -1 11 0 6
+s6tOMR@&^GR@&L9s6p!g
+BDFChar: 6 6 3 2 6 0 8
++>Ba5+E485+92BA
+BDFChar: 7 7 3 0 8 0 8
+#QP85.KGuhaafn3.KBkW#QOi)
+BDFChar: 8 11 3 0 8 0 6
+4odkKJ:Koc+oi;W#QOi)
+BDFChar: 9 8 3 3 5 0 2
+5i=m-
+BDFChar: 10 10 3 0 8 0 6
+4odkKS:Dd`#QPhE#QOi)
+BDFChar: 11 9 3 2 6 0 4
+E/5WU+92BA
+BDFChar: 12 12 3 2 7 1 8
+0M"b4r;?Kj
+BDFChar: 13 13 3 0 8 0 8
+'EAgI4ojVn+opYR4oc8s'EA+5
+EndBitmapFont
+EndSplineFont

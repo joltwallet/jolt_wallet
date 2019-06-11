@@ -20,26 +20,6 @@ static uint16_t get_symbol_width( char *sym ) {
 }
 #endif
 
-static lv_coord_t statusbar_icons_get_max_width() {
-    lv_coord_t w = 0;
-    const lv_font_t *font = header_style.text.font;
-
-    /* Add up all the widest symbols that could be displayed at once */
-    w += lv_font_get_glyph_width(font, JOLT_GUI_SYMBOL_LOCK, JOLT_GUI_SYMBOL_BLUETOOTH_CONN);
-    w += header_style.text.letter_space;
-
-    w += lv_font_get_glyph_width(font, JOLT_GUI_SYMBOL_BLUETOOTH_CONN, JOLT_GUI_SYMBOL_WIFI_DISCONN);
-    w += header_style.text.letter_space;
-
-    w += lv_font_get_glyph_width(font, JOLT_GUI_SYMBOL_WIFI_DISCONN, JOLT_GUI_SYMBOL_CHARGING);
-    w += header_style.text.letter_space;
-
-    w += lv_font_get_glyph_width(font, JOLT_GUI_SYMBOL_CHARGING, 0);
-    w += header_style.text.letter_space;
-
-    return w;
-}
-
 static void statusbar_update( lv_task_t *task ) {
     /* Gets called from a lv_task to update the graphics according to 
      * jolt_gui_store.statusbar.indicators */
@@ -133,20 +113,18 @@ void statusbar_create() {
 
     /* Create StatusBar Container */
     statusbar_cont = lv_cont_create(lv_scr_act(), NULL);
-    lv_style_copy(&header_style, lv_cont_get_style(statusbar_cont) );
+    lv_style_copy(&header_style, lv_cont_get_style(statusbar_cont, LV_CONT_STYLE_MAIN) );
     header_style.body.border.width = 1;
     header_style.body.border.part = LV_BORDER_BOTTOM;
     header_style.body.border.color = LV_COLOR_BLACK;
-    lv_cont_set_style(statusbar_cont, &header_style);
+    lv_cont_set_style(statusbar_cont, LV_CONT_STYLE_MAIN, &header_style);
     lv_obj_set_size(statusbar_cont, LV_HOR_RES, CONFIG_JOLT_GUI_STATUSBAR_H);
 
     /* Create Indicator Label*/
     statusbar_label = lv_label_create(statusbar_cont, NULL);
-    lv_label_set_long_mode(statusbar_label, LV_LABEL_LONG_CROP);
+    lv_obj_set_size(statusbar_label, 10, header_style.text.font->line_height);
+    lv_label_set_long_mode(statusbar_label, LV_LABEL_LONG_EXPAND);
     lv_label_set_align(statusbar_label, LV_LABEL_ALIGN_RIGHT);
-    lv_obj_set_size(statusbar_label,
-            statusbar_icons_get_max_width(), 
-            header_style.text.font->line_height);
 
     /* Periodically update the statusbar symbols */
     ESP_LOGD(TAG, "Creating Statusbar Update lv_task");

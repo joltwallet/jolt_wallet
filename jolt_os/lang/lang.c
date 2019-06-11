@@ -77,11 +77,11 @@ bool jolt_lang_set( jolt_lang_t lang ) {
     /* Add all font extensions to base font */
     for(uint8_t i=0; i < n_ext; i++){
         ESP_LOGI(TAG, "Adding ext font");
-        lv_font_add(ext_fonts[i], font);
+        //lv_font_add(ext_fonts[i], font);
     }
 
     /* Add Jolt symbols to base font */
-    lv_font_add(&jolt_gui_symbols, font);
+    //lv_font_add(&jolt_gui_symbols, font);
 
     lv_theme_t *theme = jolt_gui_theme_init(0, font);
     lv_theme_set_current(theme);  
