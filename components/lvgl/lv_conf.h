@@ -265,9 +265,10 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
 #endif
 
 #define LV_FONT_CUSTOM_DECLARE \
-        LV_FONT_DECLARE(terminus_9)
+        LV_FONT_DECLARE(terminus_9) \
+        LV_FONT_DECLARE(pixelmix)
 
-#define LV_FONT_DEFAULT        &lv_font_roboto_16
+#define LV_FONT_DEFAULT        &pixelmix
 
 /*Declare the type of the user data of fonts (can be e.g. `void *`, `int`, `struct`)*/
 typedef void * lv_font_user_data_t;
