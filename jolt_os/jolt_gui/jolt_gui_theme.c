@@ -78,7 +78,7 @@ static void basic_init(void)
     /* Text Configuration */
     def.text.font         = _font; // de
     def.text.color        = LV_COLOR_BLACK;
-    def.text.letter_space = 1;
+    def.text.letter_space = 0;
     def.text.line_space   = 1;
 
     /* Line Configuration */
