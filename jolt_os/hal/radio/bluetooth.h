@@ -75,4 +75,7 @@ esp_err_t jolt_bluetooth_adv_stop();
  */
 void jolt_bluetooth_config_security(bool bond);
 
+int ble_read_char(int fd, TickType_t timeout);
+
+ssize_t ble_read_timeout(int fd, void* data, size_t size, TickType_t timeout);
 #endif

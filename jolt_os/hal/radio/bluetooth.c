@@ -160,7 +160,7 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
 }
 
 static int peek_c = NONE;
-static int ble_read_char(int fd) {
+int ble_read_char(int fd, TickType_t timeout) {
     static uint32_t line_off = 0; // offset into most recent queue item
     if ( peek_c != NONE ){
         char tmp = (char) peek_c;
@@ -170,7 +170,7 @@ static int ble_read_char(int fd) {
     char c;
     char *line; // pointer to queue item
     do{
-        xQueuePeek(ble_in_queue, &line, portMAX_DELAY);
+        if(!xQueuePeek(ble_in_queue, &line, timeout)) return NONE;
         c = line[line_off];
         line_off++;
         if( '\0' == c ) {
@@ -190,13 +190,23 @@ static void ble_return_char(int fd, int c) {
 }
 
 static ssize_t ble_read(int fd, void* data, size_t size) {
+    return ble_read_timeout(fd, data, size, portMAX_DELAY);
+}
+
+ssize_t ble_read_timeout(int fd, void* data, size_t size, TickType_t timeout) {
     char *data_c = (char *)data;
 
     _lock_acquire_recursive(&s_ble_read_lock);
+#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
+    {
+        const char buf[] = "ble_read_lock acquired\n";
+        uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+    }
+#endif
 
     size_t received = 0;
     while(received < size){
-        int c = ble_read_char(fd);
+        int c = ble_read_char(fd, timeout);
 
         ESP_LOGD(TAG, "Char: %02X; Off: %d", (char) c, received);
         if ( '\r' == (char)c ) {
@@ -205,7 +215,7 @@ static ssize_t ble_read(int fd, void* data, size_t size) {
                 c = '\n';
             } else if (s_rx_mode == ESP_LINE_ENDINGS_CRLF) {
                 /* look ahead */
-                int c2 = ble_read_char(fd);
+                int c2 = ble_read_char(fd, portMAX_DELAY);
                 if (c2 == NONE) {
                     /* could not look ahead, put the current character back */
                     ble_return_char(fd, (char)c);
@@ -233,10 +243,17 @@ static ssize_t ble_read(int fd, void* data, size_t size) {
         }
     }
 
+#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
+    {
+        const char buf[] = "ble_read_lock releasing\n";
+        uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+    }
+#endif
+
     _lock_release_recursive(&s_ble_read_lock);
 
 #if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
-    {
+    if(received > 0){
         /* Display what was received */
         char buf[100];
         sprintf(buf, "ble_read returning %d bytes\nreceived message: ", received);

@@ -43,7 +43,7 @@
 #include <driver/uart.h>
 #include "esp_spiffs.h"
 #include "esp_log.h"
-
+#include "hal/radio/bluetooth.h"
 
 unsigned short IRAM_ATTR crc16(const unsigned char *buf, unsigned long count) {
     unsigned short crc = 0;
@@ -62,29 +62,36 @@ unsigned short IRAM_ATTR crc16(const unsigned char *buf, unsigned long count) {
 
 int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n) {
     int amount_read = 0;
-    do {
-        int s;
-        fd_set rfds;
-        struct timeval tv = {
-                .tv_sec = timeout / 1000,
-                .tv_usec = (timeout % 1000)*1000,
-        };
+    if(stdin == ble_stdin){
+        /* Temporary hack in lieu of writing proper bluetooth select drivers */
+        amount_read = ble_read_timeout(0, c, n, timeout / portTICK_PERIOD_MS);
+        if(amount_read != n) return -1;
+    }
+    else{
+        do {
+            int s;
+            fd_set rfds;
+            struct timeval tv = {
+                    .tv_sec = timeout / 1000,
+                    .tv_usec = (timeout % 1000)*1000,
+            };
 
-        FD_ZERO(&rfds);
-        FD_SET(fileno(stdin), &rfds);
+            FD_ZERO(&rfds);
+            FD_SET(fileno(stdin), &rfds);
 
-        s = select(fileno(stdin) + 1, &rfds, NULL, NULL, &tv);
+            s = select(fileno(stdin) + 1, &rfds, NULL, NULL, &tv);
 
-        if (s < 0) {
-            // Select Failure
-            return -1;
-        } else if (s == 0) {
-            // timed out
-            return -1;
-        } else {
-            amount_read += fread(c, 1, n-amount_read, stdin);
-        }
-    }while(amount_read < n);
+            if (s < 0) {
+                // Select Failure
+                return -1;
+            } else if (s == 0) {
+                // timed out
+                return -1;
+            } else {
+                amount_read += fread(c, 1, n-amount_read, stdin);
+            }
+        }while(amount_read < n);
+    }
     return 0;
 }
 

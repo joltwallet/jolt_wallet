@@ -31,6 +31,10 @@ void jolt_cli_ble_init(){
 }
 
 #if CONFIG_BT_ENABLED
+
+/**
+ * @brief FreeRTOS task that forwards ble_stdin to the CLI engine 
+ */
 static void jolt_cli_ble_listener_task( void *param ) {
     esp_vfs_dev_ble_spp_register();
     ble_stdin  = fopen("/dev/ble/0", "r");
@@ -58,6 +62,10 @@ static void jolt_cli_ble_listener_task( void *param ) {
                 uart_write_bytes(UART_NUM_0, buf, strlen(buf));
             }
 #endif
+            bool suspend = false;
+            if( 0 == strcmp(buf, "upload_firmware") || 0 == strcmp(buf, "upload") ){
+                suspend = true;
+            }
 
             jolt_cli_src_t src;
             src.line = buf;
@@ -67,6 +75,8 @@ static void jolt_cli_ble_listener_task( void *param ) {
             jolt_cli_set_src( &src );
 
             buf = NULL;
+
+            if( suspend == true ) jolt_cli_ble_suspend();
         }
     }
 
