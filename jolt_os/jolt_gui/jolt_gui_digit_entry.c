@@ -293,7 +293,7 @@ int8_t jolt_gui_obj_digit_entry_get_arr(jolt_gui_obj_t *digit_entry, uint8_t *ar
             arr[i] = (10 - lv_roller_get_selected(ext->rollers[i])) % 10;
         }
     }
-#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
+#if ESP_LOG_LEVEL >= 4 /* debug */
     if(n_entries > 0){
         printf("Entered Array: ");
         for(uint8_t i=0; i < ext->num_rollers; i++) {

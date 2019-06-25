@@ -115,7 +115,7 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
     const char *data_c = (const char *)data;
     _lock_acquire_recursive(&s_ble_write_lock);
 
-#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
+#if LOG_LOCAL_LEVEL >= 4 /* debug */
         {
             char buf[100] = { 0 };
             sprintf(buf, "%s write %d bytes\n", __func__, size);
@@ -131,7 +131,7 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
             print_len = 512;
         }
 
-#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
+#if LOG_LOCAL_LEVEL >= 4 /* debug */
         {
             char buf[100] = { 0 };
             sprintf(buf, "Sending %d bytes: ", print_len);
@@ -197,7 +197,7 @@ ssize_t ble_read_timeout(int fd, void* data, size_t size, TickType_t timeout) {
     char *data_c = (char *)data;
 
     _lock_acquire_recursive(&s_ble_read_lock);
-#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
+#if LOG_LOCAL_LEVEL >= 4 /* debug */
     {
         const char buf[] = "ble_read_lock acquired\n";
         uart_write_bytes(UART_NUM_0, buf, strlen(buf));
@@ -243,7 +243,7 @@ ssize_t ble_read_timeout(int fd, void* data, size_t size, TickType_t timeout) {
         }
     }
 
-#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
+#if LOG_LOCAL_LEVEL >= 4 /* debug */
     {
         const char buf[] = "ble_read_lock releasing\n";
         uart_write_bytes(UART_NUM_0, buf, strlen(buf));
@@ -252,7 +252,7 @@ ssize_t ble_read_timeout(int fd, void* data, size_t size, TickType_t timeout) {
 
     _lock_release_recursive(&s_ble_read_lock);
 
-#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
+#if LOG_LOCAL_LEVEL >= 4 /* debug */
     if(received > 0){
         /* Display what was received */
         char buf[100];
@@ -575,7 +575,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
              */
 
             /* [logging] Print Connection Data */
-#if ESP_LOG_LEVEL >= ESP_LOG_INFO
+#if LOG_LOCAL_LEVEL >= 3 /* info */
             {
                 esp_bd_addr_t bd_addr;
                 memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr,

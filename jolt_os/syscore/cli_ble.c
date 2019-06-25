@@ -56,7 +56,7 @@ static void jolt_cli_ble_listener_task( void *param ) {
             }
         }
         if(i>0){
-#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
+#if LOG_LOCAL_LEVEL >= 4 /* debug */
             {
                 const char buf[] = "sending command from ble\n";
                 uart_write_bytes(UART_NUM_0, buf, strlen(buf));
