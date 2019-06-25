@@ -26,6 +26,8 @@
  * this software.
  */
 
+#define LOG_LOCAL_LEVEL 4
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -44,6 +46,10 @@
 #include "esp_spiffs.h"
 #include "esp_log.h"
 #include "hal/radio/bluetooth.h"
+
+#if LOG_LOCAL_LEVEL >= 4 /* debug */
+static const char TAG[] = "ymodem_common";
+#endif
 
 unsigned short IRAM_ATTR crc16(const unsigned char *buf, unsigned long count) {
     unsigned short crc = 0;
@@ -65,6 +71,15 @@ int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n)
     if(stdin == ble_stdin){
         /* Temporary hack in lieu of writing proper bluetooth select drivers */
         amount_read = ble_read_timeout(0, c, n, timeout / portTICK_PERIOD_MS);
+#if LOG_LOCAL_LEVEL >= 4 /* debug */
+        if(amount_read >0){
+            char buf[128];
+            snprintf(buf, sizeof(buf), "%s: Read in %d bytes: \"", TAG, amount_read);
+            uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+            uart_write_bytes(UART_NUM_0, (char*)c, amount_read);
+            uart_write_bytes(UART_NUM_0, "\"\n", 2);
+        }
+#endif
         if(amount_read != n) return -1;
     }
     else{
