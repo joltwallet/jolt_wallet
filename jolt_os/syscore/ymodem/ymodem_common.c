@@ -73,11 +73,17 @@ int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n)
         amount_read = ble_read_timeout(0, c, n, timeout / portTICK_PERIOD_MS);
 #if LOG_LOCAL_LEVEL >= 4 /* debug */
         if(amount_read >0){
-            char buf[128];
+            char buf[64];
             snprintf(buf, sizeof(buf), "%s: Read in %d bytes: \"", TAG, amount_read);
             uart_write_bytes(UART_NUM_0, buf, strlen(buf));
             uart_write_bytes(UART_NUM_0, (char*)c, amount_read);
-            uart_write_bytes(UART_NUM_0, "\"\n", 2);
+            uart_write_bytes(UART_NUM_0, "\"", 1);
+            if( 1 == amount_read ) {
+                snprintf(buf, sizeof(buf), " Ascii: 0x%02x", (int)c[0]);
+                uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+            }
+            uart_write_bytes(UART_NUM_0, "\n", 1);
+
         }
 #endif
         if(amount_read != n) return -1;
