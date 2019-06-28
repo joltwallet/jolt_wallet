@@ -10,11 +10,22 @@
 #ifndef JOLT_BLUETOOTH_H___
 #define JOLT_BLUETOOTH_H___
 
+#include <stdint.h>
 #include "sdkconfig.h"
+#include "freertos/FreeRTOS.h"
 
 #define JOLT_BLE_WHITELIST_ADD    true
 #define JOLT_BLE_WHITELIST_REMOVE false
 #define JOLT_BLE_WHITELIST_ADDR_TYPE BLE_WL_ADDR_TYPE_RANDOM
+
+/**
+ * Objects that store bluetooth packets
+ */
+typedef struct {
+    uint8_t *data;
+    uint32_t len;
+} ble_packet_t;
+
 
 #if CONFIG_BT_ENABLED
 /**

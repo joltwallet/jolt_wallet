@@ -2,6 +2,7 @@
 
 #if CONFIG_BT_ENABLED
 
+#include "bluetooth.h"
 #include "bluetooth_cfg.h"
 #include "bluetooth_state.h"
 #include "bluetooth_gatts_profile_a.h"
@@ -95,16 +96,17 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                     /* Allocate memory for 1 MTU;
                      * send it off to the ble_in_queue */
                     ESP_LOGI(TAG, "SPP_IDX_SPP_COMMAND_VAL;"
-                            " Allocating %d bytes.", spp_mtu_size-3);
-                    uint8_t * spp_cmd_buff = NULL;
-                    spp_cmd_buff = (uint8_t *)malloc((spp_mtu_size - 3) * sizeof(uint8_t));
-                    if(spp_cmd_buff == NULL){
+                            " Allocating %d bytes.", p_data->write.len);
+                    ble_packet_t packet = { 0 };
+                    // May need to revert this to allocate mtu
+                    packet.data = (uint8_t *)malloc(p_data->write.len);
+                    if(packet.data == NULL){
                         ESP_LOGE(TAG, "%s malloc failed\n", __func__);
                         break;
                     }
-                    memset(spp_cmd_buff, 0, (spp_mtu_size - 3));
-                    memcpy(spp_cmd_buff, p_data->write.value, p_data->write.len);
-                    xQueueSend(ble_in_queue, &spp_cmd_buff, 10/portTICK_PERIOD_MS);
+                    packet.len = p_data->write.len;
+                    memcpy(packet.data, p_data->write.value, p_data->write.len);
+                    xQueueSend(ble_in_queue, &packet, 10/portTICK_PERIOD_MS);
                 }
                 else if(res == SPP_IDX_SPP_DATA_NOTIFY_CFG){
                     ESP_LOGI(TAG, "SPP_IDX_SPP_DATA_NOTIFY_CFG");

@@ -3,7 +3,7 @@
  * What doesn't work:
  *    *select
 */
-//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL 4
 
 #include "sdkconfig.h"
 #include "esp_spiffs.h"
@@ -168,18 +168,28 @@ int ble_read_char(int fd, TickType_t timeout) {
         return tmp;
     }
     char c;
-    char *line; // pointer to queue item
-    do{
-        if(!xQueuePeek(ble_in_queue, &line, timeout)) return NONE;
-        c = line[line_off];
-        line_off++;
-        if( '\0' == c ) {
-            /* pop the element from the queue */
-            xQueueReceive(ble_in_queue, &line, portMAX_DELAY);
-            free(line);
-            line_off = 0;
-        }
-    }while('\0' == c);
+    ble_packet_t packet = { 0 };
+
+    if(!xQueuePeek(ble_in_queue, &packet, timeout)) return NONE;
+    c =packet.data[line_off];
+    line_off++;
+    
+#if LOG_LOCAL_LEVEL >= 4 /* debug */
+    {
+        char buf[32];
+        snprintf(buf, sizeof(buf), "line_off: %d\n", line_off);
+        uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+        snprintf(buf, sizeof(buf), "packet.len: %d\n\n", packet.len);
+        uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+    }
+#endif
+
+    if( line_off == packet.len ) {
+        /* pop the element from the queue */
+        xQueueReceive(ble_in_queue, &packet, portMAX_DELAY);
+        free(packet.data);
+        line_off = 0;
+    }
 
     return c;
 }
@@ -421,7 +431,7 @@ static void ble_end_select() {
 
 void esp_vfs_dev_ble_spp_register() {
     if ( NULL == ble_in_queue ) {
-        ble_in_queue = xQueueCreate(10, sizeof(char *));
+        ble_in_queue = xQueueCreate(10, sizeof(ble_packet_t));
     }
 
     esp_vfs_t vfs = {

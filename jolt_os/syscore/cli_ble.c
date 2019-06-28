@@ -1,4 +1,4 @@
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL 4
 
 #include "esp_log.h"
 
@@ -58,8 +58,11 @@ static void jolt_cli_ble_listener_task( void *param ) {
         if(i>0){
 #if LOG_LOCAL_LEVEL >= 4 /* debug */
             {
-                const char buf[] = "sending command from ble\n";
+                const char buf1[] = "sending command from ble: \"";
+                uart_write_bytes(UART_NUM_0, buf1, strlen(buf1));
                 uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+                const char buf2[] = "\"\n";
+                uart_write_bytes(UART_NUM_0, buf2, strlen(buf2));
             }
 #endif
             bool suspend = false;
