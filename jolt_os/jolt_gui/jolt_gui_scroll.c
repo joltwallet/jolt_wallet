@@ -33,7 +33,6 @@ jolt_gui_obj_t *jolt_gui_scr_scroll_create(const char *title) {
         lv_obj_set_size(page, LV_HOR_RES, LV_VER_RES - CONFIG_JOLT_GUI_STATUSBAR_H);
         lv_obj_align(page, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
         lv_page_set_sb_mode(page, LV_SB_MODE_AUTO);
-        lv_page_set_arrow_scroll(page, true);
         lv_page_set_scrl_layout(page, LV_LAYOUT_COL_M);
 
         jolt_gui_group_add( page );
@@ -71,7 +70,7 @@ jolt_gui_obj_t *jolt_gui_scr_scroll_add_monospace_text(jolt_gui_obj_t *scr, cons
         if( NULL == monospace_style ){
             monospace_style = &monospace_style_obj;
             lv_style_copy(monospace_style, lv_label_get_style(label, LV_LABEL_STYLE_MAIN));
-            monospace_style->text.font = &terminus_9;
+            monospace_style->text.font = &unscii_8;
         }
         lv_label_set_style(label, LV_LABEL_STYLE_MAIN, monospace_style);
         lv_label_set_align(label, LV_LABEL_ALIGN_LEFT);

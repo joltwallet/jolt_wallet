@@ -85,7 +85,7 @@ jolt_gui_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, 
         else {
             lv_label_set_text(label, text);
         }
-        lv_label_set_long_mode(label, LV_LABEL_LONG_ROLL);
+        lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL);
         const lv_style_t *label_style = lv_obj_get_style(label);
         lv_obj_set_size(label, lv_obj_get_width(cont_body),
                 label_style->text.font->line_height);

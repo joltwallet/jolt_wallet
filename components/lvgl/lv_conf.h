@@ -150,17 +150,30 @@ typedef void * lv_group_user_data_t;
 /* 1: Enable file system (might be required for images */
 #define LV_USE_FILESYSTEM       0
 
+/*1: Add a `user_data` to drivers and objects*/
+#define LV_USE_USER_DATA 1
+
+/*========================
+ * Image decoder and cache
+ *========================*/
+
 /* 1: Enable indexed (palette) images */
-#define LV_IMG_CF_INDEXED   1
+#define LV_IMG_CF_INDEXED       1
 
 /* 1: Enable alpha indexed images */
-#define LV_IMG_CF_ALPHA     0
+#define LV_IMG_CF_ALPHA         1
+
+/* Default image cache size. Image caching keeps the images opened.
+ * If only the built-in image formats are used there is no real advantage of caching.
+ * (I.e. no new image decoder is added)
+ * With complex image decoders (e.g. PNG or JPG) caching can save the continuous open/decode of images.
+ * However the opened images might consume additional RAM.
+ * LV_IMG_CACHE_DEF_SIZE must be >= 1 */
+#define LV_IMG_CACHE_DEF_SIZE       1
 
 /*Declare the type of the user data of image decoder (can be e.g. `void *`, `int`, `struct`)*/
 typedef void * lv_img_decoder_user_data_t;
 
-/*1: Add a `user_data` to drivers and objects*/
-#define LV_USE_USER_DATA 1
 
 /*=====================
  *  Compiler settings
@@ -265,7 +278,7 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
 #endif
 
 #define LV_FONT_CUSTOM_DECLARE \
-        LV_FONT_DECLARE(terminus_9) \
+        LV_FONT_DECLARE(unscii_8) \
         LV_FONT_DECLARE(pixelmix)
 
 #define LV_FONT_DEFAULT        &pixelmix
