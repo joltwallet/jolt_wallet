@@ -43,7 +43,7 @@ NameList: AGL For New Fonts
 DisplaySize: -48
 AntiAlias: 1
 FitToEm: 0
-WinInfo: 0 30 27
+WinInfo: 0 30 26
 BeginChars: 256 14
 
 StartChar: BATTERY_EMPTY
@@ -82,6 +82,7 @@ SplineSet
  62 60 l 5
  0 60 l 5
 EndSplineSet
+Validated: 5
 EndChar
 
 StartChar: BATTERY_1
@@ -125,6 +126,7 @@ SplineSet
  62 60 l 5
  0 60 l 5
 EndSplineSet
+Validated: 5
 EndChar
 
 StartChar: BATTERY_2
@@ -173,6 +175,7 @@ SplineSet
  62 61 l 5
  0 61 l 5
 EndSplineSet
+Validated: 5
 EndChar
 
 StartChar: BATTERY_3
@@ -226,6 +229,7 @@ SplineSet
  62 60 l 5
  0 60 l 5
 EndSplineSet
+Validated: 5
 EndChar
 
 StartChar: BATTERY_CHARGING
@@ -317,6 +321,7 @@ SplineSet
  62 61 l 5
  0 61 l 5
 EndSplineSet
+Validated: 5
 EndChar
 
 StartChar: BATTERY_DISCONNECT
@@ -329,11 +334,11 @@ VStem: 0 62<63 563> 687 125<186 376> 687 2<500 562>
 LayerCount: 2
 Fore
 SplineSet
-187 187 m 5
+187 187 m 5xe0
  314 187 l 5
  314 125 l 5
  187 125 l 5
- 187 187 l 5
+ 187 187 l 5xe0
 188 312 m 1
  312 312 l 1
  312 250 l 1
@@ -380,6 +385,7 @@ SplineSet
  62 0 l 1
  0 0 l 1
 EndSplineSet
+Validated: 5
 EndChar
 
 StartChar: BLUETOOTH
@@ -446,6 +452,7 @@ SplineSet
  0 124 l 5
  0 186 l 5
 EndSplineSet
+Validated: 5
 EndChar
 
 StartChar: BLUETOOTH_CONN
@@ -532,6 +539,7 @@ SplineSet
  125 124 l 1
  125 186 l 1
 EndSplineSet
+Validated: 5
 EndChar
 
 StartChar: WIFI_1
@@ -558,6 +566,7 @@ SplineSet
  249 0 l 1
  249 61 l 1
 EndSplineSet
+Validated: 5
 EndChar
 
 StartChar: WIFI_2
@@ -609,6 +618,7 @@ SplineSet
  249 0 l 1
  249 61 l 1
 EndSplineSet
+Validated: 5
 EndChar
 
 StartChar: WIFI_3
@@ -685,6 +695,7 @@ SplineSet
  249 0 l 1
  249 61 l 1
 EndSplineSet
+Validated: 5
 EndChar
 
 StartChar: WIFI_DISCONN
@@ -756,6 +767,7 @@ SplineSet
  249 0 l 1
  249 61 l 1
 EndSplineSet
+Validated: 5
 EndChar
 
 StartChar: LOCK
@@ -787,6 +799,7 @@ SplineSet
  373 62 l 1
  0 62 l 1
 EndSplineSet
+Validated: 5
 EndChar
 
 StartChar: CHIP
@@ -858,6 +871,7 @@ SplineSet
  126 125 l 1
  126 189 l 1
 EndSplineSet
+Validated: 5
 EndChar
 EndChars
 EndSplineFont
