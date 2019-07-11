@@ -26,7 +26,7 @@
  * this software.
  */
 
-#define LOG_LOCAL_LEVEL 4
+//#define LOG_LOCAL_LEVEL 4
 
 #include <stdio.h>
 #include <stdlib.h>

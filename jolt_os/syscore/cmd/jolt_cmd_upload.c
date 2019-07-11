@@ -53,9 +53,9 @@ int jolt_cmd_upload(int argc, char** argv) {
         strcat(orig_fn, "/");
         rec_res = ymodem_receive(ffd, max_fsize, orig_fn + strlen(orig_fn), progress);
         fclose(ffd);
-        jolt_gui_scr_del(loading_scr);
-        printf("\r\n");
+        //printf("\r\n");
         if (rec_res > 0) {
+            jolt_gui_scr_del(loading_scr);
             printf("\"%s\" Transfer complete, Size=%d Bytes\n",
                     orig_fn+strlen(SPIFFS_BASE_PATH), rec_res);
             if( jolt_fs_exists(orig_fn) ) {
@@ -69,6 +69,10 @@ int jolt_cmd_upload(int argc, char** argv) {
         }
         else {
             ESP_LOGE(TAG, "Transfer complete, Error=%d", rec_res);
+            char buf[20];
+            snprintf(buf, sizeof(buf), "Error=%d", rec_res);
+            jolt_gui_scr_loadingbar_update(loading_scr, NULL, buf, -1);
+            jolt_gui_scr_set_event_cb(loading_scr, jolt_gui_event_del);
             remove(tmp_fn);
         }
     }
