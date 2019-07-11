@@ -122,7 +122,7 @@ void statusbar_create() {
 
     /* Create Indicator Label*/
     statusbar_label = lv_label_create(statusbar_cont, NULL);
-    lv_obj_set_size(statusbar_label, 10, header_style.text.font->line_height);
+    lv_obj_set_size(statusbar_label, 60, header_style.text.font->line_height);
     lv_label_set_long_mode(statusbar_label, LV_LABEL_LONG_EXPAND);
     lv_label_set_align(statusbar_label, LV_LABEL_ALIGN_RIGHT);
 

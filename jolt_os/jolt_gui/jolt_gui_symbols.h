@@ -7,7 +7,7 @@
 #ifndef __JOLT_GUI_SYMBOLS_H__
 #define __JOLT_GUI_SYMBOLS_H__
 
-#if 0
+#if 1
 #define JOLT_GUI_SYMBOL_BATTERY_EMPTY "\xEF\x80\x80"
 #define JOLT_GUI_SYMBOL_BATTERY_1 "\xEF\x80\x81"
 #define JOLT_GUI_SYMBOL_BATTERY_2 "\xEF\x80\x82"
