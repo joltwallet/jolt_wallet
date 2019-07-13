@@ -22,7 +22,7 @@ OS2Version: 0
 OS2_WeightWidthSlopeOnly: 0
 OS2_UseTypoMetrics: 1
 CreationTime: 1562816184
-ModificationTime: 1562860713
+ModificationTime: 1562891764
 OS2TypoAscent: 0
 OS2TypoAOffset: 1
 OS2TypoDescent: 0
@@ -43,14 +43,14 @@ NameList: AGL For New Fonts
 DisplaySize: -48
 AntiAlias: 1
 FitToEm: 0
-WinInfo: 0 30 26
+WinInfo: 0 30 25
 BeginChars: 256 14
 
 StartChar: BATTERY_EMPTY
 Encoding: 0 61440 0
-Width: 2000
+Width: 1624
 VWidth: -128
-Flags: H
+Flags: HW
 HStem: -128 126<124 1374> 872 126<126 1378>
 VStem: 0 124<-2 998> 1374 250<244 624> 1374 4<872 996>
 LayerCount: 2
@@ -86,7 +86,7 @@ EndChar
 
 StartChar: BATTERY_1
 Encoding: 1 61441 1
-Width: 2000
+Width: 1624
 VWidth: -128
 Flags: HW
 HStem: -128 126<124 1374> 872 126<126 1378>
@@ -129,7 +129,7 @@ EndChar
 
 StartChar: BATTERY_2
 Encoding: 2 61442 2
-Width: 2000
+Width: 1624
 VWidth: -128
 Flags: HW
 HStem: -128 126<124 1374> 872 126<126 1378>
@@ -177,7 +177,7 @@ EndChar
 
 StartChar: BATTERY_3
 Encoding: 3 61443 3
-Width: 2000
+Width: 1624
 VWidth: -128
 Flags: HW
 HStem: -128 126<124 1374> 872 126<126 1378>
@@ -230,7 +230,7 @@ EndChar
 
 StartChar: BATTERY_CHARGING
 Encoding: 4 61444 4
-Width: 2000
+Width: 1624
 VWidth: -128
 Flags: HMW
 LayerCount: 2
@@ -321,7 +321,7 @@ EndChar
 
 StartChar: BATTERY_DISCONNECT
 Encoding: 5 61445 5
-Width: 2000
+Width: 1624
 VWidth: -128
 Flags: HW
 HStem: -128 126<124 1374> 872 126<126 1378>
@@ -384,7 +384,7 @@ EndChar
 
 StartChar: BLUETOOTH
 Encoding: 6 61446 6
-Width: 2000
+Width: 622
 VWidth: 0
 Flags: HW
 LayerCount: 2
@@ -450,7 +450,7 @@ EndChar
 
 StartChar: BLUETOOTH_CONN
 Encoding: 7 61447 7
-Width: 2000
+Width: 1126
 VWidth: 0
 Flags: HW
 LayerCount: 2
@@ -536,9 +536,9 @@ EndChar
 
 StartChar: WIFI_1
 Encoding: 8 61448 8
-Width: 2000
+Width: 752
 VWidth: 0
-Flags: H
+Flags: HW
 LayerCount: 2
 Fore
 SplineSet
@@ -562,7 +562,7 @@ EndChar
 
 StartChar: WIFI_2
 Encoding: 9 61449 9
-Width: 2000
+Width: 998
 VWidth: 0
 Flags: HW
 LayerCount: 2
@@ -613,7 +613,7 @@ EndChar
 
 StartChar: WIFI_3
 Encoding: 10 61450 10
-Width: 2000
+Width: 1124
 VWidth: 0
 Flags: HW
 LayerCount: 2
@@ -689,7 +689,7 @@ EndChar
 
 StartChar: WIFI_DISCONN
 Encoding: 11 61451 11
-Width: 2000
+Width: 1122
 VWidth: 0
 Flags: HW
 LayerCount: 2
@@ -760,9 +760,9 @@ EndChar
 
 StartChar: LOCK
 Encoding: 12 61452 12
-Width: 2000
+Width: 746
 VWidth: 0
-Flags: H
+Flags: HW
 LayerCount: 2
 Fore
 SplineSet
@@ -791,9 +791,9 @@ EndChar
 
 StartChar: CHIP
 Encoding: 13 61453 13
-Width: 2000
+Width: 1126
 VWidth: 0
-Flags: H
+Flags: HW
 LayerCount: 2
 Fore
 SplineSet

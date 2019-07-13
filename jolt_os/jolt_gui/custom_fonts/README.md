@@ -18,8 +18,9 @@ Also include `jolt_symbols` with the following setting:
 * Bpp: 1
 * Range: 0xF000-0xF00D
 
-After conversion, manually change the line_height from `9` to `8` at the bottom
-of the `pixelmix.c` file.
+After conversion, manually change:
+* `line_height` from `9` to `8`.
+* `base_line` from `2` to `1`.
 
 ## unscii_8
 

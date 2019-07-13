@@ -121,6 +121,7 @@ void statusbar_create() {
     lv_obj_set_size(statusbar_cont, LV_HOR_RES, CONFIG_JOLT_GUI_STATUSBAR_H);
 
     /* Create Indicator Label*/
+    // TODO: custom theme with font spacing 1
     statusbar_label = lv_label_create(statusbar_cont, NULL);
     lv_obj_set_size(statusbar_label, 60, header_style.text.font->line_height);
     lv_label_set_long_mode(statusbar_label, LV_LABEL_LONG_EXPAND);
