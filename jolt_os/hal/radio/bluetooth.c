@@ -38,6 +38,7 @@
 #include "linenoise/linenoise.h"
 #include "bluetooth.h"
 #include "bluetooth_state.h"
+#include "jolt_helpers.h"
 
 #include "jolt_gui/jolt_gui.h"
 
@@ -115,13 +116,7 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
     const char *data_c = (const char *)data;
     _lock_acquire_recursive(&s_ble_write_lock);
 
-#if LOG_LOCAL_LEVEL >= 4 /* debug */
-        {
-            char buf[100] = { 0 };
-            sprintf(buf, "%s write %d bytes\n", __func__, size);
-            uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-        }
-#endif
+    BLE_UART_LOG("%s write %d bytes\n", __func__, size);
 
     int idx = 0;
     do{
@@ -132,13 +127,9 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
         }
 
 #if LOG_LOCAL_LEVEL >= 4 /* debug */
-        {
-            char buf[100] = { 0 };
-            sprintf(buf, "Sending %d bytes: ", print_len);
-            uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-            uart_write_bytes(UART_NUM_0, &data_c[idx], print_len);
-            uart_write_bytes(UART_NUM_0, "\n", 1);
-        }
+        BLE_UART_LOG("Sending %d bytes: ", print_len);
+        BLE_UART_LOG_BUF(&data_c[idx], print_len);
+        BLE_UART_LOG_STR("\n");
 #endif
 
         res = esp_ble_gatts_send_indicate(
@@ -171,17 +162,12 @@ int ble_read_char(int fd, TickType_t timeout) {
     ble_packet_t packet = { 0 };
 
     if(!xQueuePeek(ble_in_queue, &packet, timeout)) return NONE;
-    c =packet.data[line_off];
+    c = packet.data[line_off];
     line_off++;
     
 #if LOG_LOCAL_LEVEL >= 4 /* debug */
-    {
-        char buf[32];
-        snprintf(buf, sizeof(buf), "line_off: %d\n", line_off);
-        uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-        snprintf(buf, sizeof(buf), "packet.len: %d\n\n", packet.len);
-        uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-    }
+    BLE_UART_LOG("line_off: %d\n", line_off);
+    BLE_UART_LOG("packet.len: %d\n\n", packet.len);
 #endif
 
     if( line_off == packet.len ) {
@@ -208,10 +194,7 @@ ssize_t ble_read_timeout(int fd, void* data, size_t size, TickType_t timeout) {
 
     _lock_acquire_recursive(&s_ble_read_lock);
 #if LOG_LOCAL_LEVEL >= 4 /* debug */
-    {
-        const char buf[] = "ble_read_lock acquired\n";
-        uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-    }
+    BLE_UART_LOG_STR("ble_read_lock acquired\n");
 #endif
 
     size_t received = 0;
@@ -242,22 +225,20 @@ ssize_t ble_read_timeout(int fd, void* data, size_t size, TickType_t timeout) {
                 }
             }
         } else if (c == NONE) {
+            {
+                char buf[64]; 
+                snprintf(buf, sizeof(buf), "timeout; read %d bytes.\n", received);
+                uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+            }
             break;
         }
 
         data_c[received] = (char) c;
         ++received;
-
-        if ( '\n' == (char)c) {
-            break;
-        }
     }
 
 #if LOG_LOCAL_LEVEL >= 4 /* debug */
-    {
-        const char buf[] = "ble_read_lock releasing\n";
-        uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-    }
+    BLE_UART_LOG_STR("ble_read_lock releasing\n");
 #endif
 
     _lock_release_recursive(&s_ble_read_lock);
@@ -265,11 +246,9 @@ ssize_t ble_read_timeout(int fd, void* data, size_t size, TickType_t timeout) {
 #if LOG_LOCAL_LEVEL >= 4 /* debug */
     if(received > 0){
         /* Display what was received */
-        char buf[100];
-        sprintf(buf, "ble_read returning %d bytes\nreceived message: ", received);
-        uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-        uart_write_bytes(UART_NUM_0, data_c, received-1);
-        uart_write_bytes(UART_NUM_0, "\n", 1);
+        BLE_UART_LOG("ble_read returning %d bytes\nreceived message: ", received);
+        BLE_UART_LOG_BUF(data_c, received-1);
+        BLE_UART_LOG_STR("\n");
     }
 #endif
 
@@ -431,7 +410,7 @@ static void ble_end_select() {
 
 void esp_vfs_dev_ble_spp_register() {
     if ( NULL == ble_in_queue ) {
-        ble_in_queue = xQueueCreate(10, sizeof(ble_packet_t));
+        ble_in_queue = xQueueCreate(20, sizeof(ble_packet_t));
     }
 
     esp_vfs_t vfs = {
@@ -448,6 +427,11 @@ void esp_vfs_dev_ble_spp_register() {
     };
     ESP_ERROR_CHECK(esp_vfs_register("/dev/ble", &vfs, NULL));
 }
+
+void ble_set_rx_line_endings(esp_line_endings_t mode) {
+    s_rx_mode = mode;
+}
+
 /* END DRIVER STUFF */
 
 static void add_all_bonded_to_whitelist() {

@@ -109,4 +109,24 @@ void jolt_h_fn_home_refresh(const char *str);
  */
 void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *param);
 
+#include <driver/uart.h>
+#include "hal/radio/bluetooth.h"
+/* Log something to uart if BLE is the stdin */
+#define BLE_UART_LOG(format, ...) \
+    if( stdin == ble_stdin){ \
+        char buf[256]; \
+        snprintf(buf, sizeof(buf), format, __VA_ARGS__); \
+        uart_write_bytes(UART_NUM_0, buf, strlen(buf)); \
+    }
+
+#define BLE_UART_LOG_STR(buf) \
+    if(stdin == ble_stdin){ \
+        uart_write_bytes(UART_NUM_0, buf, strlen(buf)); \
+    }
+
+#define BLE_UART_LOG_BUF(buf, buf_len) \
+    if(stdin == ble_stdin){ \
+        uart_write_bytes(UART_NUM_0, buf, buf_len); \
+    }
+
 #endif

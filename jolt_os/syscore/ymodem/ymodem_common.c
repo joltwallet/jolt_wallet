@@ -46,10 +46,7 @@
 #include "esp_spiffs.h"
 #include "esp_log.h"
 #include "hal/radio/bluetooth.h"
-
-#if LOG_LOCAL_LEVEL >= 4 /* debug */
-static const char TAG[] = "ymodem_common";
-#endif
+#include "jolt_helpers.h"
 
 unsigned short IRAM_ATTR crc16(const unsigned char *buf, unsigned long count) {
     unsigned short crc = 0;
@@ -66,6 +63,12 @@ unsigned short IRAM_ATTR crc16(const unsigned char *buf, unsigned long count) {
     return crc;
 }
 
+/***
+ * @param[out] c Pointer to output buffer array.
+ * @param[in] timeout Milliseconds to wait before returning.
+ * @param[in] n number of bytes to read.
+ * @return Amount of bytes actually read.
+ */
 int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n) {
     int amount_read = 0;
     if(stdin == ble_stdin){
@@ -73,20 +76,17 @@ int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n)
         amount_read = ble_read_timeout(0, c, n, timeout / portTICK_PERIOD_MS);
 #if LOG_LOCAL_LEVEL >= 4 /* debug */
         if(amount_read >0){
-            char buf[64];
-            snprintf(buf, sizeof(buf), "%s: Read in %d bytes: \"", TAG, amount_read);
-            uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-            uart_write_bytes(UART_NUM_0, (char*)c, amount_read);
-            uart_write_bytes(UART_NUM_0, "\"", 1);
-            if( 1 == amount_read ) {
-                snprintf(buf, sizeof(buf), " Ascii: 0x%02x", (int)c[0]);
-                uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-            }
-            uart_write_bytes(UART_NUM_0, "\n", 1);
-
+            BLE_UART_LOG("Read in %d bytes: \"", amount_read);
+            BLE_UART_LOG_BUF((char *)c, amount_read);
+            BLE_UART_LOG_STR("\"");
+            if( 1 == amount_read ) BLE_UART_LOG(" Ascii: 0x%02x", (int)c[0]);
+            BLE_UART_LOG_STR("\n");
         }
 #endif
-        if(amount_read != n) return -1;
+        if(amount_read != n) {
+            BLE_UART_LOG("Only read %d/%d bytes\n", amount_read, n);
+            return -1;
+        }
     }
     else{
         do {
@@ -116,3 +116,18 @@ int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n)
     return 0;
 }
 
+void IRAM_ATTR rx_consume(){
+    if(stdin == ble_stdin){
+        /* Temporary hack in lieu of writing proper bluetooth select drivers */
+        BLE_UART_LOG("%d) CONSUMING{", __LINE__);
+        char c;
+        int amount_read = 0;
+        do{
+            amount_read = ble_read_timeout(0, &c, 1, 10 / portTICK_PERIOD_MS);
+        }while(amount_read > 0);
+        BLE_UART_LOG("%d) }CONSUMED", __LINE__);
+    }
+    else{
+        fflush(stdin);
+    }
+}
