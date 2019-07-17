@@ -74,17 +74,16 @@ int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n)
     if(stdin == ble_stdin){
         /* Temporary hack in lieu of writing proper bluetooth select drivers */
         amount_read = ble_read_timeout(0, c, n, timeout / portTICK_PERIOD_MS);
-#if LOG_LOCAL_LEVEL >= 4 /* debug */
+
         if(amount_read >0){
-            BLE_UART_LOG("Read in %d bytes: \"", amount_read);
-            BLE_UART_LOG_BUF((char *)c, amount_read);
-            BLE_UART_LOG_STR("\"");
-            if( 1 == amount_read ) BLE_UART_LOG(" Ascii: 0x%02x", (int)c[0]);
-            BLE_UART_LOG_STR("\n");
+            BLE_UART_LOGD("Read in %d bytes: \"", amount_read);
+            BLE_UART_LOGD_BUF((char *)c, amount_read);
+            BLE_UART_LOGD_STR("\"");
+            if( 1 == amount_read ) BLE_UART_LOGD(" Ascii: 0x%02x", (int)c[0]);
+            BLE_UART_LOGD_STR("\n");
         }
-#endif
         if(amount_read != n) {
-            BLE_UART_LOG("Only read %d/%d bytes\n", amount_read, n);
+            BLE_UART_LOGD("Only read %d/%d bytes\n", amount_read, n);
             return -1;
         }
     }
@@ -119,13 +118,13 @@ int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n)
 void IRAM_ATTR rx_consume(){
     if(stdin == ble_stdin){
         /* Temporary hack in lieu of writing proper bluetooth select drivers */
-        BLE_UART_LOG("%d) CONSUMING{", __LINE__);
+        BLE_UART_LOGD("%d) CONSUMING{", __LINE__);
         char c;
         int amount_read = 0;
         do{
             amount_read = ble_read_timeout(0, &c, 1, 10 / portTICK_PERIOD_MS);
         }while(amount_read > 0);
-        BLE_UART_LOG("%d) }CONSUMED", __LINE__);
+        BLE_UART_LOGD("%d) }CONSUMED", __LINE__);
     }
     else{
         fflush(stdin);

@@ -106,7 +106,7 @@ static int32_t IRAM_ATTR receive_packet(uint8_t *data, int *length, uint32_t tim
     count = packet_size + PACKET_OVERHEAD-1;
 
     if( receive_bytes(dptr, timeout, count) < 0 ) {
-        BLE_UART_LOG("%d) timeout receive_bytes", __LINE__);
+        BLE_UART_LOGI("%d) timeout receive_bytes", __LINE__);
         return ABORT_BY_TIMEOUT;
     }
 
@@ -175,11 +175,11 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                             // Abort by sender
                             SEND_ACK_EXIT(-1);
                         case -2:
-                            BLE_UART_LOG("%d) Case -2", __LINE__);
+                            BLE_UART_LOGW("%d) Case -2", __LINE__);
                             /* Fall Through */
                         case -3:
                             // error
-                            BLE_UART_LOG("%d) Case -3", __LINE__);
+                            BLE_UART_LOGW("%d) Case -3", __LINE__);
                             
                             errors ++;
                             if (errors > 5) {
@@ -189,7 +189,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                             break;
                         case 0:
                             // End of transmission
-                            BLE_UART_LOG("%d) EOT", __LINE__);
+                            BLE_UART_LOGI("%d) EOT", __LINE__);
                             eof_cnt++;
                             if (eof_cnt == 1) {
                                 send_NAK();
@@ -204,7 +204,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                 send_ACK();
                             }
                             else if ((packet_data[PACKET_SEQNO_INDEX] & 0xff) != (packets_received & 0x000000ff)) {
-                                BLE_UART_LOG("%d) Incorrect PACKET_SEQNO %02x; expected %02x", __LINE__,
+                                BLE_UART_LOGE("%d) Incorrect PACKET_SEQNO %02x; expected %02x", __LINE__,
                                         packet_data[PACKET_SEQNO_INDEX] & 0xff, packets_received & 0x000000ff);
                                 errors ++;
                                 if (errors > MAX_ERRORS) {
@@ -277,7 +277,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                 }
                                 else {
                                     // ** Data packet **
-                                    BLE_UART_LOG("%d) Received Data Packet", __LINE__);
+                                    BLE_UART_LOGD("%d) Received Data Packet", __LINE__);
                                     // Write received data to file
                                     if (file_len < size) {
                                         file_len += packet_length;    // total bytes received
@@ -321,7 +321,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                 case ABORT_BY_USER:    // user abort
                     SEND_CA_EXIT(-7);
                 default: // timeout
-                    BLE_UART_LOG("%d) TIMEOUT", __LINE__);
+                    BLE_UART_LOGD("%d) TIMEOUT", __LINE__);
                     if (eof_cnt > 1) {
                         file_done = 1;
                     }
@@ -382,7 +382,7 @@ exit:
 #endif
             );
 
-    BLE_UART_LOG("Error code %d", size);
+    BLE_UART_LOGE("Error code %d", size);
     return size;
 }
 

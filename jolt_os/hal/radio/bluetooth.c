@@ -116,7 +116,7 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
     const char *data_c = (const char *)data;
     _lock_acquire_recursive(&s_ble_write_lock);
 
-    BLE_UART_LOG("%s write %d bytes\n", __func__, size);
+    BLE_UART_LOGI("%s write %d bytes\n", __func__, size);
 
     int idx = 0;
     do{
@@ -126,11 +126,9 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
             print_len = 512;
         }
 
-#if LOG_LOCAL_LEVEL >= 4 /* debug */
-        BLE_UART_LOG("Sending %d bytes: ", print_len);
-        BLE_UART_LOG_BUF(&data_c[idx], print_len);
-        BLE_UART_LOG_STR("\n");
-#endif
+        BLE_UART_LOGD("Sending %d bytes: ", print_len);
+        BLE_UART_LOGD_BUF(&data_c[idx], print_len);
+        BLE_UART_LOGD_STR("\n");
 
         res = esp_ble_gatts_send_indicate(
                 spp_profile_tab[SPP_PROFILE_A_APP_ID].gatts_if,
@@ -165,10 +163,8 @@ int ble_read_char(int fd, TickType_t timeout) {
     c = packet.data[line_off];
     line_off++;
     
-#if LOG_LOCAL_LEVEL >= 4 /* debug */
-    BLE_UART_LOG("line_off: %d\n", line_off);
-    BLE_UART_LOG("packet.len: %d\n\n", packet.len);
-#endif
+    BLE_UART_LOGD("line_off: %d\n", line_off);
+    BLE_UART_LOGD("packet.len: %d\n\n", packet.len);
 
     if( line_off == packet.len ) {
         /* pop the element from the queue */
@@ -186,6 +182,7 @@ static void ble_return_char(int fd, int c) {
 }
 
 static ssize_t ble_read(int fd, void* data, size_t size) {
+    ESP_LOGD(TAG, "%s: fd: %d, data: %p, size: %d", __func__, fd, data, size);
     return ble_read_timeout(fd, data, size, portMAX_DELAY);
 }
 
@@ -193,44 +190,44 @@ ssize_t ble_read_timeout(int fd, void* data, size_t size, TickType_t timeout) {
     char *data_c = (char *)data;
 
     _lock_acquire_recursive(&s_ble_read_lock);
-#if LOG_LOCAL_LEVEL >= 4 /* debug */
-    BLE_UART_LOG_STR("ble_read_lock acquired\n");
-#endif
+    BLE_UART_LOGD_STR("ble_read_lock acquired\n");
+
+    ESP_LOGD(TAG, "Attempting to receive %d bytes with timeout %d.", size, timeout);
 
     size_t received = 0;
     while(received < size){
         int c = ble_read_char(fd, timeout);
 
+        if( c == NONE ) break;
+
         ESP_LOGD(TAG, "Char: %02X; Off: %d", (char) c, received);
         if ( '\r' == (char)c ) {
-            if (s_rx_mode == ESP_LINE_ENDINGS_CR) {
-                // default
-                c = '\n';
-            } else if (s_rx_mode == ESP_LINE_ENDINGS_CRLF) {
-                /* look ahead */
-                int c2 = ble_read_char(fd, portMAX_DELAY);
-                if (c2 == NONE) {
-                    /* could not look ahead, put the current character back */
-                    ble_return_char(fd, (char)c);
+            switch( s_rx_mode ){
+                case ESP_LINE_ENDINGS_CR:
+                    c = '\n';
+                    break;
+                case ESP_LINE_ENDINGS_CRLF: {
+                    /* look ahead */
+                    int c2 = ble_read_char(fd, portMAX_DELAY);
+                    if (c2 == NONE) {
+                        /* could not look ahead, put the current character back */
+                        ble_return_char(fd, (char)c);
+                        break;
+                    } else if (c2 == '\n') {
+                        /* this was \r\n sequence. discard \r, return \n */
+                        c = '\n';
+                    } else {
+                        /* \r followed by something else. put the second char back,
+                         * it will be processed on next iteration. return \r now.
+                         */
+                        ble_return_char(fd, (char)c2);
+                    }
                     break;
                 }
-                if (c2 == '\n') {
-                    /* this was \r\n sequence. discard \r, return \n */
-                    c = '\n';
-                } else {
-                    /* \r followed by something else. put the second char back,
-                     * it will be processed on next iteration. return \r now.
-                     */
-                    ble_return_char(fd, (char)c2);
-                }
+                default:
+                    /* Do Nothing */
+                    break;
             }
-        } else if (c == NONE) {
-            {
-                char buf[64]; 
-                snprintf(buf, sizeof(buf), "timeout; read %d bytes.\n", received);
-                uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-            }
-            break;
         }
 
         data_c[received] = (char) c;
@@ -243,14 +240,12 @@ ssize_t ble_read_timeout(int fd, void* data, size_t size, TickType_t timeout) {
 
     _lock_release_recursive(&s_ble_read_lock);
 
-#if LOG_LOCAL_LEVEL >= 4 /* debug */
     if(received > 0){
         /* Display what was received */
-        BLE_UART_LOG("ble_read returning %d bytes\nreceived message: ", received);
-        BLE_UART_LOG_BUF(data_c, received-1);
-        BLE_UART_LOG_STR("\n");
+        BLE_UART_LOGD("ble_read returning %d bytes\nreceived message: ", received);
+        BLE_UART_LOGD_BUF(data_c, received-1);
+        BLE_UART_LOGD_STR("\n");
     }
-#endif
 
     if(received > 0){
         return received;
