@@ -42,7 +42,7 @@
 #define ABORT1                  (0x41)  /* 'A' == 0x41, abort by user */
 #define ABORT2                  (0x61)  /* 'a' == 0x61, abort by user */
 
-#define NAK_TIMEOUT             (800000)
+#define NAK_TIMEOUT             (1000)
 #define MAX_ERRORS              (45)
 
 /**
