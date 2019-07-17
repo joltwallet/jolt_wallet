@@ -26,6 +26,8 @@
  * this software.
  */
 
+//#define LOG_LOCAL_LEVEL 4
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -189,8 +191,8 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                             break;
                         case 0:
                             // End of transmission
-                            BLE_UART_LOGI("%d) EOT", __LINE__);
                             eof_cnt++;
+                            BLE_UART_LOGI("%d) EOT %d", __LINE__, eof_cnt);
                             if (eof_cnt == 1) {
                                 send_NAK();
                             }
@@ -249,6 +251,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                         file_size[i++] = '\0';
                                         if (strlen(file_size) > 0) size = strtol(file_size, NULL, 10);
                                         else size = 0;
+                                        BLE_UART_LOGI("Header indicates file is %d long.\n", size);
 
                                         // Test the size of the file
                                         if ((size < 1) || (size > maxsize)) {
@@ -282,6 +285,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                     if (file_len < size) {
                                         file_len += packet_length;    // total bytes received
                                         if (file_len > size) {
+                                            /* Truncate the final packet */
                                             write_len = packet_length - (file_len - size);
                                             file_len = size;
                                         }
@@ -300,9 +304,11 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                         else
                                         #endif
                                         {
+                                            BLE_UART_LOGI("Writing %d bytes to disk.\n", write_len);
                                             written_bytes = write_fun(
                                                     (char*)(packet_data + PACKET_HEADER), 
                                                     1, write_len, ffd);
+                                            BLE_UART_LOGI("%d bytes written to disk.\n", file_len);
                                         }
                                         if (written_bytes != write_len) { //failed
                                             /* End session */
