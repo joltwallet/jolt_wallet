@@ -32,6 +32,8 @@ void jolt_cli_ble_init(){
 
 #if CONFIG_BT_ENABLED
 
+static const char TAG[] = "cli_ble";
+
 /**
  * @brief FreeRTOS task that forwards ble_stdin to the CLI engine 
  */
@@ -40,6 +42,10 @@ static void jolt_cli_ble_listener_task( void *param ) {
     ble_stdin  = fopen("/dev/ble/0", "r");
     ble_stdout = fopen("/dev/ble/0", "w");
     ble_stderr = fopen("/dev/ble/0", "w");
+
+    setvbuf(ble_stdin, NULL, _IONBF, 0);
+    //setvbuf(ble_stdout, NULL, _IONBF, 0);
+    setvbuf(ble_stderr, NULL, _IONBF, 0);
 
     char *buf = NULL;
     for(;;){
@@ -56,15 +62,7 @@ static void jolt_cli_ble_listener_task( void *param ) {
             }
         }
         if(i>0){
-#if LOG_LOCAL_LEVEL >= 4 /* debug */
-            {
-                const char buf1[] = "sending command from ble: \"";
-                uart_write_bytes(UART_NUM_0, buf1, strlen(buf1));
-                uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-                const char buf2[] = "\"\n";
-                uart_write_bytes(UART_NUM_0, buf2, strlen(buf2));
-            }
-#endif
+            ESP_LOGD(TAG, "sending command from ble: \"%s\"", buf);
             bool suspend = false;
             if( 0 == strcmp(buf, "upload_firmware") || 0 == strcmp(buf, "upload") ){
                 suspend = true;

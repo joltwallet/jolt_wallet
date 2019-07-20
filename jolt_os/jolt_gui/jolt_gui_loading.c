@@ -57,7 +57,7 @@ void jolt_gui_scr_loadingbar_update(jolt_gui_obj_t *parent,
         parent = jolt_gui_scr_get(parent);
 
         /* Find Objects */
-        jolt_gui_obj_t *label_title   = NULL;
+        jolt_gui_obj_t *label_title = NULL;
         {
             jolt_gui_obj_t *cont_title = NULL;
             cont_title  = JOLT_GUI_FIND_AND_CHECK(parent,     JOLT_GUI_OBJ_ID_CONT_TITLE);

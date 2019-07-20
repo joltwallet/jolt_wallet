@@ -10,6 +10,8 @@
 #ifndef YMODEM_COMMON_H__
 #define YMODEM_COMMON_H__
 
+#include "jolt_helpers.h"
+
 /* Don't use this header outside of the ymodem files */
 #define ABORT_BY_USER -2
 #define ABORT_BY_TIMEOUT -1
@@ -73,9 +75,7 @@ static inline int32_t IRAM_ATTR receive_byte (unsigned char *c, uint32_t timeout
 /**
  * @brief Flush STDIN
  */
-static inline void IRAM_ATTR rx_consume() {
-    fflush(stdin);
-}
+void IRAM_ATTR rx_consume();
 
 /**
  * @brief Wrapper to write bytes to STDOUT
@@ -116,6 +116,7 @@ static inline void IRAM_ATTR send_ACK ( void ) {
  * @brief Helper to send Negative Acknowledge byte
  */
 static inline void IRAM_ATTR send_NAK ( void ) {
+    BLE_UART_LOG("%d) send_NAK", __LINE__);
     send_byte(NAK);
 }
 
