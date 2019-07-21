@@ -147,9 +147,7 @@ char * jolt_fs_parse(const char *fn, const char *ext) {
     bool add_dot = false;
     char *path = NULL;
 
-    if( NULL == fn ) {
-        return NULL;
-    }
+    if( NULL == fn ) return NULL;
 
     total_len += strlen(fn);
 
@@ -174,7 +172,7 @@ char * jolt_fs_parse(const char *fn, const char *ext) {
         return NULL;
     }
     strcat(path, JOLT_FS_MOUNTPT);
-    strcat(path, "/");
+    if( path[strlen(path)-1] != '/' ) strcat(path, "/");
     strcat(path, fn);
     if( add_dot ) strcat(path, ".");
     strcat(path, ext);
