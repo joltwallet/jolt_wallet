@@ -29,7 +29,7 @@
 #define PACKET_SIZE             (128)
 #define PACKET_1K_SIZE          (1024)
 
-#define FILE_SIZE_LENGTH        (16)
+#define FILE_SIZE_LENGTH        (7) /* Maximum number of ascii digits file length can be */
 
 #define SOH                     (0x01)  /* start of 128-byte data packet (Start of Header) */
 #define STX                     (0x02)  /* start of 1024-byte data packet */
@@ -44,6 +44,7 @@
 
 #define NAK_TIMEOUT             (1000)
 #define MAX_ERRORS              (45)
+
 
 /**
  * @brief compute the CRC16 checksum

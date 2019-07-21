@@ -40,6 +40,31 @@
 #define JOLT_OS_DERIVATION_PATH ((uint32_t) BM_HARDENED | 0x4A4F4C54)
 
 /**
+ * @brief free non-null pointer.
+ */
+#define SAFE_FREE(x) do{if(NULL != x) free(x);}while(0)
+
+/**
+ * @brief fclose non-null pointer.
+ */
+#define SAFE_CLOSE(x) do{if(NULL != x) fclose(x);}while(0)
+
+/**
+ * @brief Set return_code and goto exit
+ */
+#define EXIT(ret) do{ return_code = ret; goto exit; }while(0)
+
+/**
+ * @brief Set return_code, print statement, and goto exit.
+ */
+#define EXIT_PRINT(ret, ...) do{ return_code = ret; printf(__VA_ARGS__); goto exit; }while(0)
+
+/**
+ * @brief Easy reference to a NULL TERMINATOR character '\0'
+ */
+extern const char NULL_TERM;
+
+/**
  * @brief Derivation BIP32 key for JoltOS settings 
  */
 static const char JOLT_OS_DERIVATION_BIP32_KEY[] = "JOLT_OS";

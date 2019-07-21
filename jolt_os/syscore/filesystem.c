@@ -9,7 +9,6 @@
 #include "esp_spiffs.h"
 #include "esp_vfs_dev.h"
 #include "linenoise/linenoise.h"
-#include "sdkconfig.h"
 #include "sodium.h"
 
 #include "jolt_gui/jolt_gui.h"
@@ -24,7 +23,7 @@ static const char* TAG = "console_syscore_fs";
 void jolt_fs_init() {
     esp_err_t ret;
     esp_vfs_spiffs_conf_t conf = {
-      .base_path = SPIFFS_BASE_PATH,
+      .base_path = JOLT_FS_MOUNTPT,
       .partition_label = NULL,
       .max_files = 3,
       .format_if_mount_failed = true
@@ -55,7 +54,7 @@ uint32_t jolt_fs_get_all_fns(char **fns, uint32_t fns_len, const char *ext, bool
     struct dirent *ent;
     char *ext_ptr;
 
-    dir = opendir(SPIFFS_BASE_PATH);
+    dir = opendir(JOLT_FS_MOUNTPT);
     if (!dir) {
         ESP_LOGE(TAG, "Failed to open filesystem.");
         fns = NULL;
@@ -114,7 +113,7 @@ uint16_t jolt_fs_get_all_jelf_fns(char ***fns) {
 uint32_t jolt_fs_free() {
     uint32_t tot, used;
     esp_spiffs_info(NULL, &tot, &used);
-    return (tot-used-FS_MIN_FREE);
+    return (tot-used-JOLT_FS_MIN_FREE);
 }
 
 size_t jolt_fs_size(const char *fname) {
@@ -143,4 +142,56 @@ bool jolt_fs_exists(const char *fname) {
     return false;
 }
 
+char * jolt_fs_parse(const char *fn, const char *ext) {
+    uint8_t total_len = 0;
+    bool add_dot = false;
+    char *path = NULL;
 
+    if( NULL == fn ) {
+        return NULL;
+    }
+
+    total_len += strlen(fn);
+
+    if( NULL == ext ) ext = &NULL_TERM;
+    else if( '.' != ext[0] ) add_dot = true;
+    total_len += strlen(ext);
+    if( add_dot ) total_len += 1;
+
+    /* Filename Length Error Check */
+    if( JOLT_FS_MAX_FILENAME_LEN < total_len ) {
+        ESP_LOGE(TAG, "Parsed path for filename \"%s\" and ext \"%s\" "
+                "cumulative len %d exceeds max len %d",
+                fn, ext, total_len, JOLT_FS_MAX_FILENAME_LEN);
+        return NULL;
+    }
+
+    total_len += sizeof(JOLT_FS_MOUNTPT) + 1; /* mount-point, slash, and NULL-terminator */
+
+    path = calloc(1,total_len);
+    if( NULL == path ){
+        ESP_LOGE(TAG, "Error allocating memory for path.");
+        return NULL;
+    }
+    strcat(path, JOLT_FS_MOUNTPT);
+    strcat(path, "/");
+    strcat(path, fn);
+    if( add_dot ) strcat(path, ".");
+    strcat(path, ext);
+
+    return path;
+}
+
+void jolt_fs_parse_buf(char **fullpath, char **fn){
+    char *path;
+    *fullpath = calloc(1, JOLT_FS_MAX_ABS_PATH_BUF_LEN);
+    path = *fullpath;
+    if(NULL == path) return;
+
+    strcat(path, JOLT_FS_MOUNTPT);
+    strcat(path, "/");
+
+    if( NULL == fn ) return;
+
+    *fn = &path[sizeof(JOLT_FS_MOUNTPT)];
+}

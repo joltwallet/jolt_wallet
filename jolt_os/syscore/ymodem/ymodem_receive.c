@@ -47,6 +47,7 @@
 #include "esp_spiffs.h"
 #include "esp_log.h"
 #include "syscore/decompress.h"
+#include "syscore/filesystem.h"
 #include "jolt_helpers.h"
 
 
@@ -141,7 +142,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
     uint8_t *packet_data = NULL;
     int size = 0;
     uint8_t *file_ptr;
-    char file_size[128];
+    char file_size[FILE_SIZE_LENGTH + 1];
     unsigned int i, file_len, write_len, session_done, file_done, packets_received, errors = 0;
     int packet_length = 0;
     file_len = 0;
@@ -149,11 +150,12 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
 
     #if CONFIG_JOLT_COMPRESSION_AUTO 
     static decomp_t *d = NULL;
-    char name[65];
+    #endif
+
+    char name[JOLT_FS_MAX_FILENAME_BUF_LEN];
     if( NULL == getname ){
         getname = name;
     }
-    #endif
 
     packet_data = malloc(PACKET_1K_SIZE + PACKET_OVERHEAD);
     if(NULL == packet_data){
@@ -220,12 +222,16 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                     if (packet_data[PACKET_HEADER] != 0) {
                                         errors = 0;
                                         // ** Filename packet has valid data
-                                        if (getname) {
+                                        {
                                             char *name = getname;
                                             for (i = 0, file_ptr = packet_data + PACKET_HEADER;
-                                                    ((*file_ptr != 0) && (i < 64));) {
-                                                *name = *file_ptr++;
-                                                name++;
+                                                    *file_ptr != 0; i++) {
+                                                if(i >= JOLT_FS_MAX_FILENAME_LEN){
+                                                    /* Filename too long */
+                                                    size = -13;
+                                                    goto exit;
+                                                }
+                                                *name++ = *file_ptr++;
                                             }
                                             *name = '\0';
                                             #if CONFIG_JOLT_COMPRESSION_AUTO 
@@ -235,7 +241,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                                 if(NULL == d){
                                                     SEND_CA_EXIT(-12);
                                                 }
-                                                // remove the ".gz" suffix
+                                                /* remove the ".gz" suffix */
                                                 name -=3;
                                                 *name = '\0';
                                             }
@@ -245,7 +251,12 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                                 (*file_ptr != 0) && (i < packet_length);) {
                                             file_ptr++;
                                         }
-                                        for (i = 0, file_ptr ++; (*file_ptr != ' ') && (i < FILE_SIZE_LENGTH);) {
+                                        for (i = 0, file_ptr++; *file_ptr != ' ';) {
+                                            if( i >= FILE_SIZE_LENGTH ) {
+                                                /* This file is definitely too big */
+                                                size = -9;
+                                                goto exit;
+                                            }
                                             file_size[i++] = *file_ptr++;
                                         }
                                         file_size[i++] = '\0';
@@ -353,12 +364,12 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
             break;
         }
     }
+
+exit:
     #if CONFIG_JOLT_COMPRESSION_AUTO 
-    /* Delete the decompressor */
     decompress_obj_del( d );
     #endif
 
-exit:
     jolt_cli_resume();
     esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
     if(NULL != packet_data) {

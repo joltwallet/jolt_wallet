@@ -8,25 +8,26 @@
 
 int jolt_cmd_mv(int argc, char** argv) {
     int return_code;
-    if( !console_check_equal_argc(argc, 3) ) {
-        return_code = 1;
-        goto exit;
-    }
-    char src_fn[128] = SPIFFS_BASE_PATH;
-    strcat(src_fn, "/");
-    strncat(src_fn, argv[1], sizeof(src_fn)-strlen(src_fn)-1);
+    char *src_fn = NULL;
+    char *dst_fn = NULL;
 
-    char dst_fn[128] = SPIFFS_BASE_PATH;
-    strcat(dst_fn, "/");
-    strncat(dst_fn, argv[2], sizeof(dst_fn)-strlen(dst_fn)-1);
+    /* Input Argument Check */
+    if( !console_check_equal_argc(argc, 3) ) EXIT_PRINT(-1, "Requires 3 args: mv [src] [dst]");
 
-    return_code = rename(src_fn, dst_fn);
+    if( NULL == (src_fn = jolt_fs_parse(argv[1], NULL))) EXIT_PRINT(-2, "Invalid [src] filename");
+    if( NULL == (dst_fn = jolt_fs_parse(argv[2], NULL))) EXIT_PRINT(-3, "Invalid [dst] filename");
 
-    if( 0 == return_code ) {
-        jolt_h_fn_home_refresh( argv[2] );
-    }
+    if( jolt_fs_exists(dst_fn) ) remove(dst_fn);
+    if( 0 != rename(src_fn, dst_fn) ) EXIT_PRINT(-4, "Unsuccessful move");
+
+    /* Maybe refresh home screen on success */
+    jolt_h_fn_home_refresh( argv[2] );
+
+    EXIT(0); /* Success */
 
 exit:
+    SAFE_FREE(src_fn);
+    SAFE_FREE(dst_fn);
     return return_code;
 }
 

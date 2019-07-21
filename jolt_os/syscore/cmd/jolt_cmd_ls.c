@@ -4,7 +4,7 @@
 #include "syscore/filesystem.h"
 
 int jolt_cmd_ls(int argc, char** argv) {
-    const char path[] = SPIFFS_BASE_PATH;
+    const char path[] = JOLT_FS_MOUNTPT;
 
     DIR *dir = NULL;
     struct dirent *ent;

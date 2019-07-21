@@ -29,14 +29,17 @@ static void jolt_cmd_upload_cb( lv_obj_t *bar, lv_event_t event ) {
 }
 
 int jolt_cmd_upload(int argc, char** argv) {
-
+    int return_code;
+    char *tmp_fullpath = NULL;
+    char *orig_fullpath = NULL, *orig_fn = NULL;
     FILE *ffd = NULL;
     int rec_res = -1;
     int32_t max_fsize = jolt_fs_free();
 
-    /* Open the file */
-    char tmp_fn[CONFIG_SPIFFS_OBJ_NAME_LEN] = SPIFFS_BASE_PATH;
-    char orig_fn[CONFIG_SPIFFS_OBJ_NAME_LEN] = SPIFFS_BASE_PATH;
+    /* Parse filenames */
+    if( NULL == (tmp_fullpath = jolt_fs_parse("tmp", NULL)) ) EXIT(-1);
+    jolt_fs_parse_buf(&orig_fullpath, &orig_fn);
+    if( NULL == orig_fullpath ) EXIT(-1);
 
     /* Create loading screen */
     jolt_gui_obj_t *loading_scr = jolt_gui_scr_loadingbar_create("Install");
@@ -44,46 +47,49 @@ int jolt_cmd_upload(int argc, char** argv) {
     int8_t *progress = jolt_gui_scr_loadingbar_autoupdate(loading_scr);
     jolt_gui_scr_loadingbar_update(loading_scr, NULL, progress_label_0, 0);
 
-    strcat(tmp_fn, "/tmp");
-    if( jolt_fs_exists(tmp_fn) ) {
-        remove(tmp_fn);
-    }
-    ffd = fopen(tmp_fn, "wb");
-    if (ffd) {
-        strcat(orig_fn, "/");
-        rec_res = ymodem_receive(ffd, max_fsize, orig_fn + strlen(orig_fn), progress);
-        fclose(ffd);
-        //printf("\r\n");
-        if (rec_res > 0) {
-            jolt_gui_scr_del(loading_scr);
-            printf("\"%s\" Transfer complete, Size=%d Bytes\n",
-                    orig_fn+strlen(SPIFFS_BASE_PATH), rec_res);
-            if( jolt_fs_exists(orig_fn) ) {
-                remove(orig_fn);
-            }
-            ESP_LOGI(TAG, "Renaming file");
-            rename(tmp_fn, orig_fn);
-            ESP_LOGI(TAG, "File renamed");
+    /* Pre-run cleanup */
+    if( jolt_fs_exists(tmp_fullpath) ) remove(tmp_fullpath);
 
-            jolt_h_fn_home_refresh( orig_fn );
-        }
-        else {
-            ESP_LOGE(TAG, "Transfer complete, Error=%d", rec_res);
-            char buf[20];
-            snprintf(buf, sizeof(buf), "Error=%d", rec_res);
-            jolt_gui_scr_loadingbar_update(loading_scr, NULL, buf, -1);
-            jolt_gui_scr_set_event_cb(loading_scr, jolt_gui_event_del);
-            remove(tmp_fn);
-        }
+    /* Open tmp file */
+    if( NULL == (ffd = fopen(tmp_fullpath, "wb")) ) {
+        EXIT_PRINT(-2, "Error opening file \"%s\" for receive.", tmp_fullpath);
     }
-    else {
-        ESP_LOGE(TAG, "Error opening file \"%s\" for receive.", tmp_fn);
-    }
-    if( jolt_fs_exists(tmp_fn) ) {
-        remove(tmp_fn);
+    
+    /* Perform Transfer */
+    rec_res = ymodem_receive(ffd, max_fsize, orig_fn, progress);
+
+    if(rec_res <= 0){
+        /* Failure */
+        char buf[20];
+        ESP_LOGE(TAG, "Transfer complete, Error=%d", rec_res);
+        snprintf(buf, sizeof(buf), "Error=%d", rec_res);
+        jolt_gui_scr_loadingbar_update(loading_scr, NULL, buf, -1);
+        /* Allow screen to be deleted via back button */
+        jolt_gui_scr_set_event_cb(loading_scr, jolt_gui_event_del);
     }
 
-    return 0;
+    jolt_gui_scr_del(loading_scr);
+    printf("\"%s\" Transfer complete, Size=%d Bytes\n", orig_fn, rec_res);
+
+    ESP_LOGI(TAG, "Renaming file");
+    if( jolt_fs_exists(orig_fullpath) && 0 !=remove(orig_fullpath) ) {
+        EXIT_PRINT(-3, "Unable to delete existing file. Transfer failed.");
+    }
+    if( 0 != rename(tmp_fullpath, orig_fullpath) ) {
+        EXIT_PRINT(-4, "Unable to rename file. Transfer failed.");
+    }
+
+    jolt_h_fn_home_refresh( orig_fn );
+
+    EXIT(0);
+
+exit:
+    if( NULL!=tmp_fullpath && jolt_fs_exists(tmp_fullpath) ) remove(tmp_fullpath);
+    SAFE_FREE(tmp_fullpath);
+    SAFE_FREE(orig_fullpath);
+    SAFE_CLOSE(ffd);
+
+    return return_code;
 }
 
 
