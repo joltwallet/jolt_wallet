@@ -251,7 +251,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                                 (*file_ptr != 0) && (i < packet_length);) {
                                             file_ptr++;
                                         }
-                                        for (i = 0, file_ptr++; *file_ptr != ' ';) {
+                                        for (i = 0, file_ptr++; *file_ptr != ' ' && *file_ptr != '\0';) {
                                             if( i >= FILE_SIZE_LENGTH ) {
                                                 /* This file is definitely too big */
                                                 size = -9;
