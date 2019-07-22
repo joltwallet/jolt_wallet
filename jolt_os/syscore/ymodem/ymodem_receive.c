@@ -300,6 +300,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                 }
                                 else {
                                     // ** Data packet **
+                                    send_ACK();
                                     BLE_UART_LOGD("%d) Received Data Packet", __LINE__);
                                     // Write received data to file
                                     if (file_len < size) {
@@ -340,7 +341,6 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                     }
                                     //success
                                     errors = 0;
-                                    send_ACK();
                                     taskYIELD();
                                 }
                                 packets_received++;
