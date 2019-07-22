@@ -69,7 +69,9 @@ unsigned short IRAM_ATTR crc16(const unsigned char *buf, unsigned long count) {
  * @return Amount of bytes actually read.
  */
 int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n) {
+    int return_code = 0;
     int amount_read = 0;
+    uint64_t t_start = esp_timer_get_time();
     if(stdin == ble_stdin){
         /* Temporary hack in lieu of writing proper bluetooth select drivers */
         amount_read = ble_read_timeout(0, c, n, timeout / portTICK_PERIOD_MS);
@@ -83,7 +85,7 @@ int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n)
         }
         if(amount_read != n) {
             BLE_UART_LOGD("Only read %d/%d bytes\n", amount_read, n);
-            return -1;
+            EXIT(-1);
         }
     }
     else{
@@ -102,16 +104,18 @@ int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n)
 
             if (s < 0) {
                 // Select Failure
-                return -1;
+                EXIT(-1);
             } else if (s == 0) {
                 // timed out
-                return -1;
+                EXIT(-1);
             } else {
                 amount_read += fread(c, 1, n-amount_read, stdin);
             }
         }while(amount_read < n);
     }
-    return 0;
+exit:
+    t_ymodem_receive += esp_timer_get_time() - t_start;
+    return return_code;
 }
 
 void IRAM_ATTR rx_consume(){

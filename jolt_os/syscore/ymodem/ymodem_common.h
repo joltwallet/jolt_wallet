@@ -11,6 +11,7 @@
 #define YMODEM_COMMON_H__
 
 #include "jolt_helpers.h"
+#include <esp_timer.h>
 
 /* Don't use this header outside of the ymodem files */
 #define ABORT_BY_USER -2
@@ -45,6 +46,7 @@
 #define NAK_TIMEOUT             (1000)
 #define MAX_ERRORS              (45)
 
+extern uint64_t t_ymodem_send, t_ymodem_receive;
 
 /**
  * @brief compute the CRC16 checksum
@@ -85,8 +87,10 @@ void IRAM_ATTR rx_consume();
  */
 static inline uint32_t IRAM_ATTR send_bytes(char *c, uint32_t n) {
     const char new_line = '\n';
+    uint64_t t_start = esp_timer_get_time();
     fwrite(c, 1, n, stdout);
     fwrite(&new_line, 1, 1, stdout);
+    t_ymodem_send += esp_timer_get_time() - t_start; 
     return 0;
 }
 

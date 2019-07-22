@@ -26,7 +26,7 @@
  * this software.
  */
 
-//#define LOG_LOCAL_LEVEL 4
+#define LOG_LOCAL_LEVEL 3
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,10 +45,12 @@
 #include "syscore/ymodem/ymodem_common.h"
 #include <driver/uart.h>
 #include "esp_log.h"
+#include <esp_timer.h>
 #include "syscore/decompress.h"
 #include "syscore/filesystem.h"
 #include "jolt_helpers.h"
 
+uint64_t t_ymodem_send = 0, t_ymodem_receive = 0;
 
 /**
     * @brief    Receive a packet from sender
@@ -132,8 +134,8 @@ static int32_t IRAM_ATTR receive_packet(uint8_t *data, int *length, uint32_t tim
 #define SEND_ACK_EXIT(x) send_ACK(); size=x; goto exit;
 int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getname,
                 write_fun_t write_fun, int8_t *progress) {
-        /* Just incase stdin is from uart, we override the current settings to 
-         * potentially replace carriage returns */
+    /* Just incase stdin is from uart, we override the current settings to 
+     * potentially replace carriage returns */
     esp_vfs_dev_uart_set_rx_line_endings(-1);
     ble_set_rx_line_endings(-1);
     esp_log_level_set("*", ESP_LOG_NONE);
@@ -156,12 +158,20 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
         getname = name;
     }
 
+    /* Profiling Variables */
+    uint64_t t_ymodem_start = 0, t_ymodem_end = 0;
+    uint64_t t_disk = 0;
+    t_ymodem_send = 0;
+    t_ymodem_receive = 0;
+
     packet_data = malloc(PACKET_1K_SIZE + PACKET_OVERHEAD);
     if(NULL == packet_data){
         goto exit;
     }
 
     jolt_cli_suspend();
+
+    t_ymodem_start = esp_timer_get_time();
 
     send_CRC16(); /* Initiate Transfer */
     
@@ -304,6 +314,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                         }
 
                                         int written_bytes; 
+                                        uint64_t t_disk_start = esp_timer_get_time();
                                         #if CONFIG_JOLT_COMPRESSION_AUTO 
                                         if( NULL != d ){
                                             decompress_obj_chunk( d,
@@ -314,12 +325,14 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                         else
                                         #endif
                                         {
-                                            BLE_UART_LOGI("Writing %d bytes to disk.\n", write_len);
+                                            BLE_UART_LOGD("Writing %d bytes to disk.\n", write_len);
                                             written_bytes = write_fun(
                                                     (char*)(packet_data + PACKET_HEADER), 
                                                     1, write_len, ffd);
-                                            BLE_UART_LOGI("%d bytes written to disk.\n", file_len);
+                                            BLE_UART_LOGD("%d bytes written to disk.\n", file_len);
                                         }
+                                        t_disk += esp_timer_get_time() - t_disk_start;
+
                                         if (written_bytes != write_len) { //failed
                                             /* End session */
                                             SEND_CA_EXIT(-6);
@@ -365,6 +378,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
     }
 
 exit:
+    t_ymodem_end = esp_timer_get_time();
     #if CONFIG_JOLT_COMPRESSION_AUTO 
     decompress_obj_del( d );
     #endif
@@ -374,7 +388,7 @@ exit:
     if(NULL != packet_data) {
         free(packet_data);
     }
-    ESP_LOGI("ymodem", "\n%d errors corrected during transfer.", errors);
+    BLE_UART_LOGI("\n%d errors corrected during transfer.", errors);
     if( NULL != progress && size < 0) {
         *progress = -1;
     }
@@ -398,7 +412,23 @@ exit:
 #endif
             );
 
-    BLE_UART_LOGE("Error code %d", size);
+    if(size <= 0) BLE_UART_LOGE("Error %d", size);
+
+    BLE_UART_LOGI(
+            "\n-----------------------------\n"
+            "YMODEM Profiling Results (%d Bytes):\n"
+            "Description            Time (uS)\n"
+            "Receives:              %8d\n"
+            "Sends:                 %8d\n"
+            "Disk Writing           %8d\n"
+            "TOTAL                  %d\n"
+            "-----------------------------\n\n",
+            size,
+            (uint32_t) t_ymodem_receive,
+            (uint32_t) t_ymodem_send,
+            (uint32_t) t_disk,
+            (uint32_t) (t_ymodem_end - t_ymodem_start));
+
     return size;
 }
 
