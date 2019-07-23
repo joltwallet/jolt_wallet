@@ -48,11 +48,11 @@
 #define JOLT_FS_MAX_FILENAME_BUF_LEN JOLT_FS_MAX_FILENAME_LEN+1
 
 /**
- * @brief Mounting point for spiffs filesystem
+ * @brief Mounting point for filesystem
  * 
  * Must NOT end in "/"
  */
-#define JOLT_FS_MOUNTPT "/spiffs"
+#define JOLT_FS_MOUNTPT "/store"
 
 /**
  * @brief buffer length to hold the longest null-terminated full path.
