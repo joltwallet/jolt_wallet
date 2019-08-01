@@ -13,7 +13,7 @@
 #elif CONFIG_JOLT_FS_LITTLEFS 
     #include "esp_littlefs.h"
 #elif CONFIG_JOLT_FS_FAT
-    assert(0);
+    #include "esp_vfs_fat.h"
 #endif
 
 #include "esp_vfs_dev.h"
@@ -29,27 +29,42 @@
 
 static const char* TAG = "console_syscore_fs";
 
+#define MAX_FILES 3
+
+#if CONFIG_JOLT_FS_FAT
+static wl_handle_t s_wl_handle = WL_INVALID_HANDLE;
+static esp_err_t fat_format();
+static esp_err_t setup_fat();
+static esp_err_t esp_fatfs_info(size_t* out_total_bytes, size_t* out_free_bytes);
+#endif
+
 void jolt_fs_init() {
     esp_err_t ret;
 
 #if CONFIG_JOLT_FS_SPIFFS
-    esp_vfs_spiffs_conf_t conf = {
+    const esp_vfs_spiffs_conf_t conf = {
       .base_path = JOLT_FS_MOUNTPT,
       .partition_label = JOLT_FS_PARTITION,
-      .max_files = 3,
+      .max_files = MAX_FILES,
       .format_if_mount_failed = true
     };
     ret = esp_vfs_spiffs_register(&conf);
 #elif CONFIG_JOLT_FS_LITTLEFS 
-    esp_vfs_littlefs_conf_t conf = {
+    const esp_vfs_littlefs_conf_t conf = {
       .base_path = JOLT_FS_MOUNTPT,
       .partition_label = JOLT_FS_PARTITION,
-      .max_files = 3,
+      .max_files = MAX_FILES,
       .format_if_mount_failed = true
     };
     ret = esp_vfs_littlefs_register(&conf);
 #elif CONFIG_JOLT_FS_FAT
-    assert(0);
+    const esp_vfs_fat_mount_config_t conf = {
+            .max_files = MAX_FILES,
+            .format_if_mount_failed = true,
+            .allocation_unit_size = CONFIG_WL_SECTOR_SIZE
+    };
+    ret = esp_vfs_fat_spiflash_mount(JOLT_FS_MOUNTPT, JOLT_FS_PARTITION,
+            &conf, &s_wl_handle);
 #endif
 
     if (ret != ESP_OK) {
@@ -211,7 +226,7 @@ esp_err_t jolt_fs_format(){
 #elif CONFIG_JOLT_FS_LITTLEFS 
     return esp_littlefs_format(JOLT_FS_PARTITION);
 #elif CONFIG_JOLT_FS_FAT
-    assert(0); // TODO implement
+    return fat_format();
 #endif
 }
 
@@ -221,7 +236,7 @@ esp_err_t jolt_fs_info(size_t *total_bytes, size_t *used_bytes) {
 #elif CONFIG_JOLT_FS_LITTLEFS 
     return esp_littlefs_info(JOLT_FS_PARTITION, total_bytes, used_bytes);
 #elif CONFIG_JOLT_FS_FAT
-    assert(0);
+    return esp_fatfs_info(total_bytes, used_bytes);
 #endif
 }
 
@@ -233,4 +248,57 @@ esp_err_t jolt_fs_info(size_t *total_bytes, size_t *used_bytes) {
 #elif CONFIG_JOLT_FS_FAT
     assert(0);
 #endif
+#endif
+
+#if CONFIG_JOLT_FS_FAT
+static esp_err_t setup_fat(){
+    const esp_vfs_fat_mount_config_t conf = {
+            .max_files = MAX_FILES,
+            .format_if_mount_failed = true,
+            .allocation_unit_size = CONFIG_WL_SECTOR_SIZE
+    };
+    esp_err_t err = esp_vfs_fat_spiflash_mount(JOLT_FS_MOUNTPT, JOLT_FS_PARTITION, &conf, &s_wl_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to mount FATFS (%s)", esp_err_to_name(err));
+        esp_restart();
+        return err;
+    }
+    return ESP_OK;
+}
+
+static esp_err_t fat_format(){
+    /* Unmount */
+    ESP_LOGI(TAG, "Unmounting FAT Filesystem...");
+    assert(ESP_OK == esp_vfs_fat_spiflash_unmount(JOLT_FS_MOUNTPT, s_wl_handle));
+
+    /* Wipe Partition */
+    ESP_LOGI(TAG, "Wiping Partition...");
+    const esp_partition_t *partition;
+    partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY,
+            JOLT_FS_PARTITION);
+    assert( NULL != partition );
+    assert( ESP_OK == esp_partition_erase_range(partition, 0, partition->size) );
+
+    /* Remount/Reformat FAT */
+    ESP_LOGI(TAG, "Mounting FAT Filesystem...");
+    return setup_fat();
+}
+
+static esp_err_t esp_fatfs_info(size_t* out_total_bytes, size_t* out_free_bytes){
+    FATFS *fs;
+    size_t free_clusters;
+    int res = f_getfree("0:", &free_clusters, &fs);
+    assert(res == FR_OK);
+    size_t total_sectors = (fs->n_fatent - 2) * fs->csize;
+    size_t free_sectors = free_clusters * fs->csize;
+
+    // assuming the total size is < 4GiB, should be true for SPI Flash
+    if (out_total_bytes != NULL) {
+        *out_total_bytes = total_sectors * CONFIG_WL_SECTOR_SIZE;
+    }
+    if (out_free_bytes != NULL) {
+        *out_free_bytes = free_sectors * CONFIG_WL_SECTOR_SIZE;
+    }
+    return ESP_OK;
+}
 #endif
