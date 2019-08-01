@@ -536,6 +536,7 @@ menu "JoltOS"
                     Use FAT for the filesystem.
             config JOLT_FS_LITTLEFS
                 bool "Use LittleFS Filesystem"
+                default y
                 help
                     Use LittleFS for the filesystem.
         endchoice
