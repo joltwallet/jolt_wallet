@@ -6,7 +6,6 @@
 //#define LOG_LOCAL_LEVEL 4
 
 #include "sdkconfig.h"
-#include "esp_spiffs.h"
 
 #if CONFIG_BT_ENABLED
 

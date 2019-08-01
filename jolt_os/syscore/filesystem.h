@@ -16,6 +16,7 @@
 #include "stdbool.h"
 #include <stdarg.h>
 #include "sdkconfig.h"
+#include "esp_err.h"
 
 /**
  * @brief Minimum amount of free space allowed in bytes.
@@ -35,10 +36,15 @@
  *
  * DOES NOT account for null terminator. The base_path does not contribute to overall length.
  *
- * e.g. "/spiffs/foo.bar" is 7 long and is <= JOLT_FS_MAX_FILENAME_LEN, so its ok.
+ * e.g. "/store/foo.bar" is 7 long and is <= JOLT_FS_MAX_FILENAME_LEN, so its ok.
  *
  */
-#define JOLT_FS_MAX_FILENAME_LEN CONFIG_SPIFFS_OBJ_NAME_LEN-2
+#if CONFIG_JOLT_FS_SPIFFS
+    #define JOLT_FS_MAX_FILENAME_LEN CONFIG_SPIFFS_OBJ_NAME_LEN-2
+#elif CONFIG_JOLT_FS_LITTLEFS 
+    #define JOLT_FS_MAX_FILENAME_LEN CONFIG_LITTLEFS_OBJ_NAME_LEN-2
+#elif CONFIG_JOLT_FS_FAT
+#endif
 
 /**
  * @brief inclusive max buflen of a filename.
@@ -53,6 +59,8 @@
  * Must NOT end in "/"
  */
 #define JOLT_FS_MOUNTPT "/store"
+
+#define JOLT_FS_PARTITION "storage"
 
 /**
  * @brief buffer length to hold the longest null-terminated full path.
@@ -85,7 +93,7 @@ uint32_t jolt_fs_get_all_fns(char **fns, uint32_t fns_len,
         const char *ext, bool remove_ext);
 
 /**
- * @brief Starts up the SPIFFS Filesystem
+ * @brief Starts up the Filesystem
  */
 void jolt_fs_init() ;
 
@@ -100,14 +108,14 @@ uint32_t jolt_fs_free();
 
 /**
  * @brief Get the storage size of a file 
- * @param[in] full filename path; i.e. '/spiffs/test.txt 
+ * @param[in] full filename path; i.e. '/store/test.txt'
  * @return size of file in bytes. Returns -1 if the file is not found. 
  */
 size_t jolt_fs_size(const char *fname);
 
 /**
  * @brief Checks if file exists. 
- * @param[in] full filename path; i.e. '/spiffs/test.txt 
+ * @param[in] full filename path; i.e. '/store/test.txt'
  * @return 0 if file exists, 1 if file does not exist, -1 if filesystem is not mounted.
  */
 bool jolt_fs_exists(const char *fname);
@@ -117,11 +125,11 @@ bool jolt_fs_exists(const char *fname);
  *
  * ex.
  *     char *path1 = jolt_fs_parse("Jolt", "jelf");
- *     // "/spiffs/Jolt.jelf"
+ *     // "/store/Jolt.jelf"
  *     char *path2 = "jolt_fs_parse("Jolt", NULL);
- *     // "/spiffs/Jolt"
+ *     // "/store/Jolt"
  *     char *path3 = "jolt_fs_parse("Jolt", ".jelf");
- *     // "/spiffs/Jolt.jelf"
+ *     // "/store/Jolt.jelf"
  *
  * @param[in] fn Filename. 
  * @param[in] ext extension with or without the "." Can be NULL for no ext.
@@ -134,9 +142,28 @@ char * jolt_fs_parse(const char *fn, const char *ext);
  *
  * Populates with filesystem mount point. NOTE: only free fullpath, NOT fn.
  *
- * @param[out] fullpath Full path "/spiffs/..."
+ * @param[out] fullpath Full path "/store/..."
  * @param[out] fn [optional] Pointer to the filename portion of the buffer "...".
  */
 void jolt_fs_parse_buf(char **fullpath, char **fn);
+
+/**
+ * @brief Erase and format the filesystem
+ * @return ESP_OK on success.
+ */
+esp_err_t jolt_fs_format();
+
+/**
+ * Get information for jolt's filesystem
+ *
+ * @param partition_label           Optional, label of the partition to get info for.
+ * @param[out] total_bytes          Size of the file system
+ * @param[out] used_bytes           Current used bytes in the file system
+ *
+ * @return  
+ *          - ESP_OK                  if success
+ *          - ESP_ERR_INVALID_STATE   if not mounted
+ */
+esp_err_t jolt_fs_info(size_t *total_bytes, size_t *used_bytes);
 
 #endif

@@ -19,7 +19,7 @@
 #include "jolttypes.h"
 #include "storage.h"
 #include "joltcrypto.h"
-#include "esp_spiffs.h"
+#include "syscore/filesystem.h"
 
 static const char TAG[] = "storage_internal";
 
@@ -362,7 +362,7 @@ void storage_internal_factory_reset() {
     /* Erases everything */
     ESP_ERROR_CHECK(nvs_flash_deinit());
     ESP_ERROR_CHECK(nvs_flash_erase());
-    ESP_ERROR_CHECK(esp_spiffs_format(NULL));
+    ESP_ERROR_CHECK(jolt_fs_format());
 }
 
 bool storage_internal_erase_key(const char *namespace, const char *key) {

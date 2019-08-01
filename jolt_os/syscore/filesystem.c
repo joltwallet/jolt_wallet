@@ -6,7 +6,16 @@
 #include "driver/uart.h"
 #include "esp_console.h"
 #include "esp_log.h"
-#include "esp_spiffs.h"
+#include "sdkconfig.h"
+
+#if CONFIG_JOLT_FS_SPIFFS
+    #include "esp_spiffs.h"
+#elif CONFIG_JOLT_FS_LITTLEFS 
+    #include "esp_littlefs.h"
+#elif CONFIG_JOLT_FS_FAT
+    assert(0);
+#endif
+
 #include "esp_vfs_dev.h"
 #include "linenoise/linenoise.h"
 #include "sodium.h"
@@ -22,28 +31,38 @@ static const char* TAG = "console_syscore_fs";
 
 void jolt_fs_init() {
     esp_err_t ret;
+
+#if CONFIG_JOLT_FS_SPIFFS
     esp_vfs_spiffs_conf_t conf = {
       .base_path = JOLT_FS_MOUNTPT,
-      .partition_label = NULL,
+      .partition_label = JOLT_FS_PARTITION,
       .max_files = 3,
       .format_if_mount_failed = true
     };
-    ret = esp_vfs_spiffs_register(&conf); // Will format system (nonblocking) if cannot mount SPIFFS
+    ret = esp_vfs_spiffs_register(&conf);
+#elif CONFIG_JOLT_FS_LITTLEFS 
+    esp_vfs_littlefs_conf_t conf = {
+      .base_path = JOLT_FS_MOUNTPT,
+      .partition_label = JOLT_FS_PARTITION,
+      .max_files = 3,
+      .format_if_mount_failed = true
+    };
+    ret = esp_vfs_littlefs_register(&conf);
+#elif CONFIG_JOLT_FS_FAT
+    assert(0);
+#endif
+
     if (ret != ESP_OK) {
-        if (ret == ESP_FAIL) {
-            ESP_LOGE(TAG, "Failed to mount or format filesystem");
-        } else if (ret == ESP_ERR_NOT_FOUND) {
-            ESP_LOGE(TAG, "Failed to find SPIFFS partition");
-        } else {
-            ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
-        }
+        ESP_LOGE(TAG, "Failed to mount or format filesystem");
+        esp_restart();
         return;
     }
     size_t total = 0, used = 0;
-    ret = esp_spiffs_info(NULL, &total, &used);
+    ret = jolt_fs_info(&total, &used);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
-    } else {
+        ESP_LOGE(TAG, "Failed to get partition information (%s)", esp_err_to_name(ret));
+    }
+    else {
         ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
     }
 }
@@ -112,16 +131,12 @@ uint16_t jolt_fs_get_all_jelf_fns(char ***fns) {
 
 uint32_t jolt_fs_free() {
     uint32_t tot, used;
-    esp_spiffs_info(NULL, &tot, &used);
+    jolt_fs_info(&tot, &used);
     return (tot-used-JOLT_FS_MIN_FREE);
 }
 
 size_t jolt_fs_size(const char *fname) {
     struct stat sb;
-
-    if (!esp_spiffs_mounted( NULL )) {
-        return -1;
-    }
 
     if( 0 != stat(fname, &sb) ) {
         return -1;
@@ -131,10 +146,6 @@ size_t jolt_fs_size(const char *fname) {
 }
 
 bool jolt_fs_exists(const char *fname) {
-    if (!esp_spiffs_mounted( NULL )) {
-        return false;
-    }
-
     struct stat sb;
     if (stat(fname, &sb) == 0) {
         return true;
@@ -193,3 +204,33 @@ void jolt_fs_parse_buf(char **fullpath, char **fn){
 
     *fn = &path[sizeof(JOLT_FS_MOUNTPT)];
 }
+
+esp_err_t jolt_fs_format(){
+#if CONFIG_JOLT_FS_SPIFFS
+    return esp_spiffs_format(JOLT_FS_PARTITION);
+#elif CONFIG_JOLT_FS_LITTLEFS 
+    return esp_littlefs_format(JOLT_FS_PARTITION);
+#elif CONFIG_JOLT_FS_FAT
+    assert(0); // TODO implement
+#endif
+}
+
+esp_err_t jolt_fs_info(size_t *total_bytes, size_t *used_bytes) {
+#if CONFIG_JOLT_FS_SPIFFS
+    return esp_spiffs_info(JOLT_FS_PARTITION, total_bytes, used_bytes);
+#elif CONFIG_JOLT_FS_LITTLEFS 
+    return esp_littlefs_info(JOLT_FS_PARTITION, total_bytes, used_bytes);
+#elif CONFIG_JOLT_FS_FAT
+    assert(0);
+#endif
+}
+
+#if 0
+#if CONFIG_JOLT_FS_SPIFFS
+    assert(0);
+#elif CONFIG_JOLT_FS_LITTLEFS 
+    assert(0);
+#elif CONFIG_JOLT_FS_FAT
+    assert(0);
+#endif
+#endif
