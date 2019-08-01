@@ -1,4 +1,3 @@
-#include "esp_spiffs.h"
 #include "esp_vfs_dev.h"
 #include "filesystem.h"
 #include "esp32/rom/miniz.h"

@@ -1,5 +1,4 @@
 #include "stdio.h"
-#include "esp_spiffs.h"
 #include "esp_vfs_dev.h"
 #include "syscore/cli_helpers.h"
 #include "syscore/filesystem.h"

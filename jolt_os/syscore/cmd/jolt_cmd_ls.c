@@ -1,5 +1,4 @@
 #include "stdio.h"
-#include "esp_spiffs.h"
 #include "esp_vfs_dev.h"
 #include "syscore/filesystem.h"
 #include "jolt_helpers.h"
@@ -48,7 +47,7 @@ int jolt_cmd_ls(int argc, char** argv) {
 
     {
         uint32_t tot, used;
-        esp_spiffs_info(NULL, &tot, &used);
+        jolt_fs_info(&tot, &used);
         if( NULL == cJSON_AddNumberToObject(json, "total", tot)) EXIT(-3);
         if( NULL == cJSON_AddNumberToObject(json, "free", tot-used)) EXIT(-3);
     }

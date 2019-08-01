@@ -6,8 +6,7 @@
 #include "syscore/filesystem.h"
 
 static const char TAG[] = "json_config";
-
-static const char PATH_STR[] = "/spiffs/%s.json";
+static const char EXT[] = "json";
 
 cJSON *jolt_json_read( const char *fn ) {
     FILE *f = NULL;
@@ -86,11 +85,15 @@ exit:
 }
 
 cJSON *jolt_json_read_app() {
-    char *name;
-    char buf[128] = { 0 };
-    name = launch_get_name();
-    snprintf(buf, sizeof(buf), PATH_STR, name);
-    return jolt_json_read(buf);
+    char *name = NULL, *path = NULL;
+    cJSON *json = NULL;
+    if( NULL == (name = launch_get_name()) ) goto exit;
+    if( NULL == (path = jolt_fs_parse(name, EXT)) ) goto exit;
+    json = jolt_json_read(path);
+
+exit:
+    SAFE_FREE(path);
+    return json;
 }
 
 int jolt_json_write(const char *fn, const cJSON *json) {
@@ -140,10 +143,14 @@ exit:
 }
 
 int jolt_json_write_app( const cJSON *json ) {
-    char *name;
-    char buf[128] = { 0 };
-    name = launch_get_name();
-    snprintf(buf, sizeof(buf), PATH_STR, name);
-    return jolt_json_write(buf, json);
+    char *name = NULL, *path = NULL;
+    int return_code;
+    if( NULL == (name = launch_get_name()) ) EXIT(-1);
+    if( NULL == (path = jolt_fs_parse(name, EXT)) ) EXIT(-2);
+    return_code = jolt_json_write(path, json);
+
+exit:
+    SAFE_FREE(path);
+    return return_code;
 }
 

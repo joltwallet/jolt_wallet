@@ -44,7 +44,6 @@
 #include "syscore/ymodem.h"
 #include "syscore/ymodem/ymodem_common.h"
 #include <driver/uart.h>
-#include "esp_spiffs.h"
 #include "esp_log.h"
 #include "syscore/decompress.h"
 #include "syscore/filesystem.h"

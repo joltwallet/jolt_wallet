@@ -523,4 +523,22 @@ menu "JoltOS"
         prompt "Enable Partition Table Hash check"
         default y
 
+    menu "Filesystem"
+        choice
+            prompt "Driver"
+            config JOLT_FS_SPIFFS
+                bool "Use SPIFFS Filesystem"
+                help
+                    Use SPIFFS for the filesystem.
+            config JOLT_FS_FAT
+                bool "Use FAT Filesystem"
+                help
+                    Use FAT for the filesystem.
+            config JOLT_FS_LITTLEFS
+                bool "Use LittleFS Filesystem"
+                help
+                    Use LittleFS for the filesystem.
+        endchoice
+    endmenu
+
 endmenu

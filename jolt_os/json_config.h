@@ -12,7 +12,7 @@
 /**
  * @brief read in and parse a compressed json file.
  *
- * @param[in] fn Path to JSON file (probably starts with "/spiffs/").
+ * @param[in] fn Fullpath to JSON file.
  * @return cJSON object representing parsed data
  */
 cJSON *jolt_json_read( const char *fn );
@@ -24,8 +24,8 @@ cJSON *jolt_json_read( const char *fn );
 cJSON *jolt_json_read_app();
 
 /**
- * @brief Writes json to a compressed file (probably starts with "/spiffs/").
- * @param[in] fn Path to write JSON to.
+ * @brief Writes json to a compressed file.
+ * @param[in] fn Fullpath to write JSON to.
  * @param[in] json JSON object to write.
  * @return 0 on success; -1 otherwise.
  */

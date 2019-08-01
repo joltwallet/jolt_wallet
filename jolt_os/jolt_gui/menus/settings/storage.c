@@ -1,6 +1,6 @@
 #include "jolt_gui/jolt_gui.h"
 #include "esp_log.h"
-#include "esp_spiffs.h"
+#include "syscore/filesystem.h"
 
 
 static const char TAG[] = "gui_storage";
@@ -11,7 +11,7 @@ void menu_storage_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
         uint8_t percentage;
         char subtitle[50];
 
-        esp_spiffs_info(NULL, &tot, &used);
+        jolt_fs_info(&tot, &used);
         percentage = (used*100)/tot;
 
         snprintf(subtitle, sizeof(subtitle), "%dKB Free / %dKB Total", used/1024, tot/1024);
