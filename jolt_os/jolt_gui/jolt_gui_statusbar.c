@@ -1,3 +1,5 @@
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
 #include "esp_log.h"
 #include "jolt_gui.h"
 #include "jolt_gui_symbols.h"
@@ -19,6 +21,9 @@ static uint16_t get_symbol_width( char *sym ) {
     return lv_font_get_glyph_width(font, uint32_t letter, uint32_t letter_next);
 }
 #endif
+static uint16_t get_statusbar_label_max_width(){
+    return 0;
+}
 
 static void statusbar_update( lv_task_t *task ) {
     /* Gets called from a lv_task to update the graphics according to 
@@ -100,10 +105,13 @@ static void statusbar_update( lv_task_t *task ) {
     }
     ptr += 3;
 
+    //strcpy(ptr, "meow"); // debug
+
     // Dont need a semaphore around here because this is called in an lv_task
     lv_label_set_text(statusbar_label, statusbar_symbols);
-    lv_obj_align(statusbar_label, statusbar_cont,
-            LV_ALIGN_IN_RIGHT_MID, -1, 0);
+    lv_obj_align(statusbar_label, statusbar_cont, LV_ALIGN_IN_RIGHT_MID, -1, 0);
+
+    ESP_LOGD(TAG, "statusbar_label x: %d w: %d", lv_obj_get_x(statusbar_label), lv_obj_get_width(statusbar_label));
 }
 
 /* Assumes that hardware_monitors have been externally intialized and the 
@@ -121,11 +129,15 @@ void statusbar_create() {
     lv_obj_set_size(statusbar_cont, LV_HOR_RES, CONFIG_JOLT_GUI_STATUSBAR_H);
 
     /* Create Indicator Label*/
-    // TODO: custom theme with font spacing 1
+    static lv_style_t statusbar_style;
     statusbar_label = lv_label_create(statusbar_cont, NULL);
-    lv_obj_set_size(statusbar_label, 60, header_style.text.font->line_height);
-    lv_label_set_long_mode(statusbar_label, LV_LABEL_LONG_EXPAND);
+    lv_style_copy(&statusbar_style, lv_obj_get_style(statusbar_label));
+    statusbar_style.text.letter_space = 1; // spacing between symbols
+    statusbar_style.text.font = &jolt_symbols;
+    lv_obj_set_style(statusbar_label, &statusbar_style);
+    lv_label_set_long_mode(statusbar_label, LV_LABEL_LONG_CROP);
     lv_label_set_align(statusbar_label, LV_LABEL_ALIGN_RIGHT);
+    lv_obj_set_size(statusbar_label, 60, header_style.text.font->line_height); // todo get actual width
 
     /* Periodically update the statusbar symbols */
     ESP_LOGD(TAG, "Creating Statusbar Update lv_task");

@@ -132,7 +132,10 @@ typedef int16_t lv_coord_t;
 /*1: Enable the Animations */
 #define LV_USE_ANIMATION        1
 #if LV_USE_ANIMATION
+
+/*Declare the type of the user data of animations (can be e.g. `void *`, `int`, `struct`)*/
 typedef void * lv_anim_user_data_t;
+
 #endif
 
 /* 1: Enable shadow drawing*/
@@ -192,12 +195,6 @@ typedef void * lv_img_decoder_user_data_t;
 /* Attribute to mark large constant arrays for example
  * font's bitmaps */
 #define LV_ATTRIBUTE_LARGE_CONST
-
-/* 1: Variable length array is supported*/
-#define LV_COMPILER_VLA_SUPPORTED            1
-
-/* 1: Initialization with non constant values are supported */
-#define LV_COMPILER_NON_CONST_INIT_SUPPORTED 1
 
 /*===================
  *  HAL settings
@@ -279,7 +276,8 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
 
 #define LV_FONT_CUSTOM_DECLARE \
         LV_FONT_DECLARE(unscii_8) \
-        LV_FONT_DECLARE(pixelmix)
+        LV_FONT_DECLARE(pixelmix) \
+        LV_FONT_DECLARE(jolt_symbols)
 
 #define LV_FONT_DEFAULT        &pixelmix
 
@@ -309,6 +307,14 @@ typedef void * lv_font_user_data_t;
 
 /* Minimum number of characters of a word to put on a line after a break */
 #define LV_TXT_LINE_BREAK_LONG_POST_MIN_LEN 3
+
+/*Change the built in (v)snprintf functions*/
+#define LV_SPRINTF_CUSTOM   1
+#if LV_SPRINTF_CUSTOM
+#  define LV_SPRINTF_INCLUDE <stdio.h>
+#  define lv_snprintf     snprintf
+#  define lv_vsnprintf    vsnprintf
+#endif  /*LV_SPRINTF_CUSTOM*/
 
 /*===================
  *  LV_OBJ SETTINGS
@@ -370,17 +376,13 @@ typedef uint8_t (*lv_action_t)(struct _lv_obj_t * obj);
 
 #define JOLT_GUI_USE_RESERVED 1 /* Use the `reserved` field of lv_obj_t. Reserved must be at least 6 bits. Saves potentially 4 bytes per lv_obj */
 
-#if JOLT_GUI_USE_RESERVED
 typedef struct {
     void *param;               /**< Free parameters. Consumer should only attach to the active object. */
-} lv_obj_user_data_t;          /*Declare the type of the user data of object (can be e.g. `void *`, `int`, `struct`)*/
-#else
-typedef struct {
-    void *param;               /**< Free parameters. Consumer should only attach to the active object. */
+#if !JOLT_GUI_USE_RESERVED
     uint8_t id:5;              /**< Either a screen id or an object id */
     uint8_t is_scr:1;          /**< 0=obj; 1=screen (parent object) */
-} lv_obj_user_data_t;          /*Declare the type of the user data of object (can be e.g. `void *`, `int`, `struct`)*/
 #endif
+} lv_obj_user_data_t;          /*Declare the type of the user data of object (can be e.g. `void *`, `int`, `struct`)*/
 
 /*1: enable `lv_obj_realaign()` based on `lv_obj_align()` parameters*/
 #define LV_USE_OBJ_REALIGN          0
@@ -459,10 +461,13 @@ typedef struct {
 /*Label (dependencies: -*/
 #define LV_USE_LABEL    1
 #if LV_USE_LABEL != 0
+
 /*Hor, or ver. scroll speed [px/sec] in 'LV_LABEL_LONG_ROLL/ROLL_CIRC' mode*/
 #  define LV_LABEL_DEF_SCROLL_SPEED       25
+
 #  define LV_LABEL_WAIT_CHAR_COUNT        4 /* Waiting period at beginning/end of animation cycle */
 #  define LV_LABEL_TEXT_SEL               0 /*Enable selecting text of the label */
+
 #endif
 
 /*LED (dependencies: -)*/
@@ -486,6 +491,10 @@ typedef struct {
 
 /*Page (dependencies: lv_cont)*/
 #define LV_USE_PAGE     1
+#if LV_USE_PAGE != 0
+/*Focus default animation time [ms] (0: no animation)*/
+#  define LV_PAGE_DEF_ANIM_TIME     400
+#endif
 
 /*Preload (dependencies: lv_arc)*/
 #define LV_USE_PRELOAD      1
