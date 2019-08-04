@@ -1,8 +1,13 @@
+#define LOG_LOCAL_LEVEL 4
+
 #include "stdio.h"
+#include "esp_log.h"
 #include "esp_vfs_dev.h"
 #include "syscore/filesystem.h"
 #include "jolt_helpers.h"
 #include "cJSON.h"
+
+static const char TAG[] = "jolt_cmd_ls";
 
 int jolt_cmd_ls(int argc, char** argv) {
 
@@ -32,6 +37,7 @@ int jolt_cmd_ls(int argc, char** argv) {
         /* Parse full filepath */
         if (tpath[strlen(tpath)-1] != '/') strcat(tpath,"/");
         strcat(tpath, ent->d_name);
+        ESP_LOGD(TAG, "stat path \"%s\"", tpath);
 
         if (stat(tpath, &sb)){
             /* Unknown size */
