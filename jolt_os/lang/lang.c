@@ -44,44 +44,30 @@ bool jolt_lang_set( jolt_lang_t lang ) {
         return false;
     }
     lv_font_t *font = NULL; /* base font to add extension fonts to */
-    uint8_t n_ext = 0;
-    lv_font_t **ext_fonts = NULL;
 
     jolt_lang_t current_lang;
     storage_get_u8(&current_lang, "user", "lang", CONFIG_JOLT_LANG_DEFAULT );
 
     /* Save the font and restart */
     if( current_lang != lang ){
+        ESP_LOGI(TAG, "Different language detected; rebooting...");
         storage_set_u8(lang, "user", "lang");
         esp_restart();
     }
 
 #if CONFIG_JOLT_LANG_ENGLISH_EN
-    if( JOLT_LANG_ENGLISH == lang ){
+    else if( JOLT_LANG_ENGLISH == lang ){
         lang_pack = jolt_lang_english;
         font = jolt_lang_english_font;
-        ext_fonts = jolt_lang_english_ext_fonts;
-        n_ext = jolt_lang_english_n_ext;
     }
 #endif
 
 #if CONFIG_JOLT_LANG_SPANISH_EN
-    if( JOLT_LANG_SPANISH == lang ){
+    else if( JOLT_LANG_SPANISH == lang ){
         lang_pack = jolt_lang_spanish;
         font = jolt_lang_spanish_font;
-        ext_fonts = jolt_lang_spanish_ext_fonts;
-        n_ext = jolt_lang_spanish_n_ext;
     }
 #endif
-
-    /* Add all font extensions to base font */
-    for(uint8_t i=0; i < n_ext; i++){
-        ESP_LOGI(TAG, "Adding ext font");
-        //lv_font_add(ext_fonts[i], font);
-    }
-
-    /* Add Jolt symbols to base font */
-    //lv_font_add(&jolt_gui_symbols, font);
 
     lv_theme_t *theme = jolt_gui_theme_init(0, font);
     lv_theme_set_current(theme);  

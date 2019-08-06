@@ -309,6 +309,13 @@ lv_obj_t *jolt_gui_obj_get_parent( const lv_obj_t *obj );
 
 #define if_not(x) if(!(x))
 
+/*****************
+ * Configuration *
+ *****************/
+#define JOLT_GUI_FONT_BIG_NUM &dejavu_40
+#define JOLT_GUI_FONT_DIGIT_ENTRY &dejavu_16
+#define JOLT_GUI_FONT_DEFAULT &pixelmix
+
 /**********
  * Macros *
  **********/

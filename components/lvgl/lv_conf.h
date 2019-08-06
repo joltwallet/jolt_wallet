@@ -254,10 +254,10 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
  * More info about fonts: https://docs.littlevgl.com/#Fonts
  * To create a new font go to: https://littlevgl.com/ttf-font-to-c-array
  */
-#define LV_FONT_ROBOTO_12    1
-#define LV_FONT_ROBOTO_16    1
+#define LV_FONT_ROBOTO_12    0
+#define LV_FONT_ROBOTO_16    0
 #define LV_FONT_ROBOTO_22    0
-#define LV_FONT_ROBOTO_28    1
+#define LV_FONT_ROBOTO_28    0
 
 
 /* Optionally declare your custom fonts here.
@@ -266,16 +266,12 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
  * #define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(my_font_1) \
  *                                LV_FONT_DECLARE(my_font_2)
  */
-#define LV_USE_FONT_CROX3HB_NUMERIC 1 /* Used for Pin Entry Roller Digits */
-#define LV_USE_FONT_DEJAVU_40_NUMERIC 1 /* Used for Misc big numbers */
-#define LV_USE_FONT_PIXELMIX_7 1 /* Default small font */
-
-#if CONFIG_JOLT_LANG_ENGLISH_EN || CONFIG_JOLT_LANG_SPANISH_EN
-    #define LV_USE_FONT_PIXELMIX_7_LATIN_SUP 1
-#endif
 
 #define LV_FONT_CUSTOM_DECLARE \
         LV_FONT_DECLARE(unscii_8) \
+        LV_FONT_DECLARE(dejavu_16) \
+        /*LV_FONT_DECLARE(dejavu_32)*/ \
+        LV_FONT_DECLARE(dejavu_40) \
         LV_FONT_DECLARE(pixelmix) \
         LV_FONT_DECLARE(jolt_symbols)
 

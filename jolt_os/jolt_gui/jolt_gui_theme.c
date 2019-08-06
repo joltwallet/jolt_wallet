@@ -6,7 +6,7 @@
 /*********************
  *      INCLUDES
  *********************/
-#include "lvgl/lvgl.h"
+#include "jolt_gui/jolt_gui.h"
 
 
 /*********************
@@ -406,7 +406,7 @@ static void roller_init(void)
     bg.body.padding.left = 3; // Width Padding of the entire roller
     bg.body.padding.right = 3; // Width Padding of the entire roller
     bg.body.padding.inner = 0;
-    bg.text.font = &pixelmix;
+    bg.text.font = JOLT_GUI_FONT_DIGIT_ENTRY;
     bg.text.line_space = 6; // Distance between options
 
     theme.style.roller.bg = &bg;
