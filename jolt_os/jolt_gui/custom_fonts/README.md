@@ -64,6 +64,7 @@ Just the numbers are used for PIN/digit entry.
 
 ###Font Modifications
 
+Removed left and right bearings.
 [TODO] Cleaned up some glyphs for pixel perfectness at this size.
 
 ### Conversion Settings
