@@ -50,7 +50,9 @@
 #include "syscore/filesystem.h"
 #include "jolt_helpers.h"
 
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
 uint64_t t_ymodem_send = 0, t_ymodem_receive = 0;
+#endif
 
 /**
     * @brief    Receive a packet from sender
@@ -158,11 +160,16 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
         getname = name;
     }
 
+    vTaskPrioritySet(NULL, 17);
+
     /* Profiling Variables */
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
     uint64_t t_ymodem_start = 0, t_ymodem_end = 0;
     uint64_t t_disk = 0;
     t_ymodem_send = 0;
     t_ymodem_receive = 0;
+    t_ymodem_start = esp_timer_get_time();
+#endif
 
     packet_data = malloc(PACKET_1K_SIZE + PACKET_OVERHEAD);
     if(NULL == packet_data){
@@ -170,8 +177,6 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
     }
 
     jolt_cli_suspend();
-
-    t_ymodem_start = esp_timer_get_time();
 
     send_CRC16(); /* Initiate Transfer */
     
@@ -227,6 +232,9 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                             }
                             else {
                                 if (packets_received == 0) {
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
+                                    ymodem_transfer_in_progress = true;
+#endif
                                     // ** First packet, Filename packet **
                                     if (packet_data[PACKET_HEADER] != 0) {
                                         errors = 0;
@@ -378,13 +386,19 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
     }
 
 exit:
+
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
     t_ymodem_end = esp_timer_get_time();
-    #if CONFIG_JOLT_COMPRESSION_AUTO 
+#endif
+#if CONFIG_JOLT_COMPRESSION_AUTO 
     decompress_obj_del( d );
-    #endif
+#endif
+
+    vTaskPrioritySet(NULL, CONFIG_JOLT_TASK_PRIORITY_BACKGROUND);
 
     jolt_cli_resume();
     esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
+    esp_log_level_set("wifi", ESP_LOG_NONE);
     if(NULL != packet_data) {
         free(packet_data);
     }
@@ -414,6 +428,7 @@ exit:
 
     if(size <= 0) BLE_UART_LOGE("Error %d", size);
 
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
     BLE_UART_LOGI(
             "\n-----------------------------\n"
             "YMODEM Profiling Results (%d Bytes):\n"
@@ -421,13 +436,22 @@ exit:
             "Receives:              %8d\n"
             "Sends:                 %8d\n"
             "Disk Writing           %8d\n"
+#if CONFIG_JOLT_BT_PROFILING
+            "Avg BLE Packet Life    %8d\n"
+#endif
+            "t_ble_read_timeout     %8d\n"
             "TOTAL                  %d\n"
             "-----------------------------\n\n",
             size,
             (uint32_t) t_ymodem_receive,
             (uint32_t) t_ymodem_send,
             (uint32_t) t_disk,
+#if CONFIG_JOLT_BT_PROFILING
+            (uint32_t) (ble_packet_cum_life / ble_packet_n),
+#endif
+            (uint32_t) t_ble_read_timeout,
             (uint32_t) (t_ymodem_end - t_ymodem_start));
+#endif
 
     return size;
 }

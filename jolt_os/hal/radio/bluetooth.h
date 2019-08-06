@@ -25,8 +25,15 @@
 typedef struct {
     uint8_t *data;
     uint32_t len;
+#if CONFIG_JOLT_BT_PROFILING
+    uint64_t t_receive; /**< System ime in uS the packet was received at */
+#endif
 } ble_packet_t;
 
+#if CONFIG_JOLT_BT_PROFILING
+extern uint64_t ble_packet_cum_life;
+extern uint32_t ble_packet_n;
+#endif
 
 #if CONFIG_BT_ENABLED
 /**

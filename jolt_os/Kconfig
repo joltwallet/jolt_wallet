@@ -387,6 +387,18 @@ menu "JoltOS"
              default n
              help
                  Always advertise; for debugging purposes only. Not enabled for production.
+        config JOLT_BT_YMODEM_PROFILING
+             bool
+             prompt "Profile ymodem transfers"
+             default n
+             help
+                 Profile ymodem transfers.
+        config JOLT_BT_PROFILING
+             bool
+             prompt "Profile bluetooth internals"
+             default n
+             help
+                 Profile bluetooth internals.
     endmenu
 
     menu "Battery"

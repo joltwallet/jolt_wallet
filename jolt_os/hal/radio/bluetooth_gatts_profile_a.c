@@ -11,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "esp_log.h"
+#include <esp_timer.h>
 
 
 static const char TAG[] = "GATTS_A";
@@ -65,7 +66,7 @@ static const char* gatts_evt_to_str(esp_gap_ble_cb_event_t event) {
 
 
 /* Only used to handle events for SPP_PROFILE_A_APP_ID */
-void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, 
+void IRAM_ATTR gatts_profile_a_event_handler(esp_gatts_cb_event_t event, 
         esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) {
 
     esp_ble_gatts_cb_param_t *p_data = (esp_ble_gatts_cb_param_t *) param;
@@ -93,11 +94,13 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
             if(p_data->write.is_prep == false){
                 ESP_LOGI(TAG, "ESP_GATTS_WRITE_EVT : handle = %d\n", res);
                 if(res == SPP_IDX_SPP_COMMAND_VAL){
-                    /* Allocate memory for 1 MTU;
-                     * send it off to the ble_in_queue */
+                    /* Forward packet to the ble_in_queue */
+                    ble_packet_t packet = { 0 };
+#if CONFIG_JOLT_BT_PROFILING
+                    packet.t_receive = esp_timer_get_time();
+#endif
                     ESP_LOGI(TAG, "SPP_IDX_SPP_COMMAND_VAL;"
                             " Allocating %d bytes.", p_data->write.len);
-                    ble_packet_t packet = { 0 };
                     // May need to revert this to allocate mtu
                     packet.data = (uint8_t *)malloc(p_data->write.len);
                     if(packet.data == NULL){

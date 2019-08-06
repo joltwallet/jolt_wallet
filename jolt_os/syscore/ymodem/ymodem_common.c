@@ -46,6 +46,12 @@
 #include "esp_log.h"
 #include "hal/radio/bluetooth.h"
 #include "jolt_helpers.h"
+#include <esp_timer.h>
+
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
+uint64_t t_ble_read_timeout = 0;
+bool ymodem_transfer_in_progress = false;
+#endif
 
 unsigned short IRAM_ATTR crc16(const unsigned char *buf, unsigned long count) {
     unsigned short crc = 0;
@@ -71,10 +77,18 @@ unsigned short IRAM_ATTR crc16(const unsigned char *buf, unsigned long count) {
 int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n) {
     int return_code = 0;
     int amount_read = 0;
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
     uint64_t t_start = esp_timer_get_time();
+#endif
     if(stdin == ble_stdin){
         /* Temporary hack in lieu of writing proper bluetooth select drivers */
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
+        if(ymodem_transfer_in_progress) t_ble_read_timeout -= esp_timer_get_time();
+#endif
         amount_read = ble_read_timeout(0, c, n, timeout / portTICK_PERIOD_MS);
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
+        if(ymodem_transfer_in_progress) t_ble_read_timeout += esp_timer_get_time();
+#endif
 
         if(amount_read >0){
             BLE_UART_LOGD("Read in %d bytes: \"", amount_read);
@@ -114,7 +128,9 @@ int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n)
         }while(amount_read < n);
     }
 exit:
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
     t_ymodem_receive += esp_timer_get_time() - t_start;
+#endif
     return return_code;
 }
 

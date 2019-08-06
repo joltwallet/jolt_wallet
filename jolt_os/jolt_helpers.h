@@ -139,7 +139,7 @@ void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *
 /* Log something to uart if BLE is the stdin */
 #define BLE_UART_LOG(format, ...) \
     if( stdin == ble_stdin){ \
-        char buf[1024]; \
+        char buf[1512]; \
         snprintf(buf, sizeof(buf), format, __VA_ARGS__); \
         uart_write_bytes(UART_NUM_0, buf, strlen(buf)); \
     }
