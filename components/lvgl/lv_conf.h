@@ -270,8 +270,7 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
 #define LV_FONT_CUSTOM_DECLARE \
         LV_FONT_DECLARE(unscii_8) \
         LV_FONT_DECLARE(dejavu_16) \
-        /*LV_FONT_DECLARE(dejavu_32)*/ \
-        LV_FONT_DECLARE(dejavu_40) \
+        LV_FONT_DECLARE(dejavu_32) \
         LV_FONT_DECLARE(pixelmix) \
         LV_FONT_DECLARE(jolt_symbols)
 
