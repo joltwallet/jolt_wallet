@@ -109,7 +109,11 @@ void IRAM_ATTR gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                     }
                     packet.len = p_data->write.len;
                     memcpy(packet.data, p_data->write.value, p_data->write.len);
-                    xQueueSend(ble_in_queue, &packet, 10/portTICK_PERIOD_MS);
+                    if(!xQueueSend(ble_in_queue, &packet, 10/portTICK_PERIOD_MS)){
+                        ESP_LOGE(TAG, "Timed out trying to put packet onto ble_in_queue");
+                        free(packet.data);
+                        break;
+                    }
                 }
                 else if(res == SPP_IDX_SPP_DATA_NOTIFY_CFG){
                     ESP_LOGI(TAG, "SPP_IDX_SPP_DATA_NOTIFY_CFG");

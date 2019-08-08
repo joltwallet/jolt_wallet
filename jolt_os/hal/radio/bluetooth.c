@@ -416,7 +416,7 @@ static void ble_end_select() {
 
 void esp_vfs_dev_ble_spp_register() {
     if ( NULL == ble_in_queue ) {
-        ble_in_queue = xQueueCreate(20, sizeof(ble_packet_t));
+        ble_in_queue = xQueueCreate(50, sizeof(ble_packet_t));
     }
 
     esp_vfs_t vfs = {
@@ -676,6 +676,15 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
          ************************************/
         /* Triggered by: esp_ble_gap_update_conn_params( &params ) */
         case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
+            ESP_LOGI(TAG, "update connetion params "
+                    "status = %d, min_int = %d, max_int = %d, "
+                    "conn_int = %d,latency = %d, timeout = %d",
+                    param->update_conn_params.status,
+                    param->update_conn_params.min_int,
+                    param->update_conn_params.max_int,
+                    param->update_conn_params.conn_int,
+                    param->update_conn_params.latency,
+                    param->update_conn_params.timeout);
             break;
         /* Triggered by: esp_ble_gap_set_pkt_data_len() */
         case ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT:

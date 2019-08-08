@@ -52,6 +52,11 @@
 
 #if CONFIG_JOLT_BT_YMODEM_PROFILING
 uint64_t t_ymodem_send = 0, t_ymodem_receive = 0;
+
+static uint64_t t_ymodem_first_byte_cum = 0;
+static uint32_t n_ymodem_first_byte = 0;
+static uint64_t t_ymodem_packet_cum = 0;
+static uint32_t n_ymodem_packet = 0;
 #endif
 
 /**
@@ -70,14 +75,21 @@ uint64_t t_ymodem_send = 0, t_ymodem_receive = 0;
 //--------------------------------------------------------------------------
 static int32_t IRAM_ATTR receive_packet(uint8_t *data, int *length, uint32_t timeout)
 {
-    int count, packet_size;
+    int count, packet_size, rec_bytes;
     unsigned char ch;
     *length = 0;
     
     // receive 1st byte
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
+    uint64_t t_start = esp_timer_get_time();
+#endif
     if (receive_byte(&ch, timeout) < 0) {
         return -1;
     }
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
+    t_ymodem_first_byte_cum += esp_timer_get_time() - t_start;
+    n_ymodem_first_byte++;
+#endif
 
     switch (ch) {
         case SOH:
@@ -106,12 +118,23 @@ static int32_t IRAM_ATTR receive_packet(uint8_t *data, int *length, uint32_t tim
             rx_consume();
             return ABORT_BY_TIMEOUT;
     }
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
+    t_ymodem_packet_cum -= esp_timer_get_time();
+#endif
 
-    *data = (uint8_t)ch;
-    uint8_t *dptr = data+1;
-    count = packet_size + PACKET_OVERHEAD-1;
+    {
+        *data = (uint8_t)ch;
+        uint8_t *dptr = data+1;
+        count = packet_size + PACKET_OVERHEAD-1;
+        rec_bytes = receive_bytes(dptr, timeout, count);
+    }
 
-    if( receive_bytes(dptr, timeout, count) < 0 ) {
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
+    t_ymodem_packet_cum += esp_timer_get_time();
+    n_ymodem_packet++;
+#endif
+
+    if( rec_bytes < 0 ) {
         BLE_UART_LOGI("%d) timeout receive_bytes", __LINE__);
         return ABORT_BY_TIMEOUT;
     }
@@ -125,6 +148,7 @@ static int32_t IRAM_ATTR receive_packet(uint8_t *data, int *length, uint32_t tim
         *length = -3;
         return 0;
     }
+
 
     *length = packet_size;
     return 0;
@@ -439,6 +463,8 @@ exit:
 #if CONFIG_JOLT_BT_PROFILING
             "Avg BLE Packet Life    %8d\n"
 #endif
+            "Avg ymodem Packet Wait %8d\n"
+            "Avg first byte wait    %8d\n"
             "t_ble_read_timeout     %8d\n"
             "TOTAL                  %d\n"
             "-----------------------------\n\n",
@@ -449,6 +475,8 @@ exit:
 #if CONFIG_JOLT_BT_PROFILING
             (uint32_t) (ble_packet_cum_life / ble_packet_n),
 #endif
+            (uint32_t) (t_ymodem_packet_cum / n_ymodem_packet),
+            (uint32_t) (t_ymodem_first_byte_cum / n_ymodem_first_byte),
             (uint32_t) t_ble_read_timeout,
             (uint32_t) (t_ymodem_end - t_ymodem_start));
 #endif
