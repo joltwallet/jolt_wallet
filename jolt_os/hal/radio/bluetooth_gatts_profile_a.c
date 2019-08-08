@@ -195,6 +195,19 @@ void IRAM_ATTR gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                 }
                 else {
                     esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_MITM);
+
+                    esp_ble_conn_update_params_t conn_params = {0};
+                    memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
+                    /* For the IOS system, please reference the apple official documents about the ble connection parameters restrictions. */
+                    conn_params.latency = 0;
+                    conn_params.max_int = 0x20;    // max_int = 0x20*1.25ms = 40ms
+                    conn_params.min_int = 0x00;    // min_int = 0x10*1.25ms = 20ms
+                    conn_params.timeout = 400;    // timeout = 400*10ms = 4000ms
+                    ESP_LOGI(TAG, "ESP_GATTS_CONNECT_EVT, conn_id %d, remote %02x:%02x:%02x:%02x:%02x:%02x:",
+                             param->connect.conn_id,
+                             param->connect.remote_bda[0], param->connect.remote_bda[1], param->connect.remote_bda[2],
+                             param->connect.remote_bda[3], param->connect.remote_bda[4], param->connect.remote_bda[5]);
+                    esp_ble_gap_update_conn_params(&conn_params);
                 }
             }
         	break;

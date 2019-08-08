@@ -358,11 +358,15 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                         else
                                         #endif
                                         {
+#if 0
                                             BLE_UART_LOGD("Writing %d bytes to disk.\n", write_len);
                                             written_bytes = write_fun(
                                                     (char*)(packet_data + PACKET_HEADER), 
                                                     1, write_len, ffd);
                                             BLE_UART_LOGD("%d bytes written to disk.\n", file_len);
+#else
+                                            written_bytes = write_len;
+#endif
                                         }
                                         t_disk += esp_timer_get_time() - t_disk_start;
 
