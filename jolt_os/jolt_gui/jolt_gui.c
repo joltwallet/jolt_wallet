@@ -41,7 +41,6 @@ const jolt_gui_event_enum_t jolt_gui_event = {
     .defocused = LV_EVENT_DEFOCUSED,
     .value_changed = LV_EVENT_VALUE_CHANGED,
     .insert = LV_EVENT_INSERT,
-    .selected = LV_EVENT_SELECTED,
     .refresh = LV_EVENT_REFRESH,
     .apply = LV_EVENT_APPLY,  /*"Ok", "Apply" or similar specific button has clicked*/
     .cancel = LV_EVENT_CANCEL, /*"Close", "Cancel" or similar specific button has clicked*/
@@ -204,7 +203,7 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
         label = BREAK_IF_NULL(lv_label_create(title_cont, NULL));
         jolt_gui_obj_id_set(label, JOLT_GUI_OBJ_ID_LABEL_0);
         const lv_style_t *label_style = lv_obj_get_style(label);
-        lv_label_set_long_mode(label, LV_LABEL_LONG_ROLL);
+        lv_label_set_long_mode(label, LV_LABEL_LONG_SROLL);
         lv_label_set_body_draw(label, false); // dont draw background
         lv_obj_align(label, NULL, LV_ALIGN_IN_LEFT_MID, 0, 0);
         if( NULL == title ){
@@ -213,7 +212,7 @@ lv_obj_t *jolt_gui_obj_title_create(lv_obj_t *parent, const char *title) {
         else{
             lv_label_set_text(label, title);
         }
-        lv_obj_set_size(label, lv_obj_get_width(title_cont), label_style->text.font->h_px);
+        lv_obj_set_size(label, lv_obj_get_width(title_cont), label_style->text.font->line_height);
     }
     return label;
 }
@@ -256,8 +255,8 @@ void jolt_gui_group_create() {
         lv_theme_t * th = lv_theme_get_current();
         group = BREAK_IF_NULL(lv_group_create());
         lv_group_set_refocus_policy(group, LV_GROUP_REFOCUS_POLICY_PREV);
-        lv_group_set_style_mod_cb(group, th->group.style_mod_cb);
-        lv_group_set_style_mod_edit_cb(group, th->group.style_mod_edit_cb);
+        lv_group_set_style_mod_cb(group, th->group.style_mod_xcb);
+        lv_group_set_style_mod_edit_cb(group, th->group.style_mod_edit_xcb);
         success = true;
     }
     if( !success ){

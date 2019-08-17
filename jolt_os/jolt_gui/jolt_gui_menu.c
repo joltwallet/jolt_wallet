@@ -12,7 +12,7 @@
  *       +--LIST
  */
 #define LABEL_LONG_MODE_DEFAULT LV_LABEL_LONG_DOT
-#define LABEL_LONG_MODE_SELECTED LV_LABEL_LONG_ROLL 
+#define LABEL_LONG_MODE_SELECTED LV_LABEL_LONG_SROLL 
 static const char TAG[] = "scr_menu";
 
 static lv_signal_cb_t old_list_signal = NULL;     /*Store the old signal function*/
@@ -103,10 +103,12 @@ jolt_gui_obj_t *jolt_gui_scr_menu_get_scr( jolt_gui_obj_t *btn ) {
 /* Adds an item to a Jolt Menu Screen */
 jolt_gui_obj_t *jolt_gui_scr_menu_add(jolt_gui_obj_t *par, const void *img_src,
         const char *txt, lv_event_cb_t rel_action) {
+    // TODO: change rel_action name
     jolt_gui_obj_t *btn = NULL;
     JOLT_GUI_CTX{
         jolt_gui_obj_t *list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list( par ));
-        btn = BREAK_IF_NULL(lv_list_add(list, img_src, txt, rel_action));
+        btn = BREAK_IF_NULL(lv_list_add_btn(list, img_src, txt));
+        lv_obj_set_event_cb(btn, rel_action);
         jolt_gui_obj_t *label = BREAK_IF_NULL(lv_list_get_btn_label(btn));
         if( 1 == lv_list_get_size(list) ){
             lv_label_set_long_mode(label, LABEL_LONG_MODE_SELECTED);

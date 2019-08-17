@@ -13,13 +13,15 @@
 #define LV_CONF_H
 /* clang-format off */
 
+#include <stdint.h>
+
 /*====================
    Graphical settings
  *====================*/
 
 /* Maximal horizontal and vertical resolution to support by the library.*/
-#define LV_HOR_RES_MAX          (640)
-#define LV_VER_RES_MAX          (480)
+#define LV_HOR_RES_MAX          (480)
+#define LV_VER_RES_MAX          (320)
 
 /* Color depth:
  * - 1:  1 byte per pixel
@@ -27,7 +29,7 @@
  * - 16: RGB565
  * - 32: ARGB8888
  */
-#define LV_COLOR_DEPTH     32
+#define LV_COLOR_DEPTH     16
 
 /* Swap the 2 bytes of RGB565 color.
  * Useful if the display has a 8 bit interface (e.g. SPI)*/
@@ -36,7 +38,7 @@
 /* 1: Enable screen transparency.
  * Useful for OSD or other overlapping GUIs.
  * Requires `LV_COLOR_DEPTH = 32` colors and the screen's style should be modified: `style.body.opa = ...`*/
-#define LV_COLOR_SCREEN_TRANSP        0
+#define LV_COLOR_SCREEN_TRANSP    0
 
 /*Images pixels with this color will not be drawn (with chroma keying)*/
 #define LV_COLOR_TRANSP    LV_COLOR_LIME         /*LV_COLOR_LIME: pure green*/
@@ -53,6 +55,9 @@
  * (Not so important, you can adjust it to modify default sizes and spaces)*/
 #define LV_DPI              100     /*[px]*/
 
+/* Type of coordinates. Should be `int16_t` (or `int32_t` for extreme cases) */
+typedef int16_t lv_coord_t;
+
 /*=========================
    Memory manager settings
  *=========================*/
@@ -64,7 +69,7 @@
 #define LV_MEM_CUSTOM      0
 #if LV_MEM_CUSTOM == 0
 /* Size of the memory used by `lv_mem_alloc` in bytes (>= 2kB)*/
-#  define LV_MEM_SIZE    (128U * 1024U)
+#  define LV_MEM_SIZE    (32U * 1024U)
 
 /* Complier prefix for a big array declaration */
 #  define LV_MEM_ATTR
@@ -119,10 +124,10 @@
  *==================*/
 
 /*1: Enable the Animations */
-#define LV_USE_ANIMATION        1
+#define LV_USE_ANIMATION        0
 #if LV_USE_ANIMATION
-typedef void * lv_anim_user_data_t;      /*Type of user data in `lv_anim_t`*/
-#endif /*LV_USE_ANIMATION*/
+typedef void * lv_anim_user_data_t;
+#endif
 
 /* 1: Enable shadow drawing*/
 #define LV_USE_SHADOW           1
@@ -130,7 +135,7 @@ typedef void * lv_anim_user_data_t;      /*Type of user data in `lv_anim_t`*/
 /* 1: Enable object groups (for keyboard/encoder navigation) */
 #define LV_USE_GROUP            1
 #if LV_USE_GROUP
-typedef void * lv_group_user_data_t;     /*Type of user data in `lv_group_t`*/
+typedef void * lv_group_user_data_t;
 #endif  /*LV_USE_GROUP*/
 
 /* 1: Enable GPU interface*/
@@ -138,18 +143,34 @@ typedef void * lv_group_user_data_t;     /*Type of user data in `lv_group_t`*/
 
 /* 1: Enable file system (might be required for images */
 #define LV_USE_FILESYSTEM       1
+#if LV_USE_FILESYSTEM
+/*Declare the type of the user data of file system drivers (can be e.g. `void *`, `int`, `struct`)*/
+typedef void * lv_fs_drv_user_data_t;
+#endif
+
+/*1: Add a `user_data` to drivers and objects*/
+#define LV_USE_USER_DATA        1
+
+/*========================
+ * Image decoder and cache
+ *========================*/
 
 /* 1: Enable indexed (palette) images */
-#define LV_IMG_CF_INDEXED   1
+#define LV_IMG_CF_INDEXED       1
 
 /* 1: Enable alpha indexed images */
-#define LV_IMG_CF_ALPHA     1
+#define LV_IMG_CF_ALPHA         1
+
+/* Default image cache size. Image caching keeps the images opened.
+ * If only the built-in image formats are used there is no real advantage of caching.
+ * (I.e. no new image decoder is added)
+ * With complex image decoders (e.g. PNG or JPG) caching can save the continuous open/decode of images.
+ * However the opened images might consume additional RAM.
+ * LV_IMG_CACHE_DEF_SIZE must be >= 1 */
+#define LV_IMG_CACHE_DEF_SIZE       1
 
 /*Declare the type of the user data of image decoder (can be e.g. `void *`, `int`, `struct`)*/
 typedef void * lv_img_decoder_user_data_t;
-
-/*1: Add a `user_data` to drivers and objects*/
-#define LV_USE_USER_DATA 1
 
 /*=====================
  *  Compiler settings
@@ -159,6 +180,15 @@ typedef void * lv_img_decoder_user_data_t;
 
 /* Define a custom attribute to `lv_task_handler` function */
 #define LV_ATTRIBUTE_TASK_HANDLER
+
+/* With size optimization (-Os) the compiler might not align data to
+ * 4 or 8 byte boundary. This alignment will be explicitly applied where needed.
+ * E.g. __attribute__((aligned(4))) */
+#define LV_ATTRIBUTE_MEM_ALIGN
+
+/* Attribute to mark large constant arrays for example
+ * font's bitmaps */
+#define LV_ATTRIBUTE_LARGE_CONST
 
 /* 1: Variable length array is supported*/
 #define LV_COMPILER_VLA_SUPPORTED            1
@@ -179,14 +209,14 @@ typedef void * lv_img_decoder_user_data_t;
 #endif   /*LV_TICK_CUSTOM*/
 
 typedef void * lv_disp_drv_user_data_t;             /*Type of user data in the display driver*/
-typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the display driver*/
+typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the input device driver*/
 
 /*================
  * Log settings
  *===============*/
 
 /*1: Enable the log module*/
-#define LV_USE_LOG      1
+#define LV_USE_LOG      0
 #if LV_USE_LOG
 /* How important log should be added:
  * LV_LOG_LEVEL_TRACE       A lot of logs to give detailed information
@@ -194,11 +224,11 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the d
  * LV_LOG_LEVEL_WARN        Log if something unwanted happened but didn't cause a problem
  * LV_LOG_LEVEL_ERROR       Only critical issue, when the system may fail
  */
-#  define LV_LOG_LEVEL    LV_LOG_LEVEL_INFO
+#  define LV_LOG_LEVEL    LV_LOG_LEVEL_WARN
 
 /* 1: Print the log with 'printf';
  * 0: user need to register a callback with `lv_log_register_print`*/
-#  define LV_LOG_PRINTF   1
+#  define LV_LOG_PRINTF   0
 #endif  /*LV_USE_LOG*/
 
 /*================
@@ -219,40 +249,29 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the d
  *    FONT USAGE
  *===================*/
 
-/* More info about fonts: https://docs.littlevgl.com/#Fonts
- * To enable a built-in font use 1,2,4 or 8 values
- * which will determine the bit-per-pixel. Higher value means smoother fonts */
-#define LV_USE_FONT_DEJAVU_10              0
-#define LV_USE_FONT_DEJAVU_10_LATIN_SUP    0
-#define LV_USE_FONT_DEJAVU_10_CYRILLIC     0
-#define LV_USE_FONT_SYMBOL_10              0
-
-#define LV_USE_FONT_DEJAVU_20              4
-#define LV_USE_FONT_DEJAVU_20_LATIN_SUP    0
-#define LV_USE_FONT_DEJAVU_20_CYRILLIC     0
-#define LV_USE_FONT_SYMBOL_20              4
-
-#define LV_USE_FONT_DEJAVU_30              0
-#define LV_USE_FONT_DEJAVU_30_LATIN_SUP    0
-#define LV_USE_FONT_DEJAVU_30_CYRILLIC     0
-#define LV_USE_FONT_SYMBOL_30              0
-
-#define LV_USE_FONT_DEJAVU_40              4
-#define LV_USE_FONT_DEJAVU_40_LATIN_SUP    0
-#define LV_USE_FONT_DEJAVU_40_CYRILLIC     0
-#define LV_USE_FONT_SYMBOL_40              4
-
-#define LV_USE_FONT_MONOSPACE_8            0
+/* The built-in fonts contains the ASCII range and some Symbols with  4 bit-per-pixel.
+ * The symbols are available via `LV_SYMBOL_...` defines
+ * More info about fonts: https://docs.littlevgl.com/#Fonts
+ * To create a new font go to: https://littlevgl.com/ttf-font-to-c-array
+ */
+#define LV_FONT_ROBOTO_12    0
+#define LV_FONT_ROBOTO_16    1
+#define LV_FONT_ROBOTO_22    0
+#define LV_FONT_ROBOTO_28    0
 
 /* Optionally declare your custom fonts here.
  * You can use these fonts as default font too
  * and they will be available globally. E.g.
  * #define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(my_font_1) \
- *                                LV_FONT_DECLARE(my_font_2) \
+ *                                LV_FONT_DECLARE(my_font_2)
  */
 #define LV_FONT_CUSTOM_DECLARE
 
-#define LV_FONT_DEFAULT        &lv_font_dejavu_20     /*Always set a default font from the built-in fonts*/
+/*Always set a default font from the built-in fonts*/
+#define LV_FONT_DEFAULT        &lv_font_roboto_16
+
+/*Declare the type of the user data of fonts (can be e.g. `void *`, `int`, `struct`)*/
+typedef void * lv_font_user_data_t;
 
 /*=================
  *  Text settings
@@ -265,7 +284,7 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the d
  * */
 #define LV_TXT_ENC LV_TXT_ENC_UTF8
 
-/*Can break (wrap) texts on these chars*/
+ /*Can break (wrap) texts on these chars*/
 #define LV_TXT_BREAK_CHARS                  " ,.;:-_"
 
 /* If a character is at least this long, will break wherever "prettiest" */
@@ -275,7 +294,8 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the d
 #define LV_TXT_LINE_BREAK_LONG_PRE_MIN_LEN  3
 
 /* Minimum number of characters of a word to put on a line after a break */
-#define LV_TXT_LINE_BREAK_LONG_POST_MIN_LEN 1
+#define LV_TXT_LINE_BREAK_LONG_POST_MIN_LEN 4
+
 
 /*===================
  *  LV_OBJ SETTINGS
@@ -292,7 +312,7 @@ typedef void * lv_obj_user_data_t;
  * LV_EXT_CLICK_AREA_TINY: The extra area can be adjusted horizontally and vertically (0..255 px)
  * LV_EXT_CLICK_AREA_FULL: The extra area can be adjusted in all 4 directions (-32k..+32k px)
  */
-#define LV_USE_EXT_CLICK_AREA LV_EXT_CLICK_AREA_FULL
+#define LV_USE_EXT_CLICK_AREA  LV_EXT_CLICK_AREA_OFF
 
 /*==================
  *  LV OBJ X USAGE
@@ -361,9 +381,17 @@ typedef void * lv_obj_user_data_t;
 /*Label (dependencies: -*/
 #define LV_USE_LABEL    1
 #if LV_USE_LABEL != 0
-#  define LV_LABEL_DEF_SCROLL_SPEED       25  /*Hor/ver scroll speed [px/sec] in 'LV_LABEL_LONG_ROLL/ROLL_CIRC' mode*/
-#  define LV_LABEL_WAIT_CHAR_COUNT        3  /* Waiting period at start/end of animation cycle */
-#  define LV_LABEL_TEXT_SEL               1  /*Enable selecting text of the label */
+/*Hor, or ver. scroll speed [px/sec] in 'LV_LABEL_LONG_ROLL/ROLL_CIRC' mode*/
+#  define LV_LABEL_DEF_SCROLL_SPEED       25
+
+/* Waiting period at beginning/end of animation cycle */
+#  define LV_LABEL_WAIT_CHAR_COUNT        3
+
+/*Enable selecting text of the label */
+#  define LV_LABEL_TEXT_SEL               0
+
+/*Store extra some info in labels (12 bytes) to speed up drawing of very long texts*/
+#  define LV_LABEL_LONG_TXT_HINT          0
 #endif
 
 /*LED (dependencies: -)*/
@@ -388,8 +416,8 @@ typedef void * lv_obj_user_data_t;
 /*Page (dependencies: lv_cont)*/
 #define LV_USE_PAGE     1
 
-/*Preload (dependencies: lv_arc)*/
-#define LV_USE_PRELOAD      1
+/*Preload (dependencies: lv_arc, lv_anim)*/
+#define LV_USE_PRELOAD      0
 #if LV_USE_PRELOAD != 0
 #  define LV_PRELOAD_DEF_ARC_LENGTH   60      /*[deg]*/
 #  define LV_PRELOAD_DEF_SPIN_TIME    1000    /*[ms]*/
@@ -418,8 +446,8 @@ typedef void * lv_obj_user_data_t;
 /*Text area (dependencies: lv_label, lv_page)*/
 #define LV_USE_TA       1
 #if LV_USE_TA != 0
-#  define LV_TA_CURSOR_BLINK_TIME 400     /*ms*/
-#  define LV_TA_PWD_SHOW_TIME     1500    /*ms*/
+#  define LV_TA_DEF_CURSOR_BLINK_TIME 400     /*ms*/
+#  define LV_TA_DEF_PWD_SHOW_TIME     1500    /*ms*/
 #endif
 
 /*Table (dependencies: lv_label)*/

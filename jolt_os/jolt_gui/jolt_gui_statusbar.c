@@ -1,3 +1,5 @@
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
 #include "esp_log.h"
 #include "jolt_gui.h"
 #include "jolt_gui_symbols.h"
@@ -9,34 +11,44 @@ static lv_style_t header_style;
 static jolt_gui_obj_t *statusbar_cont;
 static jolt_gui_obj_t *statusbar_label;
 
-static lv_coord_t get_symbol_width( char *sym ) {
+#define JOLT_STATUSBAR_SYMBOL_SPACE 1
+
+#if 0
+static uint16_t get_symbol_width( char *sym ) {
     const lv_font_t *font = header_style.text.font;
     uint32_t i = 0;
     uint32_t letter;
     letter = lv_txt_encoded_next(sym, &i);
     return lv_font_get_width(font, letter);
+    return lv_font_get_glyph_width(font, uint32_t letter, uint32_t letter_next);
 }
+#endif
+static uint16_t get_statusbar_label_max_width(){
+    char statusbar_symbols[20] = { 0 };
+    char *ptr = statusbar_symbols;
+    lv_point_t size_res = { 0 };
 
-static lv_coord_t statusbar_icons_get_max_width() {
-    static lv_coord_t w = 0;
+    strcpy(ptr, JOLT_GUI_SYMBOL_LOCK);
+    ptr += 3;
 
-    /* Add up all the widest symbols that could be displayed at once */
-    /* Only have to compute this once */
-    if( 0 == w ) {
-        w += get_symbol_width(JOLT_GUI_SYMBOL_LOCK);
-        w += header_style.text.letter_space;
+    strcpy(ptr, JOLT_GUI_SYMBOL_BLUETOOTH_CONN);
+    ptr += 3;
 
-        w += get_symbol_width(JOLT_GUI_SYMBOL_BLUETOOTH_CONN);
-        w += header_style.text.letter_space;
+    strcpy(ptr, JOLT_GUI_SYMBOL_WIFI_3);
+    ptr += 3;
 
-        w += get_symbol_width(JOLT_GUI_SYMBOL_WIFI_DISCONN);
-        w += header_style.text.letter_space;
+#if CONFIG_JOLT_STORE_ATAES132A
+    strcpy(ptr, JOLT_GUI_SYMBOL_CHIP);
+    ptr += 3;
+#endif
 
-        w += get_symbol_width(JOLT_GUI_SYMBOL_BATTERY_CHARGING);
-        w += header_style.text.letter_space;
-    }
+    strcpy(ptr, JOLT_GUI_SYMBOL_BATTERY_3);
+    ptr += 3;
 
-    return w;
+    lv_txt_get_size(&size_res, statusbar_symbols, &jolt_symbols,
+            JOLT_STATUSBAR_SYMBOL_SPACE, 0, LV_COORD_MAX, LV_TXT_FLAG_NONE);
+
+    return size_res.x;
 }
 
 static void statusbar_update( lv_task_t *task ) {
@@ -121,8 +133,9 @@ static void statusbar_update( lv_task_t *task ) {
 
     // Dont need a semaphore around here because this is called in an lv_task
     lv_label_set_text(statusbar_label, statusbar_symbols);
-    lv_obj_align(statusbar_label, statusbar_cont,
-            LV_ALIGN_IN_RIGHT_MID, -1, 0);
+    lv_obj_align(statusbar_label, statusbar_cont, LV_ALIGN_IN_RIGHT_MID, -1, 0);
+
+    ESP_LOGD(TAG, "statusbar_label x: %d w: %d", lv_obj_get_x(statusbar_label), lv_obj_get_width(statusbar_label));
 }
 
 /* Assumes that hardware_monitors have been externally intialized and the 
@@ -132,24 +145,33 @@ void statusbar_create() {
 
     /* Create StatusBar Container */
     statusbar_cont = lv_cont_create(lv_scr_act(), NULL);
-    lv_style_copy(&header_style, lv_cont_get_style(statusbar_cont) );
+    lv_style_copy(&header_style, lv_cont_get_style(statusbar_cont, LV_CONT_STYLE_MAIN) );
     header_style.body.border.width = 1;
     header_style.body.border.part = LV_BORDER_BOTTOM;
     header_style.body.border.color = LV_COLOR_BLACK;
-    lv_cont_set_style(statusbar_cont, &header_style);
+    lv_cont_set_style(statusbar_cont, LV_CONT_STYLE_MAIN, &header_style);
     lv_obj_set_size(statusbar_cont, LV_HOR_RES, CONFIG_JOLT_GUI_STATUSBAR_H);
 
     /* Create Indicator Label*/
+    static lv_style_t statusbar_style;
     statusbar_label = lv_label_create(statusbar_cont, NULL);
+    lv_style_copy(&statusbar_style, lv_obj_get_style(statusbar_label));
+    statusbar_style.text.letter_space = JOLT_STATUSBAR_SYMBOL_SPACE;
+    statusbar_style.text.font = &jolt_symbols;
+    lv_obj_set_style(statusbar_label, &statusbar_style);
     lv_label_set_long_mode(statusbar_label, LV_LABEL_LONG_CROP);
     lv_label_set_align(statusbar_label, LV_LABEL_ALIGN_RIGHT);
-    lv_obj_set_size(statusbar_label,
-            statusbar_icons_get_max_width(), 
-            header_style.text.font->h_px);
+    {
+        uint16_t label_width;
+        label_width = get_statusbar_label_max_width();
+        lv_obj_set_size(statusbar_label, label_width,
+                header_style.text.font->line_height);
+    }
 
     /* Periodically update the statusbar symbols */
     ESP_LOGD(TAG, "Creating Statusbar Update lv_task");
-    lv_task_t *task = lv_task_create(&statusbar_update, CONFIG_JOLT_GUI_STATUSBAR_UPDATE_PERIOD_MS,
+    lv_task_t *task = lv_task_create(&statusbar_update,
+            CONFIG_JOLT_GUI_STATUSBAR_UPDATE_PERIOD_MS,
             LV_TASK_PRIO_LOW, NULL);
     lv_task_ready( task );
 }
