@@ -42,12 +42,12 @@
 /**
  * @brief free non-null pointer.
  */
-#define SAFE_FREE(x) do{if(NULL != x) free(x);}while(0)
+#define SAFE_FREE(x) do{if(NULL != x) {free(x); x = NULL;}}while(0)
 
 /**
  * @brief fclose non-null pointer.
  */
-#define SAFE_CLOSE(x) do{if(NULL != x) fclose(x);}while(0)
+#define SAFE_CLOSE(x) do{if(NULL != x) {fclose(x); x = NULL;}}while(0)
 
 /**
  * @brief Set return_code and goto exit
@@ -139,7 +139,7 @@ void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *
 /* Log something to uart if BLE is the stdin */
 #define BLE_UART_LOG(format, ...) \
     if( stdin == ble_stdin){ \
-        char buf[256]; \
+        char buf[1512]; \
         snprintf(buf, sizeof(buf), format, __VA_ARGS__); \
         uart_write_bytes(UART_NUM_0, buf, strlen(buf)); \
     }
@@ -154,20 +154,20 @@ void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *
         uart_write_bytes(UART_NUM_0, buf, buf_len); \
     }
 
-#define BLE_UART_LOGD(format, ...) if(LOG_LOCAL_LEVEL >= 4) BLE_UART_LOG(format, __VA_ARGS__);
-#define BLE_UART_LOGD_STR(buf) if(LOG_LOCAL_LEVEL >= 4) BLE_UART_LOG_STR(buf);
-#define BLE_UART_LOGD_BUF(buf, buf_len) if(LOG_LOCAL_LEVEL >= 4) BLE_UART_LOG_BUF(buf, buf_len);
+#define BLE_UART_LOGD(format, ...)      do{if(LOG_LOCAL_LEVEL >= 4) BLE_UART_LOG(format, __VA_ARGS__);}while(0)
+#define BLE_UART_LOGD_STR(buf)          do{if(LOG_LOCAL_LEVEL >= 4) BLE_UART_LOG_STR(buf);}while(0)
+#define BLE_UART_LOGD_BUF(buf, buf_len) do{if(LOG_LOCAL_LEVEL >= 4) BLE_UART_LOG_BUF(buf, buf_len);}while(0)
 
-#define BLE_UART_LOGI(format, ...) if(LOG_LOCAL_LEVEL >= 3) BLE_UART_LOG(format, __VA_ARGS__);
-#define BLE_UART_LOGI_STR(buf) if(LOG_LOCAL_LEVEL >= 3) BLE_UART_LOG_STR(buf);
-#define BLE_UART_LOGI_BUF(buf, buf_len) if(LOG_LOCAL_LEVEL >= 3) BLE_UART_LOG_BUF(buf, buf_len);
+#define BLE_UART_LOGI(format, ...)      do{if(LOG_LOCAL_LEVEL >= 3) BLE_UART_LOG(format, __VA_ARGS__);}while(0)
+#define BLE_UART_LOGI_STR(buf)          do{if(LOG_LOCAL_LEVEL >= 3) BLE_UART_LOG_STR(buf);}while(0)
+#define BLE_UART_LOGI_BUF(buf, buf_len) do{if(LOG_LOCAL_LEVEL >= 3) BLE_UART_LOG_BUF(buf, buf_len);}while(0)
 
-#define BLE_UART_LOGW(format, ...) if(LOG_LOCAL_LEVEL >= 2) BLE_UART_LOG(format, __VA_ARGS__);
-#define BLE_UART_LOGW_STR(buf) if(LOG_LOCAL_LEVEL >= 2) BLE_UART_LOG_STR(buf);
-#define BLE_UART_LOGW_BUF(buf, buf_len) if(LOG_LOCAL_LEVEL >= 2) BLE_UART_LOG_BUF(buf, buf_len);
+#define BLE_UART_LOGW(format, ...)      do{if(LOG_LOCAL_LEVEL >= 2) BLE_UART_LOG(format, __VA_ARGS__);}while(0)
+#define BLE_UART_LOGW_STR(buf)          do{if(LOG_LOCAL_LEVEL >= 2) BLE_UART_LOG_STR(buf);}while(0)
+#define BLE_UART_LOGW_BUF(buf, buf_len) do{if(LOG_LOCAL_LEVEL >= 2) BLE_UART_LOG_BUF(buf, buf_len);}while(0)
 
-#define BLE_UART_LOGE(format, ...) if(LOG_LOCAL_LEVEL >= 1) BLE_UART_LOG(format, __VA_ARGS__);
-#define BLE_UART_LOGE_STR(buf) if(LOG_LOCAL_LEVEL >= 1) BLE_UART_LOG_STR(buf);
-#define BLE_UART_LOGE_BUF(buf, buf_len) if(LOG_LOCAL_LEVEL >= 1) BLE_UART_LOG_BUF(buf, buf_len);
+#define BLE_UART_LOGE(format, ...)      do{if(LOG_LOCAL_LEVEL >= 1) BLE_UART_LOG(format, __VA_ARGS__);}while(0)
+#define BLE_UART_LOGE_STR(buf)          do{if(LOG_LOCAL_LEVEL >= 1) BLE_UART_LOG_STR(buf);}while(0)
+#define BLE_UART_LOGE_BUF(buf, buf_len) do{if(LOG_LOCAL_LEVEL >= 1) BLE_UART_LOG_BUF(buf, buf_len);}while(0)
 
 #endif

@@ -11,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "esp_log.h"
+#include <esp_timer.h>
 
 
 static const char TAG[] = "GATTS_A";
@@ -65,7 +66,7 @@ static const char* gatts_evt_to_str(esp_gap_ble_cb_event_t event) {
 
 
 /* Only used to handle events for SPP_PROFILE_A_APP_ID */
-void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, 
+void IRAM_ATTR gatts_profile_a_event_handler(esp_gatts_cb_event_t event, 
         esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) {
 
     esp_ble_gatts_cb_param_t *p_data = (esp_ble_gatts_cb_param_t *) param;
@@ -93,11 +94,13 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
             if(p_data->write.is_prep == false){
                 ESP_LOGI(TAG, "ESP_GATTS_WRITE_EVT : handle = %d\n", res);
                 if(res == SPP_IDX_SPP_COMMAND_VAL){
-                    /* Allocate memory for 1 MTU;
-                     * send it off to the ble_in_queue */
+                    /* Forward packet to the ble_in_queue */
+                    ble_packet_t packet = { 0 };
+#if CONFIG_JOLT_BT_PROFILING
+                    packet.t_receive = esp_timer_get_time();
+#endif
                     ESP_LOGI(TAG, "SPP_IDX_SPP_COMMAND_VAL;"
                             " Allocating %d bytes.", p_data->write.len);
-                    ble_packet_t packet = { 0 };
                     // May need to revert this to allocate mtu
                     packet.data = (uint8_t *)malloc(p_data->write.len);
                     if(packet.data == NULL){
@@ -106,7 +109,11 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                     }
                     packet.len = p_data->write.len;
                     memcpy(packet.data, p_data->write.value, p_data->write.len);
-                    xQueueSend(ble_in_queue, &packet, 10/portTICK_PERIOD_MS);
+                    if(!xQueueSend(ble_in_queue, &packet, 10/portTICK_PERIOD_MS)){
+                        ESP_LOGE(TAG, "Timed out trying to put packet onto ble_in_queue");
+                        free(packet.data);
+                        break;
+                    }
                 }
                 else if(res == SPP_IDX_SPP_DATA_NOTIFY_CFG){
                     ESP_LOGI(TAG, "SPP_IDX_SPP_DATA_NOTIFY_CFG");
@@ -188,6 +195,19 @@ void gatts_profile_a_event_handler(esp_gatts_cb_event_t event,
                 }
                 else {
                     esp_ble_set_encryption(param->connect.remote_bda, ESP_BLE_SEC_ENCRYPT_MITM);
+
+                    esp_ble_conn_update_params_t conn_params = {0};
+                    memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
+                    /* For the IOS system, please reference the apple official documents about the ble connection parameters restrictions. */
+                    conn_params.latency = 0;
+                    conn_params.max_int = 0x20;    // max_int = 0x20*1.25ms = 40ms
+                    conn_params.min_int = 0x00;    // min_int = 0x10*1.25ms = 20ms
+                    conn_params.timeout = 400;    // timeout = 400*10ms = 4000ms
+                    ESP_LOGI(TAG, "ESP_GATTS_CONNECT_EVT, conn_id %d, remote %02x:%02x:%02x:%02x:%02x:%02x:",
+                             param->connect.conn_id,
+                             param->connect.remote_bda[0], param->connect.remote_bda[1], param->connect.remote_bda[2],
+                             param->connect.remote_bda[3], param->connect.remote_bda[4], param->connect.remote_bda[5]);
+                    esp_ble_gap_update_conn_params(&conn_params);
                 }
             }
         	break;

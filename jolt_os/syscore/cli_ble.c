@@ -67,6 +67,10 @@ static void jolt_cli_ble_listener_task( void *param ) {
             if( 0 == strcmp(buf, "upload_firmware") || 0 == strcmp(buf, "upload") ){
                 suspend = true;
             }
+            else if( 0 == strcmp(buf, "ping") ) {
+                fwrite("pong\n", 1, 5, ble_stdout);
+                continue;
+            }
 
             jolt_cli_src_t src;
             src.line = buf;

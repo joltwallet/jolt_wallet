@@ -15,6 +15,7 @@
 #include "freertos/portmacro.h"
 #include "esp_system.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "nvs_flash.h"
 #include "esp_bt.h"
 #include "string.h"
@@ -42,6 +43,11 @@
 #include "jolt_gui/jolt_gui.h"
 
 #define GATTS_SEND_REQUIRE_CONFIRM false
+
+#if CONFIG_JOLT_BT_PROFILING
+uint64_t ble_packet_cum_life = 0;
+uint32_t ble_packet_n = 0;
+#endif
 
 FILE *ble_stdin;
 FILE *ble_stdout;
@@ -115,7 +121,7 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
     const char *data_c = (const char *)data;
     _lock_acquire_recursive(&s_ble_write_lock);
 
-    BLE_UART_LOGI("%s write %d bytes\n", __func__, size);
+    BLE_UART_LOGD("%s write %d bytes\n", __func__, size);
 
     int idx = 0;
     do{
@@ -149,16 +155,20 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
 
 static int peek_c = NONE;
 int ble_read_char(int fd, TickType_t timeout) {
-    static uint32_t line_off = 0; // offset into most recent queue item
+    static int32_t line_off = -1; // offset into most recent queue item
+    static ble_packet_t packet = { 0 };
+
     if ( peek_c != NONE ){
         char tmp = (char) peek_c;
         peek_c = NONE;
         return tmp;
     }
     char c;
-    ble_packet_t packet = { 0 };
 
-    if(!xQueuePeek(ble_in_queue, &packet, timeout)) return NONE;
+    if(line_off < 0){
+        if(!xQueueReceive(ble_in_queue, &packet, timeout)) return NONE;
+        line_off = 0;
+    }
     c = packet.data[line_off];
     line_off++;
     
@@ -166,10 +176,12 @@ int ble_read_char(int fd, TickType_t timeout) {
     BLE_UART_LOGD("packet.len: %d\n\n", packet.len);
 
     if( line_off == packet.len ) {
-        /* pop the element from the queue */
-        xQueueReceive(ble_in_queue, &packet, portMAX_DELAY);
+        line_off = -1;
+#if CONFIG_JOLT_BT_PROFILING
+        ble_packet_cum_life += esp_timer_get_time() - packet.t_receive;
+        ble_packet_n++;
+#endif
         free(packet.data);
-        line_off = 0;
     }
 
     return c;
@@ -404,7 +416,7 @@ static void ble_end_select() {
 
 void esp_vfs_dev_ble_spp_register() {
     if ( NULL == ble_in_queue ) {
-        ble_in_queue = xQueueCreate(20, sizeof(ble_packet_t));
+        ble_in_queue = xQueueCreate(50, sizeof(ble_packet_t));
     }
 
     esp_vfs_t vfs = {
@@ -664,6 +676,15 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
          ************************************/
         /* Triggered by: esp_ble_gap_update_conn_params( &params ) */
         case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
+            ESP_LOGI(TAG, "update connetion params "
+                    "status = %d, min_int = %d, max_int = %d, "
+                    "conn_int = %d,latency = %d, timeout = %d",
+                    param->update_conn_params.status,
+                    param->update_conn_params.min_int,
+                    param->update_conn_params.max_int,
+                    param->update_conn_params.conn_int,
+                    param->update_conn_params.latency,
+                    param->update_conn_params.timeout);
             break;
         /* Triggered by: esp_ble_gap_set_pkt_data_len() */
         case ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT:
