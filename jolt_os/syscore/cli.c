@@ -274,7 +274,7 @@ static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job) {
             static char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
             /* split_argv modifies line with NULL-terminators */
             size_t argc = esp_console_split_argv(src->line, argv, CONFIG_JOLT_CONSOLE_MAX_ARGS);
-#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
+#if LOG_LOCAL_LEVEL >= 4 /* debug */
             ESP_LOGD(TAG, "%d arguments parsed.", argc);
             for(uint8_t i=0; i < argc; i++) {
                 ESP_LOGD(TAG, "argv[%d]: %s", i, argv[i]);

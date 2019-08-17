@@ -489,7 +489,7 @@ static bool app_hash_init(jelfLoaderContext_t *ctx,
         assert( JELF_SIGNATURE_LEN == n );
     }
 
-#if ESP_LOG_LEVEL >= ESP_LOG_INFO
+#if LOG_LOCAL_LEVEL >= 4 /* debug */
     {
         char sig_hex[129] = { 0 };
         sodium_bin2hex(sig_hex, sizeof(sig_hex),

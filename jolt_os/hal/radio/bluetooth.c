@@ -3,10 +3,9 @@
  * What doesn't work:
  *    *select
 */
-//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL 4
 
 #include "sdkconfig.h"
-#include "esp_spiffs.h"
 
 #if CONFIG_BT_ENABLED
 
@@ -16,6 +15,7 @@
 #include "freertos/portmacro.h"
 #include "esp_system.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "nvs_flash.h"
 #include "esp_bt.h"
 #include "string.h"
@@ -38,10 +38,16 @@
 #include "linenoise/linenoise.h"
 #include "bluetooth.h"
 #include "bluetooth_state.h"
+#include "jolt_helpers.h"
 
 #include "jolt_gui/jolt_gui.h"
 
 #define GATTS_SEND_REQUIRE_CONFIRM false
+
+#if CONFIG_JOLT_BT_PROFILING
+uint64_t ble_packet_cum_life = 0;
+uint32_t ble_packet_n = 0;
+#endif
 
 FILE *ble_stdin;
 FILE *ble_stdout;
@@ -115,13 +121,7 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
     const char *data_c = (const char *)data;
     _lock_acquire_recursive(&s_ble_write_lock);
 
-#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
-        {
-            char buf[100] = { 0 };
-            sprintf(buf, "%s write %d bytes\n", __func__, size);
-            uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-        }
-#endif
+    BLE_UART_LOGD("%s write %d bytes\n", __func__, size);
 
     int idx = 0;
     do{
@@ -131,15 +131,9 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
             print_len = 512;
         }
 
-#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
-        {
-            char buf[100] = { 0 };
-            sprintf(buf, "Sending %d bytes: ", print_len);
-            uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-            uart_write_bytes(UART_NUM_0, &data_c[idx], print_len);
-            uart_write_bytes(UART_NUM_0, "\n", 1);
-        }
-#endif
+        BLE_UART_LOGD("Sending %d bytes: ", print_len);
+        BLE_UART_LOGD_BUF(&data_c[idx], print_len);
+        BLE_UART_LOGD_STR("\n");
 
         res = esp_ble_gatts_send_indicate(
                 spp_profile_tab[SPP_PROFILE_A_APP_ID].gatts_if,
@@ -160,26 +154,35 @@ static ssize_t ble_write(int fd, const void *data, size_t size) {
 }
 
 static int peek_c = NONE;
-static int ble_read_char(int fd) {
-    static uint32_t line_off = 0; // offset into most recent queue item
+int ble_read_char(int fd, TickType_t timeout) {
+    static int32_t line_off = -1; // offset into most recent queue item
+    static ble_packet_t packet = { 0 };
+
     if ( peek_c != NONE ){
         char tmp = (char) peek_c;
         peek_c = NONE;
         return tmp;
     }
     char c;
-    char *line; // pointer to queue item
-    do{
-        xQueuePeek(ble_in_queue, &line, portMAX_DELAY);
-        c = line[line_off];
-        line_off++;
-        if( '\0' == c ) {
-            /* pop the element from the queue */
-            xQueueReceive(ble_in_queue, &line, portMAX_DELAY);
-            free(line);
-            line_off = 0;
-        }
-    }while('\0' == c);
+
+    if(line_off < 0){
+        if(!xQueueReceive(ble_in_queue, &packet, timeout)) return NONE;
+        line_off = 0;
+    }
+    c = packet.data[line_off];
+    line_off++;
+    
+    BLE_UART_LOGD("line_off: %d\n", line_off);
+    BLE_UART_LOGD("packet.len: %d\n\n", packet.len);
+
+    if( line_off == packet.len ) {
+        line_off = -1;
+#if CONFIG_JOLT_BT_PROFILING
+        ble_packet_cum_life += esp_timer_get_time() - packet.t_receive;
+        ble_packet_n++;
+#endif
+        free(packet.data);
+    }
 
     return c;
 }
@@ -190,61 +193,70 @@ static void ble_return_char(int fd, int c) {
 }
 
 static ssize_t ble_read(int fd, void* data, size_t size) {
+    ESP_LOGD(TAG, "%s: fd: %d, data: %p, size: %d", __func__, fd, data, size);
+    return ble_read_timeout(fd, data, size, portMAX_DELAY);
+}
+
+ssize_t ble_read_timeout(int fd, void* data, size_t size, TickType_t timeout) {
     char *data_c = (char *)data;
 
     _lock_acquire_recursive(&s_ble_read_lock);
+    BLE_UART_LOGD_STR("ble_read_lock acquired\n");
+
+    ESP_LOGD(TAG, "Attempting to receive %d bytes with timeout %d.", size, timeout);
 
     size_t received = 0;
     while(received < size){
-        int c = ble_read_char(fd);
+        int c = ble_read_char(fd, timeout);
+
+        if( c == NONE ) break;
 
         ESP_LOGD(TAG, "Char: %02X; Off: %d", (char) c, received);
         if ( '\r' == (char)c ) {
-            if (s_rx_mode == ESP_LINE_ENDINGS_CR) {
-                // default
-                c = '\n';
-            } else if (s_rx_mode == ESP_LINE_ENDINGS_CRLF) {
-                /* look ahead */
-                int c2 = ble_read_char(fd);
-                if (c2 == NONE) {
-                    /* could not look ahead, put the current character back */
-                    ble_return_char(fd, (char)c);
+            switch( s_rx_mode ){
+                case ESP_LINE_ENDINGS_CR:
+                    c = '\n';
+                    break;
+                case ESP_LINE_ENDINGS_CRLF: {
+                    /* look ahead */
+                    int c2 = ble_read_char(fd, portMAX_DELAY);
+                    if (c2 == NONE) {
+                        /* could not look ahead, put the current character back */
+                        ble_return_char(fd, (char)c);
+                        break;
+                    } else if (c2 == '\n') {
+                        /* this was \r\n sequence. discard \r, return \n */
+                        c = '\n';
+                    } else {
+                        /* \r followed by something else. put the second char back,
+                         * it will be processed on next iteration. return \r now.
+                         */
+                        ble_return_char(fd, (char)c2);
+                    }
                     break;
                 }
-                if (c2 == '\n') {
-                    /* this was \r\n sequence. discard \r, return \n */
-                    c = '\n';
-                } else {
-                    /* \r followed by something else. put the second char back,
-                     * it will be processed on next iteration. return \r now.
-                     */
-                    ble_return_char(fd, (char)c2);
-                }
+                default:
+                    /* Do Nothing */
+                    break;
             }
-        } else if (c == NONE) {
-            break;
         }
 
         data_c[received] = (char) c;
         ++received;
-
-        if ( '\n' == (char)c) {
-            break;
-        }
     }
+
+#if LOG_LOCAL_LEVEL >= 4 /* debug */
+    BLE_UART_LOG_STR("ble_read_lock releasing\n");
+#endif
 
     _lock_release_recursive(&s_ble_read_lock);
 
-#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
-    {
+    if(received > 0){
         /* Display what was received */
-        char buf[100];
-        sprintf(buf, "ble_read returning %d bytes\nreceived message: ", received);
-        uart_write_bytes(UART_NUM_0, buf, strlen(buf));
-        uart_write_bytes(UART_NUM_0, data_c, received-1);
-        uart_write_bytes(UART_NUM_0, "\n", 1);
+        BLE_UART_LOGD("ble_read returning %d bytes\nreceived message: ", received);
+        BLE_UART_LOGD_BUF(data_c, received-1);
+        BLE_UART_LOGD_STR("\n");
     }
-#endif
 
     if(received > 0){
         return received;
@@ -404,7 +416,7 @@ static void ble_end_select() {
 
 void esp_vfs_dev_ble_spp_register() {
     if ( NULL == ble_in_queue ) {
-        ble_in_queue = xQueueCreate(10, sizeof(char *));
+        ble_in_queue = xQueueCreate(50, sizeof(ble_packet_t));
     }
 
     esp_vfs_t vfs = {
@@ -421,6 +433,11 @@ void esp_vfs_dev_ble_spp_register() {
     };
     ESP_ERROR_CHECK(esp_vfs_register("/dev/ble", &vfs, NULL));
 }
+
+void ble_set_rx_line_endings(esp_line_endings_t mode) {
+    s_rx_mode = mode;
+}
+
 /* END DRIVER STUFF */
 
 static void add_all_bonded_to_whitelist() {
@@ -558,7 +575,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
              */
 
             /* [logging] Print Connection Data */
-#if ESP_LOG_LEVEL >= ESP_LOG_INFO
+#if LOG_LOCAL_LEVEL >= 3 /* info */
             {
                 esp_bd_addr_t bd_addr;
                 memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr,
@@ -659,6 +676,15 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
          ************************************/
         /* Triggered by: esp_ble_gap_update_conn_params( &params ) */
         case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
+            ESP_LOGI(TAG, "update connetion params "
+                    "status = %d, min_int = %d, max_int = %d, "
+                    "conn_int = %d,latency = %d, timeout = %d",
+                    param->update_conn_params.status,
+                    param->update_conn_params.min_int,
+                    param->update_conn_params.max_int,
+                    param->update_conn_params.conn_int,
+                    param->update_conn_params.latency,
+                    param->update_conn_params.timeout);
             break;
         /* Triggered by: esp_ble_gap_set_pkt_data_len() */
         case ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT:

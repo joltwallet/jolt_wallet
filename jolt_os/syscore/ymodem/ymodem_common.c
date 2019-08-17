@@ -26,6 +26,8 @@
  * this software.
  */
 
+//#define LOG_LOCAL_LEVEL 4
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -41,9 +43,15 @@
 #include "syscore/ymodem.h"
 #include "syscore/ymodem/ymodem_common.h"
 #include <driver/uart.h>
-#include "esp_spiffs.h"
 #include "esp_log.h"
+#include "hal/radio/bluetooth.h"
+#include "jolt_helpers.h"
+#include <esp_timer.h>
 
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
+uint64_t t_ble_read_timeout = 0;
+bool ymodem_transfer_in_progress = false;
+#endif
 
 unsigned short IRAM_ATTR crc16(const unsigned char *buf, unsigned long count) {
     unsigned short crc = 0;
@@ -60,31 +68,84 @@ unsigned short IRAM_ATTR crc16(const unsigned char *buf, unsigned long count) {
     return crc;
 }
 
+/***
+ * @param[out] c Pointer to output buffer array.
+ * @param[in] timeout Milliseconds to wait before returning.
+ * @param[in] n number of bytes to read.
+ * @return Amount of bytes actually read.
+ */
 int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n) {
+    int return_code = 0;
     int amount_read = 0;
-    do {
-        int s;
-        fd_set rfds;
-        struct timeval tv = {
-                .tv_sec = timeout / 1000,
-                .tv_usec = (timeout % 1000)*1000,
-        };
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
+    uint64_t t_start = esp_timer_get_time();
+#endif
+    if(stdin == ble_stdin){
+        /* Temporary hack in lieu of writing proper bluetooth select drivers */
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
+        if(ymodem_transfer_in_progress) t_ble_read_timeout -= esp_timer_get_time();
+#endif
+        amount_read = ble_read_timeout(0, c, n, timeout / portTICK_PERIOD_MS);
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
+        if(ymodem_transfer_in_progress) t_ble_read_timeout += esp_timer_get_time();
+#endif
 
-        FD_ZERO(&rfds);
-        FD_SET(fileno(stdin), &rfds);
-
-        s = select(fileno(stdin) + 1, &rfds, NULL, NULL, &tv);
-
-        if (s < 0) {
-            // Select Failure
-            return -1;
-        } else if (s == 0) {
-            // timed out
-            return -1;
-        } else {
-            amount_read += fread(c, 1, n-amount_read, stdin);
+        if(amount_read >0){
+            BLE_UART_LOGD("Read in %d bytes: \"", amount_read);
+            BLE_UART_LOGD_BUF((char *)c, amount_read);
+            BLE_UART_LOGD_STR("\"");
+            if( 1 == amount_read ) BLE_UART_LOGD(" Ascii: 0x%02x", (int)c[0]);
+            BLE_UART_LOGD_STR("\n");
         }
-    }while(amount_read < n);
-    return 0;
+        if(amount_read != n) {
+            BLE_UART_LOGD("Only read %d/%d bytes\n", amount_read, n);
+            EXIT(-1);
+        }
+    }
+    else{
+        do {
+            int s;
+            fd_set rfds;
+            struct timeval tv = {
+                    .tv_sec = timeout / 1000,
+                    .tv_usec = (timeout % 1000)*1000,
+            };
+
+            FD_ZERO(&rfds);
+            FD_SET(fileno(stdin), &rfds);
+
+            s = select(fileno(stdin) + 1, &rfds, NULL, NULL, &tv);
+
+            if (s < 0) {
+                // Select Failure
+                EXIT(-1);
+            } else if (s == 0) {
+                // timed out
+                EXIT(-1);
+            } else {
+                amount_read += fread(c, 1, n-amount_read, stdin);
+            }
+        }while(amount_read < n);
+    }
+exit:
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
+    t_ymodem_receive += esp_timer_get_time() - t_start;
+#endif
+    return return_code;
 }
 
+void IRAM_ATTR rx_consume(){
+    if(stdin == ble_stdin){
+        /* Temporary hack in lieu of writing proper bluetooth select drivers */
+        BLE_UART_LOGD("%d) CONSUMING{", __LINE__);
+        char c;
+        int amount_read = 0;
+        do{
+            amount_read = ble_read_timeout(0, &c, 1, 10 / portTICK_PERIOD_MS);
+        }while(amount_read > 0);
+        BLE_UART_LOGD("%d) }CONSUMED", __LINE__);
+    }
+    else{
+        fflush(stdin);
+    }
+}

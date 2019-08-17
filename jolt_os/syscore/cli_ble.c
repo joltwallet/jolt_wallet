@@ -1,4 +1,4 @@
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL 4
 
 #include "esp_log.h"
 
@@ -31,11 +31,21 @@ void jolt_cli_ble_init(){
 }
 
 #if CONFIG_BT_ENABLED
+
+static const char TAG[] = "cli_ble";
+
+/**
+ * @brief FreeRTOS task that forwards ble_stdin to the CLI engine 
+ */
 static void jolt_cli_ble_listener_task( void *param ) {
     esp_vfs_dev_ble_spp_register();
     ble_stdin  = fopen("/dev/ble/0", "r");
     ble_stdout = fopen("/dev/ble/0", "w");
     ble_stderr = fopen("/dev/ble/0", "w");
+
+    setvbuf(ble_stdin, NULL, _IONBF, 0);
+    //setvbuf(ble_stdout, NULL, _IONBF, 0);
+    setvbuf(ble_stderr, NULL, _IONBF, 0);
 
     char *buf = NULL;
     for(;;){
@@ -52,12 +62,15 @@ static void jolt_cli_ble_listener_task( void *param ) {
             }
         }
         if(i>0){
-#if ESP_LOG_LEVEL >= ESP_LOG_DEBUG
-            {
-                const char buf[] = "sending command from ble\n";
-                uart_write_bytes(UART_NUM_0, buf, strlen(buf));
+            ESP_LOGD(TAG, "sending command from ble: \"%s\"", buf);
+            bool suspend = false;
+            if( 0 == strcmp(buf, "upload_firmware") || 0 == strcmp(buf, "upload") ){
+                suspend = true;
             }
-#endif
+            else if( 0 == strcmp(buf, "ping") ) {
+                fwrite("pong\n", 1, 5, ble_stdout);
+                continue;
+            }
 
             jolt_cli_src_t src;
             src.line = buf;
@@ -67,6 +80,8 @@ static void jolt_cli_ble_listener_task( void *param ) {
             jolt_cli_set_src( &src );
 
             buf = NULL;
+
+            if( suspend == true ) jolt_cli_ble_suspend();
         }
     }
 

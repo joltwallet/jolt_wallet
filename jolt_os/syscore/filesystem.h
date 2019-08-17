@@ -9,27 +9,64 @@
  https://www.joltwallet.com/
  */
 
+
 #ifndef __JOLT_SYSCORE_FS_CONSOLE_H__
 #define __JOLT_SYSCORE_FS_CONSOLE_H__
 
 #include "stdbool.h"
+#include <stdarg.h>
+#include "sdkconfig.h"
+#include "esp_err.h"
 
 /**
  * @brief Minimum amount of free space allowed in bytes.
  *
  * Don't let the filesystem fill up 100% 
  */
-#define FS_MIN_FREE 0x2000
+#define JOLT_FS_MIN_FREE 0x2000
 
 /**
  * @brief Maximum file size allowed in bytes
+ * NOTE: Currently not used.
  */
-#define MAX_FILE_SIZE 524288
+#define JOLT_FS_MAX_FILE_SIZE 524288
 
 /**
- * @brief Mounting point for spiffs filesystem
+ * @brief inclusive max strlen of a filename.
+ *
+ * DOES NOT account for null terminator. The base_path does not contribute to overall length.
+ *
+ * e.g. "/store/foo.bar" is 7 long and is <= JOLT_FS_MAX_FILENAME_LEN, so its ok.
+ *
  */
-#define SPIFFS_BASE_PATH "/spiffs"
+#if CONFIG_JOLT_FS_SPIFFS
+    #define JOLT_FS_MAX_FILENAME_LEN CONFIG_SPIFFS_OBJ_NAME_LEN-2
+#elif CONFIG_JOLT_FS_LITTLEFS 
+    #define JOLT_FS_MAX_FILENAME_LEN CONFIG_LITTLEFS_OBJ_NAME_LEN-2
+#elif CONFIG_JOLT_FS_FAT
+    #define JOLT_FS_MAX_FILENAME_LEN 126 //TODO refine
+#endif
+
+/**
+ * @brief inclusive max buflen of a filename.
+ * 
+ * Takes into account the NULL terminator.
+ */
+#define JOLT_FS_MAX_FILENAME_BUF_LEN JOLT_FS_MAX_FILENAME_LEN+1
+
+/**
+ * @brief Mounting point for filesystem
+ * 
+ * Must NOT end in "/"
+ */
+#define JOLT_FS_MOUNTPT "/store"
+
+#define JOLT_FS_PARTITION "storage"
+
+/**
+ * @brief buffer length to hold the longest null-terminated full path.
+ */
+#define JOLT_FS_MAX_ABS_PATH_BUF_LEN sizeof(JOLT_FS_MOUNTPT) + 1 + JOLT_FS_MAX_FILENAME_LEN
 
 /**
  * @brief Allocates and returns the names of all files ending with ".jelf" 
@@ -57,7 +94,7 @@ uint32_t jolt_fs_get_all_fns(char **fns, uint32_t fns_len,
         const char *ext, bool remove_ext);
 
 /**
- * @brief Starts up the SPIFFS Filesystem
+ * @brief Starts up the Filesystem
  */
 void jolt_fs_init() ;
 
@@ -72,16 +109,62 @@ uint32_t jolt_fs_free();
 
 /**
  * @brief Get the storage size of a file 
- * @param[in] full filename path; i.e. '/spiffs/test.txt 
+ * @param[in] full filename path; i.e. '/store/test.txt'
  * @return size of file in bytes. Returns -1 if the file is not found. 
  */
 size_t jolt_fs_size(const char *fname);
 
 /**
  * @brief Checks if file exists. 
- * @param[in] full filename path; i.e. '/spiffs/test.txt 
+ * @param[in] full filename path; i.e. '/store/test.txt'
  * @return 0 if file exists, 1 if file does not exist, -1 if filesystem is not mounted.
  */
 bool jolt_fs_exists(const char *fname);
+
+/**
+ * @brief Parse a file path.
+ *
+ * ex.
+ *     char *path1 = jolt_fs_parse("Jolt", "jelf");
+ *     // "/store/Jolt.jelf"
+ *     char *path2 = "jolt_fs_parse("Jolt", NULL);
+ *     // "/store/Jolt"
+ *     char *path3 = "jolt_fs_parse("Jolt", ".jelf");
+ *     // "/store/Jolt.jelf"
+ *
+ * @param[in] fn Filename. 
+ * @param[in] ext extension with or without the "." Can be NULL for no ext.
+ * @return Allocated string representing the filename. NULL on failure. Must be freed.
+ */
+char * jolt_fs_parse(const char *fn, const char *ext);
+
+/** 
+ * @brief Allocates the maximum allowed file name buffer size.
+ *
+ * Populates with filesystem mount point. NOTE: only free fullpath, NOT fn.
+ *
+ * @param[out] fullpath Full path "/store/..."
+ * @param[out] fn [optional] Pointer to the filename portion of the buffer "...".
+ */
+void jolt_fs_parse_buf(char **fullpath, char **fn);
+
+/**
+ * @brief Erase and format the filesystem
+ * @return ESP_OK on success.
+ */
+esp_err_t jolt_fs_format();
+
+/**
+ * Get information for jolt's filesystem
+ *
+ * @param partition_label           Optional, label of the partition to get info for.
+ * @param[out] total_bytes          Size of the file system
+ * @param[out] used_bytes           Current used bytes in the file system
+ *
+ * @return  
+ *          - ESP_OK                  if success
+ *          - ESP_ERR_INVALID_STATE   if not mounted
+ */
+esp_err_t jolt_fs_info(size_t *total_bytes, size_t *used_bytes);
 
 #endif

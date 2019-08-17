@@ -68,6 +68,14 @@ int jolt_cmd_jolt_cast_update(int argc, char** argv);
  * @brief List all files in filesystem
  *
  * Takes no arguments
+ *
+ * keys:
+ *     n - [int] Number of files
+ *     free - [int] Space free (bytes)
+ *     total - [int[ Total disk size (bytes)
+ *     files - [list]
+ *         name - [str] Name of file
+ *         size - [int] Size of file (bytes)
  */
 int jolt_cmd_ls(int argc, char** argv);
 

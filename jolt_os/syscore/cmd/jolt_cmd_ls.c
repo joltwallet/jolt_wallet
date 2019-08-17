@@ -1,85 +1,68 @@
 #include "stdio.h"
-#include "esp_spiffs.h"
 #include "esp_vfs_dev.h"
 #include "syscore/filesystem.h"
+#include "jolt_helpers.h"
+#include "cJSON.h"
 
 int jolt_cmd_ls(int argc, char** argv) {
-    const char path[] = SPIFFS_BASE_PATH;
 
+    int return_code;
     DIR *dir = NULL;
     struct dirent *ent;
-    char type;
-    char size[12];
-    char tpath[256];
-    char tbuffer[80];
     struct stat sb;
-    struct tm *tm_info;
-    int statok;
+    cJSON *json = NULL, *json_files = NULL, *entry = NULL;
+    char *response = NULL;
+    uint32_t nfiles = 0;
 
-    printf("LIST of DIR [%s]\r\n", path);
-    // Open directory
-    dir = opendir(path);
-    if (!dir) {
-        printf("Error opening directory\r\n");
-        return  1;
-    }
+    if( NULL == (json = cJSON_CreateObject()) ) EXIT(-1);
+    if( NULL == (json_files = cJSON_AddArrayToObject(json, "files")) ) EXIT(-1);
 
-    // Read directory entries
-    uint64_t total = 0;
-    int nfiles = 0;
-    printf("T      Size    Date/Time         Name\r\n");
-    printf("-----------------------------------\r\n");
+    if( !(dir = opendir(JOLT_FS_MOUNTPT)) ) EXIT_PRINT(-1, "Error opening directory\n");
+
+    /* Read directory entries */
     while ((ent = readdir(dir)) != NULL) {
-        sprintf(tpath, path);
-        if (path[strlen(path)-1] != '/') strcat(tpath,"/");
-        strcat(tpath,ent->d_name);
-        tbuffer[0] = '\0';
+        char tpath[JOLT_FS_MAX_ABS_PATH_BUF_LEN] = JOLT_FS_MOUNTPT;
 
-        // Get file stat
-        statok = stat(tpath, &sb);
+        nfiles++;
+        assert( ent->d_type == DT_REG ); /* All objects should be files */
 
-        if (statok == 0) {
-            tm_info = localtime(&sb.st_mtime);
-            strftime(tbuffer, 80, "%d/%m/%Y %R", tm_info);
-        }
-        else sprintf(tbuffer, "                ");
+        if( NULL == (entry = cJSON_CreateObject())) EXIT(-2);
+        if( NULL == cJSON_AddStringToObject(entry, "name", ent->d_name)) EXIT(-2);
 
-        if (ent->d_type == DT_REG) {
-            type = 'f';
-            nfiles++;
-            if (statok) strcpy(size, "       ?");
-            else {
-                total += sb.st_size;
-                if (sb.st_size < (1024*1024)) snprintf(size, sizeof(size), "%8d", (int)sb.st_size);
-                else if ((sb.st_size/1024) < (1024*1024)) snprintf(size, sizeof(size), "%6dKB", (int)(sb.st_size / 1024));
-                else sprintf(size,"%6dMB", (int)(sb.st_size / (1024 * 1024)));
-            }
+        /* Parse full filepath */
+        if (tpath[strlen(tpath)-1] != '/') strcat(tpath,"/");
+        strcat(tpath, ent->d_name);
+
+        if (stat(tpath, &sb)){
+            /* Unknown size */
+            if( NULL == cJSON_AddNumberToObject(entry, "size", -1)) EXIT(-3);
         }
         else {
-            type = 'd';
-            strcpy(size, "       -");
+            if( NULL == cJSON_AddNumberToObject(entry, "size", sb.st_size)) EXIT(-3);
         }
-
-        printf("%c  %s  %s  %s\r\n",
-            type,
-            size,
-            tbuffer,
-            ent->d_name
-        );
+        cJSON_AddItemToArray(json_files, entry);
+        entry = NULL;
     }
-    if (total) {
-        printf("-----------------------------------\r\n");
-        if (total < (1024*1024)) printf("   %8d", (int)total);
-        else if ((total/1024) < (1024*1024)) printf("   %6dKB", (int)(total / 1024));
-        else printf("   %6dMB", (int)(total / (1024 * 1024)));
-        printf(" in %d file(s)\r\n", nfiles);
+    if( NULL == cJSON_AddNumberToObject(json, "n", nfiles)) EXIT(-3);
+
+    {
+        uint32_t tot, used;
+        jolt_fs_info(&tot, &used);
+        if( NULL == cJSON_AddNumberToObject(json, "total", tot)) EXIT(-3);
+        if( NULL == cJSON_AddNumberToObject(json, "free", tot-used)) EXIT(-3);
     }
-    printf("-----------------------------------\r\n");
 
-    closedir(dir);
+    response = cJSON_Print(json);
+    printf(response);
+    printf("\n");
 
-    uint32_t tot, used;
-    esp_spiffs_info(NULL, &tot, &used);
-    printf("SPIFFS: free %d KB of %d KB\r\n", (tot-used) / 1024, tot / 1024);
-    return 0;
+    EXIT(0);
+
+exit:
+    if( NULL!=dir ) closedir(dir);
+    if( NULL != json ) cJSON_Delete(json);
+    if( NULL != entry ) cJSON_Delete(entry);
+    if( NULL != response ) free(response);
+
+    return return_code;
 }

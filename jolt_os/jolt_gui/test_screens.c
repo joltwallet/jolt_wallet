@@ -6,6 +6,7 @@
 #include "jolt_helpers.h"
 #include "hal/hw_monitor.h"
 #include <driver/adc.h>
+#include "syscore/filesystem.h"
 
 #include "json_config.h"
 #include "cJSON.h"
@@ -16,18 +17,19 @@ static const char TAG[] = "test_screens";
 
 void jolt_gui_test_json_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
     cJSON *json = NULL;
+    char *path = NULL;
     if( jolt_gui_event.short_clicked == event ) {
 #define EXIT_IF_NULL(x) if( NULL == x ) goto exit;
-        const char fn[] = "/spiffs/test.json";
+        if( NULL == (path = jolt_fs_parse("test", "json")) ) goto exit;
 
-        json = jolt_json_read( fn );
+        json = jolt_json_read( path );
 
         if( NULL == json ) {
             ESP_LOGI(TAG, "No json file found; creating.");
             json = cJSON_CreateObject();
             EXIT_IF_NULL( cJSON_AddStringToObject(json, "testStringKey", "testStringVal") );
             EXIT_IF_NULL( cJSON_AddNumberToObject(json, "testIntKey", 123456789) );
-            jolt_json_write( fn, json );
+            jolt_json_write( path, json );
         }
 
         /* Print stuff to stdout*/
@@ -40,6 +42,7 @@ void jolt_gui_test_json_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
 
 exit:
     if(json) jolt_json_del(json);
+    SAFE_FREE(path); 
 #undef EXIT_IF_NULL
 }
 

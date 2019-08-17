@@ -10,11 +10,30 @@
 #ifndef JOLT_BLUETOOTH_H___
 #define JOLT_BLUETOOTH_H___
 
+#include <stdint.h>
 #include "sdkconfig.h"
+#include "freertos/FreeRTOS.h"
+#include "esp_vfs_dev.h"
 
 #define JOLT_BLE_WHITELIST_ADD    true
 #define JOLT_BLE_WHITELIST_REMOVE false
 #define JOLT_BLE_WHITELIST_ADDR_TYPE BLE_WL_ADDR_TYPE_RANDOM
+
+/**
+ * Objects that store bluetooth packets
+ */
+typedef struct {
+    uint8_t *data;
+    uint32_t len;
+#if CONFIG_JOLT_BT_PROFILING
+    uint64_t t_receive; /**< System ime in uS the packet was received at */
+#endif
+} ble_packet_t;
+
+#if CONFIG_JOLT_BT_PROFILING
+extern uint64_t ble_packet_cum_life;
+extern uint32_t ble_packet_n;
+#endif
 
 #if CONFIG_BT_ENABLED
 /**
@@ -74,5 +93,29 @@ esp_err_t jolt_bluetooth_adv_stop();
  * @param[in] bond To bond with client device after pairing
  */
 void jolt_bluetooth_config_security(bool bond);
+
+/**
+ * @brief Read a character from the bluetooth stream.
+ * @param[in] fd File Descriptor; ignored. Just set it to 0.
+ * @param[in] timeout; Maximum number of ticks to wait.
+ * @return Character read. Returns -1 on timeout. 
+ */
+int ble_read_char(int fd, TickType_t timeout);
+
+/**
+ * @brief Read data from bluetooth stream with timeout.
+ * @param[in] fd File Descriptor; ignored. Just set it to 0.
+ * @param[out] data Data buffer to store output bytes.
+ * @param[in] size Number of bytes to read.
+ * @param[in] timeout; Maximum number of ticks to wait.
+ * @return Number of bytes read.
+ */
+ssize_t ble_read_timeout(int fd, void* data, size_t size, TickType_t timeout);
+
+/**
+ * @brief Set line ending rules.
+ * @param[in] type ending rule. -1 for no rules.
+ */
+void ble_set_rx_line_endings(esp_line_endings_t mode);
 
 #endif

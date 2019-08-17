@@ -387,6 +387,18 @@ menu "JoltOS"
              default n
              help
                  Always advertise; for debugging purposes only. Not enabled for production.
+        config JOLT_BT_YMODEM_PROFILING
+             bool
+             prompt "Profile ymodem transfers"
+             default n
+             help
+                 Profile ymodem transfers.
+        config JOLT_BT_PROFILING
+             bool
+             prompt "Profile bluetooth internals"
+             default n
+             help
+                 Profile bluetooth internals.
     endmenu
 
     menu "Battery"
@@ -522,5 +534,24 @@ menu "JoltOS"
         bool
         prompt "Enable Partition Table Hash check"
         default y
+
+    menu "Filesystem"
+        choice
+            prompt "Driver"
+            config JOLT_FS_SPIFFS
+                bool "Use SPIFFS Filesystem"
+                help
+                    Use SPIFFS for the filesystem.
+            config JOLT_FS_FAT
+                bool "Use FAT Filesystem"
+                help
+                    Use FAT for the filesystem.
+            config JOLT_FS_LITTLEFS
+                bool "Use LittleFS Filesystem"
+                default y
+                help
+                    Use LittleFS for the filesystem.
+        endchoice
+    endmenu
 
 endmenu

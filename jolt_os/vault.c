@@ -348,16 +348,16 @@ static void pin_fail_cb( lv_obj_t *num_entry, lv_event_t event ) {
     }
 }
 
-#if ESP_LOG_LEVEL >= ESP_LOG_INFO
+#if LOG_LOCAL_LEVEL >= 3 /* info */
 static int8_t vault_sem_ctr = 0;
 #endif
 
 void vault_sem_take() {
     /* Takes Vault semaphore; restarts device if timesout during take. */
-#if ESP_LOG_LEVEL >= ESP_LOG_INFO
+#if LOG_LOCAL_LEVEL >= 3 /* info */
     vault_sem_ctr--;
+    ESP_LOGI(TAG, "%s %d", __func__, vault_sem_ctr);
 #endif
-    ESP_LOGD(TAG, "%s %d", __func__, vault_sem_ctr);
 
     if( !xSemaphoreTakeRecursive(vault_sem, pdMS_TO_TICKS( 
                     CONFIG_JOLT_VAULT_TIMEOUT_TIMEOUT_MS) ) ) {
@@ -369,10 +369,10 @@ void vault_sem_take() {
 }
 
 void vault_sem_give() {
-#if ESP_LOG_LEVEL >= ESP_LOG_INFO
+#if LOG_LOCAL_LEVEL >= 3 /* info */
     vault_sem_ctr++;
+    ESP_LOGI(TAG, "%s %d", __func__, vault_sem_ctr);
 #endif
-    ESP_LOGD(TAG, "%s %d", __func__, vault_sem_ctr);
     xSemaphoreGiveRecursive(vault_sem);
 }
 

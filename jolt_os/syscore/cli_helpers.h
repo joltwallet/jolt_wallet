@@ -9,6 +9,7 @@
 
 #include "stdint.h"
 #include "stdbool.h"
+#include "jolt_helpers.h"
 
 /**
  * @brief Check to see if the provided argument count is within specified range.
