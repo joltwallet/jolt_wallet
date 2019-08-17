@@ -347,7 +347,9 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                         }
 
                                         int written_bytes; 
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
                                         uint64_t t_disk_start = esp_timer_get_time();
+#endif
                                         #if CONFIG_JOLT_COMPRESSION_AUTO 
                                         if( NULL != d ){
                                             decompress_obj_chunk( d,
@@ -368,7 +370,9 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                             written_bytes = write_len;
 #endif
                                         }
+#if CONFIG_JOLT_BT_YMODEM_PROFILING
                                         t_disk += esp_timer_get_time() - t_disk_start;
+#endif
 
                                         if (written_bytes != write_len) { //failed
                                             /* End session */
