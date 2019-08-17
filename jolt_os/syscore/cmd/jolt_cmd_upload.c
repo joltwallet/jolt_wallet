@@ -10,7 +10,7 @@
 static const char TAG[] = "cmd_upload";
 
 static const char progress_label_0[] = "Connecting...";
-static const char progress_label_1[] = "Transfering...";
+static const char progress_label_1[] = "Transferring...";
 static const char progress_label_2[] = "Installing...";
 
 
@@ -57,6 +57,8 @@ int jolt_cmd_upload(int argc, char** argv) {
     /* Perform Transfer */
     rec_res = ymodem_receive(ffd, max_fsize, orig_fn, progress);
 
+    SAFE_CLOSE(ffd);
+
     if(rec_res <= 0){
         /* Failure */
         char buf[20];
@@ -65,13 +67,14 @@ int jolt_cmd_upload(int argc, char** argv) {
         jolt_gui_scr_loadingbar_update(loading_scr, NULL, buf, -1);
         /* Allow screen to be deleted via back button */
         jolt_gui_scr_set_event_cb(loading_scr, jolt_gui_event_del);
+        EXIT(-5);
     }
 
     jolt_gui_scr_del(loading_scr);
     printf("\"%s\" Transfer complete, Size=%d Bytes\n", orig_fn, rec_res);
 
     ESP_LOGI(TAG, "Renaming file");
-    if( jolt_fs_exists(orig_fullpath) && 0 !=remove(orig_fullpath) ) {
+    if( jolt_fs_exists(orig_fullpath) && 0 != remove(orig_fullpath) ) {
         EXIT_PRINT(-3, "Unable to delete existing file. Transfer failed.");
     }
     if( 0 != rename(tmp_fullpath, orig_fullpath) ) {
@@ -83,10 +86,10 @@ int jolt_cmd_upload(int argc, char** argv) {
     EXIT(0);
 
 exit:
+    SAFE_CLOSE(ffd);
     if( NULL!=tmp_fullpath && jolt_fs_exists(tmp_fullpath) ) remove(tmp_fullpath);
     SAFE_FREE(tmp_fullpath);
     SAFE_FREE(orig_fullpath);
-    SAFE_CLOSE(ffd);
 
     return return_code;
 }

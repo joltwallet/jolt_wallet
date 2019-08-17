@@ -42,12 +42,12 @@
 /**
  * @brief free non-null pointer.
  */
-#define SAFE_FREE(x) do{if(NULL != x) free(x);}while(0)
+#define SAFE_FREE(x) do{if(NULL != x) {free(x); x = NULL;}}while(0)
 
 /**
  * @brief fclose non-null pointer.
  */
-#define SAFE_CLOSE(x) do{if(NULL != x) fclose(x);}while(0)
+#define SAFE_CLOSE(x) do{if(NULL != x) {fclose(x); x = NULL;}}while(0)
 
 /**
  * @brief Set return_code and goto exit

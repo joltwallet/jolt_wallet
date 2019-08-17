@@ -92,10 +92,14 @@ void IRAM_ATTR rx_consume();
  */
 static inline uint32_t IRAM_ATTR send_bytes(char *c, uint32_t n) {
     const char new_line = '\n';
+#if JOLT_YMODEM_PROFILING
     uint64_t t_start = esp_timer_get_time();
+#endif
     fwrite(c, 1, n, stdout);
     fwrite(&new_line, 1, 1, stdout);
+#if JOLT_YMODEM_PROFILING
     t_ymodem_send += esp_timer_get_time() - t_start; 
+#endif
     return 0;
 }
 

@@ -358,7 +358,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                         else
                                         #endif
                                         {
-#if 0
+#if 1
                                             BLE_UART_LOGD("Writing %d bytes to disk.\n", write_len);
                                             written_bytes = write_fun(
                                                     (char*)(packet_data + PACKET_HEADER), 
