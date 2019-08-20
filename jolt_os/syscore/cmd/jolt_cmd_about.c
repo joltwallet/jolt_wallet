@@ -1,5 +1,6 @@
 #include "jolt_lib.h"
 #include "esp_wifi.h"
+#include "syscore/filesystem.h"
 
 extern const jolt_version_t JOLT_OS_VERSION;   /**< JoltOS version */
 extern const jolt_version_t JOLT_JELF_VERSION; /**< Used to determine app compatibility */
@@ -46,14 +47,11 @@ int jolt_cmd_about(int argc, char** argv) {
         if( !add_semver_to_object(json, "jolt_os", JOLT_OS_VERSION.major, JOLT_OS_VERSION.minor, JOLT_OS_VERSION.patch)) goto end;
         if( NULL == cJSON_AddStringToObject(json, "jolt_os_commit", JOLT_OS_COMMIT)) goto end; 
         if( !add_semver_to_object(json, "jelf_loader", JOLT_JELF_VERSION.major, JOLT_JELF_VERSION.minor, JOLT_JELF_VERSION.patch)) goto end;
-        PRINT_AND_END(json);
     }
-
-    if( !console_check_equal_argc(argc, 2) ) {
+    else if( argc < 2 ) {
         goto end;
     }
-
-    if( 0 == strcmp(argv[1], "wifi") ) {
+    else if( 0 == strcmp(argv[1], "wifi") ) {
         char ssid[32];
         {
             size_t ssid_len;
@@ -81,15 +79,23 @@ int jolt_cmd_about(int argc, char** argv) {
                 }
             }
             if(NULL == cJSON_AddNumberToObject(json, "rssi", rssi)) goto end;
-            PRINT_AND_END(json);
         }
 #else
         {
             if(NULL == cJSON_AddNumberToObject(json, "rssi", 0)) goto end;
-            PRINT_AND_END(json);
         }
 #endif
     }
+    else if( 0 == strcmp(argv[1], "filesystem")) {
+        size_t total_bytes = 0, used_bytes = 0;
+        if( ESP_OK != jolt_fs_info(&total_bytes, &used_bytes) ) goto end;
+
+        if( NULL == cJSON_AddStringToObject(json, "type", jolt_fs_type()) ) goto end;
+        if(NULL == cJSON_AddNumberToObject(json, "total", total_bytes)) goto end;
+        if(NULL == cJSON_AddNumberToObject(json, "used", used_bytes)) goto end;
+    }
+
+    PRINT_AND_END(json);
 
 end:
     if( NULL != json ) cJSON_Delete(json);

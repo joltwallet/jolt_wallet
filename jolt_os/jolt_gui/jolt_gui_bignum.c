@@ -34,12 +34,12 @@ jolt_gui_obj_t *jolt_gui_scr_bignum_create(const char *title, const char *subtit
         /* Set a Big Font Style for number*/
         if( first ) {
             first = false;
-            lv_style_copy(&bignum_style, lv_label_get_style(number_label));
-            bignum_style.text.font = &lv_font_dejavu_40_numeric;
+            lv_style_copy(&bignum_style, lv_label_get_style(number_label, LV_LABEL_STYLE_MAIN));
+            bignum_style.text.font = JOLT_GUI_FONT_BIG_NUM;
             bignum_style.text.letter_space = 3;
         }
 
-        lv_label_set_style(number_label, &bignum_style);
+        lv_label_set_style(number_label, LV_LABEL_STYLE_MAIN, &bignum_style);
 
         /* Align Big Number to Center bottom of screen */
         lv_obj_align(number_label, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);

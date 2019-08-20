@@ -61,6 +61,9 @@
  * (Not so important, you can adjust it to modify default sizes and spaces)*/
 #define LV_DPI              147     /*[px]*/
 
+/* Type of coordinates. Should be `int16_t` (or `int32_t` for extreme cases) */
+typedef int16_t lv_coord_t;
+
 /*=========================
    Memory manager settings
  *=========================*/
@@ -129,7 +132,10 @@
 /*1: Enable the Animations */
 #define LV_USE_ANIMATION        1
 #if LV_USE_ANIMATION
+
+/*Declare the type of the user data of animations (can be e.g. `void *`, `int`, `struct`)*/
 typedef void * lv_anim_user_data_t;
+
 #endif
 
 /* 1: Enable shadow drawing*/
@@ -147,17 +153,30 @@ typedef void * lv_group_user_data_t;
 /* 1: Enable file system (might be required for images */
 #define LV_USE_FILESYSTEM       0
 
+/*1: Add a `user_data` to drivers and objects*/
+#define LV_USE_USER_DATA 1
+
+/*========================
+ * Image decoder and cache
+ *========================*/
+
 /* 1: Enable indexed (palette) images */
-#define LV_IMG_CF_INDEXED   1
+#define LV_IMG_CF_INDEXED       1
 
 /* 1: Enable alpha indexed images */
-#define LV_IMG_CF_ALPHA     0
+#define LV_IMG_CF_ALPHA         1
+
+/* Default image cache size. Image caching keeps the images opened.
+ * If only the built-in image formats are used there is no real advantage of caching.
+ * (I.e. no new image decoder is added)
+ * With complex image decoders (e.g. PNG or JPG) caching can save the continuous open/decode of images.
+ * However the opened images might consume additional RAM.
+ * LV_IMG_CACHE_DEF_SIZE must be >= 1 */
+#define LV_IMG_CACHE_DEF_SIZE       1
 
 /*Declare the type of the user data of image decoder (can be e.g. `void *`, `int`, `struct`)*/
 typedef void * lv_img_decoder_user_data_t;
 
-/*1: Add a `user_data` to drivers and objects*/
-#define LV_USE_USER_DATA 1
 
 /*=====================
  *  Compiler settings
@@ -173,12 +192,9 @@ typedef void * lv_img_decoder_user_data_t;
  * E.g. __attribute__((aligned(4))) */
 #define LV_ATTRIBUTE_MEM_ALIGN
 
-
-/* 1: Variable length array is supported*/
-#define LV_COMPILER_VLA_SUPPORTED            1
-
-/* 1: Initialization with non constant values are supported */
-#define LV_COMPILER_NON_CONST_INIT_SUPPORTED 1
+/* Attribute to mark large constant arrays for example
+ * font's bitmaps */
+#define LV_ATTRIBUTE_LARGE_CONST
 
 /*===================
  *  HAL settings
@@ -233,54 +249,36 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
  *    FONT USAGE
  *===================*/
 
-/* More info about fonts: https://docs.littlevgl.com/#Fonts
- * To enable a built-in font use 1,2,4 or 8 values
- * which will determine the bit-per-pixel. Higher value means smoother fonts */
-#define LV_USE_FONT_DEJAVU_10              0
-#define LV_USE_FONT_DEJAVU_10_LATIN_SUP    0
-#define LV_USE_FONT_DEJAVU_10_CYRILLIC     0
-#define LV_USE_FONT_SYMBOL_10              0
+/* The built-in fonts contains the ASCII range and some Symbols with  4 bit-per-pixel.
+ * The symbols are available via `LV_SYMBOL_...` defines
+ * More info about fonts: https://docs.littlevgl.com/#Fonts
+ * To create a new font go to: https://littlevgl.com/ttf-font-to-c-array
+ */
+#define LV_FONT_ROBOTO_12    0
+#define LV_FONT_ROBOTO_16    0
+#define LV_FONT_ROBOTO_22    0
+#define LV_FONT_ROBOTO_28    0
 
-#define LV_USE_FONT_DEJAVU_20              0
-#define LV_USE_FONT_DEJAVU_20_LATIN_SUP    0
-#define LV_USE_FONT_DEJAVU_20_CYRILLIC     0
-#define LV_USE_FONT_SYMBOL_20              0
-
-#define LV_USE_FONT_DEJAVU_30              0
-#define LV_USE_FONT_DEJAVU_30_LATIN_SUP    0
-#define LV_USE_FONT_DEJAVU_30_CYRILLIC     0
-#define LV_USE_FONT_SYMBOL_30              0
-
-#define LV_USE_FONT_DEJAVU_40              0
-#define LV_USE_FONT_DEJAVU_40_LATIN_SUP    0
-#define LV_USE_FONT_DEJAVU_40_CYRILLIC     0
-#define LV_USE_FONT_SYMBOL_40              0
-
-#define LV_USE_FONT_MONOSPACE_8            1
 
 /* Optionally declare your custom fonts here.
  * You can use these fonts as default font too
  * and they will be available globally. E.g.
  * #define LV_FONT_CUSTOM_DECLARE LV_FONT_DECLARE(my_font_1) \
- *                                LV_FONT_DECLARE(my_font_2) \
+ *                                LV_FONT_DECLARE(my_font_2)
  */
-#define LV_USE_FONT_CROX3HB_NUMERIC 1 /* Used for Pin Entry Roller Digits */
-#define LV_USE_FONT_DEJAVU_40_NUMERIC 1 /* Used for Misc big numbers */
-#define LV_USE_FONT_PIXELMIX_7 1 /* Default small font */
-
-#if CONFIG_JOLT_LANG_ENGLISH_EN || CONFIG_JOLT_LANG_SPANISH_EN
-    #define LV_USE_FONT_PIXELMIX_7_LATIN_SUP 1
-#endif
 
 #define LV_FONT_CUSTOM_DECLARE \
-        LV_FONT_DECLARE(jolt_gui_symbols) \
-        LV_FONT_DECLARE(lv_font_jolt_gui_symbols) \
-        LV_FONT_DECLARE(lv_font_crox3hb_numeric) \
-        LV_FONT_DECLARE(lv_font_dejavu_40_numeric) \
-        LV_FONT_DECLARE(lv_font_pixelmix_7) \
-        LV_FONT_DECLARE(lv_font_pixelmix_7_latin_sup)
+        LV_FONT_DECLARE(unscii_8) \
+        LV_FONT_DECLARE(dejavu_16) \
+        LV_FONT_DECLARE(dejavu_32) \
+        LV_FONT_DECLARE(pixelmix) \
+        LV_FONT_DECLARE(jolt_symbols)
 
-#define LV_FONT_DEFAULT        &lv_font_pixelmix_7
+#define LV_FONT_DEFAULT        &pixelmix
+
+/*Declare the type of the user data of fonts (can be e.g. `void *`, `int`, `struct`)*/
+typedef void * lv_font_user_data_t;
+
 
 /*=================
  *  Text settings
@@ -304,6 +302,14 @@ typedef void * lv_indev_drv_user_data_t;            /*Type of user data in the i
 
 /* Minimum number of characters of a word to put on a line after a break */
 #define LV_TXT_LINE_BREAK_LONG_POST_MIN_LEN 3
+
+/*Change the built in (v)snprintf functions*/
+#define LV_SPRINTF_CUSTOM   1
+#if LV_SPRINTF_CUSTOM
+#  define LV_SPRINTF_INCLUDE <stdio.h>
+#  define lv_snprintf     snprintf
+#  define lv_vsnprintf    vsnprintf
+#endif  /*LV_SPRINTF_CUSTOM*/
 
 /*===================
  *  LV_OBJ SETTINGS
@@ -365,17 +371,13 @@ typedef uint8_t (*lv_action_t)(struct _lv_obj_t * obj);
 
 #define JOLT_GUI_USE_RESERVED 1 /* Use the `reserved` field of lv_obj_t. Reserved must be at least 6 bits. Saves potentially 4 bytes per lv_obj */
 
-#if JOLT_GUI_USE_RESERVED
 typedef struct {
     void *param;               /**< Free parameters. Consumer should only attach to the active object. */
-} lv_obj_user_data_t;          /*Declare the type of the user data of object (can be e.g. `void *`, `int`, `struct`)*/
-#else
-typedef struct {
-    void *param;               /**< Free parameters. Consumer should only attach to the active object. */
+#if !JOLT_GUI_USE_RESERVED
     uint8_t id:5;              /**< Either a screen id or an object id */
     uint8_t is_scr:1;          /**< 0=obj; 1=screen (parent object) */
-} lv_obj_user_data_t;          /*Declare the type of the user data of object (can be e.g. `void *`, `int`, `struct`)*/
 #endif
+} lv_obj_user_data_t;          /*Declare the type of the user data of object (can be e.g. `void *`, `int`, `struct`)*/
 
 /*1: enable `lv_obj_realaign()` based on `lv_obj_align()` parameters*/
 #define LV_USE_OBJ_REALIGN          0
@@ -404,7 +406,7 @@ typedef struct {
 #define LV_USE_BTN      1
 #if LV_USE_BTN != 0
 /*Enable button-state animations - draw a circle on click (dependencies: LV_USE_ANIMATION)*/
-#  define LV_BTN_INK_EFFECT   1
+#  define LV_BTN_INK_EFFECT   0
 #endif
 
 /*Button matrix (dependencies: -)*/
@@ -454,10 +456,13 @@ typedef struct {
 /*Label (dependencies: -*/
 #define LV_USE_LABEL    1
 #if LV_USE_LABEL != 0
+
 /*Hor, or ver. scroll speed [px/sec] in 'LV_LABEL_LONG_ROLL/ROLL_CIRC' mode*/
 #  define LV_LABEL_DEF_SCROLL_SPEED       25
+
 #  define LV_LABEL_WAIT_CHAR_COUNT        4 /* Waiting period at beginning/end of animation cycle */
 #  define LV_LABEL_TEXT_SEL               0 /*Enable selecting text of the label */
+
 #endif
 
 /*LED (dependencies: -)*/
@@ -481,6 +486,10 @@ typedef struct {
 
 /*Page (dependencies: lv_cont)*/
 #define LV_USE_PAGE     1
+#if LV_USE_PAGE != 0
+/*Focus default animation time [ms] (0: no animation)*/
+#  define LV_PAGE_DEF_ANIM_TIME     400
+#endif
 
 /*Preload (dependencies: lv_arc)*/
 #define LV_USE_PRELOAD      1

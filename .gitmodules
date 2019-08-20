@@ -25,3 +25,9 @@
 [submodule "components/esp_littlefs"]
 	path = components/esp_littlefs
 	url = https://github.com/joltwallet/esp_littlefs.git
+[submodule "components/esp_hdiffz"]
+	path = components/esp_hdiffz
+	url = https://github.com/joltwallet/esp_hdiffz.git
+[submodule "components/esp_full_miniz"]
+	path = components/esp_full_miniz
+	url = https://github.com/joltwallet/esp_full_miniz.git

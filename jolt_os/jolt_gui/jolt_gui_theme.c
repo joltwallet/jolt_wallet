@@ -6,7 +6,7 @@
 /*********************
  *      INCLUDES
  *********************/
-#include "lvgl/lvgl.h"
+#include "jolt_gui/jolt_gui.h"
 
 
 /*********************
@@ -78,7 +78,7 @@ static void basic_init(void)
     /* Text Configuration */
     def.text.font         = _font; // de
     def.text.color        = LV_COLOR_BLACK;
-    def.text.letter_space = 1;
+    def.text.letter_space = 0;
     def.text.line_space   = 1;
 
     /* Line Configuration */
@@ -406,7 +406,7 @@ static void roller_init(void)
     bg.body.padding.left = 3; // Width Padding of the entire roller
     bg.body.padding.right = 3; // Width Padding of the entire roller
     bg.body.padding.inner = 0;
-    bg.text.font = &lv_font_crox3hb_numeric;
+    bg.text.font = JOLT_GUI_FONT_DIGIT_ENTRY;
     bg.text.line_space = 6; // Distance between options
 
     theme.style.roller.bg = &bg;
@@ -507,8 +507,8 @@ lv_theme_t * jolt_gui_theme_init(uint16_t hue, const lv_font_t * font)
     win_init();
 
 #if LV_USE_GROUP
-    theme.group.style_mod_cb = style_mod;
-    theme.group.style_mod_edit_cb = style_mod_edit;
+    theme.group.style_mod_xcb = style_mod;
+    theme.group.style_mod_edit_xcb = style_mod_edit;
 #endif
 
     return &theme;

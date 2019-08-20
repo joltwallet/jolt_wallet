@@ -16,11 +16,7 @@ int jolt_cmd_mv(int argc, char** argv) {
     if( NULL == (src_fn = jolt_fs_parse(argv[1], NULL))) EXIT_PRINT(-2, "Invalid [src] filename");
     if( NULL == (dst_fn = jolt_fs_parse(argv[2], NULL))) EXIT_PRINT(-3, "Invalid [dst] filename");
 
-    if( jolt_fs_exists(dst_fn) ) remove(dst_fn);
-    if( 0 != rename(src_fn, dst_fn) ) EXIT_PRINT(-4, "Unsuccessful move");
-
-    /* Maybe refresh home screen on success */
-    jolt_h_fn_home_refresh( argv[2] );
+    if( ESP_OK != jolt_fs_mv(src_fn, dst_fn) ) EXIT_PRINT(-4, "Unsuccessful move");
 
     EXIT(0); /* Success */
 

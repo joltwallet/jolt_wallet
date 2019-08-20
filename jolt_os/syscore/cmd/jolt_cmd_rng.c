@@ -8,17 +8,21 @@ int jolt_cmd_rng(int argc, char** argv) {
     int return_code = -1;
     uint8_t bin_buf[4] = { 0 };
     bool output_hex = false;
-    uint64_t n_bytes;
+    uint64_t n_bytes = 0;
 
     if( !console_check_range_argc(argc, 2, 3) ) {
         printf("Specify how many bytes to generate.\n");
         return_code = -1;
         goto exit;
     }
-    n_bytes = strtoull(argv[1], NULL, 10);
 
-    if( argc == 3 && 0==strcmp("--hex", argv[2]) ) {
-        output_hex = true;
+    for(uint8_t i=1; i < argc; i++){
+        if( 0==strcmp("--hex", argv[i]) ) {
+            output_hex = true;
+        }
+        else{
+            n_bytes = strtoull(argv[i], NULL, 10);
+        }
     }
 
     for(uint64_t i=0; i < n_bytes; i+=4) {

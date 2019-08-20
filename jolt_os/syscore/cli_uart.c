@@ -94,7 +94,7 @@ static void jolt_cli_uart_listener_task( void *param) {
     }
     
     /* Main loop */
-    for(;;vTaskDelay(pdMS_TO_TICKS(200))) {
+    for(;;) {
         bool suspend = false;
         /* Get a line using linenoise.
          * The line is returned when ENTER is pressed.
@@ -114,6 +114,10 @@ static void jolt_cli_uart_listener_task( void *param) {
 
         if( 0 == strcmp(line, "upload_firmware") || 0 == strcmp(line, "upload") ){
             suspend = true;
+        }
+        else if( 0 == strcmp(line, "ping") ) {
+            fwrite("pong\n", 1, 5, stdout);
+            continue;
         }
 
         /* Send the command to the command queue */

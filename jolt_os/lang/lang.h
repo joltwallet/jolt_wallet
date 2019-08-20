@@ -126,15 +126,11 @@ bool jolt_lang_available( jolt_lang_t lang );
 #if CONFIG_JOLT_LANG_ENGLISH_EN
 extern const char *jolt_lang_english[JOLT_TEXT_LAST_STR];
 extern lv_font_t *jolt_lang_english_font;
-extern uint8_t jolt_lang_english_n_ext;
-extern lv_font_t *jolt_lang_english_ext_fonts[];
 #endif
 
 #if CONFIG_JOLT_LANG_SPANISH_EN
 extern const char *jolt_lang_spanish[JOLT_TEXT_LAST_STR];
 extern lv_font_t *jolt_lang_spanish_font;
-extern uint8_t jolt_lang_spanish_n_ext;
-extern lv_font_t *jolt_lang_spanish_ext_fonts[];
 #endif
 
 #endif
