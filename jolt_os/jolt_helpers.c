@@ -24,6 +24,8 @@
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_gui/menus/home.h"
 #include "syscore/https.h"
+#include "syscore/filesystem.h"
+#include "esp_hdiffz.h"
 
 
 static const char* TAG = "jolt_helpers";
@@ -108,4 +110,60 @@ void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *
             JOLT_OS_DERIVATION_BIP32_KEY,
             JOLT_OS_DERIVATION_PASSPHRASE,
             fail_cb, success_cb, param);
+}
+
+void jolt_h_apply_patch(const char *filename){
+    // TODO: prompt user
+    FILE *f_diff = NULL, *f_jelf = NULL, *f_tmp = NULL;
+    char *path_diff = NULL;
+    if( !jolt_h_strcmp_suffix(filename, ".patch") ) goto exit;
+
+    /* Ensure its a full path */
+    path_diff = jolt_fs_parse(filename, NULL);
+    if(NULL == path_diff) goto exit;
+
+    /* Open DIFF file */
+    f_diff = fopen(path_diff, "rb");
+    if(NULL == f_diff) goto exit;
+
+    if( 0 == jolt_h_strcmp_suffix(path_diff, "joltos.patch") ) {
+        /* Firmware Update */
+        // TODO: GUI stuff
+        esp_hdiffz_ota_file(f_diff);
+        SAFE_CLOSE(f_diff);
+        remove(path_diff);
+        esp_restart();
+    }
+    else {
+        /* File Update */
+        esp_err_t err;
+
+        jolt_fs_strip_ext(path_diff);
+        strcat(path_diff, ".jelf"); // NOTE: only works because "jelf" is shorter than "patch"
+
+        f_jelf = fopen(path_diff, "rb");
+        if(f_jelf == NULL) goto exit;
+
+        // Will output to /store/tmp
+        f_tmp = fopen(JOLT_FS_TMP_FN, "wb");
+        if(f_tmp == NULL) goto exit;
+
+        err = esp_hdiffz_patch_file(f_jelf, f_tmp, f_diff);
+        if( ESP_OK != err ) goto exit;
+
+        SAFE_CLOSE(f_jelf);
+        SAFE_CLOSE(f_tmp);
+        SAFE_CLOSE(f_diff);
+
+        /* Replace the app with the patched version */
+        err = jolt_fs_mv(JOLT_FS_TMP_FN, path_diff);
+        if(ESP_OK != err) goto exit;
+    }
+
+exit:
+    SAFE_FREE(path_diff);
+    SAFE_CLOSE(f_diff);
+    SAFE_CLOSE(f_jelf);
+    SAFE_CLOSE(f_tmp);
+    return;
 }
