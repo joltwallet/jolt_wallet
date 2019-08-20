@@ -41,6 +41,7 @@
 #include "syscore/cli_ble.h"
 #include "syscore/cli_uart.h"
 #include "syscore/partition.h"
+#include "syscore/noise.h"
 #include "vault.h"
 
 #include "esp_ota_ops.h"
@@ -108,6 +109,9 @@ void app_main() {
                     partition->encrypted ? "" : "NOT ");
         }
     }
+
+    /* Start side-channel mitigation noise */
+    jolt_noise_init();
 
     /* Setup and Install I2C Driver */
     {
