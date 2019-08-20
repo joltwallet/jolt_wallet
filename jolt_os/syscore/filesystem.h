@@ -19,6 +19,15 @@
 #include "esp_err.h"
 
 /**
+ * @brief Mounting point for filesystem
+ * 
+ * Must NOT end in "/"
+ */
+#define JOLT_FS_MOUNTPT "/store"
+
+#define JOLT_FS_PARTITION "storage"
+
+/**
  * @brief Minimum amount of free space allowed in bytes.
  *
  * Don't let the filesystem fill up 100% 
@@ -55,18 +64,11 @@
 #define JOLT_FS_MAX_FILENAME_BUF_LEN JOLT_FS_MAX_FILENAME_LEN+1
 
 /**
- * @brief Mounting point for filesystem
- * 
- * Must NOT end in "/"
- */
-#define JOLT_FS_MOUNTPT "/store"
-
-#define JOLT_FS_PARTITION "storage"
-
-/**
  * @brief buffer length to hold the longest null-terminated full path.
  */
 #define JOLT_FS_MAX_ABS_PATH_BUF_LEN sizeof(JOLT_FS_MOUNTPT) + 1 + JOLT_FS_MAX_FILENAME_LEN
+
+#define JOLT_FS_TMP_FN (JOLT_FS_MOUNTPT "/tmp")
 
 /**
  * @brief Allocates and returns the names of all files ending with ".jelf" 
@@ -116,13 +118,15 @@ size_t jolt_fs_size(const char *fname);
 
 /**
  * @brief Checks if file exists. 
- * @param[in] full filename path; i.e. '/store/test.txt'
+ * @param[in] full filename path; i.e. '/store/test.txt' or just the filename 'test.txt'.
  * @return 0 if file exists, 1 if file does not exist, -1 if filesystem is not mounted.
  */
 bool jolt_fs_exists(const char *fname);
 
 /**
  * @brief Parse a file path.
+ *
+ * Populates with filesystem mount point if it's not already.
  *
  * ex.
  *     char *path1 = jolt_fs_parse("Jolt", "jelf");
@@ -131,6 +135,9 @@ bool jolt_fs_exists(const char *fname);
  *     // "/store/Jolt"
  *     char *path3 = "jolt_fs_parse("Jolt", ".jelf");
  *     // "/store/Jolt.jelf"
+ *     char *path4 = "jolt_fs_parse("/store/Jolt", ".jelf");
+ *     // "/store/Jolt.jelf"
+
  *
  * @param[in] fn Filename. 
  * @param[in] ext extension with or without the "." Can be NULL for no ext.
@@ -141,12 +148,30 @@ char * jolt_fs_parse(const char *fn, const char *ext);
 /** 
  * @brief Allocates the maximum allowed file name buffer size.
  *
- * Populates with filesystem mount point. NOTE: only free fullpath, NOT fn.
+ * Populates with filesystem mount point if it's not already.
+ *
+ * NOTE: only free fullpath, NOT fn.
  *
  * @param[out] fullpath Full path "/store/..."
  * @param[out] fn [optional] Pointer to the filename portion of the buffer "...".
  */
 void jolt_fs_parse_buf(char **fullpath, char **fn);
+
+/**
+ * @brief Strip the extension from the file inplace
+ * @param[in,out] fname File path to strip.
+ */
+void jolt_fs_strip_ext(char *fname);
+
+/**
+ * @brief Move a file, deleting the old destination if it existed.
+ *
+ * Filenames MUST be fullpaths ("/store/foo.bar")
+ *
+ * @param[in] src
+ * @param[in] dst
+ */
+esp_err_t jolt_fs_mv(const char *src, const char *dst);
 
 /**
  * @brief Erase and format the filesystem

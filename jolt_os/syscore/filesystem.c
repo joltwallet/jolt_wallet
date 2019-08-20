@@ -161,16 +161,22 @@ size_t jolt_fs_size(const char *fname) {
 }
 
 bool jolt_fs_exists(const char *fname) {
+    bool res = false;
     struct stat sb;
-    if (stat(fname, &sb) == 0) {
-        return true;
-    }
-    return false;
+
+    char *f = NULL;
+    f = jolt_fs_parse(fname, NULL);
+    if(NULL == f) return false;
+
+    if (stat(f, &sb) == 0) res = true;
+    free(f);
+    return res;
 }
 
 char * jolt_fs_parse(const char *fn, const char *ext) {
-    uint8_t total_len = 0;
+    uint8_t total_len = 1; // NULL-terminator
     bool add_dot = false;
+    bool add_mt = false;
     char *path = NULL;
 
     if( NULL == fn ) return NULL;
@@ -178,9 +184,11 @@ char * jolt_fs_parse(const char *fn, const char *ext) {
     total_len += strlen(fn);
 
     if( NULL == ext ) ext = &NULL_TERM;
-    else if( '.' != ext[0] ) add_dot = true;
+    else if( '.' != ext[0] ){
+        add_dot = true;
+        total_len++;
+    }
     total_len += strlen(ext);
-    if( add_dot ) total_len += 1;
 
     /* Filename Length Error Check */
     if( JOLT_FS_MAX_FILENAME_LEN < total_len ) {
@@ -190,15 +198,17 @@ char * jolt_fs_parse(const char *fn, const char *ext) {
         return NULL;
     }
 
-    total_len += sizeof(JOLT_FS_MOUNTPT) + 1; /* mount-point, slash, and NULL-terminator */
+    if( 0 != strncmp(fn, JOLT_FS_MOUNTPT "/", sizeof(JOLT_FS_MOUNTPT)) ) {
+        add_mt = true;
+        total_len += sizeof(JOLT_FS_MOUNTPT); /* mount-point and slash*/
+    }
 
-    path = calloc(1,total_len);
+    path = calloc(1, total_len);
     if( NULL == path ){
         ESP_LOGE(TAG, "Error allocating memory for path.");
         return NULL;
     }
-    strcat(path, JOLT_FS_MOUNTPT);
-    if( path[strlen(path)-1] != '/' ) strcat(path, "/");
+    if(add_mt) strcat(path, JOLT_FS_MOUNTPT "/");
     strcat(path, fn);
     if( add_dot ) strcat(path, ".");
     strcat(path, ext);
@@ -220,6 +230,18 @@ void jolt_fs_parse_buf(char **fullpath, char **fn){
     *fn = &path[sizeof(JOLT_FS_MOUNTPT)];
 }
 
+void jolt_fs_strip_ext(char *fname) {
+    char *end = fname + strlen(fname);
+
+    while (end > fname && *end != '.' && *end != '\\' && *end != '/') {
+        --end;
+    }
+    if ((end > fname && *end == '.') &&
+        (*(end - 1) != '\\' && *(end - 1) != '/')) {
+        *end = '\0';
+    }
+}
+
 esp_err_t jolt_fs_format(){
 #if CONFIG_JOLT_FS_SPIFFS
     return esp_spiffs_format(JOLT_FS_PARTITION);
@@ -238,6 +260,17 @@ esp_err_t jolt_fs_info(size_t *total_bytes, size_t *used_bytes) {
 #elif CONFIG_JOLT_FS_FAT
     return esp_fatfs_info(total_bytes, used_bytes);
 #endif
+}
+
+esp_err_t jolt_fs_mv(const char *src, const char *dst){
+
+    if( jolt_fs_exists(dst) ) remove(dst);
+    if( 0 != rename(src, dst) ) return ESP_FAIL;
+
+    /* Maybe refresh home screen on success */
+    jolt_h_fn_home_refresh( dst );
+
+    return ESP_OK;
 }
 
 #if 0
