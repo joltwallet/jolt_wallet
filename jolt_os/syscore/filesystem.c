@@ -273,6 +273,18 @@ esp_err_t jolt_fs_mv(const char *src, const char *dst){
     return ESP_OK;
 }
 
+char *jolt_fs_type(){
+#if CONFIG_JOLT_FS_SPIFFS
+    return "SPIFFS";
+#elif CONFIG_JOLT_FS_LITTLEFS 
+    return "LittleFS";
+#elif CONFIG_JOLT_FS_FAT
+    return "FAT";
+#else
+    return "UNKNOWN";
+#endif
+}
+
 #if 0
 #if CONFIG_JOLT_FS_SPIFFS
     assert(0);

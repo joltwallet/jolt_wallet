@@ -10,6 +10,12 @@
 
 /**
  * @brief Report versioning and other system data
+ *
+ * No args:
+ *     Print general system info
+ * 1 args:
+ *     wifi - print wifi info
+ *     filesystem - print filesystem info
  */
 int jolt_cmd_about(int argc, char** argv);
 

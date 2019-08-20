@@ -192,4 +192,11 @@ esp_err_t jolt_fs_format();
  */
 esp_err_t jolt_fs_info(size_t *total_bytes, size_t *used_bytes);
 
+/**
+ * @brief Get the filesystem type.
+ *
+ * @return NULL-terminated string literal.
+ */
+char *jolt_fs_type();
+
 #endif
