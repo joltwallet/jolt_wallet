@@ -134,6 +134,12 @@ void jolt_h_fn_home_refresh(const char *str);
  */
 void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *param);
 
+/**
+ * @brief If it's a patch file, try to apply it. Will remove the patch file upon
+ * success or failure.
+ */
+void jolt_h_apply_patch(const char *filename);
+
 #include <driver/uart.h>
 #include "hal/radio/bluetooth.h"
 /* Log something to uart if BLE is the stdin */
