@@ -370,6 +370,7 @@ menu "JoltOS"
             default "Password"
             help
                 Factory reset WiFi pass
+
         menu "Jolt Cast"
             config JOLT_CAST_URI
                 string
@@ -381,18 +382,27 @@ menu "JoltOS"
     endmenu
 
     menu "Bluetooth"
+        config JOLT_BT_ENABLE_DEFAULT
+            bool
+            prompt "Enable bluetooth by default?"
+            default n
+            help
+                On first boost, enable/disable bluetooth.
+
         config JOLT_BT_DEBUG_ALWAYS_ADV
              bool
              prompt "[DEBUG] Always advertise"
              default n
              help
                  Always advertise; for debugging purposes only. Not enabled for production.
+
         config JOLT_BT_YMODEM_PROFILING
              bool
              prompt "Profile ymodem transfers"
              default n
              help
                  Profile ymodem transfers.
+
         config JOLT_BT_PROFILING
              bool
              prompt "Profile bluetooth internals"

@@ -228,7 +228,11 @@ void app_main() {
     {
         esp_vfs_dev_ble_spp_register();
         uint8_t bluetooth_en;
-        storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 1 );
+#if CONFIG_JOLT_BT_ENABLE_DEFAULT
+        storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 1);
+#else
+        storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 0);
+#endif
         if( 1 == bluetooth_en ) {
             ESP_LOGI(TAG, "Starting Bluetooth");
             jolt_bluetooth_start();
