@@ -68,7 +68,7 @@ Removed left and right bearings.
 
 ### Conversion Settings
 
-* Input: `ModeNine.wooff`
+* Input: `ModeNine.woff`
 * Name: modenine_20
 * Size: 20
 * Bpp: 1
@@ -79,22 +79,19 @@ After conversion, manually change:
 * `line_height` to `14`.
 * `base_line` to `0`.
 
-## dejavu_32
+## modenine_40
 
-Just the numbers are used for bluetooth pairing.
-
-[TODO] Cleaned up some glyphs for pixel perfectness at this size.
+Removed left and right bearings.
 
 ###Font Modifications
-
-Originated from `dejavu-fonts-ttf-2.37/ttf/DejaVuSans.ttf`
 
 * Set Left and Right Bearing to 0.
 
 ### Conversion Settings
 
-* Input: `DejaVuSans09NoBearing.woff`
-* Size: 32
+* Input: `ModeNine.woff`
+* Name: modenine_40
+* Size: 40
 * Bpp: 1
 * Range: 0x30-0x39
 

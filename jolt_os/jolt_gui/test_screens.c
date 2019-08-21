@@ -230,4 +230,10 @@ void jolt_gui_test_https_create( jolt_gui_obj_t *btn, jolt_gui_event_t event ) {
     }
 }
 
+void jolt_gui_test_bignum_create( jolt_gui_obj_t *btn, jolt_gui_event_t event ) {
+    if( jolt_gui_event.short_clicked == event ) {
+        jolt_gui_obj_t *scr = jolt_gui_scr_bignum_create("BigNum Test", "subtitle", 123456, 6);
+    }
+}
+
 #endif
