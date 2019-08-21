@@ -6,23 +6,25 @@ Weight: Bold
 Copyright: Copyright (c) 2003 by Bitstream, Inc. All Rights Reserved.\nCopyright (c) 2006 by Tavmjong Bah. All Rights Reserved.\nDejaVu changes are in public domain\n
 Version: 2.37
 ItalicAngle: 0
-UnderlinePosition: -175
+UnderlinePosition: -265
 UnderlineWidth: 90
 Ascent: 1556
 Descent: 492
 InvalidEm: 0
 sfntRevision: 0x00025eb8
+woffMajor: 2
+woffMinor: 37
 LayerCount: 2
 Layer: 0 1 "Back" 1
 Layer: 1 1 "Fore" 0
-XUID: [1021 625 963893922 2189881]
+XUID: [1021 625 963893922 10847187]
 StyleMap: 0x0020
 FSType: 0
 OS2Version: 1
 OS2_WeightWidthSlopeOnly: 0
 OS2_UseTypoMetrics: 0
 CreationTime: 1469872272
-ModificationTime: 1565059986
+ModificationTime: 1566315428
 PfmFamily: 17
 TTFWeight: 700
 TTFWidth: 5
@@ -2846,6 +2848,7 @@ EndChar
 StartChar: .null
 Encoding: 1114113 -1 1
 Width: 0
+GlyphClass: 2
 Flags: W
 LayerCount: 2
 EndChar
@@ -2853,6 +2856,7 @@ EndChar
 StartChar: nonmarkingreturn
 Encoding: 1114114 -1 2
 Width: 682
+GlyphClass: 2
 Flags: W
 LayerCount: 2
 EndChar
@@ -4031,42 +4035,6 @@ Encoding: 43 43 14
 Width: 1282
 GlyphClass: 2
 Flags: W
-TtInstrs:
-NPUSHB
- 16
- 0
- 7
- 3
- 167
- 9
- 1
- 166
- 5
- 8
- 4
- 0
- 18
- 2
- 10
- 6
- 12
-SRP0
-MDRP[rp0,rnd,grey]
-ALIGNRP
-MDRP[rnd,grey]
-MIRP[rp0,min,rnd,grey]
-ALIGNRP
-MDRP[rnd,grey]
-IUP[x]
-SVTCA[y-axis]
-MDAP[rnd]
-MIRP[rp0,rnd,grey]
-ALIGNRP
-MIRP[rp0,min,rnd,grey]
-ALIGNRP
-MDRP[rnd,grey]
-IUP[y]
-EndTTInstrs
 LayerCount: 2
 Fore
 SplineSet
@@ -4091,33 +4059,6 @@ Encoding: 44 44 15
 Width: 460
 GlyphClass: 2
 Flags: W
-TtInstrs:
-NPUSHB
- 12
- 3
- 169
- 0
- 168
- 6
- 3
- 4
- 1
- 2
- 0
- 19
- 6
-SRP0
-MIRP[rp0,min,rnd,grey]
-MIRP[min,rnd,grey]
-MDRP[rp0,rnd,grey]
-MDRP[min,rnd,grey]
-IUP[x]
-SVTCA[y-axis]
-SRP0
-MIRP[rp0,min,rnd,grey]
-MIRP[min,rnd,grey]
-IUP[y]
-EndTTInstrs
 LayerCount: 2
 Fore
 SplineSet
@@ -4136,26 +4077,6 @@ Encoding: 45 45 16
 Width: 628
 GlyphClass: 2
 Flags: W
-TtInstrs:
-PUSHB_8
- 2
- 171
- 0
- 170
- 4
- 1
- 0
- 4
-SRP0
-MDRP[rp0,rnd,grey]
-MDRP[rnd,grey]
-IUP[x]
-SVTCA[y-axis]
-SRP0
-MIRP[rp0,rnd,grey]
-MIRP[min,rnd,grey]
-IUP[y]
-EndTTInstrs
 LayerCount: 2
 Fore
 SplineSet
@@ -4171,34 +4092,15 @@ StartChar: period
 Encoding: 46 46 17
 Width: 360
 GlyphClass: 2
-Flags: W
-TtInstrs:
-PUSHB_8
- 0
- 168
- 2
- 1
- 2
- 0
- 19
- 4
-SRP0
-MIRP[rp0,min,rnd,grey]
-MIRP[min,rnd,grey]
-IUP[x]
-SVTCA[y-axis]
-MDAP[rnd]
-MIRP[min,rnd,grey]
-IUP[y]
-EndTTInstrs
+Flags: MW
 LayerCount: 2
 Fore
 SplineSet
-0 387 m 1,0,-1
- 360 387 l 1,1,-1
- 360 0 l 1,2,-1
- 0 0 l 1,3,-1
- 0 387 l 1,0,-1
+0 386 m 1,0,-1
+ 360 386 l 1,1,-1
+ 360 -1 l 1,2,-1
+ 0 -1 l 1,3,-1
+ 0 386 l 1,0,-1
 EndSplineSet
 EndChar
 
@@ -4207,27 +4109,6 @@ Encoding: 47 47 18
 Width: 748
 GlyphClass: 2
 Flags: W
-TtInstrs:
-PUSHB_8
- 2
- 0
- 141
- 4
- 2
- 0
- 1
- 3
-MDAP[rnd]
-MDRP[rnd,grey]
-IP
-IP
-IUP[x]
-SVTCA[y-axis]
-SRP0
-MIRP[rp0,rnd,grey]
-MDRP[min,rnd,grey]
-IUP[y]
-EndTTInstrs
 LayerCount: 2
 Fore
 SplineSet
@@ -4243,67 +4124,30 @@ StartChar: zero
 Encoding: 48 48 19
 Width: 1229
 GlyphClass: 2
-Flags: WO
-TtInstrs:
-NPUSHB
- 19
- 9
- 172
- 15
- 3
- 172
- 21
- 156
- 15
- 152
- 24
- 0
- 22
- 12
- 23
- 6
- 22
- 18
- 20
- 24
-SRP0
-MIRP[rp0,min,rnd,grey]
-MIRP[min,rnd,grey]
-MIRP[rp0,min,rnd,grey]
-MIRP[min,rnd,grey]
-IUP[x]
-SVTCA[y-axis]
-SRP0
-MIRP[rnd,grey]
-MIRP[rp0,rnd,grey]
-MIRP[min,rnd,grey]
-SRP0
-MIRP[min,rnd,white]
-IUP[y]
-EndTTInstrs
-AnchorPoint: "Anchor-17" 611 1520 basechar 0
-AnchorPoint: "Anchor-16" 611 0 basechar 0
+Flags: MW
+AnchorPoint: "Anchor-17" 615 1520 basechar 0
+AnchorPoint: "Anchor-16" 615 0 basechar 0
 LayerCount: 2
 Fore
 SplineSet
-840 748 m 4,0,1
- 840 1028 840 1028 787.5 1142.5 c 132,-1,2
- 735 1257 735 1257 611 1257 c 260,3,4
- 487 1257 487 1257 434 1142.5 c 132,-1,5
- 381 1028 381 1028 381 748 c 4,6,7
- 381 465 381 465 434 349 c 132,-1,8
- 487 233 487 233 611 233 c 4,9,10
- 734 233 734 233 787 349 c 132,-1,11
- 840 465 840 465 840 748 c 4,0,1
-1225 745 m 4,12,13
- 1225 374 1225 374 1065 172.5 c 132,-1,14
- 905 -29 905 -29 611 -29 c 4,15,16
- 316 -29 316 -29 156 172.5 c 132,-1,17
- -4 374 -4 374 -4 745 c 4,18,19
- -4 1117 -4 1117 156 1318.5 c 132,-1,20
- 316 1520 316 1520 611 1520 c 4,21,22
- 905 1520 905 1520 1065 1318.5 c 132,-1,23
- 1225 1117 1225 1117 1225 745 c 4,12,13
+844 748 m 0,0,1
+ 844 1028 844 1028 791.5 1142.5 c 128,-1,2
+ 739 1257 739 1257 615 1257 c 256,3,4
+ 491 1257 491 1257 438 1142.5 c 128,-1,5
+ 385 1028 385 1028 385 748 c 0,6,7
+ 385 465 385 465 438 349 c 128,-1,8
+ 491 233 491 233 615 233 c 0,9,10
+ 738 233 738 233 791 349 c 128,-1,11
+ 844 465 844 465 844 748 c 0,0,1
+1229 745 m 0,12,13
+ 1229 374 1229 374 1069 172.5 c 128,-1,14
+ 909 -29 909 -29 615 -29 c 0,15,16
+ 320 -29 320 -29 160 172.5 c 128,-1,17
+ 0 374 0 374 0 745 c 0,18,19
+ 0 1117 0 1117 160 1318.5 c 128,-1,20
+ 320 1520 320 1520 615 1520 c 0,21,22
+ 909 1520 909 1520 1069 1318.5 c 128,-1,23
+ 1229 1117 1229 1117 1229 745 c 0,12,13
 EndSplineSet
 EndChar
 
@@ -4311,49 +4155,7 @@ StartChar: one
 Encoding: 49 49 20
 Width: 1053
 GlyphClass: 2
-Flags: W
-TtInstrs:
-NPUSHB
- 21
- 3
- 174
- 4
- 2
- 174
- 5
- 141
- 7
- 0
- 174
- 9
- 8
- 24
- 6
- 26
- 3
- 0
- 24
- 5
- 1
- 11
-SRP0
-MDRP[rp0,rnd,grey]
-MDRP[rnd,grey]
-MIRP[min,rnd,grey]
-MDRP[rnd,grey]
-MIRP[rp0,min,rnd,grey]
-MIRP[min,rnd,grey]
-IUP[x]
-SVTCA[y-axis]
-MDAP[rnd]
-MIRP[min,rnd,grey]
-SHP[rp2]
-MIRP[rp0,rnd,grey]
-MIRP[min,rnd,grey]
-MDRP[rp0,rnd,grey]
-MIRP[min,rnd,grey]
-IUP[y]
-EndTTInstrs
+Flags: MW
 AnchorPoint: "Anchor-17" 482 1520 basechar 0
 AnchorPoint: "Anchor-16" 482 0 basechar 0
 LayerCount: 2
@@ -4378,146 +4180,7 @@ StartChar: two
 Encoding: 50 50 21
 Width: 1085
 GlyphClass: 2
-Flags: W
-TtInstrs:
-NPUSHB
- 41
- 0
- 29
- 4
- 5
- 4
- 23
- 1
- 22
- 24
- 29
- 5
- 5
- 4
- 37
- 5
- 24
- 0
- 14
- 144
- 15
- 11
- 172
- 18
- 156
- 4
- 0
- 175
- 2
- 24
- 21
- 5
- 0
- 14
- 8
- 22
- 21
- 1
- 27
- 14
- 3
- 25
-SRP0
-MDRP[rp0,min,rnd,grey]
-MPPEM
-PUSHB_1
- 13
-EQ
-IF
-PUSHW_2
- 3
- -64
-SHPIX
-EIF
-MDRP[rnd,grey]
-MIRP[rp0,min,rnd,grey]
-MDRP[rp0,rnd,grey]
-MIRP[min,rnd,grey]
-SRP1
-IP
-IP
-SRP1
-IP
-IUP[x]
-SVTCA[y-axis]
-MDAP[rnd]
-MIRP[min,rnd,grey]
-SHP[rp2]
-MIRP[rp0,rnd,grey]
-MIRP[min,rnd,grey]
-MDRP[rp0,rnd,grey]
-MIRP[min,rnd,grey]
-SRP1
-IP
-IP
-IUP[y]
-MPPEM
-GTEQ
-IF
-SPVTL[orthog]
-SRP0
-SFVTPV
-MIRP[min,rnd,black]
-SRP1
-SLOOP
-IP
-SPVTL[orthog]
-SRP0
-SFVTCA[x-axis]
-MIRP[min,rnd,black]
-EIF
-CLEAR
-SVTCA[x-axis]
-NPUSHB
- 38
- 2
- 23
- 42
- 22
- 42
- 23
- 3
- 3
- 0
- 14
- 23
- 5
- 24
- 23
- 23
- 23
- 24
- 34
- 0
- 34
- 23
- 34
- 24
- 53
- 0
- 53
- 23
- 53
- 24
- 66
- 0
- 74
- 5
- 70
- 23
- 70
- 24
- 15
-DELTAP1
-SVTCA[y-axis]
-DELTAP1
-EndTTInstrs
+Flags: MW
 AnchorPoint: "Anchor-17" 551 1520 basechar 0
 AnchorPoint: "Anchor-16" 551 0 basechar 0
 LayerCount: 2
@@ -4550,85 +4213,7 @@ StartChar: three
 Encoding: 51 51 22
 Width: 1125
 GlyphClass: 2
-Flags: W
-TtInstrs:
-NPUSHB
- 43
- 0
- 21
- 172
- 19
- 9
- 150
- 10
- 177
- 13
- 172
- 6
- 32
- 150
- 31
- 177
- 28
- 172
- 19
- 176
- 35
- 156
- 6
- 152
- 41
- 22
- 19
- 25
- 20
- 0
- 16
- 25
- 22
- 38
- 16
- 22
- 3
- 31
- 20
- 31
- 32
- 9
- 30
- 41
-SRP0
-MIRP[rp0,min,rnd,grey]
-MIRP[rnd,grey]
-MDRP[rnd,grey]
-MIRP[rp0,min,rnd,grey]
-MIRP[min,rnd,grey]
-MDRP[rp0,rnd,grey]
-MIRP[min,rnd,grey]
-SRP2
-IP
-SRP1
-SRP2
-IP
-IP
-IUP[x]
-SVTCA[y-axis]
-SRP0
-MIRP[rnd,grey]
-MIRP[rp0,rnd,grey]
-MIRP[rnd,grey]
-MIRP[rp0,min,rnd,grey]
-MIRP[rp0,rnd,grey]
-MIRP[min,rnd,grey]
-SRP0
-MIRP[rp0,min,rnd,white]
-MIRP[rp0,rnd,black]
-MIRP[min,rnd,white]
-SRP0
-MIRP[min,rnd,white]
-IP
-IUP[y]
-EndTTInstrs
+Flags: MW
 AnchorPoint: "Anchor-17" 576 1520 basechar 0
 AnchorPoint: "Anchor-16" 576 0 basechar 0
 LayerCount: 2
@@ -4671,76 +4256,7 @@ StartChar: four
 Encoding: 52 52 23
 Width: 1239
 GlyphClass: 2
-Flags: W
-TtInstrs:
-NPUSHB
- 32
- 1
- 33
- 13
- 3
- 13
- 0
- 33
- 3
- 3
- 13
- 37
- 0
- 3
- 11
- 7
- 174
- 5
- 1
- 3
- 141
- 9
- 1
- 12
- 10
- 0
- 26
- 6
- 8
- 4
- 12
- 20
- 14
-SRP0
-MIRP[rp0,min,rnd,grey]
-MDRP[rp0,rnd,grey]
-ALIGNRP
-MDRP[rnd,grey]
-MIRP[min,rnd,grey]
-SHP[rp2]
-SRP1
-IP
-IUP[x]
-SVTCA[y-axis]
-MDAP[rnd]
-MIRP[rnd,grey]
-MDRP[rp0,rnd,grey]
-ALIGNRP
-MIRP[min,rnd,grey]
-SHP[rp2]
-SRP2
-IP
-IUP[y]
-MPPEM
-GTEQ
-IF
-SPVTL[orthog]
-SRP0
-SFVTCA[y-axis]
-MIRP[min,rnd,black]
-SPVTL[orthog]
-SRP0
-SFVTCA[x-axis]
-MIRP[min,rnd,black]
-EIF
-CLEAR
-EndTTInstrs
+Flags: MW
 AnchorPoint: "Anchor-17" 621 1520 basechar 0
 AnchorPoint: "Anchor-16" 621 0 basechar 0
 LayerCount: 2
@@ -4769,70 +4285,7 @@ StartChar: five
 Encoding: 53 53 24
 Width: 1124
 GlyphClass: 2
-Flags: W
-TtInstrs:
-NPUSHB
- 34
- 4
- 7
- 29
- 149
- 26
- 172
- 7
- 16
- 150
- 17
- 149
- 20
- 172
- 7
- 178
- 13
- 2
- 175
- 0
- 141
- 13
- 152
- 30
- 3
- 34
- 0
- 1
- 23
- 22
- 10
- 31
- 0
- 16
- 30
-SRP0
-MDRP[rp0,min,rnd,grey]
-MDRP[rnd,grey]
-MIRP[rp0,min,rnd,grey]
-MIRP[min,rnd,grey]
-MDRP[rnd,grey]
-SRP0
-MIRP[min,rnd,white]
-IUP[x]
-SVTCA[y-axis]
-SRP0
-MIRP[rnd,grey]
-MIRP[rp0,rnd,grey]
-MIRP[min,rnd,grey]
-SRP0
-MIRP[rnd,white]
-MIRP[rp0,min,rnd,white]
-MIRP[rp0,rnd,black]
-MIRP[min,rnd,white]
-SRP0
-MIRP[rp0,min,rnd,white]
-MIRP[rnd,grey]
-SRP2
-IP
-IUP[y]
-EndTTInstrs
+Flags: MW
 AnchorPoint: "Anchor-17" 555 1520 basechar 0
 AnchorPoint: "Anchor-16" 555 0 basechar 0
 LayerCount: 2
@@ -4868,64 +4321,7 @@ StartChar: six
 Encoding: 54 54 25
 Width: 1188
 GlyphClass: 2
-Flags: W
-TtInstrs:
-NPUSHB
- 31
- 19
- 0
- 172
- 22
- 6
- 172
- 28
- 12
- 150
- 13
- 149
- 16
- 172
- 34
- 156
- 28
- 152
- 37
- 12
- 9
- 26
- 25
- 3
- 37
- 19
- 26
- 25
- 23
- 31
- 36
- 37
-SRP0
-MIRP[rp0,min,rnd,grey]
-MIRP[min,rnd,grey]
-MIRP[rp0,min,rnd,grey]
-MIRP[rnd,grey]
-SRP0
-MIRP[min,rnd,white]
-MDRP[rnd,grey]
-IUP[x]
-SVTCA[y-axis]
-SRP0
-MIRP[rnd,grey]
-MIRP[rp0,rnd,grey]
-MIRP[rp0,min,rnd,grey]
-MIRP[rp0,rnd,grey]
-MIRP[min,rnd,grey]
-SRP0
-MIRP[min,rnd,white]
-MDRP[rp0,rnd,white]
-MIRP[min,rnd,white]
-IP
-IUP[y]
-EndTTInstrs
+Flags: MW
 AnchorPoint: "Anchor-17" 586 1520 basechar 0
 AnchorPoint: "Anchor-16" 586 0 basechar 0
 LayerCount: 2
@@ -4965,78 +4361,7 @@ StartChar: seven
 Encoding: 55 55 26
 Width: 1125
 GlyphClass: 2
-Flags: W
-TtInstrs:
-NPUSHB
- 23
- 5
- 25
- 2
- 3
- 2
- 4
- 25
- 3
- 3
- 2
- 37
- 5
- 175
- 0
- 141
- 3
- 5
- 4
- 3
- 3
- 1
- 0
- 7
-SRP0
-MDRP[rp0,min,rnd,grey]
-MDRP[min,rnd,grey]
-SLOOP
-IP
-IUP[x]
-SVTCA[y-axis]
-MDAP[rnd]
-MIRP[rp0,rnd,grey]
-MIRP[min,rnd,grey]
-IUP[y]
-MPPEM
-GTEQ
-IF
-SPVTL[orthog]
-SRP0
-SFVTCA[x-axis]
-MIRP[min,rnd,black]
-SPVTL[orthog]
-SRP0
-SFVTCA[x-axis]
-MIRP[min,rnd,black]
-EIF
-CLEAR
-PUSHB_3
- 7
- 3
- 1
-SVTCA[x-axis]
-DELTAP1
-NPUSHB
- 11
- 7
- 3
- 26
- 5
- 38
- 3
- 53
- 3
- 70
- 3
- 5
-DELTAP1
-EndTTInstrs
+Flags: MW
 AnchorPoint: "Anchor-17" 576 1520 basechar 0
 AnchorPoint: "Anchor-16" 576 0 basechar 0
 LayerCount: 2
@@ -5057,80 +4382,7 @@ StartChar: eight
 Encoding: 56 56 27
 Width: 1173
 GlyphClass: 2
-Flags: W
-TtInstrs:
-NPUSHB
- 40
- 24
- 12
- 39
- 172
- 0
- 6
- 172
- 30
- 0
- 176
- 45
- 172
- 18
- 156
- 30
- 152
- 48
- 24
- 21
- 9
- 12
- 3
- 36
- 26
- 15
- 42
- 26
- 21
- 38
- 9
- 26
- 27
- 39
- 3
- 26
- 15
- 38
- 33
- 36
- 48
-SRP0
-MIRP[rp0,min,rnd,grey]
-MIRP[rnd,grey]
-MIRP[min,rnd,grey]
-MIRP[rp0,min,rnd,grey]
-MIRP[min,rnd,grey]
-MIRP[rp0,rnd,grey]
-MIRP[min,rnd,grey]
-SRP0
-MIRP[min,rnd,white]
-SRP2
-IP
-SRP1
-SRP2
-IP
-IUP[x]
-SVTCA[y-axis]
-SRP0
-MIRP[rnd,grey]
-MIRP[rp0,rnd,grey]
-MIRP[min,rnd,grey]
-MIRP[rnd,grey]
-SRP0
-MIRP[min,rnd,white]
-SRP0
-MIRP[min,rnd,white]
-IP
-IP
-IUP[y]
-EndTTInstrs
+Flags: MW
 AnchorPoint: "Anchor-17" 588 1520 basechar 0
 AnchorPoint: "Anchor-16" 588 0 basechar 0
 LayerCount: 2
@@ -5178,64 +4430,7 @@ StartChar: nine
 Encoding: 57 57 28
 Width: 1188
 GlyphClass: 2
-Flags: W
-TtInstrs:
-NPUSHB
- 31
- 7
- 25
- 172
- 10
- 0
- 150
- 1
- 149
- 4
- 172
- 22
- 10
- 31
- 172
- 16
- 156
- 22
- 152
- 37
- 28
- 37
- 7
- 26
- 19
- 23
- 0
- 34
- 26
- 13
- 36
- 37
-SRP0
-MIRP[rp0,min,rnd,grey]
-MIRP[min,rnd,grey]
-MDRP[rnd,grey]
-MIRP[rp0,min,rnd,grey]
-MIRP[rp0,min,rnd,grey]
-MIRP[rnd,grey]
-IUP[x]
-SVTCA[y-axis]
-SRP0
-MIRP[rnd,grey]
-MIRP[rp0,rnd,grey]
-MIRP[min,rnd,grey]
-MDRP[rnd,grey]
-SRP0
-MIRP[rp0,min,rnd,white]
-MIRP[rp0,rnd,black]
-MIRP[min,rnd,white]
-SRP0
-MIRP[min,rnd,white]
-IP
-IUP[y]
-EndTTInstrs
+Flags: MW
 AnchorPoint: "Anchor-17" 607 1520 basechar 0
 AnchorPoint: "Anchor-16" 607 0 basechar 0
 LayerCount: 2
@@ -91750,7 +90945,7 @@ StartChar: uni203B
 Encoding: 8251 8251 2846
 Width: 1991
 GlyphClass: 2
-Flags: W
+Flags: HW
 LayerCount: 2
 Fore
 Refer: 153 215 N 1 0 0 1 125 193 2
@@ -92256,7 +91451,7 @@ StartChar: uni2052
 Encoding: 8274 8274 2869
 Width: 1139
 GlyphClass: 2
-Flags: W
+Flags: HW
 LayerCount: 2
 Fore
 Refer: 18 47 N 1 0 0 1 170 0 2
@@ -159862,7 +159057,7 @@ StartChar: uniA4F8
 Encoding: 42232 42232 4807
 Width: 660
 GlyphClass: 2
-Flags: W
+Flags: HW
 LayerCount: 2
 Fore
 Refer: 17 46 N 1 0 0 1 -59 0 2
@@ -159882,7 +159077,7 @@ StartChar: uniA4FA
 Encoding: 42234 42234 4809
 Width: 1380
 GlyphClass: 2
-Flags: W
+Flags: HW
 LayerCount: 2
 Fore
 Refer: 4807 42232 N 1 0 0 1 720 0 2
@@ -159893,7 +159088,7 @@ StartChar: uniA4FB
 Encoding: 42235 42235 4810
 Width: 1380
 GlyphClass: 2
-Flags: W
+Flags: HW
 LayerCount: 2
 Fore
 Refer: 15 44 N 1 0 0 1 661 0 2
@@ -178357,7 +177552,7 @@ StartChar: u1D7EC
 Encoding: 120812 120812 5656
 Width: 1425
 GlyphClass: 2
-Flags: W
+Flags: HW
 LayerCount: 2
 Fore
 Refer: 19 48 N 1 0 0 1 0 0 2

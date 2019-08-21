@@ -58,25 +58,25 @@ Monospace font used for addresses and other data.
 * Range: 0x20-0x7F
 
 
-## dejavu_16
+## modenine_20
 
 Just the numbers are used for PIN/digit entry.
 
 ###Font Modifications
 
 Removed left and right bearings.
-[TODO] Cleaned up some glyphs for pixel perfectness at this size.
 
 ### Conversion Settings
 
-* Input: `dejavu-fonts-ttf-2.37/ttf/DejaVuSansMono-Bold.ttf`
-* Size: 16
+* Input: `ModeNine.wooff`
+* Name: modenine_20
+* Size: 20
 * Bpp: 1
 * Range: 0x2B-0x39
 
 After conversion, manually change:
 
-* `line_height` to `12`.
+* `line_height` to `14`.
 * `base_line` to `0`.
 
 ## dejavu_32
