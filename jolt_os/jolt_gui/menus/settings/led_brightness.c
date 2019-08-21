@@ -24,7 +24,7 @@ static void led_brightness_cb(jolt_gui_obj_t *slider, jolt_gui_event_t event) {
         uint8_t brightness = brightness_levels[slider_pos];
         jolt_led_set(brightness);
     }
-    else if( jolt_gui_event.short_clicked == event ) {
+    else if( jolt_gui_event.short_clicked == event || jolt_gui_event.cancel == event) {
         int16_t slider_pos = lv_slider_get_value(slider);
         uint8_t brightness = brightness_levels[slider_pos];
         storage_set_u8(brightness, "user", "led_val");
