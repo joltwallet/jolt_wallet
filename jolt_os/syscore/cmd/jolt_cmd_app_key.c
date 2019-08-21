@@ -43,7 +43,7 @@ static void set_app_key_cb(lv_obj_t *btn, lv_event_t event) {
 }
 
 int jolt_cmd_app_key(int argc, char** argv){
-    int return_code = 0;
+    int return_code = -1;
 
     /* Input Validation */
     if( !console_check_range_argc(argc, 1, 2) ) {
@@ -92,12 +92,14 @@ int jolt_cmd_app_key(int argc, char** argv){
 
     /* Display Text; Pressing any button returns to previous screen */
     lv_obj_t *scr;
-    char body[400];
-    snprintf(body, sizeof(body), "WARNING: This will perform a factory reset.\nSet app public key to: \n%s ?", argv[1]);
 
     /* Prompt user */
-    scr = jolt_gui_scr_text_create("Set App Key", body);
+    scr = jolt_gui_scr_text_create( gettext(JOLT_TEXT_APP_KEY_SET_CONFIRMATION_TITLE), gettext(JOLT_TEXT_APP_KEY_SET_CONFIRMATION));
+    if( NULL == scr ) goto exit;
+    jolt_gui_scr_scroll_add_monospace_text(scr, argv[1]);
     jolt_gui_scr_set_event_cb(scr, set_app_key_cb);
+    
+    return 0;
 
 exit:
     return return_code;

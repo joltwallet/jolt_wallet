@@ -13,6 +13,7 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Settings", /* Menu option to change device settings */
     "WiFi",
     "Bluetooth",
+    "continue",
 
     /* Confirmation */
     "Yes",
@@ -42,6 +43,9 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Forget Devices",
     "Broadcasting",
 
+    /* Storage Options */
+    "%dKB Used / %dKB Total",
+
     /* WiFi Options */
     "WiFi Enable",
     "WiFi Details",
@@ -58,10 +62,30 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Incorrect PIN",
     "Unlocking",
 
+    /* App Key */
+    "WARNING: This will perform a factory reset.\nSet app public key to:\n?",
+    "Set App Key",
+
     /* Error */
     "Error",
     "Error Code",
+
+    /* Data Transfer */
+    "Connecting...",
+    "Transferring...",
+    "Installing...",
+    "Saving...",
+    "Processing...",
+
+    /* First Boot */
+    "PIN Setup",
+    "PIN Verify",
+    "Pin Mismatch! Please try again.",
+    "Write Down Mnemonic!",
+    "First Startup",
+    "Welcome to Jolt, please backup the following secret mnemonic."
+
+    /* Misc */
+    "...",
 };
-
-
 #endif

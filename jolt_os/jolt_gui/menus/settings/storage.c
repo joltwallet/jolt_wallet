@@ -14,7 +14,7 @@ void menu_storage_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
         jolt_fs_info(&tot, &used);
         percentage = (used*100)/tot;
 
-        snprintf(subtitle, sizeof(subtitle), "%dKB Used / %dKB Total", used/1024, tot/1024);
+        snprintf(subtitle, sizeof(subtitle), gettext(JOLT_TEXT_STORAGE_USAGE), used/1024, tot/1024);
         ESP_LOGD(TAG, "Storage subtitle: %s", subtitle);
 
         jolt_gui_obj_t *scr;

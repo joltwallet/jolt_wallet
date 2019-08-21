@@ -38,13 +38,14 @@ typedef enum jolt_text_id_t {
 
     /* Main Menuing and General Options */
     JOLT_TEXT_MAIN_MENU_TITLE, /* main menu title (the homescreen) */
-    JOLT_TEXT_SETTINGS, /* Menu option to change device settings */
+    JOLT_TEXT_SETTINGS,        /* Menu option to change device settings */
     JOLT_TEXT_WIFI,
     JOLT_TEXT_BLUETOOTH,
+    JOLT_TEXT_CONTINUE,        /* lowercase */
 
     /* Confirmation */
-    JOLT_TEXT_YES,
-    JOLT_TEXT_NO,
+    JOLT_TEXT_YES,             /* First letter capitlaized */
+    JOLT_TEXT_NO,              /* First letter capitlaized */
 
     /* Settings */
     JOLT_TEXT_SCREEN_BRIGHTNESS,
@@ -74,6 +75,9 @@ typedef enum jolt_text_id_t {
     JOLT_TEXT_WIFI_ENABLE,
     JOLT_TEXT_WIFI_DETAILS,
 
+    /* Storage Options */
+    JOLT_TEXT_STORAGE_USAGE,
+
     /* Mnemonic Restore */
     JOLT_TEXT_MNEMONIC_RESTORE,
     JOLT_TEXT_RESTORE,
@@ -86,9 +90,31 @@ typedef enum jolt_text_id_t {
     JOLT_TEXT_INCORRECT_PIN,
     JOLT_TEXT_UNLOCKING,
 
+    /* App Ket */
+    JOLT_TEXT_APP_KEY_SET_CONFIRMATION,
+    JOLT_TEXT_APP_KEY_SET_CONFIRMATION_TITLE,
+
     /* Error */
     JOLT_TEXT_ERROR,
     JOLT_TEXT_ERROR_CODE,
+
+    /* Data Transfer */
+    JOLT_TEXT_CONNECTING,
+    JOLT_TEXT_TRANSFERRING,
+    JOLT_TEXT_INSTALLING,
+    JOLT_TEXT_SAVING,
+    JOLT_TEXT_PROCESSING,
+
+    /* First Boot */
+    JOLT_TEXT_PIN_SETUP,
+    JOLT_TEXT_PIN_VERIFY,
+    JOLT_TEXT_PIN_MISMATCH,
+    JOLT_TEXT_BACKUP_MNEMONIC,
+    JOLT_TEXT_FIRST_STARTUP,
+    JOLT_TEXT_WELCOME_DIALOG_0,
+
+    /* Misc */
+    JOLT_TEXT_ELLIPSIS,
 
     /* Used for allocating resources. Not actually a string */
     JOLT_TEXT_LAST_STR,

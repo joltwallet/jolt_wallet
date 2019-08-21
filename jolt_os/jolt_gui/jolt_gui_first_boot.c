@@ -44,8 +44,8 @@ static jolt_err_t get_nth_word(char buf[], size_t buf_len,
         const char *str, const uint32_t n){
     // Assumes a single space between words; no leading/trailing spaces
     // Copies the nth word of null-terminated str into buf.
-    if ( (n+1)==25 ){
-        strlcpy(buf, "Continue", buf_len);
+    if ( (n+1)>=25 ){
+        strlcpy(buf, gettext(JOLT_TEXT_CONTINUE), buf_len);
         return E_SUCCESS;
     }
     // Copy over number prefix
@@ -95,14 +95,14 @@ static int bg_stretch_task(jolt_bg_job_t *job) {
     param = jolt_bg_get_param( job );
 
     /* Create Loading Bar */
-    loading_scr = jolt_gui_scr_loadingbar_create("Saving");
-    jolt_gui_scr_loadingbar_update(loading_scr, NULL, "Processing", 0);
+    loading_scr = jolt_gui_scr_loadingbar_create(gettext(JOLT_TEXT_SAVING));
+    jolt_gui_scr_loadingbar_update(loading_scr, NULL, gettext(JOLT_TEXT_PROCESSING), 0);
     progress = jolt_gui_scr_loadingbar_autoupdate( loading_scr );
 
     /* Perform the lengthy stretching */
     storage_stretch( param->pin_hash, progress );
 
-    jolt_gui_scr_loadingbar_update(loading_scr, NULL, "Saving", 100);
+    jolt_gui_scr_loadingbar_update(loading_scr, NULL, gettext(JOLT_TEXT_SAVING), 100);
 
     /* Saves setup information to storage */
     storage_set_mnemonic(param->mnemonic_bin, param->pin_hash);
@@ -156,7 +156,7 @@ static void screen_finish_create(lv_obj_t *digit_entry, lv_event_t event) {
         }
         else{
             sodium_memzero( param->pin_hash, sizeof(param->pin_hash) );
-            lv_obj_t *scr = jolt_gui_scr_text_create("Pin Setup", "Pin Mismatch! Please try again.");
+            lv_obj_t *scr = jolt_gui_scr_text_create(gettext(JOLT_TEXT_PIN_SETUP), gettext(JOLT_TEXT_PIN_MISMATCH));
             jolt_gui_scr_set_active_param(scr, param);
             jolt_gui_scr_set_event_cb(scr, mismatch_cb);
         }
@@ -187,7 +187,7 @@ static void screen_pin_verify_create(lv_obj_t *digit_entry, lv_event_t event) {
 
         /* Create Verify PIN screen */
         ESP_LOGD(TAG, "Creating verify screen");
-        lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "PIN Verify",
+        lv_obj_t *scr = jolt_gui_scr_digit_entry_create( gettext(JOLT_TEXT_PIN_VERIFY),
                 CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL); 
         if( NULL == scr ){
             esp_restart();
@@ -202,7 +202,7 @@ static void screen_pin_verify_create(lv_obj_t *digit_entry, lv_event_t event) {
 }
 
 static lv_obj_t *screen_pin_entry_create_( mnemonic_setup_t *param ) {
-    lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "PIN",
+    lv_obj_t *scr = jolt_gui_scr_digit_entry_create( gettext(JOLT_TEXT_PIN),
             CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL);
     if( NULL == scr ){
         esp_restart();
@@ -231,11 +231,10 @@ static void screen_pin_entry_create(lv_obj_t *btn, lv_event_t event) {
 static void screen_mnemonic_create(lv_obj_t *btn, lv_event_t event) {
     ESP_LOGV(TAG, "(%d) event: %s", __LINE__, jolt_gui_event_to_str(event) );
     if( jolt_gui_event.short_clicked == event ){
-        const char title[] = "Write Down Mnemonic!";
         mnemonic_setup_t *param;
         param = jolt_gui_obj_get_param( btn );
 
-        lv_obj_t *scr = jolt_gui_scr_menu_create( title );
+        lv_obj_t *scr = jolt_gui_scr_menu_create( gettext(JOLT_TEXT_BACKUP_MNEMONIC) );
         for(uint8_t i=0; i < 24; i++) {
             char buf[SINGLE_WORD_BUF_LEN] = { 0 };
             get_nth_word(buf, sizeof(buf), param->mnemonic, i);
@@ -245,7 +244,7 @@ static void screen_mnemonic_create(lv_obj_t *btn, lv_event_t event) {
             jolt_gui_scr_menu_add(scr, NULL, buf, NULL);
 #endif
         }
-        jolt_gui_scr_menu_add(scr, NULL, "continue", screen_pin_entry_create);
+        jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_CONTINUE), screen_pin_entry_create);
         jolt_gui_scr_menu_set_param( scr, param );
     }
     else if ( jolt_gui_event.cancel == event ) {
@@ -268,9 +267,8 @@ void jolt_gui_first_boot_create() {
     generate_mnemonic( param );
 
     // todo: localization
-    lv_obj_t *scr = jolt_gui_scr_text_create( "First Startup",
-            "Welcome to Jolt, "
-            "please backup the following secret mnemonic.");
+    lv_obj_t *scr = jolt_gui_scr_text_create( gettext(JOLT_TEXT_FIRST_STARTUP),
+            gettext(JOLT_TEXT_WELCOME_DIALOG_0));
     jolt_gui_scr_set_active_param(scr, param);
     jolt_gui_scr_set_event_cb(scr, &screen_mnemonic_create);
 }
