@@ -72,7 +72,7 @@ static const char TAG[] = "main";
 static void littlevgl_task() {
     ESP_LOGI(TAG, "Starting draw loop");
     TickType_t xLastWakeTime = xTaskGetTickCount();
-    for( ;; vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS(10) ) ) {
+    for( ;; vTaskDelayUntil( &xLastWakeTime, 1 ) ) {
         JOLT_GUI_CTX{
             lv_task_handler();
         }
