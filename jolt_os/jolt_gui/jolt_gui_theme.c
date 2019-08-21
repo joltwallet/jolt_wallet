@@ -403,8 +403,8 @@ static void roller_init(void)
 #if LV_USE_ROLLER != 0
     static lv_style_t bg;
     lv_style_copy(&bg, &def);
-    bg.body.padding.left = 3; // Width Padding of the entire roller
-    bg.body.padding.right = 3; // Width Padding of the entire roller
+    bg.body.padding.left = 2; // Width Padding of the entire roller
+    bg.body.padding.right = 2; // Width Padding of the entire roller
     bg.body.padding.inner = 0;
     bg.text.font = JOLT_GUI_FONT_DIGIT_ENTRY;
     bg.text.line_space = 6; // Distance between options

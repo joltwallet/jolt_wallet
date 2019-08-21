@@ -312,8 +312,8 @@ lv_obj_t *jolt_gui_obj_get_parent( const lv_obj_t *obj );
 /*****************
  * Configuration *
  *****************/
-#define JOLT_GUI_FONT_BIG_NUM &dejavu_32
-#define JOLT_GUI_FONT_DIGIT_ENTRY &dejavu_16
+#define JOLT_GUI_FONT_BIG_NUM &modenine_40
+#define JOLT_GUI_FONT_DIGIT_ENTRY &modenine_20
 #define JOLT_GUI_FONT_DEFAULT &pixelmix
 
 /**********

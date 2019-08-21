@@ -194,7 +194,7 @@ jolt_gui_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
         int8_t n, int8_t pos){
 
     /* Validate number of digits/rollers */
-    if( n > CONFIG_JOLT_GUI_SCR_DIGIT_ENTRY_MAX_LEN ){
+    if( n > CONFIG_JOLT_GUI_SCR_DIGIT_ENTRY_MAX_LEN || n < 1 ){
         return NULL;
     }
 
@@ -218,19 +218,6 @@ jolt_gui_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
         jolt_gui_obj_id_set(digit_entry, JOLT_GUI_OBJ_ID_DIGIT_ENTRY);
         lv_obj_set_pos(digit_entry, 0, 0);
 
-        /* Setup style */
-        static lv_style_t digit_entry_style_obj;
-        static lv_style_t *digit_entry_style = NULL;
-        if( NULL == digit_entry_style ){
-            digit_entry_style = &digit_entry_style_obj;
-            lv_style_copy(digit_entry_style, lv_cont_get_style(digit_entry, LV_CONT_STYLE_MAIN));
-            digit_entry_style->body.padding.inner = 1;
-            digit_entry_style->body.padding.left = 0;
-            digit_entry_style->body.padding.right = 0;
-        }
-        lv_cont_set_style(digit_entry, LV_CONT_STYLE_MAIN, digit_entry_style);
-        lv_cont_set_layout(digit_entry, LV_LAYOUT_PRETTY ); // automatically handles object spacing
-
         /* Initialize ext params */
         ext->sel = 0;
         ext->decimal_point = NULL;
@@ -247,7 +234,24 @@ jolt_gui_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
             ext->rollers[i] = digit_create(digit_entry);
         }
         lv_roller_set_visible_row_count(ext->rollers[0], 3);
-        
+        uint8_t roller_height = lv_obj_get_height(ext->rollers[0]);
+
+        /* Setup style */
+        static lv_style_t digit_entry_style_obj;
+        static lv_style_t *digit_entry_style = NULL;
+        if( NULL == digit_entry_style ){
+            uint8_t cont_height = lv_obj_get_height(digit_entry);
+            digit_entry_style = &digit_entry_style_obj;
+            lv_style_copy(digit_entry_style, lv_cont_get_style(digit_entry, LV_CONT_STYLE_MAIN));
+            digit_entry_style->body.padding.top= (cont_height-roller_height)/2;
+            digit_entry_style->body.padding.inner = 1;
+            digit_entry_style->body.padding.left = 0;
+            digit_entry_style->body.padding.right = 0;
+        }
+        lv_cont_set_style(digit_entry, LV_CONT_STYLE_MAIN, digit_entry_style);
+        lv_cont_set_layout(digit_entry, LV_LAYOUT_PRETTY ); // automatically handles object spacing
+
+       
         if( 0 == pos ) {
             ext->decimal_point = create_dp(digit_entry);
         }
