@@ -127,6 +127,8 @@ int32_t IRAM_ATTR receive_bytes (unsigned char *c, uint32_t timeout, uint32_t n)
             }
         }while(amount_read < n);
     }
+    return amount_read;
+
 exit:
 #if CONFIG_JOLT_BT_YMODEM_PROFILING
     t_ymodem_receive += esp_timer_get_time() - t_start;
