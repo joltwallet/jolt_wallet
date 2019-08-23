@@ -40,8 +40,10 @@ void menu_bluetooth_pair_create( jolt_gui_obj_t *btn, jolt_gui_event_t event ) {
 }
 
 void menu_bluetooth_temp_pair_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
-    jolt_bluetooth_config_security( false ); /* disable bonding */
-    menu_bluetooth_pair_common_create( );
+    if( jolt_gui_event.short_clicked == event ) {
+        jolt_bluetooth_config_security( false ); /* disable bonding */
+        menu_bluetooth_pair_common_create( );
+    }
 }
 
 void jolt_gui_bluetooth_pair_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
