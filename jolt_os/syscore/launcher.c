@@ -250,12 +250,14 @@ void launch_inc_ref_ctr() {
     }
     else {
         app_cache.ref_ctr++;
+        ESP_LOGD(TAG, "Reference Counter incremented to %d.", app_cache.ref_ctr);
     }
 }
 
 void launch_dec_ref_ctr() {
     if(app_cache.ref_ctr > 0) {
         app_cache.ref_ctr--;
+        ESP_LOGD(TAG, "Reference Counter decremented to %d.", app_cache.ref_ctr);
     }
     else {
         ESP_LOGE(TAG, "Reference Counter is 0; cannot decrement");
