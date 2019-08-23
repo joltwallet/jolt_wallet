@@ -38,6 +38,7 @@ static void sw_en_cb(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
         state = lv_sw_toggle(sw_en, true);
 
         if( state ) {
+            destroy_list();
             create_enable_list();
             if( ESP_OK != jolt_bluetooth_start() ) {
                 lv_sw_toggle(sw_en, false);

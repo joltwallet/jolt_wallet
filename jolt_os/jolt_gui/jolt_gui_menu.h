@@ -70,8 +70,8 @@ void jolt_gui_scr_menu_set_btn_selected(lv_obj_t *par, lv_obj_t *btn);
 /**
  * @brief Deletes elements from indicies start to end (inclusive) 
  * @param[in,out] par Jolt menu screen
- * @param[in] start Starting index to delete (inclusive)
- * @param[in] end Ending index to delete (inclusive)
+ * @param[in] start Starting index to delete (inclusive).
+ * @param[in] end Ending index to delete (inclusive). Set to 0 to delete all past start.
  */
 void jolt_gui_scr_menu_remove(lv_obj_t *par, uint16_t start, uint16_t end);
 
