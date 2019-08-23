@@ -9,8 +9,8 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "<missing_string>",
 
     /* Main Menuing and General Options */
-    "Home", /* main menu title (the homescreen) */
-    "Settings", /* Menu option to change device settings */
+    "Home",
+    "Settings",
     "WiFi",
     "Bluetooth",
     "continue",
@@ -32,8 +32,8 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Spanish",
 
     /* App Launcher */
-    "Launching", /* Label for spinning preloader */
-    "Application update required to run application",
+    "Launching",
+    "Application update required to run.",
     "JoltOS update required to run application.",
 
     /* Bluetooth Options */
@@ -43,12 +43,12 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Forget Devices",
     "Broadcasting",
 
-    /* Storage Options */
-    "%dKB Used / %dKB Total",
-
     /* WiFi Options */
     "WiFi Enable",
     "WiFi Details",
+
+    /* Storage Options */
+    "%dKB Used / %dKB Total",
 
     /* Mnemonic Restore */
     "Mnemonic Restore",
@@ -63,7 +63,7 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Unlocking",
 
     /* App Key */
-    "WARNING: This will perform a factory reset.\nSet app public key to:\n?",
+    "WARNING: This will perform a factory reset.\nSet app public key to:\n",
     "Set App Key",
 
     /* Error */
