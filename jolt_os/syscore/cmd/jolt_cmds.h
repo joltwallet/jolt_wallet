@@ -130,13 +130,6 @@ int jolt_cmd_rm(int argc, char** argv);
 int jolt_cmd_rng(int argc, char** argv);
 
 /**
- * @brief launch application
- *
- * Passes all arguments into the application's subconsole
- */
-int jolt_cmd_run(int argc, char** argv);
-
-/**
  * @brief Memory usage of all running tasks.
  *
  * Takes no arguments

@@ -3,7 +3,7 @@
  https://www.joltwallet.com/
  */
 
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include "sodium.h"
 #include "freertos/FreeRTOS.h"
@@ -38,6 +38,8 @@ static struct {
 } app_cache = { 0 };
 
 static void launch_app_cb(lv_obj_t *btn, lv_event_t event);
+
+static void launch_vault_fail_cb(void *dummy);
 static void launch_app_from_store(void *dummy);
 
 static void launch_app_cache_clear(){
@@ -159,7 +161,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
 
     fclose(program);
 
-    lv_obj_del(preloading_scr);
+    jolt_gui_scr_del(preloading_scr);
     preloading_scr = NULL;
 
     strcpy(app_cache.name, fn_basename);
@@ -181,11 +183,12 @@ exec:
     ESP_LOGI(TAG, "The following BIP32 Key is %d char long:%s.",
             strlen(app_cache.ctx->bip32_key),
             app_cache.ctx->bip32_key);
+    launch_inc_ref_ctr();
     vault_set(app_cache.ctx->coin_purpose, 
             app_cache.ctx->coin_path,
             app_cache.ctx->bip32_key, 
             "",
-            NULL, launch_app_from_store, NULL);
+            launch_vault_fail_cb, launch_app_from_store, NULL);
 
     app_cache.loading = false;
     return 0;
@@ -193,10 +196,20 @@ exec:
 exit:
     launch_app_cache_clear();
     SAFE_CLOSE(program);
-    LV_OBJ_DEL_SAFE(preloading_scr);
+    JOLT_GUI_OBJ_DEL_SAFE(preloading_scr);
     SAFE_FREE(exec_fn);
     app_cache.loading = false;
     return return_code;
+}
+
+/**
+ * @brief Callback for when vault_set fails from app launch.
+ */
+static void launch_vault_fail_cb(void *dummy) {
+    ESP_LOGE(TAG, "Launching app aborted");
+    if(app_cache.argc > 0) {
+        jolt_cli_return(-1);
+    }
 }
 
 static void launch_app_from_store(void *dummy) {
@@ -204,35 +217,34 @@ static void launch_app_from_store(void *dummy) {
     int res;
     ESP_LOGI(TAG, "Launching App");
 
-    launch_inc_ref_ctr();
     res = jelfLoaderRun(app_cache.ctx, app_cache.argc, app_cache.argv);
 
     if( 0 == app_cache.argc ){
         /* Application returns a LVGL screen */
         app_cache.scr = (lv_obj_t*)res;
+        if( NULL != app_cache.scr ) {
+            jolt_gui_scr_set_event_cb(app_cache.scr, launch_app_cb);
+        }
     }
     else{
         /* Application returns a return code */
+        assert( res !=  JOLT_CLI_NON_BLOCKING );
         jolt_cli_return( res );
-        launch_dec_ref_ctr();
-    }
-
-    if( NULL != app_cache.scr ) {
-        jolt_gui_scr_set_event_cb(app_cache.scr, launch_app_cb);
     }
 }
 
+/**
+ * @brief Event handler for app's primary screen
+ */
 static void launch_app_cb(lv_obj_t *btn, lv_event_t event) {
     if( LV_EVENT_CANCEL == event ) {
         if( NULL != app_cache.scr ) {
             ESP_LOGI(TAG, "Deleting App Screen.");
             lv_obj_del(app_cache.scr);
             app_cache.scr = NULL;
-            launch_dec_ref_ctr();
         }
-        else{
-            launch_dec_ref_ctr();
-        }
+        ESP_LOGD(TAG, "%s decrementing counter.", __func__);
+        launch_dec_ref_ctr();
     }
 }
 
@@ -250,12 +262,14 @@ void launch_inc_ref_ctr() {
     }
     else {
         app_cache.ref_ctr++;
+        ESP_LOGD(TAG, "Reference Counter incremented to %d.", app_cache.ref_ctr);
     }
 }
 
 void launch_dec_ref_ctr() {
     if(app_cache.ref_ctr > 0) {
         app_cache.ref_ctr--;
+        ESP_LOGD(TAG, "Reference Counter decremented to %d.", app_cache.ref_ctr);
     }
     else {
         ESP_LOGE(TAG, "Reference Counter is 0; cannot decrement");

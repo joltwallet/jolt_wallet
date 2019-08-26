@@ -541,6 +541,12 @@ static inline void app_hash_update(jelfLoaderContext_t *ctx, const uint8_t* data
 
 /**
  * @brief Compares the JELF version requirement vs JoltOS's compiled version
+ *
+ * Rules for a launch:
+ *  1. Major version must absolutely match.
+ *  2. minor version must be <= current version
+ *  3. patch must be <= current version
+ *
  * @return 0 on success. -1 if app is too old. Return -2 if JoltOS is too old.
  */
 static int8_t check_version_compatability( Jelf_Ehdr *header ) {
