@@ -210,6 +210,9 @@ static void launch_vault_fail_cb(void *dummy) {
     if(app_cache.argc > 0) {
         jolt_cli_return(-1);
     }
+    else{
+        launch_dec_ref_ctr();
+    }
 }
 
 static void launch_app_from_store(void *dummy) {
