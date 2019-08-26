@@ -4,7 +4,6 @@
  * which in turn is mostly an ESP32-port of martinribelotta's ARMv7 elfloader.
  */
 
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -227,7 +226,7 @@ void jelfLoaderProfilerPrint() {
         fread(buffer, 1, size, ctx->fd)
    
 #define LOADER_GETDATA(ctx, buffer, size) \
-    if(decompress_get(ctx, (uint8_t*)buffer, size) != (int)size ) {assert(0); goto err;};
+    if(decompress_get(ctx, (uint8_t*)buffer, size) != (int)size ) {goto err;};
 
 
 /******************************************************
@@ -485,8 +484,10 @@ static bool app_hash_init(jelfLoaderContext_t *ctx,
      * No compression is performed on the signature. */
     {
         int n = LOADER_GETDATA_RAW(ctx, ctx->app_signature, JELF_SIGNATURE_LEN);
-        (void) n;
-        assert( JELF_SIGNATURE_LEN == n );
+        if( JELF_SIGNATURE_LEN != n ) {
+            ERR("Failed to fetch signature");
+            goto err;
+        }
     }
 
 #if LOG_LOCAL_LEVEL >= 4 /* debug */
@@ -748,7 +749,6 @@ static int relocateSymbol(Jelf_Addr relAddr, int type, Jelf_Addr symAddr,
         }
         default:
             MSG("Relocation: undefined relocation %d %s", type, type2String(type));
-            assert(0);
             goto err;
     }
 
@@ -1061,6 +1061,7 @@ err:
     if(NULL != ctx) {
         jelfLoaderFree(ctx);
     }
+    *ctx_ptr = NULL;
     return response;
 }
 

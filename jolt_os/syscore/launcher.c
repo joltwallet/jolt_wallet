@@ -65,7 +65,7 @@ static void launch_app_cache_clear(){
  * matches derivation path)
  */
 int launch_file(const char *fn_basename, int app_argc, char** app_argv, const char *passphrase){
-    int return_code = -1;
+    int return_code = JOLT_LAUNCHER_ERR_UNKNOWN_FAIL;
     lv_obj_t *preloading_scr = NULL;
     LOADER_FD_T program = NULL;
     char *exec_fn = NULL;
@@ -81,7 +81,8 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
     /* Check filename length */
     if( NULL == (exec_fn = jolt_fs_parse(fn_basename, "jelf")) ) {
         ESP_LOGE(TAG, "Too long of an app name");
-        EXIT(-13);
+        jolt_gui_scr_text_create(fn_basename, gettext(JOLT_TEXT_LAUNCH_INVALID) );
+        EXIT(JOLT_LAUNCHER_ERR_UNKNOWN_FAIL);
     }
     ESP_LOGD(TAG, "App fullpath \"%s\"", exec_fn);
 
@@ -94,7 +95,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
             }
             else if( launch_in_app() ){
                 ESP_LOGW(TAG, "App is already launched");
-                EXIT(-4);
+                EXIT(JOLT_LAUNCHER_ERR_ALREADY_LAUNCHED);
             }
             else {
                 ESP_LOGI(TAG, "Launching GUI for cached app");
@@ -103,7 +104,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
         }
         else if( launch_in_app() ){
             ESP_LOGW(TAG, "Cannot launch a different app while in app");
-            EXIT(-3);
+            EXIT(JOLT_LAUNCHER_ERR_IN_APP);
         }
         else {
             /* Different app, clear cache and proceed */
@@ -113,7 +114,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
 
     if( !jolt_fs_exists(exec_fn) ){
         ESP_LOGE(TAG, "Executable doesn't exist\n");
-        EXIT(-2);
+        EXIT(JOLT_LAUNCHER_ERR_DOESNT_EXIST);
     }
 
     preloading_scr = jolt_gui_scr_preloading_create(fn_basename, gettext(JOLT_TEXT_PRELOAD_LAUNCHING));
@@ -131,12 +132,13 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
             break;
         case JELF_LOADER_VERSION_APP:
             jolt_gui_scr_text_create(fn_basename, gettext(JOLT_TEXT_LAUNCH_APP_OUT_OF_DATE) );
-            EXIT(-4);
+            EXIT(JOLT_LAUNCHER_ERR_APP_OUT_OF_DATE);
         case JELF_LOADER_VERSION_JOLTOS:
             jolt_gui_scr_text_create(fn_basename, gettext(JOLT_TEXT_LAUNCH_JOLTOS_OUT_OF_DATE) );
-            EXIT(-4);
+            EXIT(JOLT_LAUNCHER_ERR_OS_OUT_OF_DATE);
         default:
-            EXIT(-4);
+            jolt_gui_scr_text_create(fn_basename, gettext(JOLT_TEXT_LAUNCH_INVALID) );
+            EXIT(JOLT_LAUNCHER_ERR_UNKNOWN_FAIL);
     }
 
     ESP_LOGI(TAG, "elfLoader; Loading Sections");
@@ -144,7 +146,8 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
         case JELF_LOADER_OK:
             break;
         default:
-            EXIT(-5);
+            jolt_gui_scr_text_create(fn_basename, gettext(JOLT_TEXT_LAUNCH_INVALID) );
+            EXIT(JOLT_LAUNCHER_ERR_LOADING_SECTION);
     }
 
     ESP_LOGI(TAG, "elfLoader; Relocating");
@@ -152,7 +155,8 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
         case JELF_LOADER_OK:
             break;
         default:
-            EXIT(-6);
+            jolt_gui_scr_text_create(fn_basename, gettext(JOLT_TEXT_LAUNCH_INVALID) );
+            EXIT(JOLT_LAUNCHER_ERR_RELOCATING);
     }
 
     jelfLoader_time = esp_timer_get_time() - jelfLoader_time;
@@ -170,7 +174,8 @@ exec:
     /* Verify Signature */
     if(!jelfLoaderSigCheck(app_cache.ctx)) {
         ESP_LOGE(TAG, "Invalid App Signature");
-        EXIT(-14);
+        jolt_gui_scr_text_create(fn_basename, gettext(JOLT_TEXT_LAUNCH_INVALID) );
+        EXIT(JOLT_LAUNCHER_ERR_SIGNATURE);
     }
     /* Prepare vault for app launching. vault_set() creates the PIN entry screen */
     // maybe move these out of cache
@@ -191,7 +196,7 @@ exec:
             launch_vault_fail_cb, launch_app_from_store, NULL);
 
     app_cache.loading = false;
-    return 0;
+    return JOLT_LAUNCHER_ERR_OK;
 
 exit:
     launch_app_cache_clear();
@@ -209,6 +214,9 @@ static void launch_vault_fail_cb(void *dummy) {
     ESP_LOGE(TAG, "Launching app aborted");
     if(app_cache.argc > 0) {
         jolt_cli_return(-1);
+    }
+    else{
+        launch_dec_ref_ctr();
     }
 }
 

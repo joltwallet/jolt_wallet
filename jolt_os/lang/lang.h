@@ -63,6 +63,7 @@ typedef enum jolt_text_id_t {
     JOLT_TEXT_PRELOAD_LAUNCHING,  /* Label for spinning preloader */
     JOLT_TEXT_LAUNCH_APP_OUT_OF_DATE,
     JOLT_TEXT_LAUNCH_JOLTOS_OUT_OF_DATE,
+    JOLT_TEXT_LAUNCH_INVALID,
 
     /* Bluetooth Options */
     JOLT_TEXT_BLUETOOTH_ENABLE,
