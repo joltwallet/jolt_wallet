@@ -71,7 +71,6 @@ static void jolt_cli_sub_cmd_help(jolt_cli_sub_t *subconsole) {
 
 int jolt_cli_sub_cmd_run(jolt_cli_sub_t *subconsole, uint8_t argc, char **argv) {
     jolt_cli_sub_t *current = subconsole;
-    launch_inc_ref_ctr();
     if( argc > 0 ) {
         if( 0 == strcmp(argv[0], "help") ) {
             jolt_cli_sub_cmd_help(subconsole);
@@ -87,8 +86,10 @@ int jolt_cli_sub_cmd_run(jolt_cli_sub_t *subconsole, uint8_t argc, char **argv) 
             current = current->next;
         }
     }
+    else {
+        printf("No arguments provided.\n");
+    }
     printf("Command not found.\n");
-    jolt_cli_sub_cmd_help(subconsole);
     return -100;
 }
 

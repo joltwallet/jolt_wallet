@@ -1,4 +1,4 @@
-//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL 4
 
 #include "esp_log.h"
 
@@ -33,20 +33,18 @@ static bool jolt_cli_give_src_lock();
  ********************/
 static const char TAG[] = "syscore/cli";
 static SemaphoreHandle_t src_lock = NULL;        /**< Only allow one source at a time while executing */
-static FILE * src_lock_in = NULL; /**< Pointer to the stdin stream that took the src_lock */
-static SemaphoreHandle_t job_in_progress = NULL; /**< Mutex indicates if a job is underway or not */
+static FILE * src_lock_in = NULL;                /**< Pointer to the stdin stream that took the src_lock */
 static QueueHandle_t msg_queue = NULL;           /**< Queue that holds char ptrs to data sent over CLI. */
 static QueueHandle_t ret_val_queue = NULL;       /**< Queue that the cmd populates when complete. */
+static volatile bool app_call = false;
 
 void jolt_cli_init() {
     msg_queue = xQueueCreate(5, sizeof(jolt_cli_src_t));
     if( NULL == msg_queue) goto exit;
 
-    job_in_progress = xSemaphoreCreateMutex();
-    if( NULL == job_in_progress ) goto exit;
-
     src_lock = xSemaphoreCreateBinary();
     if( NULL == src_lock ) goto exit;
+    xSemaphoreGive(src_lock);
 
     ret_val_queue = xQueueCreate(1, sizeof(int));
     if( NULL == ret_val_queue) goto exit;
@@ -91,22 +89,10 @@ char *jolt_cli_get_line(int16_t timeout){
 
     if( !jolt_cli_get_src(&src, timeout) ) return NULL;
 
-    /* if no job is actually being executed, we can give up the semaphore */
-    /* if cmd is already being executed, give up the source lock.
-     * else don't give up the source lock.
-     */
     stdin = src.in;
     stdout = src.out;
     stderr = src.err;
 
-    if( xSemaphoreTake(job_in_progress, 0) ) {
-        /* No cmd currently executed */
-    }
-    else {
-        /* There is currently a cmd being executed. For convenience, we are
-         * freeing the src_lock here so the user doesn't have to.*/
-        jolt_cli_give_src_lock();
-    }
     return src.line;
 }
 
@@ -121,40 +107,32 @@ static bool jolt_cli_get_src(jolt_cli_src_t *src, int16_t timeout){
     bool res;
 
     /* Convert timeout into ticks */
-    if(timeout < 0) delay = portMAX_DELAY;
-    else delay = pdMS_TO_TICKS(timeout);
+    delay = timeout < 0 ? portMAX_DELAY : pdMS_TO_TICKS(timeout);
 
-    portMUX_TYPE myMutex = portMUX_INITIALIZER_UNLOCKED;
-    portENTER_CRITICAL(&myMutex);
-    if( xQueueReceive(msg_queue, src, 0) ) {
-        portEXIT_CRITICAL(&myMutex);
-        res = true;
-    }
-    else {
-        if(!jolt_cli_give_src_lock()){
-            //ESP_LOGD(TAG, "Failed to give src lock");
-        }
-        portEXIT_CRITICAL(&myMutex);
-        res = (pdTRUE == xQueueReceive(msg_queue, src, delay));
-    }
+    res = (pdTRUE == xQueueReceive(msg_queue, src, delay));
 
     return res;
 }
 
+/**
+ * @brief Obtain the `src_lock` semaphore.
+ * @param[in] ticks_to_wait FreeRTOS ticks to wait before timing out
+ * @return True if successfully obtained. False otherwise.
+ */
 static bool jolt_cli_take_src_lock(TickType_t ticks_to_wait){
     bool res;
-    //ESP_LOGD(TAG, "Taking src_lock;");
+    ESP_LOGD(TAG, "Taking src_lock;");
     res = xSemaphoreTake(src_lock, ticks_to_wait);
-    //if(res) ESP_LOGD(TAG, "Took src_lock");
-    //else ESP_LOGD(TAG, "Failed to take src_lock");
+    if(res) ESP_LOGD(TAG, "Took src_lock");
+    else ESP_LOGD(TAG, "Failed to take src_lock");
     return res;
 }
 
 static bool jolt_cli_give_src_lock(){
     bool res;
-    //ESP_LOGD(TAG, "Giving src_lock;");
+    ESP_LOGD(TAG, "Giving src_lock;");
     res = xSemaphoreGive( src_lock );
-    //ESP_LOGD(TAG, "Gave src_lock");
+    ESP_LOGD(TAG, "Gave src_lock");
     return res;
 }
 
@@ -175,7 +153,7 @@ void jolt_cli_set_src(jolt_cli_src_t *src) {
         }
         else {
             portEXIT_CRITICAL(&myMutex);
-            jolt_cli_take_src_lock(portMAX_DELAY);
+            ESP_LOGD(TAG, "took src_lock");
             src_lock_in = src->in;
             xQueueSend(msg_queue, src, 0);
         }
@@ -195,23 +173,14 @@ void jolt_cli_resume(){
 }
 
 void jolt_cli_return( int val ) {
-    if( JOLT_CLI_NON_BLOCKING == val ) {
-        return;
-    }
-
-    portMUX_TYPE myMutex = portMUX_INITIALIZER_UNLOCKED;
-    portENTER_CRITICAL(&myMutex);
-    if( xSemaphoreTake(job_in_progress, 0) ) {
-        /* No cmd currently executed */
-        xSemaphoreGive(job_in_progress);
-        portEXIT_CRITICAL(&myMutex);
-    }
-    else {
-        /* There is currently a cmd being executed. Queue up the value. */
-        portEXIT_CRITICAL(&myMutex);
-        xQueueSend(ret_val_queue, &val, portMAX_DELAY);
+    xQueueSend(ret_val_queue, &val, portMAX_DELAY);
+    if( JOLT_CLI_NON_BLOCKING != val ) {
         if( 0 != val ) {
             printf("Command returned non-zero error code: %d\n", val);
+        }
+        if( app_call ) {
+            launch_dec_ref_ctr();
+            app_call = false;
         }
     }
 }
@@ -228,21 +197,20 @@ static void jolt_cli_dispatcher_task( void *param ) {
         /* Get CLI info off of queue */
         jolt_cli_get_src(&src, -1);
 
-        /* Start Job. This should ALWAYS return immediately since this function is
-         * single threaded and is the only place taking/giving job_in_progress. */
-        xSemaphoreTake(job_in_progress, portMAX_DELAY);
-
         /* Dispatch job to bg */
+        ESP_LOGD(TAG, "Dispatching \"%s\" to bg", src.line);
         jolt_bg_create(jolt_cli_process_task, &src, NULL);
 
         /* Block until job finished. */
-        xQueueReceive(ret_val_queue, &ret_val, portMAX_DELAY);
+        do {
+            xQueueReceive(ret_val_queue, &ret_val, portMAX_DELAY);
+        } while(JOLT_CLI_NON_BLOCKING == ret_val);
 
         /* Release source mutex */
         jolt_cli_give_src_lock();
 
-        /* Cmd Finished */
-        xSemaphoreGive(job_in_progress);
+        ESP_LOGD(TAG, "Freeing src.line");
+        free( src.line );
     }
 }
 
@@ -252,13 +220,8 @@ static void jolt_cli_dispatcher_task( void *param ) {
  */
 static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job) {
     jolt_cli_src_t *src = jolt_bg_get_param(bg_job); 
-    jolt_cli_src_t src_obj;
     int ret = 0;
     esp_err_t err;
-
-    /* Make a local copy of src */
-    memcpy(&src_obj, src, sizeof(jolt_cli_src_t));
-    src = &src_obj;
 
     if(NULL == src->line) goto exit;
 
@@ -284,11 +247,10 @@ static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job) {
             // todo, parse passphrase argument
             if( launch_file(argv[0], argc-1, &argv[1], "") ) {
                 printf("Unsuccessful command\n");
-                jolt_cli_return(-1);
+                ret = -1;
             }
-            else if( 1 == argc ){
-                /* Just launch the GUI */
-                jolt_cli_return(0);
+            else {
+                app_call = true;
             }
             break;
         }
@@ -297,10 +259,6 @@ static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job) {
             jolt_cli_return(-1);
             break;
         case ESP_OK:
-
-            if( JOLT_CLI_NON_BLOCKING == ret ) {
-                break;
-            }
             jolt_cli_return(ret);
             break;
         default:
@@ -309,12 +267,7 @@ static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job) {
     }
 
 exit:
-    /* De-allocate memory */
-    if( src->line ) {
-        ESP_LOGD(TAG, "%d: Freeing src->line %p", __LINE__, src->line);
-        free(src->line);
-    }
-    return 0;
+    return 0; // Don't repeat
 }
 
 /**
@@ -442,14 +395,6 @@ static void jolt_cli_cmds_register() {
         .help = "generate cryptographically strong random values",
         .hint = NULL,
         .func = &jolt_cmd_rng,
-    };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
-
-    cmd = (esp_console_cmd_t) {
-        .command = "run",
-        .help = "launch application",
-        .hint = NULL,
-        .func = &jolt_cmd_run,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 

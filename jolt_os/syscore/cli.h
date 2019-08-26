@@ -47,9 +47,9 @@ char *jolt_cli_get_line(int16_t timeout);
  * Will block until the data is queued.
  *
  * NOTE: Only the pointer is added to the queue, meaning the actual string 
- * *must* be in the heap. Caller must free the allocated memory.
+ * *must* be in the heap. Recipient must free the allocated memory.
  *
- * @param[in] str NULL-terminated string to add to queue
+ * @param[in] src Data to add to queue.
  */
 void jolt_cli_set_src(jolt_cli_src_t *src);
 
