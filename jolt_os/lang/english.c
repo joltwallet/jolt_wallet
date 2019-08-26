@@ -35,6 +35,7 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Launching",
     "Application update required to run.",
     "JoltOS update required to run application.",
+    "Invalid or corrupt application.",
 
     /* Bluetooth Options */
     "Bluetooth Enable",

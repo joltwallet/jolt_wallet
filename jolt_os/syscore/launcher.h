@@ -14,6 +14,20 @@
 
 #include "stdbool.h"
 
+enum {
+    JOLT_LAUNCHER_ERR_OK = 0,
+    JOLT_LAUNCHER_ERR_UNKNOWN_FAIL = -1,
+    JOLT_LAUNCHER_ERR_INVALID_NAME = -2,
+    JOLT_LAUNCHER_ERR_ALREADY_LAUNCHED = -3,
+    JOLT_LAUNCHER_ERR_IN_APP = -4,
+    JOLT_LAUNCHER_ERR_DOESNT_EXIST = -5,
+    JOLT_LAUNCHER_ERR_APP_OUT_OF_DATE = -6,
+    JOLT_LAUNCHER_ERR_OS_OUT_OF_DATE = -7,
+    JOLT_LAUNCHER_ERR_LOADING_SECTION = -8,
+    JOLT_LAUNCHER_ERR_RELOCATING = -9,
+    JOLT_LAUNCHER_ERR_SIGNATURE = -10,
+};
+
 /**
  * @brief Runs a Jolt Application file.
  *
@@ -26,7 +40,7 @@
  * @param[in] app_argc argument count to pass in to application.
  * @param[in] app_argv variable arguments
  * @param[in] passphrase string to use during BIP32 derivation
- * @return application's return code.
+ * @return 0 on success.
  */
 int launch_file(const char *fn_basename, int app_argc, char** app_argv, const char *passphrase);
 
