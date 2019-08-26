@@ -1,4 +1,5 @@
-#if JOLT_GUI_TEST_MENU
+#include "sdkconfig.h"
+
 #define LOG_LOCAL_LEVEL ESP_LOG_INFO
 #include "esp_log.h"
 #include "jolt_gui/jolt_gui.h"
@@ -232,8 +233,6 @@ void jolt_gui_test_https_create( jolt_gui_obj_t *btn, jolt_gui_event_t event ) {
 
 void jolt_gui_test_bignum_create( jolt_gui_obj_t *btn, jolt_gui_event_t event ) {
     if( jolt_gui_event.short_clicked == event ) {
-        jolt_gui_obj_t *scr = jolt_gui_scr_bignum_create("BigNum Test", "subtitle", 123456, 6);
+        jolt_gui_obj_t *scr = jolt_gui_scr_bignum_create("BigNum Test", "subtitle", 234567, 6);
     }
 }
-
-#endif

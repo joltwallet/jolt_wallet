@@ -36,7 +36,7 @@ jolt_gui_obj_t *jolt_gui_scr_bignum_create(const char *title, const char *subtit
             first = false;
             lv_style_copy(&bignum_style, lv_label_get_style(number_label, LV_LABEL_STYLE_MAIN));
             bignum_style.text.font = JOLT_GUI_FONT_BIG_NUM;
-            bignum_style.text.letter_space = 3;
+            bignum_style.text.letter_space = 1;
         }
 
         lv_label_set_style(number_label, LV_LABEL_STYLE_MAIN, &bignum_style);

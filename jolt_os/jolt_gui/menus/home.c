@@ -1,5 +1,6 @@
-#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+//#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 
+#include "sdkconfig.h"
 #include "esp_log.h"
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_gui/test_screens.h"

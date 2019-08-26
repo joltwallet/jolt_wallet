@@ -246,8 +246,8 @@ static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job) {
 #endif
             // todo, parse passphrase argument
             if( launch_file(argv[0], argc-1, &argv[1], "") ) {
-                printf("Unsuccessful command\n");
-                ret = -1;
+                printf("App failed to launch\n");
+                jolt_cli_return(-1);
             }
             else {
                 app_call = true;
