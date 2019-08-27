@@ -164,8 +164,9 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
      * potentially replace carriage returns */
     esp_vfs_dev_uart_set_rx_line_endings(-1);
     ble_set_rx_line_endings(-1);
-    esp_log_level_set("*", ESP_LOG_NONE);
+    jolt_suspend_logging();
 
+    char name[JOLT_FS_MAX_FILENAME_BUF_LEN] = { 0 };
     uint8_t *packet_data = NULL;
     int size = 0;
     uint8_t *file_ptr;
@@ -179,10 +180,6 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
     static decomp_t *d = NULL;
     #endif
 
-    char name[JOLT_FS_MAX_FILENAME_BUF_LEN];
-    if( NULL == getname ){
-        getname = name;
-    }
 
     vTaskPrioritySet(NULL, 17);
 
@@ -264,27 +261,38 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                         errors = 0;
                                         // ** Filename packet has valid data
                                         {
-                                            char *name = getname;
-                                            for (i = 0, file_ptr = packet_data + PACKET_HEADER;
+                                            char *name_ptr;
+                                            for (name_ptr = name, i = 0, file_ptr = packet_data + PACKET_HEADER;
                                                     *file_ptr != 0; i++) {
                                                 if(i >= JOLT_FS_MAX_FILENAME_LEN){
                                                     /* Filename too long */
-                                                    size = -13;
+                                                    SEND_CA_EXIT(-13);
                                                     goto exit;
                                                 }
-                                                *name++ = *file_ptr++;
+                                                *name_ptr++ = *file_ptr++;
                                             }
-                                            *name = '\0';
+                                            if(NULL != getname) {
+                                                if( '\0' == getname[0] ) {
+                                                    /* Copy over string */
+                                                    strcpy(getname, name);
+                                                }
+                                                /* Compare string */
+                                                else if( 0 != strcmp(name, getname) ){
+                                                    SEND_CA_EXIT(-14);
+                                                    goto exit;
+                                                }
+                                            }
+
                                             #if CONFIG_JOLT_COMPRESSION_AUTO 
                                             /* Check if the suffix is ".gz" */
-                                            if( 0 == strcmp( name-3, ".gz" ) ) {
+                                            if( 0 == strcmp( name_ptr-3, ".gz" ) ) {
                                                 d = decompress_obj_init(write_fun, ffd);
                                                 if(NULL == d){
                                                     SEND_CA_EXIT(-12);
                                                 }
                                                 /* remove the ".gz" suffix */
-                                                name -=3;
-                                                *name = '\0';
+                                                name_ptr -=3;
+                                                *name_ptr = '\0';
                                             }
                                             #endif
                                         }
@@ -430,8 +438,8 @@ exit:
     vTaskPrioritySet(NULL, CONFIG_JOLT_TASK_PRIORITY_BACKGROUND);
 
     jolt_cli_resume();
-    esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
-    esp_log_level_set("wifi", ESP_LOG_NONE);
+
+    jolt_resume_logging();
     if(NULL != packet_data) {
         free(packet_data);
     }

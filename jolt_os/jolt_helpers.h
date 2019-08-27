@@ -140,6 +140,20 @@ void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *
  */
 void jolt_h_apply_patch(const char *filename);
 
+/**
+ * @brief suspend logging.
+ * Can be called multiple times. `jolt_resume_logging` must be called the same 
+ * number of times as `jolt_suspend_logging` was called to resume.
+ */
+void jolt_suspend_logging();
+
+/**
+ * @brief resume logging.
+ * Can be called multiple times. `jolt_resume_logging` must be called the same 
+ * number of times as `jolt_suspend_logging` was called to resume.
+ */
+void jolt_resume_logging();
+
 #include <driver/uart.h>
 #include "hal/radio/bluetooth.h"
 /* Log something to uart if BLE is the stdin */

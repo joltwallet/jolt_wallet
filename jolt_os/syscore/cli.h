@@ -7,6 +7,7 @@
 #define JOLT_SYSCORE_CLI_H__
 
 #include "stdint.h"
+#include "cli_helpers.h"
 
 /**
  * @brief In a CLI function, return this if your function will explicitly call

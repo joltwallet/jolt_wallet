@@ -219,20 +219,6 @@ static int32_t app_task_wrapper( jolt_bg_job_t *job ) {
     return res;
 }
 
-esp_err_t jolt_bg_create_app( jolt_bg_task_t task, void *param, lv_obj_t *scr) {
-    launch_inc_ref_ctr();
-    app_wrapper_param_t *app_param = NULL;
-    app_param = malloc(sizeof(app_wrapper_param_t));
-    if( NULL == app_param ) {
-        launch_dec_ref_ctr();
-        return ESP_FAIL;
-    }
-    app_param->task = task;
-    app_param->param = param;
-
-    return jolt_bg_create(app_task_wrapper, app_param, scr);
-}
-
 jolt_bg_signal_t jolt_bg_get_signal( jolt_bg_job_t *job ) {
     jolt_bg_signal_t res = JOLT_BG_NO_SIGNAL;
     xQueueReceive(job->input, &res, 0);

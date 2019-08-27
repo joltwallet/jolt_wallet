@@ -98,6 +98,7 @@ typedef enum jolt_text_id_t {
     /* Error */
     JOLT_TEXT_ERROR,
     JOLT_TEXT_ERROR_CODE,
+    JOLT_TEXT_UNKNOWN,
 
     /* Data Transfer */
     JOLT_TEXT_CONNECTING,
@@ -105,6 +106,9 @@ typedef enum jolt_text_id_t {
     JOLT_TEXT_INSTALLING,
     JOLT_TEXT_SAVING,
     JOLT_TEXT_PROCESSING,
+    JOLT_TEXT_UPLOAD,
+    JOLT_TEXT_DOWNLOAD,
+    JOLT_TEXT_TRANSFER_TO_JOLT,
 
     /* First Boot */
     JOLT_TEXT_PIN_SETUP,
