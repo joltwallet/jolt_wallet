@@ -45,7 +45,7 @@ static int jolt_cmd_upload_ymodem_task(jolt_bg_job_t *job) {
     jolt_gui_obj_t *loading_scr = NULL;
 
     /* Create loading screen */
-    if( NULL == (loading_scr = jolt_gui_scr_loadingbar_create(gettext(0))) ) goto exit;
+    if( NULL == (loading_scr = jolt_gui_scr_loadingbar_create(gettext(JOLT_TEXT_UPLOAD))) ) goto exit;
     jolt_gui_scr_set_event_cb(loading_scr, jolt_cmd_upload_cb);
     int8_t *progress = jolt_gui_scr_loadingbar_autoupdate(loading_scr);
     jolt_gui_scr_loadingbar_update(loading_scr, NULL, gettext(JOLT_TEXT_CONNECTING), 0);

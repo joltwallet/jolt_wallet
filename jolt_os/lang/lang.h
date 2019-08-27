@@ -91,7 +91,7 @@ typedef enum jolt_text_id_t {
     JOLT_TEXT_INCORRECT_PIN,
     JOLT_TEXT_UNLOCKING,
 
-    /* App Ket */
+    /* App Key */
     JOLT_TEXT_APP_KEY_SET_CONFIRMATION,
     JOLT_TEXT_APP_KEY_SET_CONFIRMATION_TITLE,
 
