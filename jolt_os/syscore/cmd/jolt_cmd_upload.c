@@ -95,13 +95,12 @@ static int jolt_cmd_upload_ymodem_task(jolt_bg_job_t *job) {
     EXIT(0);
 
 exit:
-    send_CA();
     jolt_resume_logging();
     SAFE_CLOSE(ffd);
     if( jolt_fs_exists(JOLT_FS_TMP_FN) ) remove(JOLT_FS_TMP_FN);
     SAFE_FREE(orig_fullpath);
-    jolt_cli_return(return_code);
     JOLT_GUI_OBJ_DEL_SAFE(loading_scr);
+    jolt_cli_return(return_code);
 
     return 0;
 }

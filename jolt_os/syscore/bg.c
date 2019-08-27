@@ -197,28 +197,6 @@ typedef struct app_wrapper_param_t {
     void *param;
 } app_wrapper_param_t;
 
-/**
- * @brief Calls the user's task, and performs post job accounting.
- */
-static int32_t app_task_wrapper( jolt_bg_job_t *job ) {
-    int32_t res;
-
-    app_wrapper_param_t *param = jolt_bg_get_param(job);
-    job->task = param->task;
-    job->param = param->param;
-
-    res = job->task(job);
-    if( 0 == res ) {
-        launch_dec_ref_ctr();
-        free(param);
-    }
-    else{
-        job->task = app_task_wrapper;
-        job->param = param;
-    }
-    return res;
-}
-
 jolt_bg_signal_t jolt_bg_get_signal( jolt_bg_job_t *job ) {
     jolt_bg_signal_t res = JOLT_BG_NO_SIGNAL;
     xQueueReceive(job->input, &res, 0);
