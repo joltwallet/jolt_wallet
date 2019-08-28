@@ -178,7 +178,6 @@ exec:
         EXIT(JOLT_LAUNCHER_ERR_SIGNATURE);
     }
     /* Prepare vault for app launching. vault_set() creates the PIN entry screen */
-    // maybe move these out of cache
     app_cache.argc = app_argc;
     app_cache.argv = app_argv;
 

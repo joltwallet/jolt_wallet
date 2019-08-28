@@ -91,13 +91,14 @@ typedef enum jolt_text_id_t {
     JOLT_TEXT_INCORRECT_PIN,
     JOLT_TEXT_UNLOCKING,
 
-    /* App Ket */
+    /* App Key */
     JOLT_TEXT_APP_KEY_SET_CONFIRMATION,
     JOLT_TEXT_APP_KEY_SET_CONFIRMATION_TITLE,
 
     /* Error */
     JOLT_TEXT_ERROR,
     JOLT_TEXT_ERROR_CODE,
+    JOLT_TEXT_UNKNOWN,
 
     /* Data Transfer */
     JOLT_TEXT_CONNECTING,
@@ -105,6 +106,9 @@ typedef enum jolt_text_id_t {
     JOLT_TEXT_INSTALLING,
     JOLT_TEXT_SAVING,
     JOLT_TEXT_PROCESSING,
+    JOLT_TEXT_UPLOAD,
+    JOLT_TEXT_DOWNLOAD,
+    JOLT_TEXT_TRANSFER_TO_JOLT,
 
     /* First Boot */
     JOLT_TEXT_PIN_SETUP,

@@ -70,6 +70,7 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     /* Error */
     "Error",
     "Error Code",
+    "UNKNOWN",
 
     /* Data Transfer */
     "Connecting...",
@@ -77,6 +78,9 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Installing...",
     "Saving...",
     "Processing...",
+    "Upload",
+    "Download",
+    "Transfer %s from connected device to Jolt?",
 
     /* First Boot */
     "PIN Setup",

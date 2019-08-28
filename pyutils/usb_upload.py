@@ -35,6 +35,8 @@ def parse_args():
             INFO
             DEBUG
             ''')
+    parser.add_argument('--monitor', '-m', action='store_true',
+            help="Monitor esp32 after transfer.")
     args = parser.parse_args()
     dargs = vars(args)
 
@@ -87,15 +89,22 @@ def main(args):
         ser.write(b"upload_firmware\n")
     else:
         log.debug('Sending "upload" command')
-        ser.write(b"upload\n")
+        ser.write(b"upload %s\n" % basename.encode())
     time.sleep(1)
     consume(ser)
 
     log.info("Sending File")
     ymodem.send([args.input,])
 
-    time.sleep(2)
-    log.info("Upload Complete. If you got a 'send error: expected ACK; got b\'\\x15\'' the transfer was probably fine.")
+    if args.monitor:
+        while(True):
+            try:
+                n = ser.inWaiting()
+                if n:
+                    line = ser.read(n)
+                    print(line.strip().decode("utf-8") )
+            except IOError:
+                raise IOError()
 
 if __name__ == '__main__':
     main(sys.argv)

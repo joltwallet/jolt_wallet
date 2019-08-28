@@ -112,7 +112,9 @@ static void jolt_cli_uart_listener_task( void *param) {
         /* Add the command to the history */
         linenoiseHistoryAdd(line);
 
-        if( 0 == strcmp(line, "upload_firmware") || 0 == strcmp(line, "upload") ){
+        if( 0 == strcmp(line, "upload_firmware")
+                || 0 == strcmp(line, "upload")
+                || 0 == strncmp(line, "upload ", 7)){
             suspend = true;
         }
         else if( 0 == strcmp(line, "ping") ) {

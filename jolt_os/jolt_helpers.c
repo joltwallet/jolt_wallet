@@ -167,3 +167,30 @@ exit:
     SAFE_CLOSE(f_tmp);
     return;
 }
+
+static SemaphoreHandle_t suspend_logging_sem = NULL;
+void jolt_suspend_logging() {
+    esp_log_level_set("*", ESP_LOG_NONE);
+
+    if(NULL == suspend_logging_sem) {
+        suspend_logging_sem = xSemaphoreCreateCounting( 200, 0); // arbitrarily high value.
+        if(NULL == suspend_logging_sem) {
+            esp_restart();
+        }
+    }
+
+    xSemaphoreGive(suspend_logging_sem);
+
+}
+
+void jolt_resume_logging() {
+    if( NULL == suspend_logging_sem || !xSemaphoreTake(suspend_logging_sem, 0) ) {
+        assert(0);
+        esp_restart();
+    }
+    if( 0 == uxSemaphoreGetCount(suspend_logging_sem) ) {
+        esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
+        esp_log_level_set("wifi", ESP_LOG_NONE);
+    }
+}
+

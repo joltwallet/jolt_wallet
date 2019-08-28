@@ -359,20 +359,14 @@ lv_obj_t *jolt_gui_obj_get_parent( const lv_obj_t *obj );
     })
 
 /**
- * @brief Delete an lv_obj_t if pointer is non-NULL.
- */
-#define LV_OBJ_DEL_SAFE(obj) { \
-    void *x = obj; \
-    if(NULL!=x) lv_obj_del(x); \
-    }
-
-/**
- * @brief Delete an lv_obj_t if pointer is non-NULL.
+ * @brief Delete an lv_obj_t if pointer is non-NULL. Sets the pointer to NULL after.
  */
 #define JOLT_GUI_OBJ_DEL_SAFE(obj) { \
-    void *x = obj; \
-    if(NULL!=x) jolt_gui_obj_del(x); \
-    }
+    if(NULL!=obj) { \
+        jolt_gui_obj_del(obj); \
+        obj = NULL; \
+    } \
+}
 
 /**
  * @brief Similar to a JOLT_GUI_CTX, but will call JOLT_GUI_SCR_PREAMBLE before the

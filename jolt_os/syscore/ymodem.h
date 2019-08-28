@@ -37,7 +37,10 @@
  * @brief Receive a file
  * @param[in] ffd File Descriptor
  * @param[in] maxsize Maximum file size to accept.
- * @param[out] getname (optional) buffer to store .
+ * @param[in, out] getname (optional) buffer to store filename. If provided and 
+ *                 first character is NOT '\0', ymodem will test to see if 
+ *                 the incoming filename matches. If it doesn't match, will 
+ *                 abort transfer.
  * @param[in] write_fun A writer function to handle the incoming stream.
  * @param[out] progress (optional) updated with transfer progress 0~100
  *
