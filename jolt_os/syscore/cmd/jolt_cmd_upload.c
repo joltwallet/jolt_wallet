@@ -37,6 +37,7 @@ static void jolt_cmd_upload_cb( lv_obj_t *bar, lv_event_t event ) {
  * @brief Runs in background; actually performs the ymodem upload.
  */
 static int jolt_cmd_upload_ymodem_task(jolt_bg_job_t *job) {
+    char *provided_name = jolt_bg_get_param(job);
     int return_code = -1;
     char *orig_fullpath = NULL, *orig_fn = NULL;
     FILE *ffd = NULL;
@@ -51,7 +52,13 @@ static int jolt_cmd_upload_ymodem_task(jolt_bg_job_t *job) {
     jolt_gui_scr_loadingbar_update(loading_scr, NULL, gettext(JOLT_TEXT_CONNECTING), 0);
 
     /* Parse filenames */
-    jolt_fs_parse_buf(&orig_fullpath, &orig_fn);
+    if( NULL != provided_name && '\0' != provided_name[0]) {
+        orig_fullpath = jolt_fs_parse(provided_name, NULL);
+        orig_fn = provided_name;
+    }
+    else {
+        jolt_fs_parse_buf(&orig_fullpath, &orig_fn);
+    }
     if( NULL == orig_fullpath ) EXIT(-1);
 
     /* Pre-run cleanup */
@@ -96,6 +103,7 @@ static int jolt_cmd_upload_ymodem_task(jolt_bg_job_t *job) {
 
 exit:
     jolt_resume_logging();
+    jolt_cli_resume();
     SAFE_CLOSE(ffd);
     if( jolt_fs_exists(JOLT_FS_TMP_FN) ) remove(JOLT_FS_TMP_FN);
     SAFE_FREE(orig_fullpath);
@@ -123,6 +131,7 @@ exit:
     send_CA();
     jolt_cli_return(-1);
     jolt_resume_logging();
+    jolt_cli_resume();
 }
 
 /**
@@ -168,6 +177,7 @@ int jolt_cmd_upload(int argc, char** argv) {
 exit:
     JOLT_GUI_OBJ_DEL_SAFE(scr);
     jolt_resume_logging();
+    jolt_cli_resume();
     send_CA();
     return -1;
 }

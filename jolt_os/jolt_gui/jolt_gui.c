@@ -283,6 +283,7 @@ lv_group_t *jolt_gui_group_get() {
 lv_obj_t *jolt_gui_scr_get_active(lv_obj_t *parent) {
     lv_obj_t *obj = NULL;
     JOLT_GUI_CTX{
+        parent = jolt_gui_scr_get(parent);
         /* Find the BODY CONT */
         lv_obj_t *cont_body = JOLT_GUI_FIND_AND_CHECK( parent, JOLT_GUI_OBJ_ID_CONT_BODY );
 
@@ -306,6 +307,7 @@ lv_obj_t *jolt_gui_scr_get_active(lv_obj_t *parent) {
 
 void jolt_gui_scr_set_event_cb(lv_obj_t *parent, lv_event_cb_t event_cb) {
     JOLT_GUI_CTX{
+        parent = jolt_gui_scr_get(parent);
         lv_obj_t *active = jolt_gui_scr_get_active(parent);
         if( NULL != active ) {
             jolt_gui_obj_set_event_cb(active, event_cb);
@@ -315,6 +317,7 @@ void jolt_gui_scr_set_event_cb(lv_obj_t *parent, lv_event_cb_t event_cb) {
 
 void jolt_gui_scr_set_active_param( lv_obj_t *parent, void *param ) {
     JOLT_GUI_CTX{
+        parent = jolt_gui_scr_get(parent);
         lv_obj_t *active = jolt_gui_scr_get_active(parent);
         if( NULL != active ) {
             jolt_gui_obj_set_param(active, param);
@@ -325,6 +328,7 @@ void jolt_gui_scr_set_active_param( lv_obj_t *parent, void *param ) {
 void *jolt_gui_scr_get_active_param( lv_obj_t *parent ) {
     void *param = NULL;
     JOLT_GUI_CTX{
+        parent = jolt_gui_scr_get(parent);
         lv_obj_t *active = jolt_gui_scr_get_active(parent);
         if( NULL != active ) {
             param = jolt_gui_obj_get_param( active );

@@ -180,7 +180,6 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
     static decomp_t *d = NULL;
     #endif
 
-
     vTaskPrioritySet(NULL, 17);
 
     /* Profiling Variables */
@@ -267,10 +266,10 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                                 if(i >= JOLT_FS_MAX_FILENAME_LEN){
                                                     /* Filename too long */
                                                     SEND_CA_EXIT(-13);
-                                                    goto exit;
                                                 }
                                                 *name_ptr++ = *file_ptr++;
                                             }
+                                            *name_ptr = '\0';
                                             if(NULL != getname) {
                                                 if( '\0' == getname[0] ) {
                                                     /* Copy over string */
@@ -279,7 +278,6 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                                 /* Compare string */
                                                 else if( 0 != strcmp(name, getname) ){
                                                     SEND_CA_EXIT(-14);
-                                                    goto exit;
                                                 }
                                             }
 
@@ -295,10 +293,6 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                                 *name_ptr = '\0';
                                             }
                                             #endif
-                                        }
-                                        for (i = 0, file_ptr = packet_data + PACKET_HEADER;
-                                                (*file_ptr != 0) && (i < packet_length);) {
-                                            file_ptr++;
                                         }
                                         for (i = 0, file_ptr++; *file_ptr != ' ' && *file_ptr != '\0';) {
                                             if( i >= FILE_SIZE_LENGTH ) {

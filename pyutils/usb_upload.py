@@ -89,7 +89,7 @@ def main(args):
         ser.write(b"upload_firmware\n")
     else:
         log.debug('Sending "upload" command')
-        ser.write(b"upload\n")
+        ser.write(b"upload %s\n" % basename.encode())
     time.sleep(1)
     consume(ser)
 

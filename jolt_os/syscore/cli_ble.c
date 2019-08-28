@@ -47,12 +47,12 @@ static void jolt_cli_ble_listener_task( void *param ) {
     //setvbuf(ble_stdout, NULL, _IONBF, 0);
     setvbuf(ble_stderr, NULL, _IONBF, 0);
 
-    char *buf = NULL;
+    char *line = NULL;
     for(;;){
-        if ( NULL == buf ) {
-            buf = calloc(1, CONFIG_JOLT_CONSOLE_MAX_CMD_LEN);
+        if ( NULL == line ) {
+            line = calloc(1, CONFIG_JOLT_CONSOLE_MAX_CMD_LEN);
         }
-        char *ptr = buf;
+        char *ptr = line;
         uint16_t i;
         for(i=0; i<CONFIG_JOLT_CONSOLE_MAX_CMD_LEN-1; i++, ptr++){
             fread(ptr, 1, 1, ble_stdin);
@@ -62,24 +62,26 @@ static void jolt_cli_ble_listener_task( void *param ) {
             }
         }
         if(i>0){
-            ESP_LOGD(TAG, "sending command from ble: \"%s\"", buf);
+            ESP_LOGD(TAG, "sending command from ble: \"%s\"", line);
             bool suspend = false;
-            if( 0 == strcmp(buf, "upload_firmware") || 0 == strcmp(buf, "upload") ){
+            if( 0 == strcmp(line, "upload_firmware")
+                    || 0 == strcmp(line, "upload")
+                    || 0 == strncmp(line, "upload ", 7)){
                 suspend = true;
             }
-            else if( 0 == strcmp(buf, "ping") ) {
+            else if( 0 == strcmp(line, "ping") ) {
                 fwrite("pong\n", 1, 5, ble_stdout);
                 continue;
             }
 
             jolt_cli_src_t src;
-            src.line = buf;
+            src.line = line;
             src.in = ble_stdin;
             src.out = ble_stdout;
             src.err = ble_stderr;
             jolt_cli_set_src( &src );
 
-            buf = NULL;
+            line = NULL;
 
             if( suspend == true ) jolt_cli_ble_suspend();
         }
