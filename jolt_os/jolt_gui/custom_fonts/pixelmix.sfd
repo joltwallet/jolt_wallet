@@ -22,7 +22,7 @@ OS2Version: 2
 OS2_WeightWidthSlopeOnly: 0
 OS2_UseTypoMetrics: 0
 CreationTime: 1268433997
-ModificationTime: 1560337819
+ModificationTime: 1567091385
 PfmFamily: 81
 TTFWeight: 400
 TTFWidth: 5
@@ -85,7 +85,7 @@ NameList: AGL For New Fonts
 DisplaySize: -128
 AntiAlias: 1
 FitToEm: 1
-WinInfo: 0 16 11
+WinInfo: 0 11 12
 BeginChars: 65537 452
 
 StartChar: .notdef
@@ -2436,7 +2436,7 @@ EndChar
 
 StartChar: f
 Encoding: 102 102 73
-Width: 513
+Width: 643
 GlyphClass: 2
 Flags: W
 LayerCount: 2
@@ -2450,18 +2450,17 @@ SplineSet
  128 896 l 1,5,-1
  256 896 l 1,6,-1
  256 512 l 1,7,-1
- 384 512 l 1,8,-1
- 384 384 l 1,9,-1
+ 515 512 l 1,8,-1
+ 515 384 l 1,9,-1
  256 384 l 1,10,-1
  256 0 l 1,11,-1
  128 0 l 1,0,-1
 256 896 m 1,12,-1
  256 1024 l 1,13,-1
- 385 1024 l 1,14,-1
- 385 896 l 1,15,-1
+ 513 1022 l 1,14,-1
+ 513 894 l 1,15,-1
  256 896 l 1,12,-1
 EndSplineSet
-Validated: 5
 EndChar
 
 StartChar: g
@@ -2875,7 +2874,7 @@ EndChar
 
 StartChar: t
 Encoding: 116 116 87
-Width: 640
+Width: 514
 GlyphClass: 2
 Flags: W
 LayerCount: 2
@@ -2883,8 +2882,8 @@ Fore
 SplineSet
 256 0 m 1,0,-1
  256 128 l 1,1,-1
- 512 128 l 5,2,-1
- 512 0 l 5,3,-1
+ 386 124 l 1,2,-1
+ 386 -4 l 1,3,-1
  256 0 l 1,0,-1
 385 128 m 1025,4,-1
 128 128 m 1,5,-1
@@ -2901,7 +2900,6 @@ SplineSet
  256 128 l 1,16,-1
  128 128 l 1,5,-1
 EndSplineSet
-Validated: 5
 EndChar
 
 StartChar: u

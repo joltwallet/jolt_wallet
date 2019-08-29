@@ -15,6 +15,7 @@ Latin Supplement Expansion. Some glyphs have minor tweaks.
 ###Conversion Settings
 
 * Input: `pixelmix.woff`
+* Name: pixelmix
 * Size: 8
 * Bpp: 1
 * Range: 0x20-0xFF
@@ -22,6 +23,7 @@ Latin Supplement Expansion. Some glyphs have minor tweaks.
 After conversion, manually change:
 
 * `line_height` to `8`.
+* `base_line` to `1`.
 
 
 ## jolt_symbols
