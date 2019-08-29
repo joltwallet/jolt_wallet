@@ -15,11 +15,14 @@
  */
 #define JOLT_CLI_NON_BLOCKING INT_MAX
 
+extern volatile bool jolt_cli_display_prompt;
+
 typedef struct {
     char *line; /**< NULL-terminated line entered via some CLI */
     FILE *in;   /**< Where it came from */
     FILE *out;  /**< Where to print to */
     FILE *err;  /**< Where to print errors to */
+    const char *prompt; /**< Prompt to print */
 } jolt_cli_src_t;
 
 /**

@@ -35,7 +35,6 @@
 #include "esp_console.h"
 
 #include "hal/radio/spp_recv_buf.h"
-#include "linenoise/linenoise.h"
 #include "bluetooth.h"
 #include "bluetooth_state.h"
 #include "jolt_helpers.h"

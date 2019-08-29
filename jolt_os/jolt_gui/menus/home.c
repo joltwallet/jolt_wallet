@@ -14,8 +14,8 @@
  *  STATIC PROTOTYPES
  **********************/
 static int launch_app_task(jolt_bg_job_t *job);
-static char *display_name_to_fn(const char *display_name);
-static char *fn_to_display_name(const char *fn);
+static char *display_name_to_fn(char *fn, const char *display_name);
+static char *fn_to_display_name(char * display_name, const char *fn);
 
 /**********************
  *  STATIC VARIABLES
@@ -23,10 +23,18 @@ static char *fn_to_display_name(const char *fn);
 static const char TAG[] = "menu_home";
 static lv_obj_t *main_menu = NULL;
 
+/**
+ * @brief Task to launch the application from the BG task.
+ *
+ * Loading an app Takes on the order of 100~500mS, so we don't want to load it
+ * within the GUI event loop.
+ *
+ */
 static int launch_app_task(jolt_bg_job_t *job){
     char *fn_c = jolt_bg_get_param(job);
-    launch_file(fn_c, 0, NULL, ""); // puts the app back into the gui task
-    return 0;
+    // Launching App from homescreen uses an empty passphrase.
+    launch_file(fn_c, 0, NULL, "");
+    return 0; // Don't repeat.
 }
 
 /**
@@ -34,11 +42,14 @@ static int launch_app_task(jolt_bg_job_t *job){
  *
  * Not thread safe, string gets overwritten each call.
  *
+ * @param[out] display_name Buffer to populate. e.g. with "Jolt App".
  * @param fn Filename; e.g. "Jolt_App.jelf"
+ * @return display_name
  */
-static char *fn_to_display_name(const char *fn) {
-    static char display_name[65];
-    strlcpy(display_name, fn, sizeof(display_name));
+static char *fn_to_display_name(char *display_name, const char *fn) {
+    if( NULL == fn || NULL == display_name ) return NULL;
+    display_name[0] = '\0';
+    strlcpy(display_name, fn, JOLT_FS_MAX_FILENAME_BUF_LEN);
     for(char *c = display_name; *c!='\0'; c++) {
         if( *c == '_'){
             *c = ' ';
@@ -54,11 +65,14 @@ static char *fn_to_display_name(const char *fn) {
  *
  * Undoes fn_to_display_name
  *
- * @param fn Filename; e.g. "Jolt_App.jelf"
+ * @param[out] fn Buffer to populate. e.g. with "Jolt_App.jelf".
+ * @param[in] display_name Filename; e.g. "Jolt App"
+ * @return fn
  */
-static char *display_name_to_fn(const char *display_name) {
-    static char fn[65];
-    strlcpy(fn, display_name, sizeof(fn));
+static char *display_name_to_fn(char *fn, const char *display_name) {
+    if( NULL == fn || NULL == display_name ) return NULL;
+    fn[0] = '\0';
+    strlcpy(fn, display_name, JOLT_FS_MAX_FILENAME_BUF_LEN);
     for(char *c = fn; *c!='\0'; c++) {
         if( *c == ' '){
             *c = '_';
@@ -71,8 +85,8 @@ static char *display_name_to_fn(const char *display_name) {
  * Also launch_file is a blocking function*/
 static void launch_file_proxy(lv_obj_t *btn, lv_event_t event) {
     if( LV_EVENT_SHORT_CLICKED == event ) {
-        const char *fn = lv_list_get_btn_text( btn );
-        fn = display_name_to_fn(fn);
+        char fn[JOLT_FS_MAX_FILENAME_BUF_LEN] = { 0 };
+        display_name_to_fn(fn, lv_list_get_btn_text( btn ));
         ESP_LOGI(TAG, "Launching %s", fn);
         jolt_bg_create( launch_app_task, (void *)fn, NULL);
     }
@@ -89,8 +103,9 @@ void jolt_gui_menu_home_create() {
     }
 
     for(uint16_t i=0; i<n_fns; i++) {
+        char display_name[JOLT_FS_MAX_FILENAME_BUF_LEN] = { 0 };
         ESP_LOGD(TAG, "Registering App \"%s\" into the GUI", fns[i]);
-        jolt_gui_scr_menu_add(main_menu, NULL, fn_to_display_name(fns[i]), launch_file_proxy);
+        jolt_gui_scr_menu_add(main_menu, NULL, fn_to_display_name(display_name, fns[i]), launch_file_proxy);
     }
     jolt_h_free_char_array(fns, n_fns);
 

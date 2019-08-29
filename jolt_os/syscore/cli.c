@@ -38,6 +38,7 @@ static QueueHandle_t msg_queue = NULL;           /**< Queue that holds char ptrs
 static QueueHandle_t ret_val_queue = NULL;       /**< Queue that the cmd populates when complete. */
 static volatile bool app_call = false;
 
+
 void jolt_cli_init() {
     msg_queue = xQueueCreate(5, sizeof(jolt_cli_src_t));
     if( NULL == msg_queue) goto exit;
@@ -209,6 +210,12 @@ static void jolt_cli_dispatcher_task( void *param ) {
         /* Release source mutex */
         jolt_cli_give_src_lock();
 
+        /* Reprompt the user */
+        if( NULL != src.prompt ){
+            printf("\n");
+            printf(src.prompt);
+        }
+
         ESP_LOGD(TAG, "Freeing src.line");
         free( src.line );
     }
@@ -232,6 +239,9 @@ static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job) {
     /* Try to run the command */
     err = esp_console_run(src->line, &ret);
     switch( err ) {
+        case ESP_OK:
+            jolt_cli_return(ret);
+            break;
         case ESP_ERR_NOT_FOUND: {
             /* The command could be an app to run console commands from */
             static char *argv[CONFIG_JOLT_CONSOLE_MAX_ARGS + 1];
@@ -244,7 +254,7 @@ static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job) {
             }
             ESP_LOGD(TAG, "Not an internal command; looking for app of name %s", argv[0]);
 #endif
-            // todo, parse passphrase argument
+            // TODO: parse passphrase argument
             if( launch_file(argv[0], argc-1, &argv[1], "") ) {
                 printf("App failed to launch\n");
                 jolt_cli_return(-1);
@@ -254,15 +264,9 @@ static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job) {
             }
             break;
         }
-        case ESP_ERR_INVALID_ARG:
-            /* command was empty */
-            jolt_cli_return(-1);
-            break;
-        case ESP_OK:
-            jolt_cli_return(ret);
-            break;
         default:
             jolt_cli_return(-1);
+            jolt_cli_resume();
             break;
     }
 

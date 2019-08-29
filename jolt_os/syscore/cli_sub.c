@@ -15,7 +15,6 @@
 #include "esp_console.h"
 #include "driver/uart.h"
 #include "esp_vfs_dev.h"
-#include "linenoise/linenoise.h"
 
 #include "jolt_helpers.h"
 #include "syscore/launcher.h"

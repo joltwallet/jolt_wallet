@@ -217,7 +217,7 @@ jolt_gui_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *te
         jolt_gui_obj_id_set(label, JOLT_GUI_OBJ_ID_LABEL_0);
         lv_label_set_align(label, LV_LABEL_ALIGN_CENTER);
         if( NULL == text ){
-            lv_label_set_text(label, "");
+            lv_label_set_text(label, EMPTY_STR);
         }
         else {
             lv_label_set_text(label, text);

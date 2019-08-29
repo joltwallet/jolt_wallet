@@ -79,6 +79,7 @@ static void jolt_cli_ble_listener_task( void *param ) {
             src.in = ble_stdin;
             src.out = ble_stdout;
             src.err = ble_stderr;
+            src.prompt = NULL;
             jolt_cli_set_src( &src );
 
             line = NULL;

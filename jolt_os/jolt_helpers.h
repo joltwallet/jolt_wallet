@@ -64,6 +64,8 @@
  */
 extern const char NULL_TERM;
 
+extern const char *EMPTY_STR;
+
 /**
  * @brief Derivation BIP32 key for JoltOS settings 
  */

@@ -106,7 +106,7 @@ void app_main() {
             ESP_LOGI(TAG, "Currently Running %s at 0x%08X.",
                     partition->label, partition->address);
             ESP_LOGI(TAG, "Partition is %sencrypted.",
-                    partition->encrypted ? "" : "NOT ");
+                    partition->encrypted ? EMPTY_STR : "NOT ");
         }
     }
 

@@ -724,12 +724,18 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
      * initially is just an empty string. */
     linenoiseHistoryAdd("");
 
-    int pos1 = getCursorPosition();
-    if (fwrite(prompt,l.plen,1,stdout) == -1) return -1;
-    int pos2 = getCursorPosition();
-    if (pos1 >= 0 && pos2 >= 0) {
-        l.plen = pos2 - pos1;
+#if 0
+    {
+        int pos1 = getCursorPosition();
+
+        //if (fwrite(prompt,l.plen,1,stdout) == -1) return -1;
+        int pos2 = getCursorPosition();
+        if (pos1 >= 0 && pos2 >= 0) {
+            l.plen = pos2 - pos1;
+        }
     }
+#endif
+
     while(1) {
         char c;
         int nread;
@@ -933,7 +939,7 @@ static int linenoiseRaw(char *buf, size_t buflen, const char *prompt) {
 
 static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
     /* dumb terminal, fall back to fgets */
-    fputs(prompt, stdout);
+    //fputs(prompt, stdout);
     int count = 0;
     while (count < buflen) {
         int c = fgetc(stdin);

@@ -30,6 +30,7 @@
 
 static const char* TAG = "jolt_helpers";
 const char NULL_TERM = '\0';
+const char *EMPTY_STR = "";
 
 void jolt_get_random(uint8_t *buf, uint8_t n_bytes){
 

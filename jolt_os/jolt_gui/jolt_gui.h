@@ -28,6 +28,8 @@
 #include "mp.h"
 #include "lang/lang.h"
 
+#include "jolt_helpers.h"
+
 #ifndef CONFIG_JOLT_GUI_LOADING_BUF_SIZE
     #define CONFIG_JOLT_GUI_LOADING_BUF_SIZE 30
 #endif

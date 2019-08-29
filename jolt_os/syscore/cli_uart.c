@@ -1,6 +1,6 @@
 /*
  * Known bugs:
- *     * suspending the uart listener task while it's in the linenoise function causes a deadlock on UART. Internally, linenoise calls fread which takes the uart_read_lock mutex. Need an elegant way of releasing that mutex if taken on suspend. Current workaround: the 200mS delay; if the process that needs to take over the UART communication before the 200mS delay is over, everything is ok.
+ *     * suspending the uart listener task while it's in the linenoise function causes a deadlock on UART. Internally, linenoise calls fread which takes the uart_read_lock mutex. Need an elegant way of releasing that mutex if taken on suspend. Current workaround: suspending the CLI in advanced for certain functions. 
  */
 
 //#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
@@ -93,6 +93,9 @@ static void jolt_cli_uart_listener_task( void *param) {
         linenoiseSetDumbMode(1);
     }
     
+    uart_wait_tx_done(UART_NUM_0, portMAX_DELAY);
+    printf(prompt);
+
     /* Main loop */
     for(;;) {
         bool suspend = false;
@@ -105,7 +108,10 @@ static void jolt_cli_uart_listener_task( void *param) {
         char* line;
 
         line = linenoise(prompt);
-        if (line == NULL) continue; /* Ignore empty lines */
+        if (line == NULL) {
+            printf(prompt);
+            continue; /* Ignore empty lines */
+        }
 
         ESP_LOGD(TAG, "UART line at %p", line);
 
@@ -127,12 +133,14 @@ static void jolt_cli_uart_listener_task( void *param) {
         src.in = stdin;
         src.out = stdout;
         src.err = stderr;
+        src.prompt = prompt;
         jolt_cli_set_src( &src );
 
         if( suspend ){
             /* Extra safety precaution for firmware upload */
             jolt_cli_uart_suspend();
         }
+        taskYIELD();
     }
     
 #if CONFIG_JOLT_CONSOLE_OVERRIDE_LOGGING
