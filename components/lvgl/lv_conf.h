@@ -49,6 +49,9 @@
 /*Images pixels with this color will not be drawn (with chroma keying)*/
 #define LV_COLOR_TRANSP    LV_COLOR_LIME         /*LV_COLOR_LIME: pure green*/
 
+/* Enable chroma keying for indexed images. */
+#define LV_INDEXED_CHROMA       0
+
 /* Enable anti-aliasing (lines, and radiuses will be smoothed) */
 #define LV_ANTIALIAS        0
 
@@ -164,7 +167,7 @@ typedef void * lv_group_user_data_t;
 #define LV_IMG_CF_INDEXED       1
 
 /* 1: Enable alpha indexed images */
-#define LV_IMG_CF_ALPHA         1
+#define LV_IMG_CF_ALPHA         0
 
 /* Default image cache size. Image caching keeps the images opened.
  * If only the built-in image formats are used there is no real advantage of caching.
