@@ -548,6 +548,10 @@ menu "JoltOS"
     menu "Filesystem"
         choice
             prompt "Driver"
+            config JOLT_FS_LITTLEFS
+                bool "Use LittleFS Filesystem"
+                help
+                    Use LittleFS for the filesystem.
             config JOLT_FS_SPIFFS
                 bool "Use SPIFFS Filesystem"
                 help
@@ -556,11 +560,6 @@ menu "JoltOS"
                 bool "Use FAT Filesystem"
                 help
                     Use FAT for the filesystem.
-            config JOLT_FS_LITTLEFS
-                bool "Use LittleFS Filesystem"
-                default y
-                help
-                    Use LittleFS for the filesystem.
         endchoice
     endmenu
 

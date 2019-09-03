@@ -12,10 +12,10 @@
  */
 
 
-#ifndef __INCLUDE_WIFI_H__
-#define __INCLUDE_WIFI_H__
+#ifndef JOLT_HAL_RADIO_WIFI_H__
+#define JOLT_HAL_RADIO_WIFI_H__
 
-#include "esp_event_loop.h"
+#include "esp_event.h"
 
 /**
  * @brief Start WiFi
