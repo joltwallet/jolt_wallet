@@ -17,7 +17,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_freertos_hooks.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "esp_pm.h"
 
 #include <driver/adc.h>
