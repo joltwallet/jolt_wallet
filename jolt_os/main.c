@@ -110,6 +110,15 @@ void app_main() {
         }
     }
 
+#if CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
+    ESP_LOGW(TAG, 
+            "********************************************"
+            "* WARNING: EMULATING EFUSE SECURE VERSION. *"
+            "* -- DO NOT EMULATE ON CONSUMER RELEASES --*"
+            "*******************************************"
+            );
+#endif
+
     /* Start side-channel mitigation noise */
     jolt_noise_init();
 
@@ -238,7 +247,7 @@ void app_main() {
             jolt_bluetooth_start();
         }
 #if CONFIG_JOLT_BT_DEBUG_ALWAYS_ADV
-        //jolt_bluetooth_adv_all_start();
+        jolt_bluetooth_adv_all_start();
 #endif
     }
 
@@ -265,14 +274,7 @@ void app_main() {
     }
 #endif /* CONFIG_PM_ENABLE */
 
-#if 0
-    /* radio muzzling debugging */
-    vTaskDelay(pdMS_TO_TICKS(10000));
-    JOLT_RADIO_OFF_CTX{
-        vTaskDelay(pdMS_TO_TICKS(700));
-    }
-#endif
-
+    ESP_ERR_CHECK( esp_ota_mark_app_valid_cancel_rollback() );
 }
 
 #endif /* UNIT_TESTING */
