@@ -60,6 +60,11 @@
 #define EXIT_PRINT(ret, ...) do{ return_code = ret; printf(__VA_ARGS__); goto exit; }while(0)
 
 /**
+ * @brief goto exit if pointer is NULL.
+ */
+#define EXIT_IF_NULL(x) do{ if( NULL == x ) goto exit; }while(0)
+
+/**
  * @brief Easy reference to a NULL TERMINATOR character '\0'
  */
 extern const char NULL_TERM;

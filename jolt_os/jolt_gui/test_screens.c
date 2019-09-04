@@ -20,7 +20,6 @@ void jolt_gui_test_json_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
     cJSON *json = NULL;
     char *path = NULL;
     if( jolt_gui_event.short_clicked == event ) {
-#define EXIT_IF_NULL(x) if( NULL == x ) goto exit;
         if( NULL == (path = jolt_fs_parse("test", "json")) ) goto exit;
 
         json = jolt_json_read( path );
@@ -44,7 +43,6 @@ void jolt_gui_test_json_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
 exit:
     if(json) jolt_json_del(json);
     SAFE_FREE(path); 
-#undef EXIT_IF_NULL
 }
 
 static void jolt_gui_test_number_enter_cb(jolt_gui_obj_t *digit_entry, jolt_gui_event_t event){

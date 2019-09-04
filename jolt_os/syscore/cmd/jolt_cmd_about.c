@@ -1,5 +1,5 @@
 #include "jolt_lib.h"
-#include "esp_wifi.h"
+#include "hal/radio/wifi.h"
 #include "syscore/filesystem.h"
 
 extern const jolt_version_t JOLT_OS_VERSION;   /**< JoltOS version */
@@ -52,39 +52,32 @@ int jolt_cmd_about(int argc, char** argv) {
         goto end;
     }
     else if( 0 == strcmp(argv[1], "wifi") ) {
-        char ssid[32];
         {
+            char ssid[32]; // TODO macro
             size_t ssid_len;
             storage_get_str(NULL, &ssid_len, "user", "wifi_ssid",
                     CONFIG_AP_TARGET_SSID);
-            if( ssid_len > 31 ) {
-                goto end;
-            }
+            if( ssid_len > 31 ) goto end; // TODO macro
             storage_get_str(ssid, &ssid_len,
                     "user", "wifi_ssid",
                     CONFIG_AP_TARGET_SSID);
+            if( NULL == cJSON_AddStringToObject(json, "ssid", ssid) ) goto end;
         }
-        if( NULL == cJSON_AddStringToObject(json, "ssid", ssid) ) goto end;
 
         /* Get strength */
-#if !CONFIG_NO_BLOBS
         {
-            wifi_mode_t mode;
-            esp_err_t err = esp_wifi_get_mode(&mode);
-            int rssi = 0;
-            if( ESP_OK == err ) {
-                wifi_ap_record_t ap_info;
-                if(esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
-                    rssi = ap_info.rssi;
-                }
-            }
+            int8_t rssi;
+            rssi = jolt_wifi_get_rssi();
             if(NULL == cJSON_AddNumberToObject(json, "rssi", rssi)) goto end;
         }
-#else
+
+        /* Get IP Address */
         {
-            if(NULL == cJSON_AddNumberToObject(json, "rssi", 0)) goto end;
+            char *ip = NULL;
+            ip = jolt_wifi_get_ip(); // TODO error check
+            if( NULL == cJSON_AddStringToObject(json, "ip", ip) ) goto end;
+            free(ip);
         }
-#endif
     }
     else if( 0 == strcmp(argv[1], "filesystem")) {
         size_t total_bytes = 0, used_bytes = 0;

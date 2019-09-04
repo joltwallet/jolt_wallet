@@ -19,6 +19,12 @@ int jolt_cmd_wifi_update(int argc, char** argv) {
     if( 3 == argc ) {
         pass = argv[2];
     }
+    if(strlen(ssid) > 32 ) {
+        return_code = 2;
+        printf("SSID must be <=32 characters long.");
+        goto exit;
+    }
+
     set_wifi_credentials( ssid, pass );
 
     return_code = JOLT_CLI_NON_BLOCKING;

@@ -122,6 +122,9 @@ void app_main() {
     /* Start side-channel mitigation noise */
     jolt_noise_init();
 
+    /* Create Default System Event Loop */
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
     /* Setup and Install I2C Driver */
     {
         if( ESP_OK != i2c_driver_setup() ) {
@@ -203,8 +206,12 @@ void app_main() {
     /* Initialize WiFi */
     /*     todo; double check the quality of RNG sources with wifi off */
     {
-        ESP_ERROR_CHECK(esp_event_loop_init(wifi_event_handler, NULL));
         esp_log_level_set("wifi", ESP_LOG_NONE);
+        ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT,
+                    ESP_EVENT_ANY_ID, &jolt_wifi_event_handler, NULL));
+        ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT,
+                    IP_EVENT_STA_GOT_IP, &jolt_wifi_event_handler, NULL));
+
         ESP_ERROR_CHECK( jolt_network_client_init_from_nvs() );
 
         uint8_t wifi_en;
@@ -274,7 +281,7 @@ void app_main() {
     }
 #endif /* CONFIG_PM_ENABLE */
 
-    ESP_ERR_CHECK( esp_ota_mark_app_valid_cancel_rollback() );
+    ESP_ERROR_CHECK( esp_ota_mark_app_valid_cancel_rollback() );
 }
 
 #endif /* UNIT_TESTING */
