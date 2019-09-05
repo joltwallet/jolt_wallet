@@ -110,8 +110,30 @@ void app_main() {
         }
     }
 
+#if CONFIG_EFUSE_VIRTUAL 
+    ESP_LOGW(TAG, 
+            "********************************************\n"
+            "* WARNING: EMULATING ALL EFUSE ACTIONS.    *\n"
+            "* -- DO NOT EMULATE ON CONSUMER RELEASES --*\n"
+            "********************************************\n"
+            );
+
+#endif
+
+#if CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
+    ESP_LOGW(TAG, 
+            "********************************************\n"
+            "* WARNING: EMULATING EFUSE SECURE VERSION. *\n"
+            "* -- DO NOT EMULATE ON CONSUMER RELEASES --*\n"
+            "********************************************\n"
+            );
+#endif
+
     /* Start side-channel mitigation noise */
     jolt_noise_init();
+
+    /* Create Default System Event Loop */
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     /* Setup and Install I2C Driver */
     {
@@ -194,12 +216,20 @@ void app_main() {
     /* Initialize WiFi */
     /*     todo; double check the quality of RNG sources with wifi off */
     {
-        ESP_ERROR_CHECK(esp_event_loop_init(wifi_event_handler, NULL));
         esp_log_level_set("wifi", ESP_LOG_NONE);
+        ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT,
+                    ESP_EVENT_ANY_ID, &jolt_wifi_event_handler, NULL));
+        ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT,
+                    IP_EVENT_STA_GOT_IP, &jolt_wifi_event_handler, NULL));
+
         ESP_ERROR_CHECK( jolt_network_client_init_from_nvs() );
 
         uint8_t wifi_en;
-        storage_get_u8(&wifi_en, "user", "wifi_en", 1 );
+#if CONFIG_JOLT_WIFI_ENABLE_DEFAULT
+        storage_get_u8(&wifi_en, "user", "wifi_en", 1);
+#else
+        storage_get_u8(&wifi_en, "user", "wifi_en", 0);
+#endif
         if( 1 == wifi_en ) {
             ESP_LOGI(TAG, "Starting WiFi");
             jolt_wifi_start();
@@ -238,7 +268,7 @@ void app_main() {
             jolt_bluetooth_start();
         }
 #if CONFIG_JOLT_BT_DEBUG_ALWAYS_ADV
-        //jolt_bluetooth_adv_all_start();
+        jolt_bluetooth_adv_all_start();
 #endif
     }
 
@@ -265,14 +295,7 @@ void app_main() {
     }
 #endif /* CONFIG_PM_ENABLE */
 
-#if 0
-    /* radio muzzling debugging */
-    vTaskDelay(pdMS_TO_TICKS(10000));
-    JOLT_RADIO_OFF_CTX{
-        vTaskDelay(pdMS_TO_TICKS(700));
-    }
-#endif
-
+    ESP_ERROR_CHECK( esp_ota_mark_app_valid_cancel_rollback() );
 }
 
 #endif /* UNIT_TESTING */

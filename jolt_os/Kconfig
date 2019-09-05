@@ -118,7 +118,7 @@ menu "JoltOS"
 
         config JOLT_HW_MONITOR_UPDATE_PERIOD_MS
             int
-            prompt "Number of milliseconds between hardware measurements like battery voltage, wifi strenght, etc."
+            prompt "Number of milliseconds between hardware measurements like battery voltage, wifi strength, etc."
             default 100
             help
                 help text here.
@@ -370,6 +370,13 @@ menu "JoltOS"
             default "Password"
             help
                 Factory reset WiFi pass
+
+        config JOLT_WIFI_ENABLE_DEFAULT
+            bool
+            prompt "Enable wifi by default?"
+            default n
+            help
+                On first boost, enable/disable wifi.
 
         menu "Jolt Cast"
             config JOLT_CAST_URI

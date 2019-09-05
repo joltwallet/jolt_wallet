@@ -43,7 +43,9 @@ static void disconnect_timer_cb( void *arg ) {
     esp_wifi_connect();
 }
 
-esp_err_t wifi_event_handler(void *ctx, system_event_t *event) {
+void jolt_wifi_event_handler(void* arg, esp_event_base_t event_base,
+        int32_t event_id, void* event_data) {
+
     static esp_timer_handle_t disconnect_timer = NULL;
     uint8_t primary;
     wifi_second_chan_t second;
@@ -60,48 +62,57 @@ esp_err_t wifi_event_handler(void *ctx, system_event_t *event) {
         ESP_ERROR_CHECK( esp_timer_create(&cfg, &disconnect_timer) );
     }
 
-    switch(event->event_id) {
-        case SYSTEM_EVENT_STA_START:
-            ESP_LOGD(TAG, "SYSTEM_EVENT_STA_START");
-            disconnect_ctr = 0;
-            esp_wifi_connect();
-            break;
-        case SYSTEM_EVENT_STA_STOP:
-            /* application event callback generally does not need to do anything */
-            break;
-        case SYSTEM_EVENT_STA_GOT_IP:
-            err = esp_wifi_get_channel(&primary, &second);
-            ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP; channel=%d, err=%d, ip: %s\n",
-                    primary, err, ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
-            break;
-        case SYSTEM_EVENT_STA_CONNECTED:
-            /* Do nothing, generally need to wait for SYSTEM_EVENT_STA_GOT_IP */
-            disconnect_ctr = 0;
-            break;
-        case SYSTEM_EVENT_STA_DISCONNECTED: {
-            /* Gets triggered on disconnect, or when esp_wifi_connect() fails to 
-             * connect */
-            ESP_LOGD(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
-            if( 0 == disconnect_ctr ){
-                /* Try to connect immediately */
+    if( WIFI_EVENT == event_base ) {
+        switch(event_id) {
+            case WIFI_EVENT_STA_START:
+                ESP_LOGD(TAG, "WIFI_EVENT_STA_START");
+                disconnect_ctr = 0;
                 esp_wifi_connect();
-                disconnect_ctr = 1;
+                break;
+            case WIFI_EVENT_STA_STOP:
+                /* application event callback generally does not need to do anything */
+                break;
+            case WIFI_EVENT_STA_CONNECTED:
+                /* Do nothing, generally need to wait for WIFI_EVENT_STA_GOT_IP */
+                disconnect_ctr = 0;
+                break;
+            case WIFI_EVENT_STA_DISCONNECTED: {
+                /* Gets triggered on disconnect, or when esp_wifi_connect() fails to 
+                 * connect */
+                ESP_LOGD(TAG, "WIFI_EVENT_STA_DISCONNECTED");
+                if( 0 == disconnect_ctr ){
+                    /* Try to connect immediately */
+                    esp_wifi_connect();
+                    disconnect_ctr = 1;
+                }
+                else{
+                    /* Scanning period gradually increases every scan up to 20 seconds.
+                     * Idea: Faster, battery hungry scans are more important near the 
+                     * first disconnect, but after a while the device is just sitting
+                     * idle and doesn't require immediate user feedback. */
+                    uint64_t timeout;
+                    timeout = 1000000*disconnect_ctr + 5000000;
+                    esp_timer_start_once(disconnect_timer, timeout);
+                }
+                break;
             }
-            else{
-                /* Scanning period gradually increases every scan up to 20 seconds.
-                 * Idea: Faster, battery hungry scans are more important near the 
-                 * first disconnect, but after a while the device is just sitting
-                 * idle and doesn't require immediate user feedback. */
-                uint64_t timeout;
-                timeout = 1000000*disconnect_ctr + 5000000;
-                esp_timer_start_once(disconnect_timer, timeout);
-            }
-            break;
+            default:
+                break;
         }
-        default:
-            break;
     }
-    return ESP_OK;
+    else if( IP_EVENT == event_base ) {
+        switch(event_id) {
+            case IP_EVENT_STA_GOT_IP:{
+                ip_event_got_ip_t *event = (ip_event_got_ip_t*)event_data;
+                err = esp_wifi_get_channel(&primary, &second);
+                ESP_LOGI(TAG, "WIFI_EVENT_STA_GOT_IP; channel=%d, err=%d, ip: %s\n",
+                        primary, err, ip4addr_ntoa(&event->ip_info.ip));
+                break;
+            }
+            default:
+                break;
+        }
+    }
 }
 
 esp_err_t jolt_wifi_start(){
@@ -205,25 +216,29 @@ esp_err_t jolt_wifi_stop() {
     return err;
 }
 
-void get_ap_info(char * ssid_info, size_t size){
-    
-    tcpip_adapter_ip_info_t ip;
-    memset(&ip, 0, sizeof(tcpip_adapter_ip_info_t));
-    
-    wifi_ap_record_t new_ap_info;
-    esp_wifi_sta_get_ap_info(&new_ap_info);
-    
-    if (tcpip_adapter_get_ip_info(ESP_IF_WIFI_STA, &ip) == 0) {
-        char ip_address[16];
-        snprintf(ip_address, 16, IPSTR, IP2STR(&ip.ip));
-        snprintf(ssid_info, size, "SSID: %s\nRSSI: %d\nIP: %s", new_ap_info.ssid, new_ap_info.rssi, ip_address  );
-    }
-    else{
-        snprintf(ssid_info, 20, "Error Not Connected");
-    }
-    
+char *jolt_wifi_get_ip() {
+    char *ip_str;
+    tcpip_adapter_ip_info_t ip = { 0 };
+
+    if (ESP_OK != tcpip_adapter_get_ip_info(ESP_IF_WIFI_STA, &ip)) return NULL;
+    if(NULL == (ip_str = malloc(IP_MAX_LEN+1))) return NULL;
+    snprintf(ip_str, IP_MAX_LEN+1, IPSTR, IP2STR(&ip.ip));
+    return ip_str;
 }
 
+int8_t jolt_wifi_get_rssi(){
+    wifi_ap_record_t info;
+    if(ESP_OK != esp_wifi_sta_get_ap_info(&info)) return 0;
+    return info.rssi;
+}
+
+char *jolt_wifi_get_ssid(){
+    char *ssid = NULL;
+    wifi_ap_record_t info;
+    if(ESP_OK != esp_wifi_sta_get_ap_info(&info)) return NULL;
+    ssid = strdup((char *)info.ssid);
+    return ssid;
+}
 
 #else
 /* Stubs */
@@ -235,15 +250,22 @@ esp_err_t jolt_wifi_stop() {
     return ESP_OK;
 }
 
-esp_err_t wifi_event_handler(void *ctx, system_event_t *event) {
-    return ESP_OK;
+void jolt_wifi_event_handler(void* arg, esp_event_base_t event_base,
+        int32_t event_id, void* event_data) {
+}
+
+char *jolt_wifi_get_ip() {
+    return NULL;
+}
+
+int8_t jolt_wifi_get_rssi(){
+    return 0;
+}
+
+char *jolt_wifi_get_ssid(){
+    return NULL;
 }
 
 
-void get_ap_info(char * ssid_info, size_t size){
-    if(size > 0){
-        *ssid_info = '\0';
-    }
-}
 
 #endif

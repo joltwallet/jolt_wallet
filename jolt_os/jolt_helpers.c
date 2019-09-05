@@ -63,8 +63,9 @@ void jolt_get_random(uint8_t *buf, uint8_t n_bytes){
 void shuffle_arr(uint8_t *arr, int arr_len) {
     uint8_t tmp;
     for(int i=arr_len-1; i>0; i--) {
-        /* todo: use unified random bytes here */
-        uint32_t idx = randombytes_random() % (i+1);
+        uint32_t idx;
+        jolt_get_random((uint8_t *) &idx, sizeof(idx));
+        idx = idx % (i+1);
         tmp = arr[idx];
         arr[idx] = arr[i];
         arr[i] = tmp;

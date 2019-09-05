@@ -1,5 +1,5 @@
 #include "jolt_lib.h"
-#include "esp_wifi.h"
+#include "hal/radio/wifi.h"
 #include "syscore/filesystem.h"
 
 extern const jolt_version_t JOLT_OS_VERSION;   /**< JoltOS version */
@@ -7,6 +7,7 @@ extern const jolt_version_t JOLT_JELF_VERSION; /**< Used to determine app compat
 extern const jolt_version_t JOLT_HW_VERSION;   /**< To check hardware compatability */
 
 #define PRINT_AND_END(x) if(print_response(x)) return_code = 0; else return_code=1; goto end;
+
 /**
  * @brief Adds a json node with key and semver value
  * @param[in] json parenting json node to add to
@@ -52,39 +53,37 @@ int jolt_cmd_about(int argc, char** argv) {
         goto end;
     }
     else if( 0 == strcmp(argv[1], "wifi") ) {
-        char ssid[32];
         {
+            char ssid[SSID_MAX_LEN+1] = { 0 };
             size_t ssid_len;
             storage_get_str(NULL, &ssid_len, "user", "wifi_ssid",
                     CONFIG_AP_TARGET_SSID);
-            if( ssid_len > 31 ) {
-                goto end;
-            }
+            if( ssid_len > SSID_MAX_LEN ) goto end;
             storage_get_str(ssid, &ssid_len,
                     "user", "wifi_ssid",
                     CONFIG_AP_TARGET_SSID);
+            if( NULL == cJSON_AddStringToObject(json, "ssid", ssid) ) goto end;
         }
-        if( NULL == cJSON_AddStringToObject(json, "ssid", ssid) ) goto end;
 
         /* Get strength */
-#if !CONFIG_NO_BLOBS
         {
-            wifi_mode_t mode;
-            esp_err_t err = esp_wifi_get_mode(&mode);
-            int rssi = 0;
-            if( ESP_OK == err ) {
-                wifi_ap_record_t ap_info;
-                if(esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
-                    rssi = ap_info.rssi;
-                }
-            }
+            int8_t rssi;
+            rssi = jolt_wifi_get_rssi();
             if(NULL == cJSON_AddNumberToObject(json, "rssi", rssi)) goto end;
         }
-#else
+
+        /* Get IP Address */
         {
-            if(NULL == cJSON_AddNumberToObject(json, "rssi", 0)) goto end;
+            char *ip = NULL;
+            ip = jolt_wifi_get_ip();
+            if(NULL == ip){
+                if( NULL == cJSON_AddStringToObject(json, "ip", EMPTY_STR) ) goto end;
+            }
+            else{
+                if( NULL == cJSON_AddStringToObject(json, "ip", ip) ) goto end;
+            }
+            free(ip);
         }
-#endif
     }
     else if( 0 == strcmp(argv[1], "filesystem")) {
         size_t total_bytes = 0, used_bytes = 0;

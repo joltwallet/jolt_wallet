@@ -47,6 +47,7 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     /* WiFi Options */
     "WiFi Enable",
     "WiFi Details",
+    "Not Connected",
 
     /* Storage Options */
     "%dKB Used / %dKB Total",

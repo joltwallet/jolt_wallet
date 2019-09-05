@@ -17,6 +17,10 @@
 
 #include "esp_event.h"
 
+#define SSID_MAX_LEN 32 // Not including NULL terminator
+
+#define IP_MAX_LEN 45 // Not including NULL terminator
+
 /**
  * @brief Start WiFi
  * @return ESP_OK on success; otherwise the error code of whatever component failed.
@@ -32,13 +36,25 @@ esp_err_t jolt_wifi_stop();
 /**
  * @brief WiFi event handler that needs to be registered with the system.
  */
-esp_err_t wifi_event_handler(void *ctx, system_event_t *event);
+void jolt_wifi_event_handler(void* arg, esp_event_base_t event_base,
+        int32_t event_id, void* event_data);
 
 /**
- * @brief Gets SSID, RSSI, and IP address and formats it into a string
- * @param[out] ssid_info Gathered data (NULL-terminated string)
- * @param[in] size size of ssid_info buffer
+ * @brief Get the current IP address.
+ * @return Pointer to allocated string. Must be freed. Returns NULL on error.
  */
-void get_ap_info(char * ssid_info, size_t size);
+char *jolt_wifi_get_ip();
+
+/**
+ * @brief Get RSSI
+ * @return RSSI strength. 0 on error.
+ */
+int8_t jolt_wifi_get_rssi();
+
+/**
+ * @brief Get the currently connected SSID.
+ * @return Pointer to allocated string. Must be freed. Returns NULL on error.
+ */
+char *jolt_wifi_get_ssid();
 
 #endif

@@ -266,7 +266,6 @@ void jolt_gui_first_boot_create() {
 
     generate_mnemonic( param );
 
-    // todo: localization
     lv_obj_t *scr = jolt_gui_scr_text_create( gettext(JOLT_TEXT_FIRST_STARTUP),
             gettext(JOLT_TEXT_WELCOME_DIALOG_0));
     jolt_gui_scr_set_active_param(scr, param);
