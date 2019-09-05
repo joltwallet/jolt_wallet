@@ -39,7 +39,11 @@ static void sw_en_cb(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
 void menu_wifi_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
     if( jolt_gui_event.short_clicked == event ) {
         uint8_t wifi_en;
-        storage_get_u8(&wifi_en, "user", "wifi_en", 0 );
+#if CONFIG_JOLT_WIFI_ENABLE_DEFAULT
+        storage_get_u8(&wifi_en, "user", "wifi_en", 1);
+#else
+        storage_get_u8(&wifi_en, "user", "wifi_en", 0);
+#endif
 
         scr = jolt_gui_scr_menu_create(gettext(JOLT_TEXT_SETTINGS));
         jolt_gui_obj_t *btn_en = jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_WIFI_ENABLE), sw_en_cb);

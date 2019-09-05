@@ -17,6 +17,10 @@
 
 #include "esp_event.h"
 
+#define SSID_MAX_LEN 32 // Not including NULL terminator
+
+#define IP_MAX_LEN 45 // Not including NULL terminator
+
 /**
  * @brief Start WiFi
  * @return ESP_OK on success; otherwise the error code of whatever component failed.

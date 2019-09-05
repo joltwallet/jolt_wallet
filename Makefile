@@ -11,6 +11,6 @@ CFLAGS += \
 		  -DJOLT_OS \
 		  -Werror \
 		  -DJOLT_OS_COMMIT_STR=\"$(GIT_VERSION)\" \
-		  -DJOLT_GUI_TEST_MENU=true
+		  -DJOLT_GUI_TEST_MENU=false
 
 include $(IDF_PATH)/make/project.mk

@@ -221,8 +221,8 @@ char *jolt_wifi_get_ip() {
     tcpip_adapter_ip_info_t ip = { 0 };
 
     if (ESP_OK != tcpip_adapter_get_ip_info(ESP_IF_WIFI_STA, &ip)) return NULL;
-    if(NULL == (ip_str = malloc(17))) return NULL;
-    snprintf(ip_str, 17, IPSTR, IP2STR(&ip.ip));
+    if(NULL == (ip_str = malloc(IP_MAX_LEN+1))) return NULL;
+    snprintf(ip_str, IP_MAX_LEN+1, IPSTR, IP2STR(&ip.ip));
     return ip_str;
 }
 

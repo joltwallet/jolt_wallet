@@ -7,6 +7,7 @@ extern const jolt_version_t JOLT_JELF_VERSION; /**< Used to determine app compat
 extern const jolt_version_t JOLT_HW_VERSION;   /**< To check hardware compatability */
 
 #define PRINT_AND_END(x) if(print_response(x)) return_code = 0; else return_code=1; goto end;
+
 /**
  * @brief Adds a json node with key and semver value
  * @param[in] json parenting json node to add to
@@ -53,11 +54,11 @@ int jolt_cmd_about(int argc, char** argv) {
     }
     else if( 0 == strcmp(argv[1], "wifi") ) {
         {
-            char ssid[32]; // TODO macro
+            char ssid[SSID_MAX_LEN+1] = { 0 };
             size_t ssid_len;
             storage_get_str(NULL, &ssid_len, "user", "wifi_ssid",
                     CONFIG_AP_TARGET_SSID);
-            if( ssid_len > 31 ) goto end; // TODO macro
+            if( ssid_len > SSID_MAX_LEN ) goto end;
             storage_get_str(ssid, &ssid_len,
                     "user", "wifi_ssid",
                     CONFIG_AP_TARGET_SSID);
@@ -74,8 +75,13 @@ int jolt_cmd_about(int argc, char** argv) {
         /* Get IP Address */
         {
             char *ip = NULL;
-            ip = jolt_wifi_get_ip(); // TODO error check
-            if( NULL == cJSON_AddStringToObject(json, "ip", ip) ) goto end;
+            ip = jolt_wifi_get_ip();
+            if(NULL == ip){
+                if( NULL == cJSON_AddStringToObject(json, "ip", EMPTY_STR) ) goto end;
+            }
+            else{
+                if( NULL == cJSON_AddStringToObject(json, "ip", ip) ) goto end;
+            }
             free(ip);
         }
     }

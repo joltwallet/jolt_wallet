@@ -75,6 +75,7 @@ typedef enum jolt_text_id_t {
     /* WiFi Options */
     JOLT_TEXT_WIFI_ENABLE,
     JOLT_TEXT_WIFI_DETAILS,
+    JOLT_TEXT_NOT_CONNECTED,
 
     /* Storage Options */
     JOLT_TEXT_STORAGE_USAGE,

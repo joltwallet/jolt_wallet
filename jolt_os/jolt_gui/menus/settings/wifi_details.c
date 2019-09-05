@@ -16,7 +16,7 @@ void menu_wifi_details_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
         if( NULL == (ip_addr = jolt_wifi_get_ip())
                 || NULL == (ssid = jolt_wifi_get_ssid())
                 || 0 == (rssi = jolt_wifi_get_rssi())) {
-            snprintf(info, sizeof(info), "Error Not Connected"); //TODO localization
+            snprintf(info, sizeof(info), gettext(JOLT_TEXT_NOT_CONNECTED));
         }
         else {
             snprintf(info, sizeof(info), "SSID: %s\nRSSI: %d\nIP: %s",

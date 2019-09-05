@@ -215,7 +215,11 @@ void app_main() {
         ESP_ERROR_CHECK( jolt_network_client_init_from_nvs() );
 
         uint8_t wifi_en;
-        storage_get_u8(&wifi_en, "user", "wifi_en", 1 );
+#if CONFIG_JOLT_WIFI_ENABLE_DEFAULT
+        storage_get_u8(&wifi_en, "user", "wifi_en", 1);
+#else
+        storage_get_u8(&wifi_en, "user", "wifi_en", 0);
+#endif
         if( 1 == wifi_en ) {
             ESP_LOGI(TAG, "Starting WiFi");
             jolt_wifi_start();

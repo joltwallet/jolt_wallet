@@ -76,12 +76,10 @@ void jolt_gui_scr_loadingbar_update(jolt_gui_obj_t *parent,
         if( percentage > 100 ) {
             percentage = 100;
         }
-        // todo: set animation time based on config value
-        //lv_bar_set_value_anim(bar_loading, percentage, CONFIG_JOLT_GUI_LOADINGBAR_ANIM_MS);
         int16_t current_val = lv_bar_get_value(bar_loading);
         if(current_val != percentage && percentage>=0){
             ESP_LOGD(TAG, "(%d) Progress: %d", __LINE__, percentage);
-            lv_bar_set_value(bar_loading, percentage, true);
+            lv_bar_set_value(bar_loading, percentage, LV_ANIM_ON);
             loadingbar_ext_t *ext = lv_obj_get_ext_attr(bar_loading);
             if( ext->autoupdate ) {
                 ext->autoupdate->progress = percentage;
@@ -161,7 +159,8 @@ jolt_gui_obj_t *jolt_gui_scr_loadingbar_create(const char *title) {
         lv_obj_set_size(bar, 
                 CONFIG_JOLT_GUI_LOADINGBAR_W, CONFIG_JOLT_GUI_LOADINGBAR_H);
         lv_obj_align(bar, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -10);
-        lv_bar_set_value(bar, 1, true);
+        lv_bar_set_anim_time(bar, CONFIG_JOLT_GUI_LOADINGBAR_ANIM_MS);
+        lv_bar_set_value(bar, 1, LV_ANIM_ON);
         ESP_LOGD(TAG, "%d: Created loadingbar %p", __LINE__, bar);
 
         /* Create Loading Label */

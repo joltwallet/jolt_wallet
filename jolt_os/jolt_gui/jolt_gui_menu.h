@@ -31,11 +31,11 @@ lv_obj_t *jolt_gui_scr_menu_create(const char *title);
  * @param[in,out] par menu screen 
  * @param[in] img_src icon to display to the left of text; NULL for no image
  * @param[in] txt string to display
- * @param[in] rel_action action to take when this option is clicked on
+ * @param[in] event_cb Callback handler
  * @return the btn object added to the menu
  */
 lv_obj_t *jolt_gui_scr_menu_add(lv_obj_t *par, const void *img_src,
-        const char *txt, lv_event_cb_t rel_action);
+        const char *txt, lv_event_cb_t event_cb);
 
 /**
  * @brief Gets the list object of a menu screen 
