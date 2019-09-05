@@ -291,9 +291,12 @@ bool storage_internal_get_str(char *buf, size_t *required_size,
         const char *namespace, const char *key, const char *default_value) {
     bool res;
     nvs_handle nvs;
-    init_nvs_namespace(&nvs, namespace);
     esp_err_t err;
-    err = nvs_get_str(nvs, key, buf, required_size);
+
+    if( NULL == required_size ) return false;
+
+    init_nvs_namespace(&nvs, namespace);
+    err = nvs_get_str(nvs, key, buf, required_size); // if buf is NULL, required_size will be updated with required_size (including NULL-term).
     nvs_close(nvs);
     if ( ESP_OK==err ) {
         res = true;
@@ -309,7 +312,7 @@ bool storage_internal_get_str(char *buf, size_t *required_size,
         }
         else {
             if( NULL != default_value ) {
-                strcpy(buf, default_value);
+                strncpy(buf, default_value, *required_size);
             }
             else {
                 *buf = '\0';

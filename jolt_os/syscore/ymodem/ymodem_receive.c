@@ -273,7 +273,7 @@ int IRAM_ATTR ymodem_receive_write (void *ffd, unsigned int maxsize, char* getna
                                             if(NULL != getname) {
                                                 if( '\0' == getname[0] ) {
                                                     /* Copy over string */
-                                                    strcpy(getname, name);
+                                                    strlcpy(getname, name, JOLT_FS_MAX_FILENAME_BUF_LEN);
                                                 }
                                                 /* Compare string */
                                                 else if( 0 != strcmp(name, getname) ){

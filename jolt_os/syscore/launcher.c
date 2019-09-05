@@ -167,7 +167,7 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
     jolt_gui_scr_del(preloading_scr);
     preloading_scr = NULL;
 
-    strcpy(app_cache.name, fn_basename);
+    strlcpy(app_cache.name, fn_basename, sizeof(app_cache.name));
 
 exec:
     /* Verify Signature */

@@ -1051,7 +1051,8 @@ jelfLoaderStatus_t jelfLoaderInit(jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd,
         response = JELF_LOADER_MALFORMED;
         goto err;
     }
-    strcpy(ctx->bip32_key, header.e_bip32key);
+    strncpy(ctx->bip32_key, header.e_bip32key, JELF_BIP32KEY_LEN);
+    ctx->bip32_key[JELF_BIP32KEY_LEN] = '\0'; // Just in case
 
     ctx->state = JELF_CTX_INITIALIZED;
 

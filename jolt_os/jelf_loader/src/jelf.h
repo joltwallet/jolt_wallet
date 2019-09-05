@@ -20,14 +20,17 @@ typedef size_t Jelf_Addr;
  * @brief Magic Header length
  */
 #define JELF_EI_NIDENT 6
+
 /**
  * @brief Public Key Length
  */
 #define JELF_PUBLIC_KEY_LEN 32
+
 /**
- * @brief BIP32 Seed phrase length
+ * @brief BIP32 Seed phrase length.
  */
 #define JELF_BIP32KEY_LEN 32
+
 /**
  * @brief Signature length that is paired with the provided public key
  */

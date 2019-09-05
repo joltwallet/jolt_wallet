@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include "jolttypes.h"
 #include "sodium.h"
+#include "../src/jelf.h"
 
 #if ESP_PLATFORM
 #include "esp32/rom/miniz.h"
@@ -116,7 +117,7 @@ typedef struct jelfLoaderContext_t {
     /* Coin Derivation Data */
     uint32_t coin_purpose;        /**< BIP32 Purpose; typically 44' */ 
     uint32_t coin_path;           /**< BIP32 Coin Type */
-    char bip32_key[33];           /**< BIP32 Seed String; e.g. "bitcoin_seed" */
+    char bip32_key[JELF_BIP32KEY_LEN+1];           /**< BIP32 Seed String; e.g. "bitcoin_seed" */
     jelfLoaderContext_state_t state;                /**< Current State of the launching procedure */
 
     /* Inflator */

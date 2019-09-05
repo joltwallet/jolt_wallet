@@ -179,19 +179,20 @@ esp_err_t jolt_network_client_init_from_nvs() {
 
     /* Sets Jolt Cast Server Params from NVS*/
     storage_get_str(NULL, &required_size, "user", "jc_uri", CONFIG_JOLT_CAST_URI);
-    uri = malloc(required_size);
-    if( NULL == uri ) {
+    if( NULL == (uri = malloc(required_size)) ) {
         err = jolt_network_client_init( CONFIG_JOLT_CAST_URI );
+        goto exit;
     }
-    else {
-        storage_get_str(uri, &required_size, "user", "jc_uri", CONFIG_JOLT_CAST_URI);
-        err = jolt_network_client_init( uri );
-        if( err != ESP_OK ){
-            ESP_LOGE(TAG, "Failed using JoltCast URI from NVS:\n%s\nUsing default URI.", uri);
-            err = jolt_network_client_init( CONFIG_JOLT_CAST_URI );
-        }
-        free(uri);
+    storage_get_str(uri, &required_size, "user", "jc_uri", CONFIG_JOLT_CAST_URI);
+    err = jolt_network_client_init( uri );
+    if( ESP_OK != err ){
+        ESP_LOGE(TAG, "Failed using JoltCast URI from NVS:\n%s\nUsing default URI.", uri);
+        err = jolt_network_client_init( CONFIG_JOLT_CAST_URI );
+        goto exit;
     }
+
+exit:
+    SAFE_FREE(uri);
     return err;
 }
 
@@ -215,12 +216,13 @@ esp_err_t jolt_network_client_init( char *uri ) {
     /* Allocate a static copy of the uri */
     {
         char *tmp = NULL;
-        tmp = malloc( strlen(uri) + 1 );
+        size_t uri_buf_len = strlen(uri) + 1; 
+        tmp = malloc( uri_buf_len );
         if( NULL == tmp ){
             ESP_LOGE(TAG, "Failed to allocate space for URI");
             return ESP_FAIL;
         }
-        strcpy(tmp, uri);
+        strlcpy(tmp, uri, uri_buf_len);
         if( NULL != local_uri ) {
             free(local_uri);
         }
@@ -270,12 +272,11 @@ esp_err_t jolt_network_post( const char *post_data, jolt_network_client_cb_t cb,
     }
 
     /* Allocate memory for the POST command */
-    cmd = malloc(strlen(post_data) + 1);
+    cmd = strdup(post_data);
     if( NULL == cmd ) {
         ESP_LOGE(TAG, "Failed to allocate memory for post_data cmd.");
         goto exit;
     }
-    strcpy(cmd, post_data);
 
     /* Allocate memory for the https job */
     job = malloc( sizeof(https_job_t) );

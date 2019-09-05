@@ -92,23 +92,12 @@ void set_wifi_credentials(const char *ssid, const char *pass) {
     }
 
     /* allocate and copy the user's SSID */
-    target_ssid = malloc(JOLT_WIFI_SSID_LEN_MAX+1);
-    if( NULL == target_ssid ) {
-        goto exit_error;
-    }
-    strcpy(target_ssid, ssid);
+    target_ssid = strdup(ssid);
+    if( NULL == target_ssid ) goto exit_error;
 
     /* allocate and copy the user's password */
-    target_pass = malloc(JOLT_WIFI_PASS_LEN_MAX+1);
-    if( NULL == target_pass ) {
-        goto exit_error;
-    }
-    if( NULL == pass ){
-        *target_pass = '\0';
-    }
-    else{
-        strcpy(target_pass, pass);
-    }
+    if( (NULL == pass) && (NULL == (target_pass = calloc(1,1)))) goto exit_error;
+    else if(NULL == (target_pass = strdup(pass))) goto exit_error;
 
     /* Create prompt screen */
     snprintf(buf, sizeof(buf), gettext(JOLT_TEXT_WIFI_UPDATE),

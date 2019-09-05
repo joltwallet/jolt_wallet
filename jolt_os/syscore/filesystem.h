@@ -66,7 +66,7 @@
 /**
  * @brief buffer length to hold the longest null-terminated full path.
  */
-#define JOLT_FS_MAX_ABS_PATH_BUF_LEN sizeof(JOLT_FS_MOUNTPT) + 1 + JOLT_FS_MAX_FILENAME_LEN
+#define JOLT_FS_MAX_ABS_PATH_BUF_LEN sizeof(JOLT_FS_MOUNTPT) + JOLT_FS_MAX_FILENAME_BUF_LEN
 
 #define JOLT_FS_TMP_FN (JOLT_FS_MOUNTPT "/tmp")
 
