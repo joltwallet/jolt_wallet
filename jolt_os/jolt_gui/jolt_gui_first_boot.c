@@ -49,7 +49,7 @@ static jolt_err_t get_nth_word(char buf[], size_t buf_len,
         return E_SUCCESS;
     }
     // Copy over number prefix
-    sprintf(buf, "%d. ", n+1); // 1-indexing
+    snprintf(buf, buf_len, "%d. ", n+1); // 1-indexing
     buf_len -= 3;
     buf += 3;
     if( (n+1)>9 ){

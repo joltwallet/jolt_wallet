@@ -22,7 +22,7 @@ jolt_gui_obj_t *jolt_gui_scr_bignum_create(const char *title, const char *subtit
         /* Create text for big number */
         char number_str[BUF_LEN] = { 0 };
         if( n_digits > 0 ) {
-            sprintf(number_str, "%0*d", n_digits, n);
+            snprintf(number_str, BUF_LEN, "%0*d", n_digits, n);
         }
         else{
             itoa( n, number_str, 10 );

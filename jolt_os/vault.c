@@ -24,6 +24,7 @@
 #include "hal/storage/storage.h"
 #include "jolt_gui/jolt_gui.h"
 #include "syscore/bg.h"
+#include "syscore/filesystem.h"
 
 
 /* Overall vault steps 
@@ -111,7 +112,7 @@ static int ps_state_exec_task( jolt_bg_job_t *job ) {
     switch( ps.state ){
         case PIN_STATE_CREATE: {
             /* Create the PIN Screen */ 
-            char title[70];
+            char title[JOLT_FS_MAX_FILENAME_BUF_LEN + 10 + 10 + 5];
 
             /* Check PIN Attempts */
             uint32_t pin_attempts = 
@@ -124,32 +125,25 @@ static int ps_state_exec_task( jolt_bg_job_t *job ) {
             /* Assemble Title */
             #if CONFIG_JOLT_PIN_TITLE_PIN
             {
-                sprintf(title, "PIN (%d/%d)", pin_attempts+1,
+                snprintf(title, sizeof(title), "PIN (%d/%d)", pin_attempts+1,
                         CONFIG_JOLT_PIN_DEFAULT_MAX_ATTEMPT);
             }
             #elif CONFIG_JOLT_PIN_TITLE_NAME
             {
                 char *app_name = launch_get_name();
-                sprintf(title, "%s (%d/%d)", app_name,
+                snprintf(title, sizeof(title), "%s (%d/%d)", app_name,
                         pin_attempts+1, CONFIG_JOLT_PIN_DEFAULT_MAX_ATTEMPT);
             }
             #elif CONFIG_JOLT_PIN_TITLE_PATH
             {
                 uint32_t purpose = vault_get_purpose();
                 uint32_t type = vault_get_coin_type();
-                char *c = title;
-                c += sprintf(c, "%d", purpose & ~BM_HARDENED);
-                if(purpose & BM_HARDENED ){
-                    *c = '\'';
-                    c++;
-                }
-                c += sprintf(c, "/%d", type & ~BM_HARDENED);
-                if(type & BM_HARDENED ){
-                    *c = '\'';
-                    c++;
-                }
-                sprintf(c, " (%d/%d)", pin_attempts+1,
-                        CONFIG_JOLT_PIN_DEFAULT_MAX_ATTEMPT);
+                snprintf(title, sizeof(title), "%d\'%d (%d/%d)",
+                        purpose & ~BM_HARDENED,
+                        type & ~BM_HARDENED,
+                        pin_attempts+1,
+                        CONFIG_JOLT_PIN_DEFAULT_MAX_ATTEMPT
+                        );
             }
             #endif
 
