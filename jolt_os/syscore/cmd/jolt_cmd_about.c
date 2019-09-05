@@ -1,6 +1,8 @@
 #include "jolt_lib.h"
 #include "hal/radio/wifi.h"
 #include "syscore/filesystem.h"
+#include "esp_system.h"
+#include "esp_spi_flash.h"
 
 extern const jolt_version_t JOLT_OS_VERSION;   /**< JoltOS version */
 extern const jolt_version_t JOLT_JELF_VERSION; /**< Used to determine app compatibility */
@@ -44,6 +46,20 @@ int jolt_cmd_about(int argc, char** argv) {
 
     if( 1 == argc ) {
         /* General "about" information */
+        {
+            /* Chip Info */
+            cJSON *chip_json = NULL;
+            esp_chip_info_t chip_info;
+            uint16_t flash_size_mb =  spi_flash_get_chip_size() / (1024 * 1024); 
+            esp_chip_info(&chip_info);
+            if( NULL == (chip_json = cJSON_AddObjectToObject(json, "chip"))) goto end;
+            if( NULL == cJSON_AddNumberToObject(chip_json, "revision", chip_info.revision) ) goto end;
+            if( NULL == cJSON_AddNumberToObject(chip_json, "cores", chip_info.cores) ) goto end;
+            if( NULL == cJSON_AddNumberToObject(chip_json, "flash_size_mb", flash_size_mb) ) goto end;
+            if( NULL == cJSON_AddBoolToObject(chip_json, "wifi_bgn", chip_info.features & CHIP_FEATURE_WIFI_BGN) ) goto end;
+            if( NULL == cJSON_AddBoolToObject(chip_json, "ble", chip_info.features & CHIP_FEATURE_BLE) ) goto end;
+        }
+
         if( !add_semver_to_object(json, "hardware", JOLT_HW_VERSION.major, JOLT_HW_VERSION.minor, JOLT_HW_VERSION.patch)) goto end;
         if( !add_semver_to_object(json, "jolt_os", JOLT_OS_VERSION.major, JOLT_OS_VERSION.minor, JOLT_OS_VERSION.patch)) goto end;
         if( NULL == cJSON_AddStringToObject(json, "jolt_os_commit", JOLT_OS_COMMIT)) goto end; 
