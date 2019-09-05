@@ -112,10 +112,10 @@ void app_main() {
 
 #if CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
     ESP_LOGW(TAG, 
-            "********************************************"
-            "* WARNING: EMULATING EFUSE SECURE VERSION. *"
-            "* -- DO NOT EMULATE ON CONSUMER RELEASES --*"
-            "*******************************************"
+            "********************************************\n"
+            "* WARNING: EMULATING EFUSE SECURE VERSION. *\n"
+            "* -- DO NOT EMULATE ON CONSUMER RELEASES --*\n"
+            "********************************************\n"
             );
 #endif
 
