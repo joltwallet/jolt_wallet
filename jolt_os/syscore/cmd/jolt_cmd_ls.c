@@ -35,8 +35,8 @@ int jolt_cmd_ls(int argc, char** argv) {
         if( NULL == cJSON_AddStringToObject(entry, "name", ent->d_name)) EXIT(-2);
 
         /* Parse full filepath */
-        if (tpath[strlen(tpath)-1] != '/') strcat(tpath,"/");
-        strcat(tpath, ent->d_name);
+        if (tpath[strlen(tpath)-1] != '/') strlcat(tpath, "/", sizeof(tpath));
+        strlcat(tpath, ent->d_name, sizeof(tpath));
         ESP_LOGD(TAG, "stat path \"%s\"", tpath);
 
         if (stat(tpath, &sb)){

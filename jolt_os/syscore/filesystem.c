@@ -208,10 +208,10 @@ char * jolt_fs_parse(const char *fn, const char *ext) {
         ESP_LOGE(TAG, "Error allocating memory for path.");
         return NULL;
     }
-    if(add_mt) strcat(path, JOLT_FS_MOUNTPT "/");
-    strcat(path, fn);
-    if( add_dot ) strcat(path, ".");
-    strcat(path, ext);
+    if(add_mt) strlcat(path, JOLT_FS_MOUNTPT "/", total_len);
+    strlcat(path, fn, total_len);
+    if( add_dot ) strlcat(path, ".", total_len);
+    strlcat(path, ext, total_len);
 
     return path;
 }
@@ -222,8 +222,8 @@ void jolt_fs_parse_buf(char **fullpath, char **fn){
     path = *fullpath;
     if(NULL == path) return;
 
-    strcat(path, JOLT_FS_MOUNTPT);
-    strcat(path, "/");
+    strlcat(path, JOLT_FS_MOUNTPT, JOLT_FS_MAX_ABS_PATH_BUF_LEN);
+    strlcat(path, "/", JOLT_FS_MAX_ABS_PATH_BUF_LEN);
 
     if( NULL == fn ) return;
 
