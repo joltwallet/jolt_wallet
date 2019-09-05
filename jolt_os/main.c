@@ -129,12 +129,6 @@ void app_main() {
             );
 #endif
 
-    /* Start side-channel mitigation noise */
-    jolt_noise_init();
-
-    /* Create Default System Event Loop */
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-
     /* Setup and Install I2C Driver */
     {
         if( ESP_OK != i2c_driver_setup() ) {
@@ -142,6 +136,52 @@ void app_main() {
             abort();
         }
     }
+
+    /* Run Key/Value Storage Initialization */
+    {
+        ESP_LOGI(TAG, "Initializing Storage");
+        storage_startup();
+    }
+
+    /* Create Default System Event Loop */
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    /* Initialize WiFi */
+    {
+        esp_log_level_set("wifi", ESP_LOG_NONE);
+        ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT,
+                    ESP_EVENT_ANY_ID, &jolt_wifi_event_handler, NULL));
+        ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT,
+                    IP_EVENT_STA_GOT_IP, &jolt_wifi_event_handler, NULL));
+
+        ESP_ERROR_CHECK( jolt_network_client_init_from_nvs() );
+
+        if( jolt_wifi_get_en() ) {
+            ESP_LOGI(TAG, "Starting WiFi");
+            jolt_wifi_start();
+        }
+    }
+
+    /* Initialize Bluetooth */
+    {
+        esp_vfs_dev_ble_spp_register();
+        uint8_t bluetooth_en;
+#if CONFIG_JOLT_BT_ENABLE_DEFAULT
+        storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 1);
+#else
+        storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 0);
+#endif
+        if( 1 == bluetooth_en ) {
+            ESP_LOGI(TAG, "Starting Bluetooth");
+            jolt_bluetooth_start();
+        }
+#if CONFIG_JOLT_BT_DEBUG_ALWAYS_ADV
+        jolt_bluetooth_adv_all_start();
+#endif
+    }
+
+    /* Start side-channel mitigation noise */
+    jolt_noise_init();
 
     /* Initialize LVGL graphics system */
     {
@@ -166,12 +206,6 @@ void app_main() {
     {
         adc1_config_width( ADC_WIDTH_BIT_12 );
         adc1_config_channel_atten( JOLT_ADC1_VBATT, ADC_ATTEN_DB_11 );
-    }
-
-    /* Run Key/Value Storage Initialization */
-    {
-        ESP_LOGI(TAG, "Initializing Storage");
-        storage_startup();
     }
 
     /* Initialize the file system */
@@ -213,29 +247,6 @@ void app_main() {
         statusbar_create();
     }
 
-    /* Initialize WiFi */
-    /*     todo; double check the quality of RNG sources with wifi off */
-    {
-        esp_log_level_set("wifi", ESP_LOG_NONE);
-        ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT,
-                    ESP_EVENT_ANY_ID, &jolt_wifi_event_handler, NULL));
-        ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT,
-                    IP_EVENT_STA_GOT_IP, &jolt_wifi_event_handler, NULL));
-
-        ESP_ERROR_CHECK( jolt_network_client_init_from_nvs() );
-
-        uint8_t wifi_en;
-#if CONFIG_JOLT_WIFI_ENABLE_DEFAULT
-        storage_get_u8(&wifi_en, "user", "wifi_en", 1);
-#else
-        storage_get_u8(&wifi_en, "user", "wifi_en", 0);
-#endif
-        if( 1 == wifi_en ) {
-            ESP_LOGI(TAG, "Starting WiFi");
-            jolt_wifi_start();
-        }
-    }
-
     /* Check and run first-boot routine if necessary */
     {
         ESP_LOGI(TAG, "Setting up Vault");
@@ -252,24 +263,6 @@ void app_main() {
     /* Capacitive Touch LED Setup */
     {
         jolt_led_setup();
-    }
-
-    /* Initialize Bluetooth */
-    {
-        esp_vfs_dev_ble_spp_register();
-        uint8_t bluetooth_en;
-#if CONFIG_JOLT_BT_ENABLE_DEFAULT
-        storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 1);
-#else
-        storage_get_u8(&bluetooth_en, "user", "bluetooth_en", 0);
-#endif
-        if( 1 == bluetooth_en ) {
-            ESP_LOGI(TAG, "Starting Bluetooth");
-            jolt_bluetooth_start();
-        }
-#if CONFIG_JOLT_BT_DEBUG_ALWAYS_ADV
-        jolt_bluetooth_adv_all_start();
-#endif
     }
 
     /* Initialize Console */

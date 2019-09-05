@@ -8,3 +8,4 @@ jolt_os/jolt_commit.c
 docs/html/
 docs/latex/
 *.sh
+Makefile # Dont commit changes by default

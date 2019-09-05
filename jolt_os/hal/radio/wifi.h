@@ -17,9 +17,10 @@
 
 #include "esp_event.h"
 
-#define SSID_MAX_LEN 32 // Not including NULL terminator
+#define JOLT_WIFI_SSID_MAX_LEN 31 // Not including NULL terminator
+#define JOLT_WIFI_PASS_MAX_LEN 63 // Not including NULL terminator
 
-#define IP_MAX_LEN 45 // Not including NULL terminator
+#define JOLT_WIFI_IP_MAX_LEN 45 // Not including NULL terminator
 
 /**
  * @brief Start WiFi
@@ -56,5 +57,11 @@ int8_t jolt_wifi_get_rssi();
  * @return Pointer to allocated string. Must be freed. Returns NULL on error.
  */
 char *jolt_wifi_get_ssid();
+
+/**
+ * @brief Return whether or not WiFi is currently enabled.
+ * @return `true` if wifi is enabled; `false` otherwise.
+ */
+bool jolt_wifi_get_en();
 
 #endif

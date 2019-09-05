@@ -48,6 +48,7 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "WiFi Enable",
     "WiFi Details",
     "Not Connected",
+    "Update WiFi to:\nSSID: %s\nPassword: %s",
 
     /* Storage Options */
     "%dKB Used / %dKB Total",

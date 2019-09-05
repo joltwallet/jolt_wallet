@@ -34,6 +34,7 @@ const char *EMPTY_STR = "";
 
 void jolt_get_random(uint8_t *buf, uint8_t n_bytes){
 
+    // TODO: restart if unable to verify the quality of RNG sources.
 #if CONFIG_JOLT_STORE_ATAES132A
     {
         ESP_LOGD(TAG, "Getting %d bytes from ATAES132A RNG Source", n_bytes);

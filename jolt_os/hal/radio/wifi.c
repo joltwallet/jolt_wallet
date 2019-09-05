@@ -3,6 +3,8 @@
  https://www.joltwallet.com/
  */
 
+//#define LOG_LOCAL_LEVEL 4
+
 #include <lwip/sockets.h>
 #include <string.h>
 #include "freertos/event_groups.h"
@@ -138,7 +140,10 @@ esp_err_t jolt_wifi_start(){
         /* Stop Wifi if running so config may be updated */
         wifi_mode_t mode;
         if( ESP_OK == esp_wifi_get_mode(&mode) ) {
-            esp_wifi_stop();
+            ESP_LOGD(TAG, "Stopping WiFi");
+            if( ESP_OK != esp_wifi_stop() ) {
+                ESP_LOGD(TAG, "Couldn't stop WiFi, was not init'd");
+            }
         }
     }
     
@@ -158,7 +163,7 @@ esp_err_t jolt_wifi_start(){
         size_t pass_len;
         storage_get_str(NULL, &pass_len, "user", "wifi_pass",
                 CONFIG_AP_TARGET_PASSWORD);
-        if( pass_len > 63 ) {
+        if( pass_len > JOLT_WIFI_PASS_MAX_LEN ) {
             goto err;
         }
         storage_get_str((char *)sta_config.sta.password, &pass_len,
@@ -176,15 +181,16 @@ esp_err_t jolt_wifi_start(){
             ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
             ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
             ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
-            ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
         }
     }
+    ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &sta_config) );
 
-    esp_wifi_start();
+    ESP_ERROR_CHECK( esp_wifi_start() );
     ESP_ERROR_CHECK( esp_wifi_set_ps(WIFI_PS_MAX_MODEM) );
 
     return ESP_OK;
 err:
+    ESP_LOGE(TAG, "%s failed.", __func__);
     return ESP_FAIL;
 }
 
@@ -221,8 +227,8 @@ char *jolt_wifi_get_ip() {
     tcpip_adapter_ip_info_t ip = { 0 };
 
     if (ESP_OK != tcpip_adapter_get_ip_info(ESP_IF_WIFI_STA, &ip)) return NULL;
-    if(NULL == (ip_str = malloc(IP_MAX_LEN+1))) return NULL;
-    snprintf(ip_str, IP_MAX_LEN+1, IPSTR, IP2STR(&ip.ip));
+    if(NULL == (ip_str = malloc(JOLT_WIFI_IP_MAX_LEN+1))) return NULL;
+    snprintf(ip_str, JOLT_WIFI_IP_MAX_LEN+1, IPSTR, IP2STR(&ip.ip));
     return ip_str;
 }
 
@@ -238,6 +244,16 @@ char *jolt_wifi_get_ssid(){
     if(ESP_OK != esp_wifi_sta_get_ap_info(&info)) return NULL;
     ssid = strdup((char *)info.ssid);
     return ssid;
+}
+
+bool jolt_wifi_get_en(){
+    uint8_t wifi_en;
+#if CONFIG_JOLT_WIFI_ENABLE_DEFAULT
+    storage_get_u8(&wifi_en, "user", "wifi_en", 1);
+#else
+    storage_get_u8(&wifi_en, "user", "wifi_en", 0);
+#endif
+    return (bool) wifi_en;
 }
 
 #else
@@ -266,6 +282,9 @@ char *jolt_wifi_get_ssid(){
     return NULL;
 }
 
+bool jolt_wifi_get_en(){
+    return false;
+}
 
 
 #endif

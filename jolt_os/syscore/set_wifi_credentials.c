@@ -1,3 +1,6 @@
+
+#define LOG_LOCAL_LEVEL 4
+
 #include "sodium.h"
 #include "esp_log.h"
 #include "esp_system.h"
@@ -11,8 +14,6 @@
 
 #define JOLT_WIFI_SSID_LEN_MAX 32
 #define JOLT_WIFI_PASS_LEN_MAX 64
-#define JOLT_TEXT_WIFI_CRED_UPDATE_PROMPT_1 \
-    "Update WiFi to:\nSSID: %s\nPassword: %s"
 
 static const char TAG[] = "set_wifi_cred";
 static const char title[] = "WiFi Update";
@@ -42,17 +43,19 @@ static void vault_fail_cb(void *dummy) {
 }
 
 static void vault_success_cb(void *dummy) {
+    esp_err_t err = ESP_OK;
     ESP_LOGI(TAG, "vault_success_cb");
     storage_set_str(target_ssid, "user", "wifi_ssid");
     storage_set_str(target_pass, "user", "wifi_pass");
     clear_vars();
-    // restart wifi
-    uint8_t wifi_en;
-    storage_get_u8(&wifi_en, "user", "wifi_en", 0 );
-    if( wifi_en ) {
-        jolt_wifi_start();
+    if( jolt_wifi_get_en() ) {
+        ESP_LOGD(TAG, "WiFi restart");
+        err = jolt_wifi_start();
     }
-    jolt_cli_return(0);
+    else {
+        ESP_LOGD(TAG, "WiFi not enabled");
+    }
+    jolt_cli_return(err);
 }
 
 static void prompt_1_cb(lv_obj_t *btn, lv_event_t event){
@@ -69,7 +72,7 @@ static void prompt_1_cb(lv_obj_t *btn, lv_event_t event){
 
 /* Non-blocking */
 void set_wifi_credentials(const char *ssid, const char *pass) {
-    char buf[strlen(JOLT_TEXT_WIFI_CRED_UPDATE_PROMPT_1) + JOLT_WIFI_SSID_LEN_MAX + JOLT_WIFI_PASS_LEN_MAX + 1];
+    char buf[100 +  JOLT_WIFI_SSID_LEN_MAX + JOLT_WIFI_PASS_LEN_MAX + 1] = { 0 };
 
     if( in_progress ) {
         printf("Wifi credential update already in progress.\n");
@@ -108,7 +111,7 @@ void set_wifi_credentials(const char *ssid, const char *pass) {
     }
 
     /* Create prompt screen */
-    snprintf(buf, sizeof(buf), JOLT_TEXT_WIFI_CRED_UPDATE_PROMPT_1,
+    snprintf(buf, sizeof(buf), gettext(JOLT_TEXT_WIFI_UPDATE),
             target_ssid, target_pass);
     lv_obj_t *scr = jolt_gui_scr_text_create( title, buf );
     jolt_gui_scr_set_event_cb( scr, prompt_1_cb );
@@ -118,5 +121,4 @@ void set_wifi_credentials(const char *ssid, const char *pass) {
 exit_error:
     clear_vars();
 }
-
 

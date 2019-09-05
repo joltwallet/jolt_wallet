@@ -14,6 +14,8 @@
  *
  * Must be called from CLI.
  *
+ * Is non-blocking.
+ *
  * @param[in] ssid NULL-terminated network SSID to save
  * @param[in] pass NULL-terminated network password
  */

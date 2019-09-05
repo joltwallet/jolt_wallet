@@ -245,13 +245,6 @@ menu "JoltOS"
                 help text here
     endmenu
 
-    config JOLT_DEFAULT_BOOT_SPLASH_ENABLE
-        bool
-        prompt "Enable boot splash screen"
-        default y
-        help
-            Not yet reimplemented
-
     menu "Task Stack Size"
         config JOLT_TASK_STACK_SIZE_LVGL
             int
@@ -374,7 +367,7 @@ menu "JoltOS"
         config JOLT_WIFI_ENABLE_DEFAULT
             bool
             prompt "Enable wifi by default?"
-            default n
+            default y
             help
                 On first boost, enable/disable wifi.
 
@@ -392,7 +385,7 @@ menu "JoltOS"
         config JOLT_BT_ENABLE_DEFAULT
             bool
             prompt "Enable bluetooth by default?"
-            default n
+            default y
             help
                 On first boost, enable/disable bluetooth.
 

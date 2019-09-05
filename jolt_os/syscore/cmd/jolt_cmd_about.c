@@ -54,11 +54,11 @@ int jolt_cmd_about(int argc, char** argv) {
     }
     else if( 0 == strcmp(argv[1], "wifi") ) {
         {
-            char ssid[SSID_MAX_LEN+1] = { 0 };
+            char ssid[JOLT_WIFI_SSID_MAX_LEN+1] = { 0 };
             size_t ssid_len;
             storage_get_str(NULL, &ssid_len, "user", "wifi_ssid",
                     CONFIG_AP_TARGET_SSID);
-            if( ssid_len > SSID_MAX_LEN ) goto end;
+            if( ssid_len > JOLT_WIFI_SSID_MAX_LEN ) goto end;
             storage_get_str(ssid, &ssid_len,
                     "user", "wifi_ssid",
                     CONFIG_AP_TARGET_SSID);
