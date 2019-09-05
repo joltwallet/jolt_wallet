@@ -110,6 +110,16 @@ void app_main() {
         }
     }
 
+#if CONFIG_EFUSE_VIRTUAL 
+    ESP_LOGW(TAG, 
+            "********************************************\n"
+            "* WARNING: EMULATING ALL EFUSE ACTIONS.    *\n"
+            "* -- DO NOT EMULATE ON CONSUMER RELEASES --*\n"
+            "********************************************\n"
+            );
+
+#endif
+
 #if CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
     ESP_LOGW(TAG, 
             "********************************************\n"
