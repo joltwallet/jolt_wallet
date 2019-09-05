@@ -312,7 +312,7 @@ bool storage_internal_get_str(char *buf, size_t *required_size,
         }
         else {
             if( NULL != default_value ) {
-                strncpy(buf, default_value, *required_size);
+                strlcpy(buf, default_value, *required_size);
             }
             else {
                 *buf = '\0';
