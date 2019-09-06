@@ -29,7 +29,7 @@ static const char TAG[] = "first_boot";
 /********************
  * Static Functions *
  ********************/
-static void generate_mnemonic();
+static void generate_mnemonic(mnemonic_setup_t *param);
 static void mismatch_cb(lv_obj_t *btn, lv_event_t event);
 static void screen_finish_create(lv_obj_t *verify_scr, lv_event_t event);
 static void screen_pin_verify_create(lv_obj_t *digit_entry, lv_event_t event);
@@ -81,6 +81,7 @@ static jolt_err_t get_nth_word(char buf[], size_t buf_len,
  * used for display/backup purposes only.*/
 static void generate_mnemonic( mnemonic_setup_t *param ) {
     jolt_get_random(param->mnemonic_bin, MNEMONIC_STRENGTH / 8);
+    storage_stretch_init();
     bm_bin_to_mnemonic(param->mnemonic, sizeof(param->mnemonic),
             param->mnemonic_bin, MNEMONIC_STRENGTH);
     ESP_LOGI(TAG, "mnemonic %s", param->mnemonic);

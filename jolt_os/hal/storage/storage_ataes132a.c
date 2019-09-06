@@ -16,6 +16,7 @@
 #include "jolttypes.h"
 #include "storage.h"
 #include "storage_internal.h"
+#include "storage_ataes132a.h"
 #include "aes132_comm_marshaling.h"
 #include "aes132_jolt.h"
 #include "aes132_cmd.h"
@@ -37,13 +38,30 @@ bool storage_ataes132a_startup() {
 }
 
 bool storage_ataes132a_exists_mnemonic() {
-    /* Returens true if mnemonic exists, false otherwise */
+    /* Returns true if mnemonic exists, false otherwise */
     bool res;
     res = storage_internal_exists_mnemonic();
     return res;
 }
 
-static void xor256(uint8_t *out, uint8_t *x, uint8_t *y) {
+void storage_ataes132a_stretch_init() {
+    if( 0 != aes132_create_stretch_key() ) esp_restart();
+}
+
+void storage_ataes132a_stretch( uint256_t hash, int8_t *progress) {
+    // TODO
+}
+
+/**
+ * @brief XOR 2 256-bit arrays.
+ *
+ * Output may be an input.
+ *
+ * @param[out] out xor of `x` and `y`
+ * @param[in] x
+ * @param[in] y
+ */
+static void xor256(uint8_t *out, const uint8_t *x, const uint8_t *y) {
     for(uint8_t i=0; i < 32; i ++) {
         out[i] = x[i] ^ y[i];
     }
@@ -64,7 +82,7 @@ static void rand256(uint8_t *buf) {
     sodium_memzero(aes132_entropy, sizeof(aes132_entropy));
 }
 
-void storage_ataes132a_set_mnemonic(uint256_t bin, uint256_t pin_hash) {
+void storage_ataes132a_set_mnemonic(const uint256_t bin, const uint256_t pin_hash) {
     /* Inputs: Mnemonic the user backed up, stretched pin_hash coming directly
      * from secure input.
      *
@@ -117,7 +135,7 @@ void storage_ataes132a_set_mnemonic(uint256_t bin, uint256_t pin_hash) {
     sodium_memzero(child_key, sizeof(child_key));
 }
 
-bool storage_ataes132a_get_mnemonic(uint256_t mnemonic, uint256_t pin_hash) {
+bool storage_ataes132a_get_mnemonic(uint256_t mnemonic, const uint256_t pin_hash) {
     /* returns 256-bit mnemonic from storage 
      * Returns true if mnemonic is returned; false if incorrect pin_hash
      * */
@@ -227,8 +245,8 @@ bool storage_ataes132a_set_blob(const unsigned char *buf, size_t len,
 }
 
 void storage_ataes132a_factory_reset() {
+    aes132_create_stretch_key(); // Effectively destroys the mnemonic.
     storage_internal_factory_reset();
-    // todo: implement
 }
 
 bool storage_ataes132a_erase_key(const char *namespace, const char *key) {

@@ -1,3 +1,5 @@
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
 #include <stdint.h>
 #include <string.h>
 #include "aes132_conf.h"
@@ -37,25 +39,11 @@ static struct aes132h_nonce_s *get_nonce() {
 }
 
 uint8_t aes132_jolt_setup() {
-    /*
-     * In both cases:
-     *     * Allocates secure space for the master key on the heap.
-     *     * Issue a nonce comman to aes132.
-     * If device is unlocked:
-     *     * Generate Master Key from ESP32 Entropy
-     *     * Configure Device
-     *     * Encrypt and Backup Master Key to MasterUserZone
-     *     * Write key to slot 0
-     *     * Lock Device
-     * If device is locked:
-     *     * Load master key from local storage;
-     *         * If not available, Load & decrypt Master key from MasterUserZone
-     */
     uint8_t res;
-    if( NULL==master_key ) {
+    if( NULL == master_key ) {
         master_key = sodium_malloc(16);
     }
-    if( NULL==master_key ) {
+    if( NULL == master_key ) {
         ESP_LOGE(TAG, "Unable to allocate space for the ATAES132A Master Key");
         esp_restart();
     }
@@ -68,11 +56,13 @@ uint8_t aes132_jolt_setup() {
         ESP_LOGE(TAG, "Unable to check if ATAES132A is locked");
         esp_restart();
     }
+    ESP_LOGD(TAG, "ATAES132a is %slocked.", locked ? "" : "NOT ");
 
 #if CONFIG_JOLT_AES132_LOCK
     if( locked ) {
 #else
-    /* See if we have a locally stored master key */
+    /* See if we have a locally stored master key as a proxy for checking
+     * if locked.*/
     size_t required_size;
     if( storage_get_blob(NULL, &required_size, "aes132", "master") ) {
 #endif
@@ -86,7 +76,7 @@ uint8_t aes132_jolt_setup() {
                     "recover from device.");
             /* Check the Master UserZone */
             uint8_t rx[16];
-            res = aes132m_read_memory(sizeof(rx), AES132_USER_ZONE_ADDR(0), rx);
+            res = aes132m_read_memory(sizeof(rx), AES132_USER_ZONE_ADDR(0), rx); // TODO: macro for 0
             ESP_LOGI(TAG, "Read memory result: %d", res);
             ESP_LOGI(TAG, "Confidential; "
                     "ATAES132A Master Key Backup Response: 0x"
@@ -95,7 +85,7 @@ uint8_t aes132_jolt_setup() {
                     rx[0], rx[1], rx[2], rx[3], rx[4], rx[5], rx[6], rx[7],
                     rx[8], rx[9], rx[10], rx[11], rx[12], rx[13], rx[14],
                     rx[15]);
-            //todo decrypt rx; here just identity
+            //todo decrypt rx using esp32 secret; here just identity
             memcpy(master_key, rx, 16);
         }
     }
@@ -108,7 +98,7 @@ uint8_t aes132_jolt_setup() {
          * so we cannot use it for additional entropy.
          * todo: investigate more sources of entropy. */
         for( uint8_t i=0; i<4; i++ ) {
-            uint32_t entropy = randombytes_random();
+            uint32_t entropy = randombytes_random(); // TODO: change to jolt_get_random
             memcpy(&((uint32_t*)master_key)[i], &entropy, sizeof(uint32_t));
 #ifdef UNIT_TESTING
             // deterministic key for easier unit testing
@@ -184,10 +174,10 @@ uint8_t aes132_jolt_setup() {
         /* Lock Device */
         ESP_LOGI(TAG, "AES132 Config Complete.");
 #if CONFIG_JOLT_AES132_LOCK && !UNIT_TESTING
-        ESP_LOGI(TAG, "Locking device.");
-        lock_device();
+        ESP_LOGI(TAG, "***Locking device.***");
+        assert( 0 == aes132_lock_device() );
 #else
-        ESP_LOGE(TAG, "Not locking device. UNSAFE.");
+        ESP_LOGE(TAG, "Not locking device. UNSAFE FOR CONSUMER.");
 #endif
 
     }
@@ -324,7 +314,7 @@ uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter,
     if( NULL == key ) {
         goto exit;
     }
-    crypto_auth_hmacsha512(child_key, &attempt_slot, 1, key);
+    crypto_auth_hmacsha512(child_key, &attempt_slot, sizeof(attempt_slot), key);
     res = aes132_auth(child_key, attempt_slot, nonce);
     if( res ) {
         ESP_LOGE(TAG, "Failed authenticated key_slot %d. Child Key: "
@@ -413,6 +403,7 @@ uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter ) 
      * our application.
      */
     uint8_t res = 0;
+    uint8_t i = 0;
     // Even though Legacy doesn't use a Nonce, it requires a valid Nonce
     // on device.
     get_nonce();
@@ -427,23 +418,26 @@ uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter ) 
             data[12], data[13], data[14],
             data[15]);
 
-    for(uint32_t i=0; i < n_iter; i++) {
-        res = aes132_legacy(AES132_KEY_ID_STRETCH, data);
-        if( AES132_DEVICE_RETCODE_SUCCESS != res ) {
-            ESP_LOGE(TAG, "Failed on iteration %d with retcode %02X\n", i, res);
-            break;
+    do{
+        CONFIDENTIAL uint8_t buf[16] = { 0 };
+        uint32_t buf_len;
+        buf_len = data_len - i;
+        if( buf_len > 16 ) buf_len = 16;
+        memcpy(buf, &data[i], buf_len); 
+        for(uint32_t i=0; i < n_iter; i++) {
+            res = aes132_legacy(AES132_KEY_ID_STRETCH, buf);
+            if( AES132_DEVICE_RETCODE_SUCCESS != res ) {
+                ESP_LOGE(TAG, "Failed on iteration %d with retcode %02X\n", i, res);
+                sodium_memzero(buf, sizeof(buf));
+                goto exit;
+            }
         }
-    }
-    ESP_LOGI(TAG, "Stretch Output: "
-            "%02X %02X %02X %02X %02X %02X %02X %02X "
-            "%02X %02X %02X %02X %02X %02X %02X %02X",
-            data[0], data[1], data[2],
-            data[3], data[4], data[5],
-            data[6], data[7], data[8],
-            data[9], data[10], data[11],
-            data[12], data[13], data[14],
-            data[15]);
+        memcpy(&data[i], buf, 16);
+        i += buf_len;
+        sodium_memzero(buf, sizeof(buf));
+    }while(i < data_len);
 
+exit:
     return res;
 }
 

@@ -13,6 +13,7 @@
 #include <esp_system.h>
 #include "esp_err.h"
 #include "esp_log.h"
+#include "bootloader_random.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -129,6 +130,12 @@ void app_main() {
             );
 #endif
 
+
+    /* Ensure High Quality RNG */
+#if CONFIG_NO_BLOBS
+    bootloader_random_enable();
+#endif
+
     /* Setup and Install I2C Driver */
     {
         if( ESP_OK != i2c_driver_setup() ) {
@@ -140,7 +147,8 @@ void app_main() {
     /* Run Key/Value Storage Initialization */
     {
         ESP_LOGI(TAG, "Initializing Storage");
-        storage_startup();
+        /* May require good RNG if setting up ATAES132A for the first time */
+        if( !storage_startup() ) abort();
     }
 
     /* Create Default System Event Loop */

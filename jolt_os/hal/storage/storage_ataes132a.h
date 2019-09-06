@@ -12,12 +12,17 @@
 #ifndef __JOLT_HAL_ATAES132A_STORAGE_H__
 #define __JOLT_HAL_ATAES132A_STORAGE_H__
 
+#include "jolttypes.h"
+
 bool storage_ataes132a_startup();
+
+void storage_ataes132a_stretch_init();
+void storage_ataes132a_stretch( uint256_t hash, int8_t *progress);
 
 bool storage_ataes132a_exists_mnemonic();
 
-void storage_ataes132a_set_mnemonic(uint256_t bin, uint256_t pin_hash);
-bool storage_ataes132a_get_mnemonic(uint256_t mnemonic, uint256_t pin_hash);
+void storage_ataes132a_set_mnemonic(const uint256_t bin, const uint256_t pin_hash);
+bool storage_ataes132a_get_mnemonic(uint256_t mnemonic, const uint256_t pin_hash);
 
 uint32_t storage_ataes132a_get_pin_count();
 void storage_ataes132a_set_pin_count(uint32_t count);

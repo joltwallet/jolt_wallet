@@ -38,11 +38,19 @@ bool storage_startup() {
    return res;
 }
 
+void storage_stretch_init() {
+#if CONFIG_JOLT_STORE_INTERNAL
+    storage_internal_stretch_init();
+#elif CONFIG_JOLT_STORE_ATAES132A
+    storage_ataes132a_stretch_init();
+#endif
+}
+
 void storage_stretch( uint256_t hash, int8_t *progress ) {
 #if CONFIG_JOLT_STORE_INTERNAL
-    storage_internal_stretch( hash, progress);
+    storage_internal_stretch( hash, progress );
 #elif CONFIG_JOLT_STORE_ATAES132A
-    // todo
+    storage_ataes132a_stretch( hash, progress );
 #endif
 }
 

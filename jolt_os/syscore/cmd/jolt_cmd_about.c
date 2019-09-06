@@ -4,6 +4,12 @@
 #include "esp_system.h"
 #include "esp_spi_flash.h"
 
+#if CONFIG_JOLT_STORE_ATAES132A
+#include "aes132_cmd.h"
+#endif
+
+static const char TAG[] = "jolt_cmd_about";
+
 extern const jolt_version_t JOLT_OS_VERSION;   /**< JoltOS version */
 extern const jolt_version_t JOLT_JELF_VERSION; /**< Used to determine app compatibility */
 extern const jolt_version_t JOLT_HW_VERSION;   /**< To check hardware compatability */
@@ -46,6 +52,7 @@ int jolt_cmd_about(int argc, char** argv) {
 
     if( 1 == argc ) {
         /* General "about" information */
+
         {
             /* Chip Info */
             cJSON *chip_json = NULL;
@@ -59,6 +66,21 @@ int jolt_cmd_about(int argc, char** argv) {
             if( NULL == cJSON_AddBoolToObject(chip_json, "wifi_bgn", chip_info.features & CHIP_FEATURE_WIFI_BGN) ) goto end;
             if( NULL == cJSON_AddBoolToObject(chip_json, "ble", chip_info.features & CHIP_FEATURE_BLE) ) goto end;
         }
+
+#if CONFIG_JOLT_STORE_ATAES132A
+        /* ATAES132A Info */
+        do{
+            cJSON *chip_json = NULL;
+            if( NULL == (chip_json = cJSON_AddObjectToObject(json, "ataes132a"))) goto end;
+            bool locked = false;
+            if( aes132_check_configlock(&locked) ){
+                ESP_LOGE(TAG, "Unable to check ATAES132A lock status.");
+                cJSON_Delete(chip_json);
+                break;
+            }
+            if( NULL == cJSON_AddBoolToObject(chip_json, "locked", locked) ) goto end;
+        }while(0);
+#endif
 
         if( !add_semver_to_object(json, "hardware", JOLT_HW_VERSION.major, JOLT_HW_VERSION.minor, JOLT_HW_VERSION.patch)) goto end;
         if( !add_semver_to_object(json, "jolt_os", JOLT_OS_VERSION.major, JOLT_OS_VERSION.minor, JOLT_OS_VERSION.patch)) goto end;

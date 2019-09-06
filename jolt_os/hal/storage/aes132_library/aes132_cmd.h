@@ -13,6 +13,8 @@
 #include "aes132_mac.h"
 #include "jolttypes.h"
 
+#define AES132_OK 0
+
 /**
  * @brief Authenticate a key; unlocks corresponding UserZone
  *

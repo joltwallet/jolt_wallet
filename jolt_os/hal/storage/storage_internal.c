@@ -50,6 +50,10 @@ bool storage_internal_startup() {
     return true;
 }
 
+void storage_internal_stretch_init(){
+    return; // Nothing to do.
+}
+
 /* Blocking */
 void storage_internal_stretch( uint256_t hash, int8_t *progress) {
     CONFIDENTIAL uint512_t buf;

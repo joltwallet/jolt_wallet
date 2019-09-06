@@ -21,6 +21,11 @@
 bool storage_startup();
 
 /**
+ * @brief Setup a secret used for PIN stretching
+ */
+void storage_stretch_init();
+
+/**
  * @brief Stretch a hash in-place. Used to slow down PIN attempts.
  *
  * This is part of storage because we use the ATAES132A's encryption as a form
