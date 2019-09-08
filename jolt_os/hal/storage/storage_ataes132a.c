@@ -24,17 +24,16 @@
 
 static const char* TAG = "storage_ataes132a";
 
+#if CONFIG_JOLT_STORE_ATAES132A 
+
 bool storage_ataes132a_startup() {
-    /* Check if device is locked */
-    if( !(storage_internal_startup() && aes132_jolt_setup()) ) {
+    if( !(storage_internal_startup() && 0 == aes132_jolt_setup()) ) {
         // something bad happened; but we should never get here because
         // aes132_jolt_setup() should restart esp32 at the slightest hint
         // of error.
         return false;
     }
-    else {
-        return true;
-    }
+    return true;
 }
 
 bool storage_ataes132a_exists_mnemonic() {
@@ -44,12 +43,40 @@ bool storage_ataes132a_exists_mnemonic() {
     return res;
 }
 
+/**
+ * Generate a new stretch key on the ATAES132a that never leaves it.
+ * Also generate a stretching secret to prevent some physical attacks from 
+ * directly deriving your PIN.
+ */
 void storage_ataes132a_stretch_init() {
+    CONFIDENTIAL uint8_t stretch_secret[32];
+    jolt_get_random(stretch_secret, sizeof(stretch_secret));
+    storage_set_blob(stretch_secret, sizeof(stretch_secret), "secret", "stretch");
+    sodium_memzero(stretch_secret, sizeof(stretch_secret));
     if( 0 != aes132_create_stretch_key() ) esp_restart();
 }
 
 void storage_ataes132a_stretch( uint256_t hash, int8_t *progress) {
-    // TODO
+    CONFIDENTIAL uint8_t stretch_secret[32];
+    CONFIDENTIAL unsigned char result[crypto_auth_hmacsha512_BYTES];
+    size_t required_size = 32;
+
+    /* Retrieve stretching secret */
+    if( !storage_get_blob(stretch_secret, &required_size, "secret", "stretch")){
+        // Failed to get stretch_secret
+        storage_factory_reset(true);
+    }
+
+    assert( crypto_auth_hmacsha512_KEYBYTES == 32 );
+    crypto_auth_hmacsha512(result, hash, 32, stretch_secret);
+
+    /* Perform Legacy commands on ATAES132a */
+    if( 0 != aes132_stretch(result, 32, CONFIG_JOLT_AES132_STRETCH_ITER, progress) ) esp_restart();
+
+    memcpy(hash, result, 32);
+
+    sodium_memzero(stretch_secret, sizeof(stretch_secret));
+    sodium_memzero(result, sizeof(result));
 }
 
 /**
@@ -67,21 +94,6 @@ static void xor256(uint8_t *out, const uint8_t *x, const uint8_t *y) {
     }
 }
 
-static void rand256(uint8_t *buf) {
-    /* Generates 256-bits of random data from esp32 and ataes132a sources */
-    uint8_t res;
-    CONFIDENTIAL uint256_t esp32_entropy;
-    CONFIDENTIAL uint256_t aes132_entropy;
-    bm_entropy256(esp32_entropy);
-    res = aes132_rand(aes132_entropy, sizeof(aes132_entropy));
-    if( res ) {
-        esp_restart();
-    }
-    xor256(buf, esp32_entropy, aes132_entropy);
-    sodium_memzero(aes132_entropy, sizeof(aes132_entropy));
-    sodium_memzero(aes132_entropy, sizeof(aes132_entropy));
-}
-
 void storage_ataes132a_set_mnemonic(const uint256_t bin, const uint256_t pin_hash) {
     /* Inputs: Mnemonic the user backed up, stretched pin_hash coming directly
      * from secure input.
@@ -92,30 +104,21 @@ void storage_ataes132a_set_mnemonic(const uint256_t bin, const uint256_t pin_has
      *    * PIN Secret
      *    * UserZone Secret
      * */
-    uint8_t res;
     CONFIDENTIAL uint256_t aes132_secret;
     CONFIDENTIAL uint256_t esp_secret;
-    CONFIDENTIAL unsigned char child_key[crypto_auth_hmacsha512_BYTES];
 
     /* One piece of data is purely random, choosing esp_secret to be random */
-    rand256(esp_secret);
+    jolt_get_random(esp_secret, sizeof(esp_secret));
     xor256(aes132_secret, esp_secret, bin);
 
     /* Set the pin keys */
-    res = aes132_pin_load_keys(pin_hash);
-    if( res ) {
-        esp_restart();
-    }
+    if( aes132_pin_load_keys(pin_hash) ) esp_restart();
 
     /* for each pin key, set the user zone secret */
-    res = aes132_pin_load_zones(pin_hash, aes132_secret);
-    if( res ) {
-        esp_restart();
-    }
+    if( aes132_pin_load_zones(pin_hash, aes132_secret) ) esp_restart();
 
     uint32_t counter;
-    res = aes132_pin_counter(&counter);
-    if( res ) {
+    if( aes132_pin_counter(&counter) ) {
         ESP_LOGE(TAG, "could not retrieve \"pin_counter\"");
         esp_restart();
     }
@@ -132,7 +135,6 @@ void storage_ataes132a_set_mnemonic(const uint256_t bin, const uint256_t pin_has
 
     sodium_memzero(esp_secret, sizeof(esp_secret));
     sodium_memzero(aes132_secret, sizeof(aes132_secret));
-    sodium_memzero(child_key, sizeof(child_key));
 }
 
 bool storage_ataes132a_get_mnemonic(uint256_t mnemonic, const uint256_t pin_hash) {
@@ -140,15 +142,11 @@ bool storage_ataes132a_get_mnemonic(uint256_t mnemonic, const uint256_t pin_hash
      * Returns true if mnemonic is returned; false if incorrect pin_hash
      * */
     bool auth = false;
-    uint8_t res;
     CONFIDENTIAL uint256_t aes132_secret;
     CONFIDENTIAL uint256_t esp_secret;
 
     // Attempt Authorization and Get ATAES132A Secret
-    res =  aes132_pin_attempt(pin_hash, NULL, aes132_secret);
-    if( res ) {
-        goto exit;
-    }
+    if( aes132_pin_attempt(pin_hash, NULL, aes132_secret) ) goto exit;
 
     // Get ESP32 Secret
     size_t required_size = 32;
@@ -174,7 +172,7 @@ uint32_t storage_ataes132a_get_pin_count() {
 }
 
 void storage_ataes132a_set_pin_count(uint32_t count) {
-    // nothing; pin_count is inherently increased during get_mnemonic attempt
+    /* nothing; pin_count is inherently increased during get_mnemonic attempt */
 }
 
 uint32_t storage_ataes132a_get_pin_last() {
@@ -252,3 +250,4 @@ void storage_ataes132a_factory_reset() {
 bool storage_ataes132a_erase_key(const char *namespace, const char *key) {
     return storage_internal_erase_key(namespace, key);
 }
+#endif

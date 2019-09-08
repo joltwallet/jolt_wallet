@@ -17,6 +17,7 @@
 static const char TAG[] = "aes132_jolt";
 static uint8_t *master_key = NULL;
 
+#define CEIL_DIV(x,y) ((x+y-1) / y)
 
 static struct aes132h_nonce_s *get_nonce() {
     /* Always returns a valid nonce pointer */
@@ -224,6 +225,8 @@ uint8_t aes132_pin_load_zones(const uint8_t *key, const uint8_t *secret) {
     uint8_t res = 0xFF;
     struct aes132h_nonce_s *nonce = get_nonce();
 
+    assert( crypto_auth_hmacsha512_KEYBYTES == 32 );
+
     CONFIDENTIAL unsigned char child_key[crypto_auth_hmacsha512_BYTES];
     CONFIDENTIAL uint256_t zone_secret;
 
@@ -390,7 +393,7 @@ uint8_t aes132_create_stretch_key() {
     return res;
 }
 
-uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter ) {
+uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter, int8_t *progress ) {
     /* Hardware bound key stretching. We limit PIN bruteforcing (in the event 
      * of a complete esp32 compromise) by how quickly the ataes132a can respond
      * to encrypt commands. Compared to conventional keystretching, PIN 
@@ -403,12 +406,14 @@ uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter ) 
      * our application.
      */
     uint8_t res = 0;
-    uint8_t i = 0;
+    uint8_t j = 0;
+    uint32_t total_iter = CEIL_DIV(data_len, 16) * n_iter;
+    uint32_t total_iter_ctr = 0;
     // Even though Legacy doesn't use a Nonce, it requires a valid Nonce
     // on device.
     get_nonce();
 
-    ESP_LOGI(TAG, "Stretch Input: "
+    ESP_LOGD(TAG, "Stretch Input: "
             "%02X %02X %02X %02X %02X %02X %02X %02X "
             "%02X %02X %02X %02X %02X %02X %02X %02X",
             data[0], data[1], data[2],
@@ -421,9 +426,9 @@ uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter ) 
     do{
         CONFIDENTIAL uint8_t buf[16] = { 0 };
         uint32_t buf_len;
-        buf_len = data_len - i;
+        buf_len = data_len - j;
         if( buf_len > 16 ) buf_len = 16;
-        memcpy(buf, &data[i], buf_len); 
+        memcpy(buf, &data[j], buf_len); 
         for(uint32_t i=0; i < n_iter; i++) {
             res = aes132_legacy(AES132_KEY_ID_STRETCH, buf);
             if( AES132_DEVICE_RETCODE_SUCCESS != res ) {
@@ -431,11 +436,13 @@ uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter ) 
                 sodium_memzero(buf, sizeof(buf));
                 goto exit;
             }
+            total_iter_ctr++;
+            if( NULL != progress ) *progress = total_iter_ctr / total_iter;
         }
-        memcpy(&data[i], buf, 16);
-        i += buf_len;
+        memcpy(&data[j], buf, 16);
+        j += buf_len;
         sodium_memzero(buf, sizeof(buf));
-    }while(i < data_len);
+    }while(j < data_len);
 
 exit:
     return res;

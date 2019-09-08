@@ -82,7 +82,7 @@ uint8_t aes132_write_keyconfig() {
     }
     
 
-    /* Stretch is only used for Key streshing via Encrypt command */
+    /* Stretch is only used for Key stretching via Encrypt command */
     uint8_t config_stretch[4] = { 0 };
     config_stretch[0] = 
         //AES132_KEY_CONFIG_EXTERNAL_CRYPTO | // Prohibit Encrypt/Decrypt

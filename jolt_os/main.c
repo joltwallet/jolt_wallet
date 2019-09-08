@@ -20,6 +20,9 @@
 #include "esp_freertos_hooks.h"
 #include "esp_event.h"
 #include "esp_pm.h"
+#include "test_utils.h"
+#include "unity.h"
+#include "esp_task_wdt.h"
 
 #include <driver/adc.h>
 #include "esp_adc_cal.h"
@@ -70,6 +73,21 @@ const jolt_version_t JOLT_HW_VERSION = {
 
 static const char TAG[] = "main";
 
+#if UNIT_TESTING
+static void unity_task(void *pvParameters){
+    vTaskDelay(2); /* Delay a bit to let the main task be deleted */
+    esp_task_wdt_delete( xTaskGetIdleTaskHandle() );
+    unity_run_menu(); /* Doesn't return */
+}
+
+void app_main(void)
+{
+    ESP_LOGI(TAG, "Running Unit Tester");
+    xTaskCreatePinnedToCore(unity_task, "unityTask", UNITY_FREERTOS_STACK_SIZE, NULL,
+                            UNITY_FREERTOS_PRIORITY, NULL, UNITY_FREERTOS_CPU);
+}
+#else
+
 static void littlevgl_task() {
     ESP_LOGI(TAG, "Starting draw loop");
     TickType_t xLastWakeTime = xTaskGetTickCount();
@@ -82,8 +100,8 @@ static void littlevgl_task() {
     abort();
 }
 
-#ifndef UNIT_TESTING /* Don't override the unit test app_main() */
-void app_main() {
+
+void app_main(void) {
     /* Setup Heap Logging */
     #if CONFIG_HEAP_TRACING
     {
@@ -148,7 +166,10 @@ void app_main() {
     {
         ESP_LOGI(TAG, "Initializing Storage");
         /* May require good RNG if setting up ATAES132A for the first time */
-        if( !storage_startup() ) abort();
+        if( !storage_startup() ){
+            ESP_LOGE(TAG, "Failed to initialize storage.");
+            abort();
+        }
     }
 
     /* Create Default System Event Loop */

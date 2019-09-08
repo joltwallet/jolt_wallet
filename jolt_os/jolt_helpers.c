@@ -50,7 +50,10 @@ void jolt_get_random(uint8_t *buf, uint8_t n_bytes){
         if( locked ) {
             ESP_LOGD(TAG, "Getting %d bytes from ATAES132A RNG Source", n_bytes);
             uint8_t res = aes132_rand(buf, n_bytes);
-            if( ESP_OK != res ) esp_restart();
+            if( ESP_OK != res ){
+                ESP_LOGE(TAG, "aes132_rand returned nonzero value %d", res);
+                esp_restart();
+            }
         }
         else{
             ESP_LOGD(TAG, "ATAES132A is not locked; not a secure RNG source.");

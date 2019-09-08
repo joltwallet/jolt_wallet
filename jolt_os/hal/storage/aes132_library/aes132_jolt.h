@@ -34,8 +34,9 @@ uint8_t aes132_jolt_setup();
  * @param[in] optional. 256-bit stretched key. A child key is derived from this 
  *            based on the Zone authentication is attempted onn.
  *            If NULL, no attempt will be made.
- * @param[out] optional. The cumulative attempt counter prior to this attempt.
- * @param[out] Upon successful authentication, this is the resulting secret 
+ * @param[out] counter optional. The cumulative attempt counter prior to this attempt.
+ * @param[out] secret Upon successful authentication, this is the resulting 
+ *             256-bit secret 
  *             (XOR of `child key` and data in the UserZone).
  * @return 0 on success.
  */
@@ -77,8 +78,9 @@ uint8_t aes132_pin_counter(uint32_t *counter);
  * @param[in,out] data data to be stretched inplace.
  * @param[in] data_len Length of data in bytes.
  * @param[in] n_iter Number of times to consecutively run the ECB Legacy command.
+ * @param[out] progress, optional pointer to populate with percentage from 0 to 100.
  * @return 0 on success.
  */
-uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter);
+uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter, int8_t *progress);
 
 #endif

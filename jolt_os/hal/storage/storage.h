@@ -89,18 +89,18 @@ uint32_t storage_get_pin_count();
 void storage_set_pin_count(uint32_t count);
 
 /**
- * @brief Get the PIN counter the last time the correct PIN was entered
+ * @brief Get the monotonically increasing PIN counter the last time the correct PIN was entered
  *
  * Since this number is stored in flash, it is susceptible to a flash replay attack.
  * To mitigate this, the counter is always increasing so that more PIN attempts cannot be gained by
- * restoring a previously known encrypted flash image.
+ * restoring a previously known encrypted flash image while using the ATAES132a.
  *
  * @return Number of PIN attempts recorded at the last successful PIN entry. 
  */
 uint32_t storage_get_pin_last();
 
 /** 
- * @brief Set the last success PIN entry count value in storage
+ * @brief Set the monotonically increasing last success PIN entry count value in storage.
  * @param[in] count Entry counter value to store
  */
 void storage_set_pin_last(uint32_t count);
