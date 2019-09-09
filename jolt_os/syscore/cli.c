@@ -418,6 +418,16 @@ static void jolt_cli_cmds_register() {
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
+#if JOLT_GUI_TEST_MENU
+    cmd = (esp_console_cmd_t) {
+        .command = "unlock",
+        .help = "Prompts user to enter PIN and unlock device.",
+        .hint = NULL,
+        .func = &jolt_cmd_unlock,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+#endif
+
     cmd = (esp_console_cmd_t) {
         .command = "upload",
         .help = "Enters file UART ymodem upload mode",

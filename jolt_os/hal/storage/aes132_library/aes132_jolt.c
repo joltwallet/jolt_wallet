@@ -1,4 +1,4 @@
-//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#define LOG_LOCAL_LEVEL 4
 
 #include <stdint.h>
 #include <string.h>
@@ -413,6 +413,10 @@ uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter, i
     // on device.
     get_nonce();
 
+    ESP_LOGD(TAG, "Total Stretch Iterations: %d", total_iter);
+
+    if( NULL == progress ) ESP_LOGD(TAG, "Progress is NULL; will not be updated.");
+
     ESP_LOGD(TAG, "Stretch Input: "
             "%02X %02X %02X %02X %02X %02X %02X %02X "
             "%02X %02X %02X %02X %02X %02X %02X %02X",
@@ -423,6 +427,7 @@ uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter, i
             data[12], data[13], data[14],
             data[15]);
 
+    total_iter /= 100; // Progress is represented from 0-100, not 0.0-1.0
     do{
         CONFIDENTIAL uint8_t buf[16] = { 0 };
         uint32_t buf_len;
@@ -437,7 +442,11 @@ uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter, i
                 goto exit;
             }
             total_iter_ctr++;
-            if( NULL != progress ) *progress = total_iter_ctr / total_iter;
+            if( NULL != progress ) {
+                uint8_t tmp;
+                tmp = total_iter_ctr / total_iter;
+                if(tmp<=100) *progress = tmp;
+            }
         }
         memcpy(&data[j], buf, 16);
         j += buf_len;

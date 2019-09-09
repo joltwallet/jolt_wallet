@@ -121,7 +121,11 @@ uint8_t aes132_check_configlock(bool *status) {
     uint8_t data = 0x55;
     uint8_t res;
     res = aes132_blockread(&data, AES132_LOCK_CONFIG_ADDR, sizeof(data));
-    if( 0x55 == data ) {
+    if( 0 != res ) {
+        ESP_LOGE(TAG, "Unable to blockread LOCK_CONFIG_ADDR. Error 0x%02X", res);
+        *status = false;
+    }
+    else if( 0x55 == data ) {
         // Device configuration is unlocked
         *status = false;
     }

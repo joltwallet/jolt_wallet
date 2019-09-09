@@ -210,7 +210,7 @@ void app_main(void) {
     }
 
     /* Start side-channel mitigation noise */
-    jolt_noise_init();
+    //jolt_noise_init(); //TODO uncommen
 
     /* Initialize LVGL graphics system */
     {
