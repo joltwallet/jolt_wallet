@@ -3,7 +3,7 @@
  https://www.joltwallet.com/
  */
 
-#define LOG_LOCAL_LEVEL 4
+//#define LOG_LOCAL_LEVEL 4
 
 #include "esp_log.h"
 #include "sodium.h"
@@ -74,7 +74,9 @@ void storage_ataes132a_stretch( uint256_t hash, int8_t *progress) {
     crypto_auth_hmacsha512(result, hash, 32, stretch_secret);
 
     /* Perform Legacy commands on ATAES132a */
-    if( 0 != aes132_stretch(result, 32, CONFIG_JOLT_AES132_STRETCH_ITER, progress) ) esp_restart();
+    // Only the first 128-bits are stretched since the authentication keys on
+    // the ataes132a are 128-bit.
+    if( 0 != aes132_stretch(result, 16, CONFIG_JOLT_AES132_STRETCH_ITER, progress) ) esp_restart();
 
     memcpy(hash, result, 32);
 
