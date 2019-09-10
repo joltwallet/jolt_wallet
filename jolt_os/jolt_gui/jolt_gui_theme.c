@@ -127,12 +127,14 @@ static void basic_init(void)
      * Scrollbar style *
      *******************/
     lv_style_copy(&scrollbar_style, &dark_plain);
-    scrollbar_style.body.border.width = 1;
+    scrollbar_style.body.main_color   = LV_COLOR_BLACK;
+    scrollbar_style.body.grad_color   = LV_COLOR_BLACK;
+    scrollbar_style.body.border.width = 0;
     scrollbar_style.body.border.opa = LV_OPA_COVER;
     scrollbar_style.body.border.part = LV_BORDER_FULL;
-    scrollbar_style.body.padding.left = -2; // Scrollbar distance from the Right 
-    scrollbar_style.body.padding.right = -2; // Scrollbar distance from the Right 
-    scrollbar_style.body.padding.inner = 3; // Scrollbar's Width 
+    scrollbar_style.body.padding.right = 0; // Vert Scrollbar dist from the right 
+    scrollbar_style.body.padding.bottom = 0; // Hor Scrollbar dist from the bottom
+    scrollbar_style.body.padding.inner = 1; // Scrollbar's Width 
 
     theme.style.bg = &def;
     theme.style.panel = &def;
