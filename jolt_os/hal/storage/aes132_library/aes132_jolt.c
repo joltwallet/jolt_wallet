@@ -29,7 +29,7 @@ static struct aes132h_nonce_s *get_nonce() {
         ESP_LOGI(TAG, "Nonce Invalid; Refreshing Nonce");
         res = aes132_nonce(nonce, NULL); 
         if( res ) {
-            ESP_LOGE(TAG, "Error %02X generating new nonce", res);
+            ESP_LOGE(TAG, "Error generating new nonce (0x%02X)", res);
             esp_restart();
         }
         else {
@@ -54,7 +54,7 @@ uint8_t aes132_jolt_setup() {
     bool locked;
     res = aes132_check_configlock(&locked);
     if( res ) {
-        ESP_LOGE(TAG, "Unable to check if ATAES132A is locked");
+        ESP_LOGE(TAG, "Unable to check if ATAES132A is locked (0x%02X)", res);
         esp_restart();
     }
     ESP_LOGD(TAG, "ATAES132a is %slocked.", locked ? "" : "NOT ");
@@ -77,7 +77,7 @@ uint8_t aes132_jolt_setup() {
                     "recover from device.");
             /* Check the Master UserZone */
             uint8_t rx[16];
-            res = aes132m_read_memory(sizeof(rx), AES132_USER_ZONE_ADDR(0), rx); // TODO: macro for 0
+            res = aes132_blockread(rx, AES132_USER_ZONE_ADDR(0), sizeof(rx));
             ESP_LOGI(TAG, "Read memory result: %d", res);
             ESP_LOGI(TAG, "Confidential; "
                     "ATAES132A Master Key Backup Response: 0x"
@@ -137,7 +137,7 @@ uint8_t aes132_jolt_setup() {
         ESP_LOGI(TAG, "Writing encrypted Master Key backup to UserZone0");
         res = aes132m_write_memory(sizeof(enc_master_key),
                 AES132_USER_ZONE_ADDR(AES132_KEY_ID_MASTER), enc_master_key);
-        ESP_LOGI(TAG, "Write memory result: %d", res);
+        ESP_LOGI(TAG, "Write memory result: %d", res); //TODO error handling
 
         /* Confirm AES132 Backup */
         {
@@ -163,7 +163,7 @@ uint8_t aes132_jolt_setup() {
         res = aes132m_write_memory(16,
                 AES132_KEY_ADDR(AES132_KEY_ID_MASTER), master_key);
         ESP_LOGI(TAG, "Write memory to 0x%04X result: %d",
-                AES132_KEY_ADDR(AES132_KEY_ID_MASTER), res);
+                AES132_KEY_ADDR(AES132_KEY_ID_MASTER), res); //TODO error handling
         
         /* Configure Device */
         ESP_LOGI(TAG, "Configuring Device");
@@ -210,8 +210,8 @@ uint8_t aes132_pin_load_keys(const uint8_t *key) {
                 child_key[15]);
         res = aes132_key_load(master_key, child_key, key_id, nonce);
         if( res ) {
-            ESP_LOGE(TAG, "Failed to slot PIN in key slot %d. "
-                    "Error Code: 0x%02X", key_id, res);
+            ESP_LOGE(TAG, "Failed to slot PIN in key slot %d (0x%02X).",
+                    key_id, res);
             goto exit;
         }
     }
@@ -224,18 +224,17 @@ uint8_t aes132_pin_load_zones(const uint8_t *key, const uint8_t *secret) {
     /* Assumes 256-bit input key */
     uint8_t res = 0xFF;
     struct aes132h_nonce_s *nonce = get_nonce();
-
-    assert( crypto_auth_hmacsha512_KEYBYTES == 32 );
-
     CONFIDENTIAL unsigned char child_key[crypto_auth_hmacsha512_BYTES];
     CONFIDENTIAL uint256_t zone_secret;
 
+    assert( crypto_auth_hmacsha512_KEYBYTES == 32 );
+
     for(uint8_t key_id = AES132_KEY_ID_PIN(0); key_id<16; key_id++) {
-        crypto_auth_hmacsha512(child_key, &key_id, 1, key);
+        crypto_auth_hmacsha512(child_key, &key_id, sizeof(key_id), key);
         /* Different derived keys are stored in different slots.
          * If somehow partial data can be recovered from keyslots, this
          * prevents the data from being overly redundant */
-        ESP_LOGI(TAG, " Loading slot %d with child key "
+        ESP_LOGI(TAG, "Authorizing slot %d with child key "
                 "%02X %02X %02X %02X %02X %02X %02X %02X "
                 "%02X %02X %02X %02X %02X %02X %02X %02X", key_id,
                 child_key[0], child_key[1], child_key[2],
@@ -248,8 +247,8 @@ uint8_t aes132_pin_load_zones(const uint8_t *key, const uint8_t *secret) {
         // Authorize r/w zone
         res = aes132_auth(child_key, key_id, nonce);
         if( res ) {
-            ESP_LOGE(TAG, "Failed to auth key_id %d. "
-                    "Error Code: 0x%02X", key_id, res);
+            ESP_LOGE(TAG, "Failed to auth key_id %d (0x%02X).",
+                    key_id, res);
             goto exit;
         }
 
@@ -260,8 +259,8 @@ uint8_t aes132_pin_load_zones(const uint8_t *key, const uint8_t *secret) {
         res = aes132m_write_memory(32,
                 AES132_USER_ZONE_ADDR(key_id), zone_secret);
         if( res ) {
-            ESP_LOGE(TAG, "Failed to store secret in zone %d. "
-                    "Error Code: 0x%02X", key_id, res);
+            ESP_LOGE(TAG, "Failed to store secret in zone %d (0x%02X).",
+                    key_id, res);
             goto exit;
         }
     }
@@ -295,8 +294,8 @@ uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter,
         uint32_t count = AES132_COUNTER_MAX;
         res = aes132_counter(master_key, &count, counter_id, nonce);
         if( res ) {
-            ESP_LOGE(TAG, "Error attempting to read counter %d. "
-                    "RetCode 0x%02X.", counter_id, res);
+            ESP_LOGE(TAG, "Error attempting to read counter %d (0x%02X).",
+                    counter_id, res);
         }
         cum_counter += count;
         if( count < AES132_COUNTER_MAX && 0xFF == attempt_slot) {
@@ -320,9 +319,10 @@ uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter,
     crypto_auth_hmacsha512(child_key, &attempt_slot, sizeof(attempt_slot), key);
     res = aes132_auth(child_key, attempt_slot, nonce);
     if( res ) {
-        ESP_LOGE(TAG, "Failed authenticated key_slot %d. Child Key: "
+        ESP_LOGE(TAG, "Failed authenticated key_slot %d (0x%02X). Child Key: "
                 "%02X %02X %02X %02X %02X %02X %02X %02X "
-                "%02X %02X %02X %02X %02X %02X %02X %02X", attempt_slot,
+                "%02X %02X %02X %02X %02X %02X %02X %02X",
+                attempt_slot, res,
                 child_key[0], child_key[1], child_key[2],
                 child_key[3], child_key[4], child_key[5],
                 child_key[6], child_key[7], child_key[8],
@@ -335,10 +335,9 @@ uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter,
             attempt_slot);
     {
         CONFIDENTIAL uint8_t zone_secret[32];
-        res = aes132m_read_memory(sizeof(zone_secret), attempt_slot, 
-                zone_secret);
+        res = aes132_blockread(zone_secret, AES132_USER_ZONE_ADDR(attempt_slot), sizeof(zone_secret));
         if( res ) {
-            ESP_LOGE(TAG, "Error reading from user zone");
+            ESP_LOGE(TAG, "Error reading from user zone (0x%02X)", res);
             goto exit;
         }
 
@@ -346,6 +345,16 @@ uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter,
         for(uint8_t i=0; i<32; i++) {
             secret[i] = zone_secret[i] ^ child_key[i]; 
         }
+        ESP_LOGD(TAG, "Re-assembled ATAES132a Secret: "
+                "%02X %02X %02X %02X %02X %02X %02X %02X "
+                "%02X %02X %02X %02X %02X %02X %02X %02X "
+                "%02X %02X %02X %02X %02X %02X %02X %02X "
+                "%02X %02X %02X %02X %02X %02X %02X %02X ",
+                secret[0], secret[1], secret[2], secret[3], secret[4], secret[5], secret[6], secret[7],
+                secret[8], secret[9], secret[10], secret[11], secret[12], secret[13], secret[14], secret[15],
+                secret[16], secret[17], secret[18], secret[19], secret[20], secret[21], secret[22], secret[23],
+                secret[24], secret[25], secret[26], secret[27], secret[28], secret[29], secret[30], secret[31]
+                );
         sodium_memzero(zone_secret, sizeof(zone_secret));
     }
 
@@ -370,8 +379,8 @@ uint8_t aes132_pin_counter(uint32_t *counter) {
         uint32_t count = AES132_COUNTER_MAX;
         res = aes132_counter(master_key, &count, counter_id, nonce);
         if( res ) {
-            ESP_LOGE(TAG, "Error attempting to read counter %d. "
-                    "RetCode 0x%02X.", counter_id, res);
+            ESP_LOGE(TAG, "Error attempting to read counter %d (0x%02X).",
+                    counter_id, res);
         }
         cum_counter += count;
     }
@@ -417,7 +426,7 @@ uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter, i
 
     if( NULL == progress ) ESP_LOGD(TAG, "Progress is NULL; will not be updated.");
 
-    ESP_LOGD(TAG, "Stretch Input: "
+    ESP_LOGD(TAG, "Stretch Input (first 128-bits): "
             "%02X %02X %02X %02X %02X %02X %02X %02X "
             "%02X %02X %02X %02X %02X %02X %02X %02X",
             data[0], data[1], data[2],
@@ -429,7 +438,7 @@ uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter, i
 
     total_iter /= 100; // Progress is represented from 0-100, not 0.0-1.0
     do{
-        CONFIDENTIAL uint8_t buf[16] = { 0 };
+        CONFIDENTIAL uint8_t buf[16] = { 0 }; // Separate buffer for when input % 16 != 0
         uint32_t buf_len;
         buf_len = data_len - j;
         if( buf_len > 16 ) buf_len = 16;
@@ -452,6 +461,16 @@ uint8_t aes132_stretch(uint8_t *data, const uint8_t data_len, uint32_t n_iter, i
         j += buf_len;
         sodium_memzero(buf, sizeof(buf));
     }while(j < data_len);
+
+    ESP_LOGD(TAG, "Stretch Output (first 128-bits): "
+            "%02X %02X %02X %02X %02X %02X %02X %02X "
+            "%02X %02X %02X %02X %02X %02X %02X %02X",
+            data[0], data[1], data[2],
+            data[3], data[4], data[5],
+            data[6], data[7], data[8],
+            data[9], data[10], data[11],
+            data[12], data[13], data[14],
+            data[15]);
 
 exit:
     return res;

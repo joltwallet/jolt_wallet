@@ -43,7 +43,7 @@ uint8_t aes132_jolt_setup();
 uint8_t aes132_pin_attempt(const uint8_t *key, uint32_t *counter, uint8_t *secret);
 
 /**
- * Derives and sets childkeys for each zone.
+ * Derives and sets childkeys for all zone.
  *
  * @param[in] key 256-bit stretched key
  * @return 0 on success.
@@ -59,7 +59,7 @@ uint8_t aes132_pin_load_keys(const uint8_t *key);
  * This is so that changing the child key destroys the XOR secret.
  *
  * @param[in] 256-bit stretched key.
- * @param[in] Some secret to store derived copies of.
+ * @param[in] Some 256-bit secret to store derived copies of.
  * @return 0 on success.
  */
 uint8_t aes132_pin_load_zones(const uint8_t *key, const uint8_t *secret);

@@ -174,69 +174,82 @@ uint8_t aes132_reset_master_zoneconfig() {
 
 uint8_t aes132_write_zoneconfig() {
     uint8_t res;
-    uint8_t config_master[4] = { 0 };
-    config_master[0] = 
-        //AES132_ZONE_CONFIG_AUTH_READ | // Master Zone just holding an esp32 encrypted backup of the master key, no authentication required to read the ciphertext.
-        //AES132_ZONE_CONFIG_AUTH_WRITE | // Irrelevant; section is read-only
-        //AES132_ZONE_CONFIG_ENC_READ | // No security benefit in EncRead
-        //AES132_ZONE_CONFIG_ENC_WRITE | // Irrelevant; section is read-only
-        AES132_ZONE_CONFIG_WRITE_MODE_4 | // Zone is read-only
-        //AES132_ZONE_CONFIG_WRITE_MODE_5 |
-        //AES132_ZONE_CONFIG_USE_SERIAL | // Irrelevant; section is read-only
-        //AES132_ZONE_CONFIG_USE_SMALL | // Irrelevant; section is read-only
-        0;
-    config_master[1] = 
-        AES132_ZONE_CONFIG_AUTH_ID(0) | // Master to generate OutMAC
-        AES132_ZONE_CONFIG_READ_ID(0); // Irrelevant; authentication not required
-    config_master[2] = 
-        AES132_ZONE_CONFIG_WRITE_ID(0) | // Irrelevant, EncWrite not used
-        //AES132_ZONE_CONFIG_VOLATILE_TRANSFER_OK | // Prohibit KeyTransfer to VolatileKey
-        0;
-    config_master[3] = 
-         //AES132_ZONE_CONFIG_READ_ONLY_R | // Ignored unless WriteMode is 0b10 or 0b11
-         0;
-        
-    res = aes132m_write_memory(sizeof(config_master),
-            AES132_ZONE_CONFIG_ADDR(AES132_KEY_ID_MASTER), config_master);
-    if( res ) {
-        ESP_LOGE(TAG, "Failed writing Master ZoneConfig "
-                "Error Return Code 0x%02X",
-                res);
-        return res;
+    {
+        uint8_t config_master[4] = { 0 };
+        config_master[0] = 
+            //AES132_ZONE_CONFIG_AUTH_READ | // Master Zone just holding an esp32 encrypted backup of the master key, no authentication required to read the ciphertext.
+            //AES132_ZONE_CONFIG_AUTH_WRITE | // Irrelevant; section is read-only
+            //AES132_ZONE_CONFIG_ENC_READ | // No security benefit in EncRead
+            //AES132_ZONE_CONFIG_ENC_WRITE | // Irrelevant; section is read-only
+            AES132_ZONE_CONFIG_WRITE_MODE_4 | // Zone is read-only
+            //AES132_ZONE_CONFIG_WRITE_MODE_5 |
+            //AES132_ZONE_CONFIG_USE_SERIAL | // Irrelevant; section is read-only
+            //AES132_ZONE_CONFIG_USE_SMALL | // Irrelevant; section is read-only
+            0;
+        config_master[1] = 
+            AES132_ZONE_CONFIG_AUTH_ID(0) | // Master to generate OutMAC
+            AES132_ZONE_CONFIG_READ_ID(0); // Irrelevant; authentication not required
+        config_master[2] = 
+            AES132_ZONE_CONFIG_WRITE_ID(0) | // Irrelevant, EncWrite not used
+            //AES132_ZONE_CONFIG_VOLATILE_TRANSFER_OK | // Prohibit KeyTransfer to VolatileKey
+            0;
+        config_master[3] = 
+             //AES132_ZONE_CONFIG_READ_ONLY_R | // Ignored unless WriteMode is 0b10 or 0b11
+             0;
+            
+        res = aes132m_write_memory(sizeof(config_master),
+                AES132_ZONE_CONFIG_ADDR(AES132_KEY_ID_MASTER), config_master);
+        if( res ) {
+            ESP_LOGE(TAG, "Failed writing Master ZoneConfig "
+                    "Error Return Code 0x%02X",
+                    res);
+            return res;
+        }
+        else {
+            ESP_LOGI(TAG, "ZoneConfig[%d]: 0x%02X 0x%02X 0x%02X 0x%02X", 0,
+                    config_master[0], config_master[1], config_master[2], config_master[3]); 
+        }
     }
 
-    uint8_t config_pin[4] = { 0 };
-    config_pin[0] = 
-        AES132_ZONE_CONFIG_AUTH_READ | // PIN required to access zone
-        //AES132_ZONE_CONFIG_AUTH_WRITE | // Irrelevant; section is read-only
-        //AES132_ZONE_CONFIG_ENC_READ | // No security benefit in EncRead
-        //AES132_ZONE_CONFIG_ENC_WRITE | // Irrelevant; section is read-only
-        //AES132_ZONE_CONFIG_WRITE_MODE_4 |
-        //AES132_ZONE_CONFIG_WRITE_MODE_5 | // Zone is R/W
-        //AES132_ZONE_CONFIG_USE_SERIAL | // Irrelevant; section is read-only
-        //AES132_ZONE_CONFIG_USE_SMALL | // Irrelevant; section is read-only
-        0;
-    config_pin[1] = 
-        AES132_ZONE_CONFIG_AUTH_ID(0) | // Master to generate OutMAC
-        AES132_ZONE_CONFIG_READ_ID(0); // Overwritten during write loop
-    config_pin[2] = 
-        AES132_ZONE_CONFIG_WRITE_ID(0) | // Irrelevant, EncWrite not used
-        //AES132_ZONE_CONFIG_VOLATILE_TRANSFER_OK | // Prohibit KeyTransfer to VolatileKey
-        0;
-    config_pin[3] = 
-         //AES132_ZONE_CONFIG_READ_ONLY_R | // Ignored unless WriteMode is 0b10 or 0b11
-         0;
- 
-    for(uint8_t i=AES132_KEY_ID_PIN(0); i < 16; i++) {
-        config_pin[1] &= AES132_ZONE_CONFIG_AUTH_ID(0xF); // Clear out old read_id
-        config_pin[1] |= AES132_ZONE_CONFIG_READ_ID(i);
-        res = aes132m_write_memory(sizeof(config_pin),
-            AES132_ZONE_CONFIG_ADDR(i), config_pin);
-        if( res ) {
-            ESP_LOGE(TAG, "Failed writing PIN (Key%d) ZoneConfig "
-                    "Error Return Code 0x%02X",
-                    i, res);
-            return res;
+    {
+        uint8_t config_pin[4] = { 0 };
+        config_pin[0] = 
+            AES132_ZONE_CONFIG_AUTH_READ | // PIN required to access zone
+            //AES132_ZONE_CONFIG_AUTH_WRITE | // Irrelevant; section is read-only
+            //AES132_ZONE_CONFIG_ENC_READ | // No security benefit in EncRead
+            //AES132_ZONE_CONFIG_ENC_WRITE | // Irrelevant; section is read-only
+            //AES132_ZONE_CONFIG_WRITE_MODE_4 |
+            //AES132_ZONE_CONFIG_WRITE_MODE_5 | // Zone is R/W
+            //AES132_ZONE_CONFIG_USE_SERIAL | // Irrelevant; section is read-only
+            //AES132_ZONE_CONFIG_USE_SMALL | // Irrelevant; section is read-only
+            0;
+        config_pin[1] = 
+            AES132_ZONE_CONFIG_AUTH_ID(0) | // Master to generate OutMAC
+            //AES132_ZONE_CONFIG_READ_ID(0) | // Irrelevant
+            0;
+        config_pin[2] = 
+            //AES132_ZONE_CONFIG_WRITE_ID(0) | // Irrelevant, EncWrite not used
+            //AES132_ZONE_CONFIG_VOLATILE_TRANSFER_OK | // Prohibit KeyTransfer to VolatileKey
+            0;
+        config_pin[3] = 
+             //AES132_ZONE_CONFIG_READ_ONLY_R | // Ignored unless WriteMode is 0b10 or 0b11
+             0;
+     
+        for(uint8_t i=AES132_KEY_ID_PIN(0); i < 16; i++) {
+            config_pin[1] &= ~AES132_ZONE_CONFIG_AUTH_ID(0xF); // Clear out old auth_id
+            config_pin[1] |=  AES132_ZONE_CONFIG_AUTH_ID(i);   // Set
+            res = aes132m_write_memory(sizeof(config_pin),
+                AES132_ZONE_CONFIG_ADDR(i), config_pin);
+            if( res ) {
+                ESP_LOGE(TAG, "Failed writing PIN (Key%d) ZoneConfig "
+                        "Error Return Code 0x%02X",
+                        i, res);
+                return res;
+            }
+            else {
+                ESP_LOGI(TAG, "ZoneConfig[%d]: 0x%02X 0x%02X 0x%02X 0x%02X", i,
+                        config_pin[0], config_pin[1], config_pin[2], config_pin[3]); 
+            }
         }
     }
     return res;

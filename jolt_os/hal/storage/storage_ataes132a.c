@@ -2,6 +2,9 @@
  Copyright (C) 2018  Brian Pugh, James Coxon, Michael Smaili
  https://www.joltwallet.com/
  */
+
+#define LOG_LOCAL_LEVEL 4
+
 #include "esp_log.h"
 #include "sodium.h"
 #include <esp_system.h>
@@ -59,7 +62,7 @@ void storage_ataes132a_stretch_init() {
 void storage_ataes132a_stretch( uint256_t hash, int8_t *progress) {
     CONFIDENTIAL uint8_t stretch_secret[32];
     CONFIDENTIAL unsigned char result[crypto_auth_hmacsha512_BYTES];
-    size_t required_size = 32;
+    size_t required_size = sizeof(stretch_secret);
 
     /* Retrieve stretching secret */
     if( !storage_get_blob(stretch_secret, &required_size, "secret", "stretch")){
@@ -113,6 +116,17 @@ void storage_ataes132a_set_mnemonic(const uint256_t bin, const uint256_t pin_has
 
     /* Set the pin keys */
     if( aes132_pin_load_keys(pin_hash) ) esp_restart();
+
+    ESP_LOGD(TAG, "Storing ATAES132a Secret: "
+            "%02X %02X %02X %02X %02X %02X %02X %02X "
+            "%02X %02X %02X %02X %02X %02X %02X %02X "
+            "%02X %02X %02X %02X %02X %02X %02X %02X "
+            "%02X %02X %02X %02X %02X %02X %02X %02X ",
+            aes132_secret[0], aes132_secret[1], aes132_secret[2], aes132_secret[3], aes132_secret[4], aes132_secret[5], aes132_secret[6], aes132_secret[7],
+            aes132_secret[8], aes132_secret[9], aes132_secret[10], aes132_secret[11], aes132_secret[12], aes132_secret[13], aes132_secret[14], aes132_secret[15],
+            aes132_secret[16], aes132_secret[17], aes132_secret[18], aes132_secret[19], aes132_secret[20], aes132_secret[21], aes132_secret[22], aes132_secret[23],
+            aes132_secret[24], aes132_secret[25], aes132_secret[26], aes132_secret[27], aes132_secret[28], aes132_secret[29], aes132_secret[30], aes132_secret[31]
+            );
 
     /* for each pin key, set the user zone secret */
     if( aes132_pin_load_zones(pin_hash, aes132_secret) ) esp_restart();

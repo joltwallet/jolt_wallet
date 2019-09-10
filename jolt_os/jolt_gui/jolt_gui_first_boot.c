@@ -84,7 +84,7 @@ static void generate_mnemonic( mnemonic_setup_t *param ) {
     storage_stretch_init();
     bm_bin_to_mnemonic(param->mnemonic, sizeof(param->mnemonic),
             param->mnemonic_bin, MNEMONIC_STRENGTH);
-    ESP_LOGI(TAG, "mnemonic %s", param->mnemonic);
+    ESP_LOGI(TAG, "mnemonic: %s", param->mnemonic);
 }
 
 /* BG Task for stretching */
