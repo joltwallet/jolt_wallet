@@ -11,6 +11,7 @@
 #include "sodium.h"
 #include "esp_err.h"
 #include "sdkconfig.h"
+#include "bootloader_random.h"
 
 #include "esp_vfs_dev.h"
 #include "esp_spiffs.h"
@@ -27,6 +28,10 @@
 #include "syscore/filesystem.h"
 #include "esp_hdiffz.h"
 
+#if CONFIG_JOLT_STORE_ATAES132A
+#include "aes132_cmd.h"
+#endif
+
 
 static const char* TAG = "jolt_helpers";
 const char NULL_TERM = '\0';
@@ -34,13 +39,24 @@ const char *EMPTY_STR = "";
 
 void jolt_get_random(uint8_t *buf, uint8_t n_bytes){
 
-    // TODO: restart if unable to verify the quality of RNG sources.
+    if( NULL == buf || 0 == n_bytes ) return;
+
 #if CONFIG_JOLT_STORE_ATAES132A
     {
-        ESP_LOGD(TAG, "Getting %d bytes from ATAES132A RNG Source", n_bytes);
-        uint8_t res = aes132_rand(buf, n_bytes);
-        if( ESP_OK != res ) {
-            esp_restart();
+        bool locked;
+        if( aes132_check_configlock(&locked) ) {
+            ESP_LOGE(TAG, "Unable to check ATAES132A lock status.");
+        }
+        if( locked ) {
+            ESP_LOGD(TAG, "Getting %d bytes from ATAES132A RNG Source", n_bytes);
+            uint8_t res = aes132_rand(buf, n_bytes);
+            if( ESP_OK != res ){
+                ESP_LOGE(TAG, "aes132_rand returned nonzero value %d", res);
+                esp_restart();
+            }
+        }
+        else{
+            ESP_LOGD(TAG, "ATAES132A is not locked; not a secure RNG source.");
         }
     }
 #endif
@@ -50,7 +66,7 @@ void jolt_get_random(uint8_t *buf, uint8_t n_bytes){
         ESP_LOGD(TAG, "Getting %d bytes from ESP32 RNG Source", n_bytes);
         CONFIDENTIAL uint8_t rand_buffer[4];
         for(uint8_t i=0, j=0; i<n_bytes; i+=4){
-            *(uint32_t *)rand_buffer = randombytes_random();
+            *(uint32_t *)rand_buffer = esp_random();
             for(uint8_t k=0; k < 4; k++){
                 buf[j] ^= rand_buffer[k];
                 j++;

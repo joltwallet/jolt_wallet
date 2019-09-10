@@ -8,6 +8,8 @@
 #ifndef JOLT_CMDS_H__
 #define JOLT_CMDS_H__
 
+#include "sdkconfig.h"
+
 /**
  * @brief Report versioning and other system data
  *
@@ -48,6 +50,11 @@ int jolt_cmd_cat(int argc, char** argv);
  * Takes 1 argument: filename to transfer
  */
 int jolt_cmd_download(int argc, char** argv);
+
+/**
+ * @brief Perform factory reset
+ */
+int jolt_cmd_factory_reset(int argc, char** argv);
 
 /**
  * @brief Get the total size of heap memory available
@@ -149,6 +156,15 @@ int jolt_cmd_top(int argc, char** argv);
  * Takes no arguments
  */
 int jolt_cmd_upload(int argc, char** argv);
+
+#if JOLT_GUI_TEST_MENU
+/**
+ * Prompt user for PIN to unlock device.
+ *
+ * Takes no arguments.
+ */
+int jolt_cmd_unlock(int argc, char** argv);
+#endif
 
 /**
  * @brief Update JoltOS

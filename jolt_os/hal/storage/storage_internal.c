@@ -50,6 +50,10 @@ bool storage_internal_startup() {
     return true;
 }
 
+void storage_internal_stretch_init(){
+    return; // Nothing to do.
+}
+
 /* Blocking */
 void storage_internal_stretch( uint256_t hash, int8_t *progress) {
     CONFIDENTIAL uint512_t buf;
@@ -108,12 +112,6 @@ bool storage_internal_get_mnemonic(uint256_t mnemonic, const uint256_t pin_hash)
      * to having the ciphertext being restored on the SPI Flash, granting an
      * attacker unlimited PIN attempts with minimal specialty tools.
      *
-     * Todos:
-     *  * NVS currently doesn't use hardware encryption; either:
-     *      * Wait for NVS to support encryption
-     *      * Implement it ourselves
-     *  * Save 256-bits and convert it upon load instead of storing and loading 
-     *    the whole mnemonic string
      */
 
     /* Todo: move some of this logic into generic storage.c */

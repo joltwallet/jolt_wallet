@@ -24,11 +24,10 @@ static uint8_t i2c_master_cmd_begin_s(i2c_port_t i2c_num,
         i2c_cmd_handle_t cmd, TickType_t ticks_to_wait)
 {
     uint8_t res = I2C_FUNCTION_RETCODE_COMM_FAIL;
-    ESP_LOGD(TAG, "Taking display mutex");
-    I2C_SEM_TAKE;
-    esp_err_t i2c_res =  i2c_master_cmd_begin(i2c_num, cmd, ticks_to_wait);
-    ESP_LOGD(TAG, "Giving display mutex");
-    I2C_SEM_GIVE;
+    esp_err_t i2c_res;
+    I2C_CTX{
+        i2c_res =  i2c_master_cmd_begin(i2c_num, cmd, ticks_to_wait);
+    }
 
     switch( i2c_res ) {
         case ESP_OK:

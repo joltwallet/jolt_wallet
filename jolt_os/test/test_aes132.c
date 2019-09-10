@@ -82,6 +82,7 @@ TEST_CASE("Load Key/Attempt Key", MODULE_NAME) {
     // Some constant dummy
     const uint128_t const_key = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
             0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
+    uint256_t pred_secret = { 0 };
     // Hash it to simulate a pin entry
     uint256_t pin_entry_hash;
     crypto_generichash_blake2b_state hs;
@@ -97,7 +98,7 @@ TEST_CASE("Load Key/Attempt Key", MODULE_NAME) {
     const uint32_t n_iterations = 100;
     int64_t start = esp_timer_get_time();
     res = aes132_stretch( (uint8_t *)pin_entry_hash, sizeof(pin_entry_hash),
-            n_iterations );
+            n_iterations, NULL );
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
     int64_t end = esp_timer_get_time();
     printf("Performed %d encrypt iterations over %lld uS.\n"
@@ -111,7 +112,7 @@ TEST_CASE("Load Key/Attempt Key", MODULE_NAME) {
     const uint128_t zeros = { 0 };
     uint32_t counter = 0;
     /* Bad PIN attempt */
-    res = aes132_pin_attempt(zeros, &counter);
+    res = aes132_pin_attempt(zeros, &counter, pred_secret);
     ESP_LOGE(TAG, "Counter Value: %d", counter);
     if( counter >= AES132_CUM_COUNTER_MAX) {
         ESP_LOGI(TAG, "Device Deactivated; key use completely exhausted.");
@@ -119,7 +120,7 @@ TEST_CASE("Load Key/Attempt Key", MODULE_NAME) {
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_MAC_ERROR, res );
 
     /* Good PIN attempt */
-    res = aes132_pin_attempt(pin_entry_hash, &counter);
+    res = aes132_pin_attempt(pin_entry_hash, &counter, pred_secret);
     ESP_LOGE(TAG, "Counter Value: %d", counter);
     if( counter >= AES132_CUM_COUNTER_MAX) {
         ESP_LOGI(TAG, "Device Deactivated; key use completely exhausted.");
@@ -150,7 +151,7 @@ TEST_CASE("Key Stretch", MODULE_NAME) {
 
     /* Stretch Key */
     int64_t start = esp_timer_get_time();
-    res = aes132_stretch( (uint8_t *)payload, sizeof(payload), n_iterations );
+    res = aes132_stretch( (uint8_t *)payload, sizeof(payload), n_iterations, NULL );
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
     int64_t end = esp_timer_get_time();
     printf("Performed %d encrypt iterations over %lld uS.\n"
