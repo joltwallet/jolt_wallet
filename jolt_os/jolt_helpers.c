@@ -62,13 +62,11 @@ void jolt_get_random(uint8_t *buf, uint8_t n_bytes){
 #endif
 
     /* ESP32 Strong RNG source */
-    // TODO: Check if radios are on, if not, enable radio noise.
-    //bootloader_random_enable()
     {
         ESP_LOGD(TAG, "Getting %d bytes from ESP32 RNG Source", n_bytes);
         CONFIDENTIAL uint8_t rand_buffer[4];
         for(uint8_t i=0, j=0; i<n_bytes; i+=4){
-            *(uint32_t *)rand_buffer = randombytes_random();
+            *(uint32_t *)rand_buffer = esp_random();
             for(uint8_t k=0; k < 4; k++){
                 buf[j] ^= rand_buffer[k];
                 j++;

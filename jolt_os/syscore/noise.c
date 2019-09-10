@@ -9,7 +9,7 @@
 #include "noise.h"
 
 #define CONFIG_JOLT_NOISE_AVG_PERIOD_US 100
-#define CONFIG_JOLT_NOISE_DELTA 23
+#define CONFIG_JOLT_NOISE_DELTA 50
 
 /*********************
  * PRIVATE VARIABLES *
@@ -52,11 +52,11 @@ static void oneshot_timer_callback(){
     uint32_t period = CONFIG_JOLT_NOISE_AVG_PERIOD_US;
     uint32_t rng;
 
-    rng = rand();
-    period += (rng % CONFIG_JOLT_NOISE_DELTA) - CONFIG_JOLT_NOISE_DELTA/2;
+    rng = esp_random();
+    period += (int32_t)(rng % CONFIG_JOLT_NOISE_DELTA) - CONFIG_JOLT_NOISE_DELTA/2;
 
     if( 0 == rng % 17) {
-        jolt_get_random((uint8_t *)&rng, sizeof(rng));
+        rng = esp_random();
         srand(rng);
     }
 
