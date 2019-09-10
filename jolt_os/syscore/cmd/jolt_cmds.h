@@ -52,6 +52,11 @@ int jolt_cmd_cat(int argc, char** argv);
 int jolt_cmd_download(int argc, char** argv);
 
 /**
+ * @brief Perform factory reset
+ */
+int jolt_cmd_factory_reset(int argc, char** argv);
+
+/**
  * @brief Get the total size of heap memory available
  *
  * Takes no arguments

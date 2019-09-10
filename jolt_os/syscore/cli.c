@@ -323,6 +323,14 @@ static void jolt_cli_cmds_register() {
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
     cmd = (esp_console_cmd_t) {
+        .command = "factory_reset",
+        .help = "Perform factory reset",
+        .hint = NULL,
+        .func = &jolt_cmd_factory_reset,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+
+    cmd = (esp_console_cmd_t) {
         .command = "free",
         .help = "Get the total size of heap memory available",
         .hint = NULL,
