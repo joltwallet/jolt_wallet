@@ -46,7 +46,7 @@ static int jolt_cmd_upload_ymodem_task(jolt_bg_job_t *job) {
     jolt_gui_obj_t *loading_scr = NULL;
 
     /* Create loading screen */
-    if( NULL == (loading_scr = jolt_gui_scr_loadingbar_create(gettext(JOLT_TEXT_UPLOAD))) ) goto exit;
+    if( NULL == (loading_scr = jolt_gui_scr_loadingbar_create(gettext(JOLT_TEXT_UPLOAD))) ) EXIT(-1);
     jolt_gui_scr_set_event_cb(loading_scr, jolt_cmd_upload_cb);
     int8_t *progress = jolt_gui_scr_loadingbar_autoupdate(loading_scr);
     jolt_gui_scr_loadingbar_update(loading_scr, NULL, gettext(JOLT_TEXT_CONNECTING), 0);
@@ -117,6 +117,7 @@ static void jolt_cmd_upload_vault_failure_cb( void * dummy) {
     send_CA();
     jolt_cli_return(-1);
     jolt_resume_logging();
+    jolt_cli_resume();
 }
 
 /**
@@ -150,6 +151,7 @@ static void jolt_cmd_upload_confirmation_cb(jolt_gui_obj_t *obj, jolt_gui_event_
         jolt_gui_scr_del(obj);
         jolt_cli_return(-1);
         jolt_resume_logging();
+        jolt_cli_resume();
     }
 }
 
@@ -176,8 +178,8 @@ int jolt_cmd_upload(int argc, char** argv) {
 
 exit:
     JOLT_GUI_OBJ_DEL_SAFE(scr);
+    send_CA();
     jolt_resume_logging();
     jolt_cli_resume();
-    send_CA();
     return -1;
 }

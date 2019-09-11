@@ -208,8 +208,10 @@ void jolt_resume_logging() {
         esp_restart();
     }
     if( 0 == uxSemaphoreGetCount(suspend_logging_sem) ) {
+#if !CONFIG_JOLT_CONSOLE_OVERRIDE_LOGGING
         esp_log_level_set("*", CONFIG_LOG_DEFAULT_LEVEL);
         esp_log_level_set("wifi", ESP_LOG_NONE);
+#endif
     }
 }
 
