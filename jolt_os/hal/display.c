@@ -6,10 +6,12 @@
 static const char TAG[] = "display.c";
 static ssd1306_t disp_hal = { 0 };
 
+#define BUF_LINES 8
+
 void display_init() {
     static lv_disp_drv_t lv_disp_drv;
     static lv_disp_buf_t disp_buf;
-    static DRAM_ATTR lv_color_t buf[LV_HOR_RES_MAX*8];
+    static DRAM_ATTR lv_color_t buf[LV_HOR_RES_MAX*BUF_LINES];
 
     /* Set reset pin as output */
     gpio_config_t io_config;
@@ -39,10 +41,10 @@ void display_init() {
 #endif
 
     lv_disp_drv_init(&lv_disp_drv);
-    lv_disp_buf_init(&disp_buf, buf, NULL, LV_HOR_RES_MAX * 8);    /*Initialize the display buffer*/
+    lv_disp_buf_init(&disp_buf, buf, NULL, LV_HOR_RES_MAX * BUF_LINES);    /*Initialize the display buffer*/
     lv_disp_drv.buffer = &disp_buf;
     lv_disp_drv.flush_cb = ssd1306_flush;
-    lv_disp_drv.set_px_cb = ssd1306_vdb_wr; // do we need this
+    lv_disp_drv.set_px_cb = ssd1306_vdb_wr;
     lv_disp_drv.rounder_cb = ssd1306_rounder;
     lv_disp_drv_register(&lv_disp_drv);
 

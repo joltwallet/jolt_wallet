@@ -81,7 +81,6 @@ static jolt_err_t get_nth_word(char buf[], size_t buf_len,
  * used for display/backup purposes only.*/
 static void generate_mnemonic( mnemonic_setup_t *param ) {
     jolt_get_random(param->mnemonic_bin, MNEMONIC_STRENGTH / 8);
-    storage_stretch_init();
     bm_bin_to_mnemonic(param->mnemonic, sizeof(param->mnemonic),
             param->mnemonic_bin, MNEMONIC_STRENGTH);
     ESP_LOGI(TAG, "mnemonic: %s", param->mnemonic);
@@ -101,6 +100,7 @@ static int bg_stretch_task(jolt_bg_job_t *job) {
     progress = jolt_gui_scr_loadingbar_autoupdate( loading_scr );
 
     /* Perform the lengthy stretching */
+    storage_stretch_init();
     storage_stretch( param->pin_hash, progress );
 
     jolt_gui_scr_loadingbar_update(loading_scr, NULL, gettext(JOLT_TEXT_SAVING), 100);
