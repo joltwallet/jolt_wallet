@@ -160,9 +160,10 @@ bool storage_ataes132a_get_mnemonic(uint256_t mnemonic, const uint256_t pin_hash
     bool auth = false;
     CONFIDENTIAL uint256_t aes132_secret;
     CONFIDENTIAL uint256_t esp_secret;
+    uint32_t counter = 0;
 
     // Attempt Authorization and Get ATAES132A Secret
-    if( aes132_pin_attempt(pin_hash, NULL, aes132_secret) ) goto exit;
+    if( aes132_pin_attempt(pin_hash, &counter, aes132_secret) ) goto exit;
 
     // Get ESP32 Secret
     size_t required_size = 32;
@@ -174,6 +175,10 @@ bool storage_ataes132a_get_mnemonic(uint256_t mnemonic, const uint256_t pin_hash
     // Combine Secrets
     xor256(mnemonic, aes132_secret, esp_secret);
     auth = true;
+
+    /* Add one since counter reflects the value prior to this successful pin attempt */
+    storage_ataes132a_set_pin_last(counter + 1);
+
 exit:
     sodium_memzero(esp_secret, sizeof(esp_secret));
     sodium_memzero(aes132_secret, sizeof(aes132_secret));
