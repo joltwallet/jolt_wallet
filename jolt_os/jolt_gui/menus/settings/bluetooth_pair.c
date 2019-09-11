@@ -25,11 +25,17 @@ static void passkey_scr_cb(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
     }
 }
 
-static void menu_bluetooth_pair_common_create( ) {
+static void menu_bluetooth_pair_common_vault_success_cb( void *dummy ) {
     jolt_bluetooth_pair_mode = true;
     jolt_bluetooth_adv_all_start();
     scanning_scr = jolt_gui_scr_preloading_create(gettext(JOLT_TEXT_PAIR), gettext(JOLT_TEXT_BROADCASTING));
     jolt_gui_scr_set_event_cb(scanning_scr, scanning_scr_cb);
+}
+
+static void menu_bluetooth_pair_common_create( ) {
+    jolt_h_settings_vault_set( NULL,
+            menu_bluetooth_pair_common_vault_success_cb,
+            NULL);
 }
 
 void menu_bluetooth_pair_create( jolt_gui_obj_t *btn, jolt_gui_event_t event ) {
