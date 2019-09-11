@@ -255,9 +255,9 @@ void app_main(void) {
     {
         BaseType_t ret;
         ESP_LOGI(TAG, "Creating LVGL Draw Task");
-        ret = xTaskCreate(littlevgl_task,
+        ret = xTaskCreatePinnedToCore(littlevgl_task,
                     "LVGL_Draw", CONFIG_JOLT_TASK_STACK_SIZE_LVGL,
-                    NULL, CONFIG_JOLT_TASK_PRIORITY_LVGL, NULL);
+                    NULL, CONFIG_JOLT_TASK_PRIORITY_LVGL, NULL, portNUM_PROCESSORS-1);
         if( pdPASS != ret ){
             if( errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY == ret ) {
                 ESP_LOGE(TAG, "%s Couldn't allocate memory for LVGL Drawing Task",
@@ -317,6 +317,7 @@ void app_main(void) {
     }
 #endif /* CONFIG_PM_ENABLE */
 
+    // TODO mvoe into lv_draw task to make sure GUI isn't crashing.
     ESP_ERROR_CHECK( esp_ota_mark_app_valid_cancel_rollback() );
 }
 

@@ -148,17 +148,19 @@ static lv_res_t new_roller_signal(jolt_gui_obj_t *roller, lv_signal_t sign, void
 
 /* Create and return a lv_roller */
 static jolt_gui_obj_t *digit_create(jolt_gui_obj_t *parent) {
-    jolt_gui_obj_t *roller;
-    roller = lv_roller_create(parent, NULL);
-    jolt_gui_obj_id_set(roller, JOLT_GUI_OBJ_ID_ROLLER);
-    if( NULL == old_roller_signal) {
-        old_roller_signal = lv_obj_get_signal_cb(roller);
+    jolt_gui_obj_t *roller = NULL;
+    JOLT_GUI_CTX{
+        roller = BREAK_IF_NULL(lv_roller_create(parent, NULL));
+        jolt_gui_obj_id_set(roller, JOLT_GUI_OBJ_ID_ROLLER);
+        if( NULL == old_roller_signal) {
+            old_roller_signal = lv_obj_get_signal_cb(roller);
+        }
+        lv_obj_set_signal_cb(roller, new_roller_signal);
+        lv_roller_set_anim_time(roller, CONFIG_JOLT_GUI_SCR_DIGIT_ENTRY_ANIM_DIGIT_MS);
+        lv_roller_set_options(roller, "0\n9\n8\n7\n6\n5\n4\n3\n2\n1", true);
+        lv_roller_set_visible_row_count(roller, 1);
+        lv_roller_set_align(roller, LV_LABEL_ALIGN_CENTER);
     }
-    lv_obj_set_signal_cb(roller, new_roller_signal);
-    lv_roller_set_anim_time(roller, CONFIG_JOLT_GUI_SCR_DIGIT_ENTRY_ANIM_DIGIT_MS);
-    lv_roller_set_options(roller, "0\n9\n8\n7\n6\n5\n4\n3\n2\n1", true);
-    lv_roller_set_visible_row_count(roller, 1);
-    lv_roller_set_align(roller, LV_LABEL_ALIGN_CENTER);
     return roller;
 }
 
@@ -168,7 +170,7 @@ static jolt_gui_obj_t *digit_create(jolt_gui_obj_t *parent) {
 static jolt_gui_obj_t *create_dp(jolt_gui_obj_t *parent){
     jolt_gui_obj_t *label = NULL;
     JOLT_GUI_CTX{
-        label = lv_label_create(parent, NULL);
+        label = BREAK_IF_NULL(lv_label_create(parent, NULL));
         jolt_gui_obj_id_set(label, JOLT_GUI_OBJ_ID_DECIMAL_POINT);
 
         /* Style */
@@ -211,7 +213,7 @@ jolt_gui_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
         ESP_LOGD(TAG, "digit_entry screen created at: %p", parent);
 
         /* Create digit_entry object */
-        jolt_gui_obj_t *digit_entry = lv_cont_create(cont_body, cont_body);
+        jolt_gui_obj_t *digit_entry = BREAK_IF_NULL(lv_cont_create(cont_body, cont_body));
         BREAK_IF_NULL(lv_obj_allocate_ext_attr(digit_entry, sizeof(digit_entry_cont_ext_t)));
         ESP_LOGD(TAG, "digit_entry object created at: %p", digit_entry);
         digit_entry_cont_ext_t *ext = lv_obj_get_ext_attr(digit_entry);
@@ -225,13 +227,17 @@ jolt_gui_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
         ext->num_rollers = n;
 
         /* Create the rollers, left to right */
-        for(int8_t i=0; i < n; i++){
-            ESP_LOGD(TAG, "Creating roller %d", i);
-            if(pos + i == n ){
-                /* Create decimal place */
-                ext->decimal_point = create_dp(digit_entry);
+        {
+            int8_t i;
+            for(i=0; i < n; i++){
+                ESP_LOGD(TAG, "Creating roller %d", i);
+                if(pos + i == n ){
+                    /* Create decimal place */
+                    ext->decimal_point = BREAK_IF_NULL(create_dp(digit_entry));
+                }
+                ext->rollers[i] = BREAK_IF_NULL(digit_create(digit_entry));
             }
-            ext->rollers[i] = digit_create(digit_entry);
+            if( i != n ) break;  // Break if we broke early
         }
         lv_roller_set_visible_row_count(ext->rollers[0], 3);
         uint8_t roller_height = lv_obj_get_height(ext->rollers[0]);
@@ -253,7 +259,7 @@ jolt_gui_obj_t *jolt_gui_scr_digit_entry_create(const char *title,
 
        
         if( 0 == pos ) {
-            ext->decimal_point = create_dp(digit_entry);
+            ext->decimal_point = BREAK_IF_NULL(create_dp(digit_entry));
         }
 
         if( NULL == old_cont_signal) {

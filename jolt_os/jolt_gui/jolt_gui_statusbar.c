@@ -100,7 +100,7 @@ void statusbar_create() {
     ESP_LOGD(TAG, "Creating Statusbar Object");
 
     /* Create StatusBar Container */
-    statusbar_cont = lv_cont_create(lv_scr_act(), NULL);
+    statusbar_cont = RESTART_IF_NULL(lv_cont_create(lv_scr_act(), NULL));
     lv_style_copy(&header_style, lv_cont_get_style(statusbar_cont, LV_CONT_STYLE_MAIN) );
     header_style.body.border.width = 1;
     header_style.body.border.part = LV_BORDER_BOTTOM;
@@ -110,7 +110,7 @@ void statusbar_create() {
 
     /* Create Indicator Label*/
     static lv_style_t statusbar_style;
-    statusbar_label = lv_label_create(statusbar_cont, NULL);
+    statusbar_label = RESTART_IF_NULL(lv_label_create(statusbar_cont, NULL));
     lv_style_copy(&statusbar_style, lv_obj_get_style(statusbar_label));
     statusbar_style.text.letter_space = JOLT_STATUSBAR_SYMBOL_SPACE;
     statusbar_style.text.font = &jolt_symbols;
@@ -129,6 +129,7 @@ void statusbar_create() {
     lv_task_t *task = lv_task_create(&statusbar_update,
             CONFIG_JOLT_GUI_STATUSBAR_UPDATE_PERIOD_MS,
             LV_TASK_PRIO_LOW, NULL);
+    RESTART_IF_NULL(task);
     lv_task_ready( task );
 }
 

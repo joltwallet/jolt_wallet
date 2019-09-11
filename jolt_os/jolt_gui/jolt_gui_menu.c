@@ -128,13 +128,13 @@ jolt_gui_obj_t *jolt_gui_scr_menu_add_sw( jolt_gui_obj_t *btn ) {
         lv_coord_t width = lv_obj_get_width( label );
         lv_obj_set_width( label, width - JOLT_GUI_SW_CONT_WIDTH );
 
-        jolt_gui_obj_t *cont = lv_cont_create(btn, NULL);
+        jolt_gui_obj_t *cont = BREAK_IF_NULL(lv_cont_create(btn, NULL));
         lv_coord_t height = lv_obj_get_height( btn );
         lv_obj_set_protect(cont, LV_PROTECT_POS);
         lv_obj_set_size(cont, JOLT_GUI_SW_CONT_WIDTH, height);
         lv_obj_align(cont, NULL, LV_ALIGN_IN_RIGHT_MID, 0, 0);
 
-        sw = lv_sw_create( cont, NULL );
+        sw = BREAK_IF_NULL(lv_sw_create( cont, NULL ));
         lv_sw_set_anim_time(sw, JOLT_GUI_SW_ANIM_TIME_MS);
         lv_obj_set_size( sw, JOLT_GUI_SW_WIDTH, JOLT_GUI_SW_HEIGHT );
         lv_obj_align(sw, NULL, LV_ALIGN_IN_LEFT_MID, JOLT_GUI_SW_LEFT_PADDING, 0);

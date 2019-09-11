@@ -15,6 +15,7 @@
 
 #include "jolttypes.h"
 #include "esp_err.h"
+#include "esp_system.h"
 #include "bipmnemonic.h"
 #include "lvgl/lvgl.h"
 #include "vault.h"
@@ -61,8 +62,15 @@
 
 /**
  * @brief goto exit if pointer is NULL.
+ * @return passed in value
  */
-#define EXIT_IF_NULL(x) do{ if( NULL == x ) goto exit; }while(0)
+#define EXIT_IF_NULL(x) ({ void *y = x; if( NULL == y ) goto exit; y;})
+
+/**
+ * @brief Restart system if passed in value is NULL.
+ * @return passed in value
+ */
+#define RESTART_IF_NULL(x) ({ void *y = x; if(NULL == y) esp_restart(); y;})
 
 /**
  * @brief Easy reference to a NULL TERMINATOR character '\0'

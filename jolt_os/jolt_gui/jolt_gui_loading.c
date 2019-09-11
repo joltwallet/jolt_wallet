@@ -111,9 +111,9 @@ static void autoupdate_task(lv_task_t *input) {
     }
 }
 
-int8_t  *jolt_gui_scr_loadingbar_autoupdate(jolt_gui_obj_t *parent) {
+int8_t *jolt_gui_scr_loadingbar_autoupdate(jolt_gui_obj_t *parent) {
     autoupdate_param_t *param;
-    param = malloc( sizeof(autoupdate_param_t) );
+    param = calloc( 1, sizeof(autoupdate_param_t) );
     if( NULL == param ) {
         ESP_LOGE(TAG, "Unable to allocate memory for autoupdate params");
         return NULL;
@@ -130,6 +130,10 @@ int8_t  *jolt_gui_scr_loadingbar_autoupdate(jolt_gui_obj_t *parent) {
         param->scr      = parent;
         param->progress = 0;
         param->task = lv_task_create(autoupdate_task, 100, LV_TASK_PRIO_HIGH, parent);
+    }
+    if( NULL == param->task ) {
+        free(param);
+        return NULL;
     }
     ESP_LOGD(TAG, "Autoupdate create progress address: %p", &param->progress);
     return &param->progress;

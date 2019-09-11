@@ -96,7 +96,7 @@ static int bg_stretch_task(jolt_bg_job_t *job) {
     param = jolt_bg_get_param( job );
 
     /* Create Loading Bar */
-    loading_scr = jolt_gui_scr_loadingbar_create(gettext(JOLT_TEXT_SAVING));
+    RESTART_IF_NULL(loading_scr = jolt_gui_scr_loadingbar_create(gettext(JOLT_TEXT_SAVING)));
     jolt_gui_scr_loadingbar_update(loading_scr, NULL, gettext(JOLT_TEXT_PROCESSING), 0);
     progress = jolt_gui_scr_loadingbar_autoupdate( loading_scr );
 
@@ -158,6 +158,7 @@ static void screen_finish_create(lv_obj_t *digit_entry, lv_event_t event) {
         else{
             sodium_memzero( param->pin_hash, sizeof(param->pin_hash) );
             lv_obj_t *scr = jolt_gui_scr_text_create(gettext(JOLT_TEXT_PIN_SETUP), gettext(JOLT_TEXT_PIN_MISMATCH));
+            RESTART_IF_NULL(scr);
             jolt_gui_scr_set_active_param(scr, param);
             jolt_gui_scr_set_event_cb(scr, mismatch_cb);
         }
@@ -190,9 +191,7 @@ static void screen_pin_verify_create(lv_obj_t *digit_entry, lv_event_t event) {
         ESP_LOGD(TAG, "Creating verify screen");
         lv_obj_t *scr = jolt_gui_scr_digit_entry_create( gettext(JOLT_TEXT_PIN_VERIFY),
                 CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL); 
-        if( NULL == scr ){
-            esp_restart();
-        }
+        RESTART_IF_NULL(scr);
         jolt_gui_scr_set_active_param(scr, param);
         ESP_LOGD(TAG, "Setting CB");
         jolt_gui_scr_set_event_cb(scr, &screen_finish_create);
@@ -205,9 +204,7 @@ static void screen_pin_verify_create(lv_obj_t *digit_entry, lv_event_t event) {
 static lv_obj_t *screen_pin_entry_create_( mnemonic_setup_t *param ) {
     lv_obj_t *scr = jolt_gui_scr_digit_entry_create( gettext(JOLT_TEXT_PIN),
             CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL);
-    if( NULL == scr ){
-        esp_restart();
-    }
+    RESTART_IF_NULL(scr);
     ESP_LOGD(TAG, "(%d) Created PIN entry screen at %p", __LINE__, scr);
     jolt_gui_scr_set_active_param(scr, param);
     jolt_gui_scr_set_event_cb(scr, &screen_pin_verify_create);
@@ -236,20 +233,24 @@ static void screen_mnemonic_create(lv_obj_t *btn, lv_event_t event) {
         param = jolt_gui_obj_get_param( btn );
 
         lv_obj_t *scr = jolt_gui_scr_menu_create( gettext(JOLT_TEXT_BACKUP_MNEMONIC) );
+        RESTART_IF_NULL(scr);
         for(uint8_t i=0; i < 24; i++) {
             char buf[SINGLE_WORD_BUF_LEN] = { 0 };
+            jolt_gui_obj_t *elem = NULL;
             get_nth_word(buf, sizeof(buf), param->mnemonic, i);
 #if JOLT_GUI_TEST_MENU
-            jolt_gui_scr_menu_add(scr, NULL, buf, screen_pin_entry_create); // so devs dont have to scroll down every time
+            // so devs dont have to scroll down every time
+            elem = jolt_gui_scr_menu_add(scr, NULL, buf, screen_pin_entry_create);
 #else
-            jolt_gui_scr_menu_add(scr, NULL, buf, NULL);
+            elem = jolt_gui_scr_menu_add(scr, NULL, buf, NULL);
 #endif
+            RESTART_IF_NULL(elem);
         }
-        jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_CONTINUE), screen_pin_entry_create);
+        RESTART_IF_NULL(jolt_gui_scr_menu_add(scr, NULL, gettext(JOLT_TEXT_CONTINUE), screen_pin_entry_create));
         jolt_gui_scr_menu_set_param( scr, param );
     }
     else if ( jolt_gui_event.cancel == event ) {
-            /* Do Nothing - delete action handled by default menu action */
+        /* Do Nothing - delete action handled by default menu action */
     }
 }
 
@@ -260,15 +261,13 @@ static void screen_mnemonic_create(lv_obj_t *btn, lv_event_t event) {
  */
 void jolt_gui_first_boot_create() {
     mnemonic_setup_t *param = NULL;
-    param = malloc( sizeof(mnemonic_setup_t) );
-    if( NULL == param ) {
-        esp_restart();
-    }
+    param = RESTART_IF_NULL(malloc( sizeof(mnemonic_setup_t) ));
 
     generate_mnemonic( param );
 
     lv_obj_t *scr = jolt_gui_scr_text_create( gettext(JOLT_TEXT_FIRST_STARTUP),
             gettext(JOLT_TEXT_WELCOME_DIALOG_0));
+    RESTART_IF_NULL(scr);
     jolt_gui_scr_set_active_param(scr, param);
     jolt_gui_scr_set_event_cb(scr, &screen_mnemonic_create);
 }
@@ -276,18 +275,13 @@ void jolt_gui_first_boot_create() {
 /* Prompts user for pin and performs the rest of setup for a given entropy */
 void jolt_gui_restore_sequence(const uint256_t mnemonic) {
     mnemonic_setup_t *param = NULL;
-    param = malloc( sizeof(mnemonic_setup_t) );
-    if( NULL == param ) {
-        esp_restart();
-    }
+    param = RESTART_IF_NULL(malloc( sizeof(mnemonic_setup_t) ));
 
     memcpy(param->mnemonic_bin, mnemonic, 32);
 
     lv_obj_t *scr = jolt_gui_scr_digit_entry_create( "PIN",
             CONFIG_JOLT_GUI_PIN_LEN, JOLT_GUI_SCR_DIGIT_ENTRY_NO_DECIMAL);
-    if( NULL == scr ){
-        esp_restart();
-    }
+    RESTART_IF_NULL(scr);
     jolt_gui_scr_set_active_param( scr, param );
     jolt_gui_scr_set_event_cb(scr, &screen_pin_verify_create);
 }

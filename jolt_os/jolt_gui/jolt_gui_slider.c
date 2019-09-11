@@ -36,21 +36,21 @@ int16_t jolt_gui_scr_slider_get_value(jolt_gui_obj_t *scr) {
 
 void jolt_gui_scr_slider_set_value(jolt_gui_obj_t *scr, int16_t value) {
     JOLT_GUI_CTX{
-        jolt_gui_obj_t *slider = jolt_gui_scr_slider_get_slider(scr);
+        jolt_gui_obj_t *slider = BREAK_IF_NULL(jolt_gui_scr_slider_get_slider(scr));
         lv_slider_set_value(slider, value, false);
     }
 }
 
 void jolt_gui_scr_slider_set_range(jolt_gui_obj_t *scr, int16_t min, int16_t max) {
     JOLT_GUI_CTX{
-        jolt_gui_obj_t *slider = jolt_gui_scr_slider_get_slider(scr);
+        jolt_gui_obj_t *slider = BREAK_IF_NULL(jolt_gui_scr_slider_get_slider(scr));
         lv_slider_set_range(slider, min, max);
     }
 }
 
 void jolt_gui_scr_slider_set_label(jolt_gui_obj_t *scr, const char *text){
     JOLT_GUI_CTX{
-        jolt_gui_obj_t *slider = jolt_gui_scr_slider_get_slider(scr);
+        jolt_gui_obj_t *slider = BREAK_IF_NULL(jolt_gui_scr_slider_get_slider(scr));
         jolt_gui_obj_t *label = NULL;
         label = JOLT_GUI_FIND_AND_CHECK(slider, JOLT_GUI_OBJ_ID_LABEL_0);
         lv_label_set_text(label, text);
@@ -61,7 +61,7 @@ jolt_gui_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, 
     JOLT_GUI_SCR_CTX( title ) {
         jolt_gui_scr_id_set(parent, JOLT_GUI_SCR_ID_SLIDER);
         /* Create Slider */
-        jolt_gui_obj_t *slider = lv_slider_create(cont_body, NULL);
+        jolt_gui_obj_t *slider = BREAK_IF_NULL(lv_slider_create(cont_body, NULL));
         jolt_gui_obj_id_set(slider, JOLT_GUI_OBJ_ID_SLIDER);
         lv_slider_set_range(slider, 0, 10); // Default Slider Range
         lv_obj_set_size(slider,
@@ -69,9 +69,7 @@ jolt_gui_obj_t *jolt_gui_scr_slider_create(const char *title, const char *text, 
         lv_obj_align(slider, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -10);
         jolt_gui_obj_set_event_cb(slider, cb);
         lv_slider_set_value(slider, 0, false); // Default initial value
-
-        // todo use CONFIG_JOLT_GUI_SLIDER_ANIM_MS
-        //lv_slider_set_anim_time(slider, CONFIG_JOLT_GUI_SLIDER_ANIM_MS);
+        lv_slider_set_anim_time(slider, CONFIG_JOLT_GUI_SLIDER_ANIM_MS);
 
         jolt_gui_group_add( slider );
 

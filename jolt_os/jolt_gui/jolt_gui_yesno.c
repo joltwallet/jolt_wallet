@@ -16,8 +16,7 @@ jolt_gui_obj_t * jolt_gui_scr_yesno_create(const char *title,
     }
     if( !success ){
         ESP_LOGE(TAG, "Failed to create yes/no screen");
-        jolt_gui_scr_del( scr );
-        scr = NULL;
+        JOLT_GUI_OBJ_DEL_SAFE(scr);
     }
     return scr;
 }

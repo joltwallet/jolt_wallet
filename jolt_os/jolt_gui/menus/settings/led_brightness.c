@@ -51,6 +51,7 @@ void menu_led_brightness_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) {
         }
 
         jolt_gui_obj_t *scr = jolt_gui_scr_slider_create(gettext(JOLT_TEXT_BRIGHTNESS), NULL, led_brightness_cb);
+        if(NULL == scr) return;
         jolt_gui_scr_slider_set_range(scr, 0, sizeof(brightness_levels)-1);
         jolt_gui_scr_slider_set_value(scr, slider_pos);
     }

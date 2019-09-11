@@ -32,6 +32,7 @@ jolt_gui_obj_t *jolt_gui_scr_scroll_add_qr(jolt_gui_obj_t *scr, const char *data
                     JOLT_GUI_QR_VERSION, ECC_LOW, 
                     (uint8_t *)data, data_len) ) {
             // error: too much data
+            lv_obj_del(page);
             break;
         }
         jolt_gui_obj_id_set(img, JOLT_GUI_OBJ_ID_IMG_QR);
@@ -64,12 +65,12 @@ jolt_gui_obj_t *jolt_gui_scr_scroll_add_qr(jolt_gui_obj_t *scr, const char *data
 
 jolt_gui_obj_t *jolt_gui_scr_qr_create(const char *title, const char *data,
         uint16_t data_len){
-    jolt_gui_obj_t *parent = jolt_gui_scr_scroll_create(title);
-    if( NULL != parent ) {
-        jolt_gui_obj_t *label = jolt_gui_scr_scroll_add_qr(parent, data, data_len);
-        if( NULL == label ) {
-            jolt_gui_obj_del(parent);
-        }
+    jolt_gui_obj_t *parent = NULL;
+    JOLT_GUI_CTX{
+        jolt_gui_obj_t *label;
+        parent = BREAK_IF_NULL(jolt_gui_scr_scroll_create(title));
+        label = jolt_gui_scr_scroll_add_qr(parent, data, data_len);
+        if( NULL == label ) JOLT_GUI_OBJ_DEL_SAFE(parent);
     }
     return parent;
 }

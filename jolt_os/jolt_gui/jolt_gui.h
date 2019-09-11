@@ -306,7 +306,7 @@ lv_obj_t *jolt_gui_obj_get_parent( const lv_obj_t *obj );
 #define JOLT_GUI_CTX \
     MPP_BEFORE(1, jolt_gui_sem_take() ) \
     MPP_DO_WHILE(2, false) \
-    MPP_BREAK_HANDLER(3, ESP_LOGE(TAG, "JOLT_GUI_CTX break L%d", __LINE__)) \
+    MPP_BREAK_HANDLER(3, ESP_LOGE(TAG, "%s: JOLT_GUI_CTX break L%d", __func__, __LINE__)) \
     MPP_FINALLY(4, jolt_gui_sem_give() )
 
 #define if_not(x) if(!(x))

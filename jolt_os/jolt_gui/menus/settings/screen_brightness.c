@@ -27,6 +27,7 @@ void menu_screen_brightness_create(jolt_gui_obj_t *btn, jolt_gui_event_t event) 
         uint8_t slider_pos = get_display_brightness();
 
         jolt_gui_obj_t *scr = jolt_gui_scr_slider_create(gettext(JOLT_TEXT_BRIGHTNESS), NULL, screen_brightness_cb);
+        if(NULL == scr) return;
         jolt_gui_scr_slider_set_range(scr, 0, DISPLAY_BRIGHTNESS_LEVELS - 1);
         jolt_gui_scr_slider_set_value(scr, slider_pos);
     }
