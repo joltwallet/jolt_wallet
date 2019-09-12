@@ -409,7 +409,7 @@ bool vault_setup() {
 
     /* Setup the PIN Entry State Machine */
     ps.scr = NULL;
-    memset(ps.pin_hash, 0, sizeof(uint256_t));
+    memzero(ps.pin_hash, sizeof(uint256_t));
     ps.failure_cb = NULL;
     ps.success_cb = NULL;
     ps.param = NULL;
@@ -494,7 +494,7 @@ esp_err_t vault_set(uint32_t purpose, uint32_t coin_type,
     sodium_mprotect_readonly(vault);
 
     /* Zero out the pin state */
-    memset(&ps, 0, sizeof(ps));
+    memzero(&ps, sizeof(ps));
     ps.failure_cb = failure_cb;
     ps.success_cb = success_cb;
     ps.param = param;
@@ -533,7 +533,7 @@ void vault_refresh(vault_cb_t failure_cb, vault_cb_t success_cb, void *param) {
     }
     else{
         /* Prompt for pin access without overwriting vault values */
-        memset(&ps, 0, sizeof(ps));
+        memzero(&ps, sizeof(ps));
         ps.state = PIN_STATE_CREATE;
         ps.failure_cb = failure_cb;
         ps.success_cb = success_cb;

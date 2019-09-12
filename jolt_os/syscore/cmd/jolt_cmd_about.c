@@ -48,7 +48,10 @@ int jolt_cmd_about(int argc, char** argv) {
     int return_code = -1;
     cJSON *json = NULL;
 
-    if( NULL == (json = cJSON_CreateObject()) ) goto end;
+    if( NULL == (json = cJSON_CreateObject()) ) {
+        ESP_LOGE(TAG, "Unable to allocate cJSON object.");
+        goto end;
+    }
 
     if( 1 == argc ) {
         /* General "about" information */

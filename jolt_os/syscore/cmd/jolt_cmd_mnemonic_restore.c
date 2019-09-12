@@ -217,7 +217,7 @@ int jolt_cmd_mnemonic_restore(int argc, char** argv) {
 
     param = malloc(sizeof(mnemonic_restore_job_param_t));
     if( NULL == param ) goto exit;
-    memset(param, 0, sizeof(mnemonic_restore_job_param_t));
+    memzero(param, sizeof(mnemonic_restore_job_param_t));
     param->state = MNEMONIC_RESTORE_CONFIRM_START;
 
     /* Create prompt screen */

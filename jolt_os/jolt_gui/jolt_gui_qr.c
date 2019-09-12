@@ -1,5 +1,6 @@
 #include "jolt_gui.h"
 #include "jolt_gui_scroll.h"
+#include "jolt_helpers.h"
 
 /* QR Screen Structure:
  * * SCREEN
@@ -36,7 +37,7 @@ jolt_gui_obj_t *jolt_gui_scr_scroll_add_qr(jolt_gui_obj_t *scr, const char *data
             break;
         }
         jolt_gui_obj_id_set(img, JOLT_GUI_OBJ_ID_IMG_QR);
-        memset(ext->img_data, 0, sizeof(ext->img_data));
+        memzero(ext->img_data, sizeof(ext->img_data));
         memcpy(ext->img_data, lv_img_color_header, sizeof(lv_img_color_header));
 
         uint8_t *img_data = ext->img_data + sizeof(lv_img_color_header);
