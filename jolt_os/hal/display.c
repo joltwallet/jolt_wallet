@@ -1,17 +1,16 @@
-#include "lvgl/lvgl.h"
+#include "jolt_gui/jolt_gui.h"
 #include "jolt_helpers.h"
 #include "hal/display.h"
 #include "hal/storage/storage.h"
 
+#define BUF_LINES 8
 static const char TAG[] = "display.c";
 static ssd1306_t disp_hal = { 0 };
-
-#define BUF_LINES 8
+static DRAM_ATTR lv_color_t buf[LV_HOR_RES_MAX*BUF_LINES];
 
 void display_init() {
     static lv_disp_drv_t lv_disp_drv;
     static lv_disp_buf_t disp_buf;
-    static DRAM_ATTR lv_color_t buf[LV_HOR_RES_MAX*BUF_LINES];
 
     /* Set reset pin as output */
     gpio_config_t io_config;
@@ -41,7 +40,7 @@ void display_init() {
 #endif
 
     lv_disp_drv_init(&lv_disp_drv);
-    lv_disp_buf_init(&disp_buf, buf, NULL, LV_HOR_RES_MAX * BUF_LINES);    /*Initialize the display buffer*/
+    lv_disp_buf_init(&disp_buf, buf, NULL, LV_HOR_RES_MAX * BUF_LINES * 8);    /*Initialize the display buffer*/
     lv_disp_drv.buffer = &disp_buf;
     lv_disp_drv.flush_cb = ssd1306_flush;
     lv_disp_drv.set_px_cb = ssd1306_vdb_wr;
@@ -51,6 +50,43 @@ void display_init() {
     ssd1306_set_whole_display_lighting(&disp_hal, false);
     ssd1306_set_inversion(&disp_hal, true);
     set_display_brightness(get_display_brightness());
+}
+
+uint8_t *get_display_buf() {
+    assert( BUF_LINES == 8 );
+    return (uint8_t*) buf;
+}
+
+void print_display_buf() {
+    assert( LV_HOR_RES_MAX == 128 );
+    assert( BUF_LINES == 8 );
+    printf("\n");
+    char print_buf[LV_HOR_RES_MAX*4 + 2] = { 0 };  // newline + null-terminator 
+
+    JOLT_GUI_CTX{
+        jolt_suspend_logging();
+        lv_obj_invalidate(lv_scr_act());
+        lv_refr_now(NULL);
+        for(uint8_t y1=0; y1 < LV_VER_RES_MAX-1; y1+=2){
+            memzero(print_buf, sizeof(print_buf));
+            uint8_t y2 = y1 + 1;
+            for(uint8_t x=0; x < LV_HOR_RES_MAX; x++){
+                bool val1, val2;
+                uint8_t *disp_buf_ptr;
+                disp_buf_ptr = (uint8_t*)buf + LV_HOR_RES_MAX * (y1 >> 3) + x;
+                val1 = (bool)(*disp_buf_ptr & (1<<(y1 % 8)));
+                disp_buf_ptr = (uint8_t*)buf + LV_HOR_RES_MAX * (y2 >> 3) + x;
+                val2 = (bool)(*disp_buf_ptr & (1<<(y2 % 8)));
+                if(val1 && val2) strlcat(print_buf, " ", sizeof(print_buf));
+                else if(val1)    strlcat(print_buf, "▄", sizeof(print_buf));
+                else if(val2)    strlcat(print_buf, "▀", sizeof(print_buf));
+                else             strlcat(print_buf, "█", sizeof(print_buf));
+            }
+            strlcat(print_buf, "\n", sizeof(print_buf));
+            printf(print_buf);
+        }
+        jolt_resume_logging();
+    }
 }
 
 static const uint8_t brightness_levels[] = { 0, 1, 2, 50, 120, 255};

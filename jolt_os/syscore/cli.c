@@ -314,6 +314,16 @@ static void jolt_cli_cmds_register() {
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 
+    #if JOLT_GUI_TEST_MENU
+        cmd = (esp_console_cmd_t) {
+            .command = "display",
+            .help = "Print the display buffer",
+            .hint = NULL,
+            .func = &jolt_cmd_display,
+        };
+        ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+    #endif
+
     cmd = (esp_console_cmd_t) {
         .command = "download",
         .help = "Send specified file from Jolt over UART ymodem",
