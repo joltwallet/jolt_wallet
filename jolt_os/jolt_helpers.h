@@ -73,6 +73,11 @@
 #define RESTART_IF_NULL(x) ({ void *y = x; if(NULL == y) esp_restart(); y;})
 
 /**
+ * @brief Fill a buffer with zeros. DO NOT USE FOR CONFIDENTIAL DATA.
+ */
+#define memzero(buf, size) memset(buf, 0, size);
+
+/**
  * @brief Easy reference to a NULL TERMINATOR character '\0'
  */
 extern const char NULL_TERM;

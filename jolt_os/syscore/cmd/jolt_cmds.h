@@ -45,6 +45,11 @@ int jolt_cmd_bt_whitelist(int argc, char** argv);
 int jolt_cmd_cat(int argc, char** argv);
 
 /**
+ * @brief Print the display buffer to stdout
+ */
+int jolt_cmd_display(int argc, char** argv);
+
+/**
  * @brief Send specified file from Jolt over UART ymodem
  *
  * Takes 1 argument: filename to transfer
