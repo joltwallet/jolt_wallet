@@ -120,7 +120,11 @@ static void jolt_cli_uart_listener_task( void *param) {
 
         if( 0 == strcmp(line, "upload_firmware")
                 || 0 == strcmp(line, "upload")
-                || 0 == strncmp(line, "upload ", 7)){
+                || 0 == strncmp(line, "upload ", 7)
+#if JOLT_GUI_TEST_MENU
+                || 0 == strcmp(line, "display")
+#endif
+                ){
             suspend = true;
         }
         else if( 0 == strcmp(line, "ping") ) {
