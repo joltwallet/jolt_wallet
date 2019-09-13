@@ -145,25 +145,28 @@ jolt_gui_obj_t *jolt_gui_scr_menu_add_sw( jolt_gui_obj_t *btn ) {
 lv_obj_t *jolt_gui_scr_menu_add_info( jolt_gui_obj_t *btn, const char *info ) {
     jolt_gui_obj_t *info_label = NULL;
     JOLT_GUI_CTX{
+        jolt_gui_obj_t * info_label_tmp = NULL;
         jolt_gui_obj_t *btn_label = lv_list_get_btn_label( btn );
 
         /* Creating another child label under a list element interfere's with 
          * how lvgl handles signal callbacks, so we have to first create a container */
         jolt_gui_obj_t *cont = BREAK_IF_NULL(lv_cont_create(btn, NULL));
+        lv_cont_set_style(cont, LV_CONT_STYLE_MAIN, &lv_style_transp_tight);
         lv_cont_set_fit(cont, LV_FIT_TIGHT);
-        lv_cont_set_style(cont, LV_CONT_STYLE_MAIN, &lv_style_transp);
 
-        info_label = BREAK_IF_NULL(lv_label_create(cont, btn_label));
-
-        lv_label_set_long_mode(info_label, LV_LABEL_LONG_EXPAND);
-        lv_label_set_text(info_label, info);
-        lv_obj_align(cont, btn, LV_ALIGN_IN_RIGHT_MID, 0, 0);
+        info_label_tmp = BREAK_IF_NULL(lv_label_create(cont, btn_label));
+        lv_label_set_long_mode(info_label_tmp, LV_LABEL_LONG_EXPAND);
+        lv_label_set_text(info_label_tmp, info);
 
         {
-            lv_coord_t info_width = lv_obj_get_width( info_label );
+            lv_coord_t info_width = lv_obj_get_width( cont );
             lv_coord_t btn_width = lv_obj_get_width( btn_label );
             lv_obj_set_width( btn_label, btn_width - info_width );
+            lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
         }
+
+        lv_obj_align(cont, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+        info_label = info_label_tmp;
     }
     return info_label;
 }
