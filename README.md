@@ -47,16 +47,29 @@ To see the latest on what we've done, what we're planning, and where we're heade
 
 * App loading only works when set to release mode or stack protection is disabled.
 
-## Contributors
 
-This project wouldn't have been possible without the hard work and dedication of these fellow members.
+## Flashing
 
-* [@jamescoxon](https://github.com/jamescoxon) -
-**James Coxon**
-* [@brianpugh](https://github.com/brianpugh) -
-**Brian Pugh**
-* [@smaili](https://github.com/smaili) -
-**Michael Smaili**
+#### Default JoltOS
+
+```
+make flash monitor -j
+```
+
+#### Unit Test GUI
+The following flashes the on-device debug menu along with some developer commands.
+
+```
+make test-menu - j
+```
+
+#### Unit Test Functions
+The following command will flash JoltOS unit tests and a unit-test menu accessible
+via the UART console.
+
+```
+make tests -j
+```
 
 ## Support
 
