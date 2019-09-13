@@ -56,9 +56,17 @@ lv_obj_t *jolt_gui_scr_menu_get_scr( lv_obj_t *btn );
 /**
  * @brief Adds an item to a Jolt Menu Screen 
  * @param[in,out] btn Menu element to add a switch to
- * @return lv_sw object
+ * @return lv_sw object.
  */
 lv_obj_t *jolt_gui_scr_menu_add_sw( lv_obj_t *btn );
+
+/**
+ * @brief Displays a right-justified string for an element. This must be a short
+ * string, or else it might totally eclipse the menu element's label.
+ *
+ * @return created lv_label object.
+ */
+lv_obj_t *jolt_gui_scr_menu_add_info( lv_obj_t *btn, const char *info );
 
 /**
  * @brief Sets the current selection to btn 
