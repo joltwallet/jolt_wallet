@@ -1,4 +1,10 @@
 #
+# Things that need to change before consumer release
+#
+CONFIG_BOOTLOADER_LOG_LEVEL=y
+CONFIG_BOOTLOADER_LOG_LEVEL_WARN=y
+
+#
 # Application manager
 #
 CONFIG_APP_COMPILE_TIME_DATE=y

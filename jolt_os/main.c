@@ -89,9 +89,15 @@ void app_main(void)
 #else
 
 static void littlevgl_task() {
+    bool cancel_rollback = false;
     ESP_LOGI(TAG, "Starting draw loop");
     TickType_t xLastWakeTime = xTaskGetTickCount();
-    for( ;; vTaskDelayUntil( &xLastWakeTime, 1 ) ) {
+    for( uint8_t counter=0;; vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS(10) ), counter++ ) {
+        if( counter == 20 && cancel_rollback == false ) {
+            ESP_LOGI(TAG, "Marking app as valid.");
+            ESP_ERROR_CHECK( esp_ota_mark_app_valid_cancel_rollback() );
+            cancel_rollback = true;
+        }
         JOLT_GUI_CTX{
             lv_task_handler();
         }
@@ -316,9 +322,6 @@ void app_main(void) {
         ESP_ERROR_CHECK( esp_pm_configure(&cfg) );
     }
 #endif /* CONFIG_PM_ENABLE */
-
-    // TODO mvoe into lv_draw task to make sure GUI isn't crashing.
-    ESP_ERROR_CHECK( esp_ota_mark_app_valid_cancel_rollback() );
 }
 
 #endif /* UNIT_TESTING */
