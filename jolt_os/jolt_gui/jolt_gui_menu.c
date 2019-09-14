@@ -19,9 +19,12 @@ static lv_signal_cb_t old_list_signal = NULL;     /*Store the old signal functio
 
 static void set_selected_label_long_mode(jolt_gui_obj_t *list, lv_label_long_mode_t mode){
     JOLT_GUI_CTX{
-        jolt_gui_obj_t *btn = BREAK_IF_NULL(lv_list_get_btn_selected(list));
-        jolt_gui_obj_t *label = BREAK_IF_NULL(lv_list_get_btn_label(btn));
-        lv_label_set_long_mode(label, mode);
+        uint16_t len = lv_list_get_size(list);
+        if( len > 0 ) {
+            jolt_gui_obj_t *btn = BREAK_IF_NULL(lv_list_get_btn_selected(list));
+            jolt_gui_obj_t *label = BREAK_IF_NULL(lv_list_get_btn_label(btn));
+            lv_label_set_long_mode(label, mode);
+        }
     }
 }
 
