@@ -18,6 +18,8 @@ int jolt_cmd_mv(int argc, char** argv) {
 
     if( ESP_OK != jolt_fs_mv(src_fn, dst_fn) ) EXIT_PRINT(-4, "Unsuccessful move");
 
+    jolt_h_fn_home_refresh(dst_fn);
+
     EXIT(0); /* Success */
 
 exit:
