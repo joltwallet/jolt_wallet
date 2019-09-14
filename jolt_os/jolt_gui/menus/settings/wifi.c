@@ -16,7 +16,7 @@ static void create_list() {
 }
 
 static void destroy_list() {
-     jolt_gui_scr_menu_remove(scr, 1, 0);
+     jolt_gui_scr_menu_remove_indices(scr, 1, 0);
 }
 
 static void sw_en_cb(jolt_gui_obj_t *btn, jolt_gui_event_t event) {

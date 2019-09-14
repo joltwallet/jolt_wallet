@@ -277,7 +277,7 @@ void jolt_gui_sem_give();
  * @param[in] parent Any LVGL object who's children we want to search
  * @param[in] id ID we are searching for.
  */
-lv_obj_t *jolt_gui_find(lv_obj_t *parent, jolt_gui_obj_id_t id);
+lv_obj_t *jolt_gui_find(const lv_obj_t *parent, jolt_gui_obj_id_t id);
 
 /**
  * @brief Convert the enumerated value to a constant string 

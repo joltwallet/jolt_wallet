@@ -1,4 +1,4 @@
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include "esp_log.h"
 #include "jolt_gui_menu.h"
@@ -81,7 +81,7 @@ jolt_gui_obj_t *jolt_gui_scr_menu_create(const char *title) {
 }
 
 /* Gets the list object of a menu screen */
-jolt_gui_obj_t *jolt_gui_scr_menu_get_list(jolt_gui_obj_t *parent) {
+jolt_gui_obj_t *jolt_gui_scr_menu_get_list(const jolt_gui_obj_t *parent) {
     jolt_gui_obj_t *menu = NULL;
     JOLT_GUI_CTX{
         jolt_gui_obj_t *cont_body = NULL;
@@ -183,7 +183,15 @@ void jolt_gui_scr_menu_set_btn_selected(jolt_gui_obj_t *par, jolt_gui_obj_t *btn
     }
 }
 
-void jolt_gui_scr_menu_remove(jolt_gui_obj_t *par, uint16_t start, uint16_t end) {
+void jolt_gui_scr_menu_remove(lv_obj_t *par, lv_obj_t *btn) {
+    JOLT_GUI_CTX{
+        jolt_gui_obj_t *list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list(par));
+        int32_t index = lv_list_get_btn_index(list, btn);
+        lv_list_remove(list, index);
+    }
+}
+
+void jolt_gui_scr_menu_remove_indices(jolt_gui_obj_t *par, uint16_t start, uint16_t end) {
     if( 0 == end ) {
         end = UINT16_MAX;
     }
@@ -220,4 +228,13 @@ int32_t jolt_gui_scr_menu_get_btn_index( jolt_gui_obj_t *btn ) {
         index = lv_list_get_btn_index(NULL, btn);
     }
     return index;
+}
+
+uint16_t jolt_gui_scr_menu_len(const lv_obj_t *par) {
+    uint16_t len = 0;
+    JOLT_GUI_CTX{
+        jolt_gui_obj_t *list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list(par));
+        len = lv_list_get_size(list);
+    }
+    return len;
 }
