@@ -1,4 +1,4 @@
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include "esp_log.h"
 #include "jolt_gui_menu.h"
@@ -19,9 +19,12 @@ static lv_signal_cb_t old_list_signal = NULL;     /*Store the old signal functio
 
 static void set_selected_label_long_mode(jolt_gui_obj_t *list, lv_label_long_mode_t mode){
     JOLT_GUI_CTX{
-        jolt_gui_obj_t *btn = BREAK_IF_NULL(lv_list_get_btn_selected(list));
-        jolt_gui_obj_t *label = BREAK_IF_NULL(lv_list_get_btn_label(btn));
-        lv_label_set_long_mode(label, mode);
+        uint16_t len = lv_list_get_size(list);
+        if( len > 0 ) {
+            jolt_gui_obj_t *btn = BREAK_IF_NULL(lv_list_get_btn_selected(list));
+            jolt_gui_obj_t *label = BREAK_IF_NULL(lv_list_get_btn_label(btn));
+            lv_label_set_long_mode(label, mode);
+        }
     }
 }
 
@@ -81,7 +84,7 @@ jolt_gui_obj_t *jolt_gui_scr_menu_create(const char *title) {
 }
 
 /* Gets the list object of a menu screen */
-jolt_gui_obj_t *jolt_gui_scr_menu_get_list(jolt_gui_obj_t *parent) {
+jolt_gui_obj_t *jolt_gui_scr_menu_get_list(const jolt_gui_obj_t *parent) {
     jolt_gui_obj_t *menu = NULL;
     JOLT_GUI_CTX{
         jolt_gui_obj_t *cont_body = NULL;
@@ -142,6 +145,35 @@ jolt_gui_obj_t *jolt_gui_scr_menu_add_sw( jolt_gui_obj_t *btn ) {
     return sw;
 }
 
+lv_obj_t *jolt_gui_scr_menu_add_info( jolt_gui_obj_t *btn, const char *info ) {
+    jolt_gui_obj_t *info_label = NULL;
+    JOLT_GUI_CTX{
+        jolt_gui_obj_t * info_label_tmp = NULL;
+        jolt_gui_obj_t *btn_label = lv_list_get_btn_label( btn );
+
+        /* Creating another child label under a list element interfere's with 
+         * how lvgl handles signal callbacks, so we have to first create a container */
+        jolt_gui_obj_t *cont = BREAK_IF_NULL(lv_cont_create(btn, NULL));
+        lv_cont_set_style(cont, LV_CONT_STYLE_MAIN, &lv_style_transp_tight);
+        lv_cont_set_fit(cont, LV_FIT_TIGHT);
+
+        info_label_tmp = BREAK_IF_NULL(lv_label_create(cont, btn_label));
+        lv_label_set_long_mode(info_label_tmp, LV_LABEL_LONG_EXPAND);
+        lv_label_set_text(info_label_tmp, info);
+
+        {
+            lv_coord_t info_width = lv_obj_get_width( cont );
+            lv_coord_t btn_width = lv_obj_get_width( btn_label );
+            lv_obj_set_width( btn_label, btn_width - info_width );
+            lv_obj_align(btn_label, btn, LV_ALIGN_IN_LEFT_MID, 0, 0);
+        }
+
+        lv_obj_align(cont, btn_label, LV_ALIGN_OUT_RIGHT_MID, 0, 0);
+        info_label = info_label_tmp;
+    }
+    return info_label;
+}
+
 void jolt_gui_scr_menu_set_btn_selected(jolt_gui_obj_t *par, jolt_gui_obj_t *btn){
     JOLT_GUI_CTX{
         jolt_gui_obj_t *list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list(par));
@@ -154,7 +186,15 @@ void jolt_gui_scr_menu_set_btn_selected(jolt_gui_obj_t *par, jolt_gui_obj_t *btn
     }
 }
 
-void jolt_gui_scr_menu_remove(jolt_gui_obj_t *par, uint16_t start, uint16_t end) {
+void jolt_gui_scr_menu_remove(lv_obj_t *par, lv_obj_t *btn) {
+    JOLT_GUI_CTX{
+        jolt_gui_obj_t *list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list(par));
+        int32_t index = lv_list_get_btn_index(list, btn);
+        lv_list_remove(list, index);
+    }
+}
+
+void jolt_gui_scr_menu_remove_indices(jolt_gui_obj_t *par, uint16_t start, uint16_t end) {
     if( 0 == end ) {
         end = UINT16_MAX;
     }
@@ -191,4 +231,13 @@ int32_t jolt_gui_scr_menu_get_btn_index( jolt_gui_obj_t *btn ) {
         index = lv_list_get_btn_index(NULL, btn);
     }
     return index;
+}
+
+uint16_t jolt_gui_scr_menu_len(const lv_obj_t *par) {
+    uint16_t len = 0;
+    JOLT_GUI_CTX{
+        jolt_gui_obj_t *list = BREAK_IF_NULL(jolt_gui_scr_menu_get_list(par));
+        len = lv_list_get_size(list);
+    }
+    return len;
 }

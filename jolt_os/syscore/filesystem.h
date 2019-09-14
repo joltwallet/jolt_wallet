@@ -18,6 +18,11 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 
+#define KB (1<<10)
+#define MB (1<<20)
+#define GB (1<<30)
+#define TB (1<<40)
+
 /**
  * @brief Mounting point for filesystem
  * 

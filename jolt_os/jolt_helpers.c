@@ -3,6 +3,8 @@
  https://www.joltwallet.com/
  */
 
+//#define LOG_LOCAL_LEVEL 4
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -215,3 +217,15 @@ void jolt_resume_logging() {
     }
 }
 
+int jolt_bytes_to_hstr(char *buf, size_t size, size_t bytes, uint8_t precision) {
+	const char *suffix[] = {"B", "KB", "MB", "GB", "TB"};
+	char n_suffix = sizeof(suffix) / sizeof(suffix[0]);
+
+	uint8_t i;
+	double dbytes = bytes;
+
+    for(i=0; dbytes >= 1024 && (i < n_suffix); i++, dbytes /= 1024)
+        ;
+
+	return snprintf(buf, size, "%0.*lf %s", precision, dbytes, suffix[i]);
+}

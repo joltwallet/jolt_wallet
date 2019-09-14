@@ -33,7 +33,7 @@ static void create_disable_list() {
 
 static void destroy_list() {
     /* Delete everything after the enable/disable element */
-     jolt_gui_scr_menu_remove(scr, 1, 0);
+     jolt_gui_scr_menu_remove_indices(scr, 1, 0);
 }
 
 static void sw_en_cb(jolt_gui_obj_t *btn, jolt_gui_event_t event) {

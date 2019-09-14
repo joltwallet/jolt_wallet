@@ -53,6 +53,7 @@ typedef enum jolt_text_id_t {
     JOLT_TEXT_BRIGHTNESS,
     JOLT_TEXT_FACTORY_RESET,
     JOLT_TEXT_STORAGE,
+    JOLT_TEXT_STORAGE_DETAILS,
 
     /* Language Names */
     JOLT_TEXT_LANGUAGE,
@@ -80,6 +81,8 @@ typedef enum jolt_text_id_t {
 
     /* Storage Options */
     JOLT_TEXT_STORAGE_USAGE,
+    JOLT_TEXT_STORAGE_NO_FILES_FOUND,
+    JOLT_TEXT_STORAGE_DELETE,
 
     /* Mnemonic Restore */
     JOLT_TEXT_MNEMONIC_RESTORE,

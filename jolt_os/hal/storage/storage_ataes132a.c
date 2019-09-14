@@ -25,9 +25,10 @@
 #include "aes132_cmd.h"
 #include "esp_log.h"
 
-static const char* TAG = "storage_ataes132a";
 
 #if CONFIG_JOLT_STORE_ATAES132A 
+
+static const char* TAG = "storage_ataes132a";
 
 bool storage_ataes132a_startup() {
     if( !(storage_internal_startup() && 0 == aes132_jolt_setup()) ) {

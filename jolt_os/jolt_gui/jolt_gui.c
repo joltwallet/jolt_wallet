@@ -367,7 +367,7 @@ void jolt_gui_sem_give() {
 
 /* Finds the first child object with the object identifier.
  * Returns NULL if child not found. */
-lv_obj_t *jolt_gui_find(lv_obj_t *parent, jolt_gui_obj_id_t id) {
+lv_obj_t *jolt_gui_find(const lv_obj_t *parent, jolt_gui_obj_id_t id) {
     lv_obj_t *child = NULL;
     if( NULL == parent ) {
         ESP_LOGW(TAG, "Cannot search a NULL pointer.");

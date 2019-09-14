@@ -25,6 +25,7 @@ const char *jolt_lang_spanish[JOLT_TEXT_LAST_STR] = {
     "Brillo",
     "Restablecimiento de fábrica",
     "Almacenamiento",
+    "Detalles de Almacenamiento",
 
     /* Language Names */
     "Idioma",
@@ -51,7 +52,9 @@ const char *jolt_lang_spanish[JOLT_TEXT_LAST_STR] = {
     "Actualizar WiFi a:\nSSID: %s\nContraseña: %s",
 
     /* Storage Options */
-    "%dKB Usado / %dKB Total",
+    "%s Usado / %s Total",
+    "No se encontraron archivos.",
+    "Borrar",
 
     /* Mnemonic Restore */
     "restauración mnemónica",

@@ -155,6 +155,13 @@ int jolt_cmd_task_status(int argc, char** argv);
  */
 int jolt_cmd_top(int argc, char** argv);
 
+#if JOLT_GUI_TEST_MENU
+/**
+ * @brief Create empty file(s)
+ */
+int jolt_cmd_touch(int argc, char **argv);
+#endif
+
 /**
  * @brief Enters file UART ymodem upload mode
  *

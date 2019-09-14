@@ -73,6 +73,17 @@
 #define RESTART_IF_NULL(x) ({ void *y = x; if(NULL == y) esp_restart(); y;})
 
 /**
+ * @brief Breaks if passed in value is NULL 
+ * @return passed in value
+ */
+#define BREAK_IF_NULL( obj ) ({\
+        void *x = obj; \
+        if( NULL == x ) break; \
+        x; \
+        })
+
+
+/**
  * @brief Fill a buffer with zeros. DO NOT USE FOR CONFIDENTIAL DATA.
  */
 #define memzero(buf, size) memset(buf, 0, size);
@@ -173,6 +184,17 @@ void jolt_suspend_logging();
  * number of times as `jolt_suspend_logging` was called to resume.
  */
 void jolt_resume_logging();
+
+/**
+ * @brief Converts bytes into a human-friendly string.
+ * @param[out] buf Output buffer
+ * @param[in] size size of buf
+ * @param[in] Value of bytes to stringify.
+ * @param[in] Number of decimal places.
+ * @return The number of characters that would have been written if `size` had 
+ *         been sufficiently large, not counting the terminating null character.
+ */
+int jolt_bytes_to_hstr(char *buf, size_t size, size_t bytes, uint8_t precision);
 
 #include <driver/uart.h>
 #include "hal/radio/bluetooth.h"

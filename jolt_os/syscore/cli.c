@@ -438,6 +438,16 @@ static void jolt_cli_cmds_register() {
 
 #if JOLT_GUI_TEST_MENU
     cmd = (esp_console_cmd_t) {
+        .command = "touch",
+        .help = "Create empty file(s).",
+        .hint = NULL,
+        .func = &jolt_cmd_touch,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+#endif
+
+#if JOLT_GUI_TEST_MENU
+    cmd = (esp_console_cmd_t) {
         .command = "unlock",
         .help = "Prompts user to enter PIN and unlock device.",
         .hint = NULL,

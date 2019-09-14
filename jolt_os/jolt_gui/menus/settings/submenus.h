@@ -89,4 +89,9 @@ void menu_bluetooth_unbond_create(jolt_gui_obj_t *btn, jolt_gui_event_t event);
  */
 void menu_storage_create( jolt_gui_obj_t *btn, jolt_gui_event_t event );
 
+/**
+ * @brief List of installed applications and their sizes.
+ */
+void menu_storage_details_create( jolt_gui_obj_t *btn, jolt_gui_event_t event );
+
 #endif

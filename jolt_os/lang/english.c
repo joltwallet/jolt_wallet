@@ -25,6 +25,7 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Brightness",
     "Factory Reset",
     "Storage",
+    "Storage Details",
 
     /* Language Names */
     "Language",
@@ -51,7 +52,9 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
     "Update WiFi to:\nSSID: %s\nPassword: %s",
 
     /* Storage Options */
-    "%dKB Used / %dKB Total",
+    "%s Used / %s Total",
+    "No files found.",
+    "Delete",
 
     /* Mnemonic Restore */
     "Mnemonic Restore",

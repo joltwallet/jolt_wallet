@@ -42,7 +42,7 @@ lv_obj_t *jolt_gui_scr_menu_add(lv_obj_t *par, const void *img_src,
  * @param[in] par menu screen
  * @return lv_list object
  */
-lv_obj_t *jolt_gui_scr_menu_get_list(lv_obj_t *par);
+lv_obj_t *jolt_gui_scr_menu_get_list(const lv_obj_t *par);
 
 /**
  * @brief Gets the screen object given a selected button of a menu.
@@ -56,9 +56,17 @@ lv_obj_t *jolt_gui_scr_menu_get_scr( lv_obj_t *btn );
 /**
  * @brief Adds an item to a Jolt Menu Screen 
  * @param[in,out] btn Menu element to add a switch to
- * @return lv_sw object
+ * @return lv_sw object.
  */
 lv_obj_t *jolt_gui_scr_menu_add_sw( lv_obj_t *btn );
+
+/**
+ * @brief Displays a right-justified string for an element. This must be a short
+ * string, or else it might totally eclipse the menu element's label.
+ *
+ * @return created lv_label object.
+ */
+lv_obj_t *jolt_gui_scr_menu_add_info( lv_obj_t *btn, const char *info );
 
 /**
  * @brief Sets the current selection to btn 
@@ -68,12 +76,19 @@ lv_obj_t *jolt_gui_scr_menu_add_sw( lv_obj_t *btn );
 void jolt_gui_scr_menu_set_btn_selected(lv_obj_t *par, lv_obj_t *btn);
 
 /**
+ * @brief Remove an element from a menu.
+ * @param[in,out] par Jolt menu screen
+ * @param[in] btn List element to remove.
+ */
+void jolt_gui_scr_menu_remove(lv_obj_t *par, lv_obj_t *btn);
+
+/**
  * @brief Deletes elements from indicies start to end (inclusive) 
  * @param[in,out] par Jolt menu screen
  * @param[in] start Starting index to delete (inclusive).
  * @param[in] end Ending index to delete (inclusive). Set to 0 to delete all past start.
  */
-void jolt_gui_scr_menu_remove(lv_obj_t *par, uint16_t start, uint16_t end);
+void jolt_gui_scr_menu_remove_indices(lv_obj_t *par, uint16_t start, uint16_t end);
 
 /**
  * @brief Set the active object param and all of the buttons
@@ -91,5 +106,11 @@ void jolt_gui_scr_menu_set_param( lv_obj_t *par, void *param );
  * @return 0-Index of button. Returns -1 on error.
  */
 int32_t jolt_gui_scr_menu_get_btn_index( lv_obj_t *btn );
+
+/**
+ * @brief Get the number of elements in the menu
+ * @param[in] par Menu screen
+ */
+uint16_t jolt_gui_scr_menu_len(const lv_obj_t *par);
 
 #endif

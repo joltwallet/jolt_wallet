@@ -80,7 +80,7 @@ typedef void (*jolt_gui_event_cb_t)(jolt_gui_obj_t *obj, jolt_gui_event_t event)
  *********************/
 
 /**
- * Get the parenting screen for some object.
+ * @brief Get the parenting screen for some object.
  * If object is NULL, return the currently active screen.
  *
  * @param obj object to get screen object of.
@@ -277,7 +277,7 @@ void jolt_gui_sem_give();
  * @param[in] parent Any LVGL object who's children we want to search
  * @param[in] id ID we are searching for.
  */
-lv_obj_t *jolt_gui_find(lv_obj_t *parent, jolt_gui_obj_id_t id);
+lv_obj_t *jolt_gui_find(const lv_obj_t *parent, jolt_gui_obj_id_t id);
 
 /**
  * @brief Convert the enumerated value to a constant string 
@@ -306,7 +306,7 @@ lv_obj_t *jolt_gui_obj_get_parent( const lv_obj_t *obj );
 #define JOLT_GUI_CTX \
     MPP_BEFORE(1, jolt_gui_sem_take() ) \
     MPP_DO_WHILE(2, false) \
-    MPP_BREAK_HANDLER(3, ESP_LOGE(TAG, "%s: JOLT_GUI_CTX break L%d", __func__, __LINE__)) \
+    MPP_BREAK_HANDLER(3, ESP_LOGE(TAG, "%s: JOLT_GUI_CTX break", __func__)) \
     MPP_FINALLY(4, jolt_gui_sem_give() )
 
 #define if_not(x) if(!(x))
@@ -321,14 +321,6 @@ lv_obj_t *jolt_gui_obj_get_parent( const lv_obj_t *obj );
 /**********
  * Macros *
  **********/
-/**
- * @brief To be used in a JOLT_GUI_CTX; breaks if passed in value is NULL 
- */
-#define BREAK_IF_NULL( obj ) ({\
-        void *x = obj; \
-        if( NULL == x ) break; \
-        x; \
-        })
 
 /**
  * @brief Declares all the must have objects (parent, label_title, cont_body) in a Jolt Screen.
