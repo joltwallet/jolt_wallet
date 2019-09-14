@@ -80,7 +80,7 @@ typedef void (*jolt_gui_event_cb_t)(jolt_gui_obj_t *obj, jolt_gui_event_t event)
  *********************/
 
 /**
- * Get the parenting screen for some object.
+ * @brief Get the parenting screen for some object.
  * If object is NULL, return the currently active screen.
  *
  * @param obj object to get screen object of.
@@ -321,14 +321,6 @@ lv_obj_t *jolt_gui_obj_get_parent( const lv_obj_t *obj );
 /**********
  * Macros *
  **********/
-/**
- * @brief To be used in a JOLT_GUI_CTX; breaks if passed in value is NULL 
- */
-#define BREAK_IF_NULL( obj ) ({\
-        void *x = obj; \
-        if( NULL == x ) break; \
-        x; \
-        })
 
 /**
  * @brief Declares all the must have objects (parent, label_title, cont_body) in a Jolt Screen.

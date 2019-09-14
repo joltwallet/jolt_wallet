@@ -9,6 +9,7 @@
 #include "syscore/filesystem.h"
 #include "syscore/launcher.h"
 #include "jolt_helpers.h"
+#include "home.h"
 
 /**********************
  *  STATIC PROTOTYPES
@@ -22,6 +23,7 @@ static char *fn_to_display_name(char * display_name, const char *fn);
  **********************/
 static const char TAG[] = "menu_home";
 static lv_obj_t *main_menu = NULL;
+static volatile bool need_refresh = false;
 
 /**
  * @brief Task to launch the application from the BG task.
@@ -92,6 +94,22 @@ static void launch_file_proxy(lv_obj_t *btn, lv_event_t event) {
     }
 }
 
+static void refresh() {
+    if( NULL != main_menu){
+        jolt_gui_obj_del(main_menu);
+        main_menu = NULL;
+    }
+    jolt_gui_menu_home_create();
+    need_refresh = false;
+}
+
+static void home_cb(lv_obj_t *btn, jolt_gui_event_t event){
+    if( jolt_gui_event.focused == event && need_refresh) {
+        refresh();
+    }
+    // don't allow the home screen to be deleted.
+}
+
 void jolt_gui_menu_home_create() {
     // Find and Register all user apps
     char **fns = NULL;
@@ -123,16 +141,18 @@ void jolt_gui_menu_home_create() {
     jolt_gui_scr_menu_add(main_menu, NULL, "Alphabet and Scrolling Menu Option", jolt_gui_test_alphabet_create);
     jolt_gui_scr_menu_add(main_menu, NULL, "Https", jolt_gui_test_https_create);
 #endif
-    // TODO refresh on focus
-    jolt_gui_scr_set_event_cb(main_menu, NULL); // don't allow the home screen to be deleted.
+    jolt_gui_scr_set_event_cb(main_menu, home_cb);
 }
 
 /* Refreshes the home menu.
  * Use cases: call after downloading an app. */
 void jolt_gui_menu_home_refresh() {
-    if( NULL != main_menu){
-        jolt_gui_obj_del(main_menu);
-        main_menu = NULL;
+    if(jolt_gui_scr_get(NULL) == main_menu){
+        // If already the focused screen, directly cause a refresh.
+        refresh();
     }
-    jolt_gui_menu_home_create();
+    else{
+        // Queue up a refresh so the screen will refresh when focused.
+        need_refresh = true;
+    }
 }

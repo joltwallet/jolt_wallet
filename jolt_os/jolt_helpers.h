@@ -73,6 +73,17 @@
 #define RESTART_IF_NULL(x) ({ void *y = x; if(NULL == y) esp_restart(); y;})
 
 /**
+ * @brief Breaks if passed in value is NULL 
+ * @return passed in value
+ */
+#define BREAK_IF_NULL( obj ) ({\
+        void *x = obj; \
+        if( NULL == x ) break; \
+        x; \
+        })
+
+
+/**
  * @brief Fill a buffer with zeros. DO NOT USE FOR CONFIDENTIAL DATA.
  */
 #define memzero(buf, size) memset(buf, 0, size);
