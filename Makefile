@@ -16,7 +16,7 @@ include $(IDF_PATH)/make/project.mk
 
 print-%  : ; @echo $* = $($*)
 
-.PHONY: tests test-menu
+.PHONY: tests test-menu lint
 
 tests:
 	CFLAGS='-DUNIT_TESTING=1' \
@@ -28,3 +28,17 @@ test-menu:
 	CFLAGS='-DJOLT_GUI_TEST_MENU=1' \
 		$(MAKE) \
 		flash monitor;
+
+lint:
+	find jolt_os/ \
+		\( \
+			-iname '*.h' \
+			-o -iname '*.c' \
+			-o -iname '*.cpp' \
+			-o -iname '*.hpp' \
+		\) \
+		! -iname 'jolt_lib.c' \
+		! -path 'jolt_os/hal/lv_drivers/*' \
+		| xargs clang-format -style=file -i -fallback-style=google
+
+
