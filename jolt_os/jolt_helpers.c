@@ -38,6 +38,8 @@
 static const char* TAG = "jolt_helpers";
 const char NULL_TERM = '\0';
 const char *EMPTY_STR = "";
+const char JOLT_OS_DERIVATION_BIP32_KEY[] = "JOLT_OS";
+const char *JOLT_OS_DERIVATION_PASSPHRASE = "";
 
 void jolt_get_random(uint8_t *buf, uint8_t n_bytes){
 
@@ -134,7 +136,6 @@ void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *
 }
 
 void jolt_h_apply_patch(const char *filename){
-    // TODO: prompt user
     FILE *f_diff = NULL, *f_jelf = NULL, *f_tmp = NULL;
     char *path_diff = NULL;
     if( !jolt_h_strcmp_suffix(filename, ".patch") ) goto exit;

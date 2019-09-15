@@ -98,11 +98,12 @@ extern const char *EMPTY_STR;
 /**
  * @brief Derivation BIP32 key for JoltOS settings 
  */
-static const char JOLT_OS_DERIVATION_BIP32_KEY[] = "JOLT_OS";
+extern const char JOLT_OS_DERIVATION_BIP32_KEY[];
+
 /**
  * @brief Derivation BIP32 passphrase for JoltOS settings
  */
-static const char JOLT_OS_DERIVATION_PASSPHRASE[] = "";
+extern const char *JOLT_OS_DERIVATION_PASSPHRASE;
 
 /**
  * @brief Get a random number of bytes of cryptographically secure entropy.
