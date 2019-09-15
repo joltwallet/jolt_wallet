@@ -75,7 +75,7 @@ exit:
 static void jolt_cmd_upload_firmware_confirmation_cb(jolt_gui_obj_t *obj, jolt_gui_event_t event) {
     if( jolt_gui_event.short_clicked == event ){
         jolt_gui_scr_del(obj);
-        jolt_h_settings_vault_set(
+        jolt_settings_vault_set(
                 jolt_cmd_upload_firmware_vault_failure_cb,
                 jolt_cmd_upload_firmware_vault_success_cb,
                 NULL);

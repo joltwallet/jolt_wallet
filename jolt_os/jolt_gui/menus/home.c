@@ -122,7 +122,7 @@ void jolt_gui_menu_home_create() {
         ESP_LOGD(TAG, "Registering App \"%s\" into the GUI", fns[i]);
         jolt_gui_scr_menu_add(main_menu, NULL, fn_to_display_name(display_name, fns[i]), launch_file_proxy);
     }
-    jolt_h_free_char_array(fns, n_fns);
+    jolt_free_char_array(fns, n_fns);
 
     jolt_gui_scr_menu_add(main_menu, NULL, gettext(JOLT_TEXT_SETTINGS), menu_settings_create);
 #if JOLT_GUI_TEST_MENU

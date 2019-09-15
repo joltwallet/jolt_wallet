@@ -16,7 +16,7 @@ int jolt_cmd_touch(int argc, char** argv) {
         FILE *f = NULL;
         char *fn = BREAK_IF_NULL(jolt_fs_parse(argv[i], NULL));
         f = fopen(fn, "wb");
-        if( NULL != f ) jolt_h_fn_home_refresh(fn);
+        if( NULL != f ) jolt_fn_home_refresh(fn);
         SAFE_FREE(fn);
         if( NULL == f ) break;
         files_created++;

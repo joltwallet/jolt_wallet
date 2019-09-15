@@ -96,8 +96,8 @@ static int jolt_cmd_upload_ymodem_task(jolt_bg_job_t *job) {
         EXIT_PRINT(-4, "Unable to rename file. Transfer failed.");
     }
 
-    jolt_h_fn_home_refresh( orig_fn );
-    jolt_h_apply_patch( orig_fn );
+    jolt_fn_home_refresh( orig_fn );
+    jolt_apply_patch( orig_fn );
 
     EXIT(0);
 
@@ -144,7 +144,7 @@ static void jolt_cmd_upload_confirmation_cb(jolt_gui_obj_t *obj, jolt_gui_event_
         char *name_param = NULL;
         name_param = jolt_gui_scr_get_active_param( obj );
         jolt_gui_scr_del(obj);
-        jolt_h_settings_vault_set(jolt_cmd_upload_vault_failure_cb, jolt_cmd_upload_vault_success_cb, name_param);
+        jolt_settings_vault_set(jolt_cmd_upload_vault_failure_cb, jolt_cmd_upload_vault_success_cb, name_param);
 
     }
     else if( jolt_gui_event.cancel == event ) {

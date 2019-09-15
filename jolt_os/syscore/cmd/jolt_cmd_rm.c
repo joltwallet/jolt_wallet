@@ -18,7 +18,7 @@ int jolt_cmd_rm(int argc, char** argv) {
         if( jolt_fs_exists(fn) ) {
             remove(fn);
             return_code = 0;
-            jolt_h_fn_home_refresh(fn);
+            jolt_fn_home_refresh(fn);
         }
         else {
             printf("File %s doesn't exist!\n", fn);

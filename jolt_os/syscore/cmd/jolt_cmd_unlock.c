@@ -12,7 +12,7 @@
 //static const char TAG[] = "jolt_cmd_unlock";
 
 int jolt_cmd_unlock(int argc, char **argv) {
-    jolt_h_settings_vault_set(NULL, NULL, NULL);
+    jolt_settings_vault_set(NULL, NULL, NULL);
     return 0;
 }
 

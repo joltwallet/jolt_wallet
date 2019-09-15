@@ -131,14 +131,14 @@ void shuffle_arr(uint8_t *arr, int arr_len);
  * @param[in] n Number of character pointers to allocate.
  * @return pointer to char* array
  */
-char **jolt_h_malloc_char_array(int n);
+char **jolt_malloc_char_array(int n);
 
 /**
  * @brief Frees all individual strings and the pointer array itself
  * @param[in] arr pointer to array of allocated strings.
  * @param[in] n length of pointer array
  */
-void jolt_h_free_char_array(char **arr, int n);
+void jolt_free_char_array(char **arr, int n);
 
 /**
  * @brief Checks if the str ends with suffix
@@ -146,7 +146,7 @@ void jolt_h_free_char_array(char **arr, int n);
  * @param[in] suffix NULL-terminated suffix to check
  * @return True if str ends with suffix; false otherwise.
  */
-bool jolt_h_strcmp_suffix( const char *str, const char *suffix);
+bool jolt_strcmp_suffix( const char *str, const char *suffix);
 
 /**
  * @brief Refresh the home-screen if the string ends in ".jelf"
@@ -156,7 +156,7 @@ bool jolt_h_strcmp_suffix( const char *str, const char *suffix);
  *
  * @param[in] NULL-terminated string representing a new file.
  */
-void jolt_h_fn_home_refresh(const char *str);
+void jolt_fn_home_refresh(const char *str);
 
 /**
  * @brief Dummy-node used for prompting user pin for system settings/action.
@@ -164,13 +164,13 @@ void jolt_h_fn_home_refresh(const char *str);
  * @param[in] success_cb Callback on PIN success
  * @param[in] param Free param passed to callbacks
  */
-void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *param);
+void jolt_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *param);
 
 /**
  * @brief If it's a patch file, try to apply it. Will remove the patch file upon
  * success or failure.
  */
-void jolt_h_apply_patch(const char *filename);
+void jolt_apply_patch(const char *filename);
 
 /**
  * @brief suspend logging.
