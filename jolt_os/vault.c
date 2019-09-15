@@ -464,8 +464,8 @@ esp_err_t vault_set(uint32_t purpose, uint32_t coin_type,
     }
 
     if( NULL == passphrase ) {
-        /* Populate passphrase here */
-        passphrase = "";
+        /* Assume a NULL passphrase is an empty passphrase */
+        passphrase = EMPTY_STR;
     }
 
     vault_sem_take();
