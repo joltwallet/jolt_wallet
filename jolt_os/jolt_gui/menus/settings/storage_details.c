@@ -37,7 +37,7 @@ static void delete_file_cb(lv_obj_t *btn, lv_event_t event){
         else{
             ESP_LOGE(TAG, "Cannot delete %s. Doesn't exist!", fn);
         }
-        jolt_h_fn_home_refresh(path);
+        jolt_fn_home_refresh(path);
 
         SAFE_FREE(path);
 

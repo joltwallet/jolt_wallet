@@ -94,18 +94,18 @@ void shuffle_arr(uint8_t *arr, int arr_len) {
     sodium_memzero(&tmp, sizeof(uint8_t));
 }
 
-char **jolt_h_malloc_char_array(int n) {
+char **jolt_malloc_char_array(int n) {
     return (char **) calloc(n, sizeof(char*));
 }
 
-void jolt_h_free_char_array(char **arr, int n) {
+void jolt_free_char_array(char **arr, int n) {
     for(uint32_t i=0; i<n; i++) {
         free(arr[i]);
     }
     free(arr);
 }
 
-bool jolt_h_strcmp_suffix( const char *str, const char *suffix){
+bool jolt_strcmp_suffix( const char *str, const char *suffix){
     uint32_t str_len = strlen(str);
     uint32_t suffix_len = strlen(suffix);
 
@@ -120,14 +120,14 @@ bool jolt_h_strcmp_suffix( const char *str, const char *suffix){
     return false;
 }
 
-void jolt_h_fn_home_refresh(const char *str) {
-    if( !jolt_h_strcmp_suffix(str, ".jelf") ) {
+void jolt_fn_home_refresh(const char *str) {
+    if( !jolt_strcmp_suffix(str, ".jelf") ) {
         return;
     }
     jolt_gui_menu_home_refresh();
 }
 
-void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *param) {
+void jolt_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *param) {
     vault_set( JOLT_OS_DERIVATION_PURPOSE,
             JOLT_OS_DERIVATION_PATH,
             JOLT_OS_DERIVATION_BIP32_KEY,
@@ -135,10 +135,10 @@ void jolt_h_settings_vault_set(vault_cb_t fail_cb, vault_cb_t success_cb, void *
             fail_cb, success_cb, param);
 }
 
-void jolt_h_apply_patch(const char *filename){
+void jolt_apply_patch(const char *filename){
     FILE *f_diff = NULL, *f_jelf = NULL, *f_tmp = NULL;
     char *path_diff = NULL;
-    if( !jolt_h_strcmp_suffix(filename, ".patch") ) goto exit;
+    if( !jolt_strcmp_suffix(filename, ".patch") ) goto exit;
 
     /* Ensure its a full path */
     path_diff = jolt_fs_parse(filename, NULL);
@@ -148,7 +148,7 @@ void jolt_h_apply_patch(const char *filename){
     f_diff = fopen(path_diff, "rb");
     if(NULL == f_diff) goto exit;
 
-    if( 0 == jolt_h_strcmp_suffix(path_diff, "joltos.patch") ) {
+    if( 0 == jolt_strcmp_suffix(path_diff, "joltos.patch") ) {
         /* Firmware Update */
         // TODO: GUI stuff
         esp_hdiffz_ota_file(f_diff);

@@ -15,7 +15,7 @@ cJSON *jolt_json_read( const char *fn ) {
     char *buf = NULL;
 
     /* Make sure the fn ends in ".json" */
-    if( !jolt_h_strcmp_suffix( fn, ".json") ) {
+    if( !jolt_strcmp_suffix( fn, ".json") ) {
         ESP_LOGE(TAG, "file %s does not end in \".json\"", fn);
         goto exit;
     }

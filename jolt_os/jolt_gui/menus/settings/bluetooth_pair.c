@@ -33,7 +33,7 @@ static void menu_bluetooth_pair_common_vault_success_cb( void *dummy ) {
 }
 
 static void menu_bluetooth_pair_common_create( ) {
-    jolt_h_settings_vault_set( NULL,
+    jolt_settings_vault_set( NULL,
             menu_bluetooth_pair_common_vault_success_cb,
             NULL);
 }

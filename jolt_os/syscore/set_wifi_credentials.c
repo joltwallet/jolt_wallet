@@ -61,7 +61,7 @@ static void vault_success_cb(void *dummy) {
 static void prompt_1_cb(lv_obj_t *btn, lv_event_t event){
     if( LV_EVENT_SHORT_CLICKED == event ) {
         jolt_gui_scr_del( btn );
-        jolt_h_settings_vault_set(vault_fail_cb, vault_success_cb, NULL);
+        jolt_settings_vault_set(vault_fail_cb, vault_success_cb, NULL);
     }
     else if( LV_EVENT_CANCEL == event ) {
         clear_vars();

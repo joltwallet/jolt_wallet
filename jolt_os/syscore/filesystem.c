@@ -138,7 +138,7 @@ uint16_t jolt_fs_get_all_jelf_fns(char ***fns) {
     n = jolt_fs_get_all_fns(NULL, 0, ".jelf", true);
     ESP_LOGI(TAG, "Found %x apps.", n);
     if( n > 0 ) {
-        *fns = jolt_h_malloc_char_array(n);
+        *fns = jolt_malloc_char_array(n);
         jolt_fs_get_all_fns(*fns, n, ".jelf", true);
     }
     return n;
@@ -268,7 +268,7 @@ esp_err_t jolt_fs_mv(const char *src, const char *dst){
     if( 0 != rename(src, dst) ) return ESP_FAIL;
 
     /* Maybe refresh home screen on success */
-    jolt_h_fn_home_refresh( dst );
+    jolt_fn_home_refresh( dst );
 
     return ESP_OK;
 }
