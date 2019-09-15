@@ -16,7 +16,7 @@ include $(IDF_PATH)/make/project.mk
 
 print-%  : ; @echo $* = $($*)
 
-.PHONY: tests test-menu lint
+.PHONY: tests test-menu lint cppcheck
 
 tests:
 	CFLAGS='-DUNIT_TESTING=1' \
@@ -41,4 +41,7 @@ lint:
 		! -path 'jolt_os/hal/lv_drivers/*' \
 		| xargs clang-format -style=file -i -fallback-style=google
 
+cppcheck:
+	cppcheck jolt_os/ 2>cppcheck.log
+	cat cppcheck.log
 
