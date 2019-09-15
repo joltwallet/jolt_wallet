@@ -17,7 +17,6 @@ typedef enum {
     JOLT_GUI_ERR_OOM,
 } jolt_gui_err_t;
 
-
 /**
  * @brief convert a Jolt GUI error code into a NULL-terminated string
  * @param[in] err GUI error code

@@ -7,10 +7,10 @@
 #ifndef JOLT_LANG_H__
 #define JOLT_LANG_H__
 
+#include "sdkconfig.h"
 #include "stdbool.h"
 #include "stdint.h"
 #include "stdlib.h"
-#include "sdkconfig.h"
 
 /**
  * @brief Langues supported by JoltOS.
@@ -41,11 +41,11 @@ typedef enum jolt_text_id_t {
     JOLT_TEXT_SETTINGS,        /* Menu option to change device settings */
     JOLT_TEXT_WIFI,
     JOLT_TEXT_BLUETOOTH,
-    JOLT_TEXT_CONTINUE,        /* lowercase */
+    JOLT_TEXT_CONTINUE, /* lowercase */
 
     /* Confirmation */
-    JOLT_TEXT_YES,             /* First letter capitlaized */
-    JOLT_TEXT_NO,              /* First letter capitlaized */
+    JOLT_TEXT_YES, /* First letter capitlaized */
+    JOLT_TEXT_NO,  /* First letter capitlaized */
 
     /* Settings */
     JOLT_TEXT_SCREEN_BRIGHTNESS,
@@ -59,9 +59,9 @@ typedef enum jolt_text_id_t {
     JOLT_TEXT_LANGUAGE,
     JOLT_TEXT_ENGLISH,
     JOLT_TEXT_SPANISH,
-    
+
     /* App Launcher */
-    JOLT_TEXT_PRELOAD_LAUNCHING,  /* Label for spinning preloader */
+    JOLT_TEXT_PRELOAD_LAUNCHING, /* Label for spinning preloader */
     JOLT_TEXT_LAUNCH_APP_OUT_OF_DATE,
     JOLT_TEXT_LAUNCH_JOLTOS_OUT_OF_DATE,
     JOLT_TEXT_LAUNCH_INVALID,
@@ -138,11 +138,11 @@ typedef enum jolt_text_id_t {
 const char *gettext( jolt_text_id_t id );
 
 /**
- * @brief Get the specified language name in current language 
+ * @brief Get the specified language name in current language
  * @param[in] lang a JOLT_LANG_*
  * @return NULL-terminated character string.
  */
-const char *getlangname( jolt_lang_t lang);
+const char *getlangname( jolt_lang_t lang );
 
 /**
  * @brief Sets system language. If language is different than saved; it will save and reset.

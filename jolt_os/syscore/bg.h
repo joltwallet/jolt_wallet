@@ -10,11 +10,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
-
 #include "jolt_gui/jolt_gui.h"
 
 #define CONFIG_JOLT_BG_SIGNAL_QUEUE_LEN 3
-#define CONFIG_JOLT_BG_TASK_QUEUE_LEN 10
+#define CONFIG_JOLT_BG_TASK_QUEUE_LEN   10
 
 /**
  * @brief opaque type to handle all Job data
@@ -29,11 +28,11 @@ typedef struct jolt_bg_job_t jolt_bg_job_t;
  *
  * @return Minimum number of seconds before calling again. Return 0 to clean up job and not repeat.
  */
-typedef int32_t (*jolt_bg_task_t)( jolt_bg_job_t *job );
+typedef int32_t ( *jolt_bg_task_t )( jolt_bg_job_t *job );
 
 /**
  * @brief Signals to send to the Job task
- * 
+ *
  * These signals don't directly cause any action, the Job task must periodically
  * check these signals and react appropriately.
  *
@@ -49,7 +48,7 @@ typedef uint8_t jolt_bg_signal_t;
 /**
  * @brief Queues and executes a task to be performed on the BG FreeRTOS task.
  *
- * Since the GUI callbacks must respond as quickly as possible, longer running 
+ * Since the GUI callbacks must respond as quickly as possible, longer running
  * actions are packaged up as jobs and send to the BG task to be executed.
  * Within JoltOS, some examples of this are:
  *     * Mnemonic master seed derivation
@@ -70,8 +69,7 @@ typedef uint8_t jolt_bg_signal_t;
  *
  * @return ESP_OK on success, ESP_FAIL otherwise
  */
-esp_err_t jolt_bg_create( jolt_bg_task_t task, void *param, lv_obj_t *scr);
-
+esp_err_t jolt_bg_create( jolt_bg_task_t task, void *param, lv_obj_t *scr );
 
 /******************************************************************************
  * The following functions are intended to be used from within the user's
@@ -90,14 +88,14 @@ jolt_bg_signal_t jolt_bg_get_signal( jolt_bg_job_t *job );
  * @param[in] job Job to get user param from
  * @return the user param pointer
  */
-void *jolt_bg_get_param(jolt_bg_job_t *job);
+void *jolt_bg_get_param( jolt_bg_job_t *job );
 
 /**
  * @brief get the screen pointer
  * @param[in] job Job to get screen from
  * @return the screen pointer
  */
-lv_obj_t *jolt_bg_get_scr(jolt_bg_job_t *job);
+lv_obj_t *jolt_bg_get_scr( jolt_bg_job_t *job );
 
 /**
  * @brief Convenience function to delete a job's screen. Will set screen pointer to NULL.
@@ -111,9 +109,7 @@ void jolt_bg_del_scr( jolt_bg_job_t *job );
 /**
  * @brief If an abort signal has been received, goto "exit" for cleanup
  */
-#define JOLT_BG_CHECK_ABORT(job) \
-    if( JOLT_BG_ABORT == jolt_bg_get_signal(job) ) { \
-        goto exit; \
-    }
+#define JOLT_BG_CHECK_ABORT( job ) \
+    if( JOLT_BG_ABORT == jolt_bg_get_signal( job ) ) { goto exit; }
 
 #endif

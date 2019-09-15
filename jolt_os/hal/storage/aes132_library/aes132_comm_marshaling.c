@@ -19,16 +19,14 @@
  *  \date   June 08, 2015
  */
 
-
-#include <string.h>                    // needed for memcpy()
-#include "aes132_comm_marshaling.h"    // definitions and declarations for the Command Marshaling module
+#include "aes132_comm_marshaling.h"  // definitions and declarations for the Command Marshaling module
+#include <string.h>                  // needed for memcpy()
+#include "aes132_i2c.h"              // For ReturnCode macros
 #include "aes132_mac.h"
-#include "aes132_i2c.h" // For ReturnCode macros
-#include "i2c_phys.h" // For res macros
-
 #include "esp_log.h"
-#include "sodium.h"
 #include "hal/storage/storage.h"
+#include "i2c_phys.h"  // For res macros
+#include "sodium.h"
 
 /** \brief This function sends data to the device.
  * \param[in] count number of bytes to send
@@ -36,9 +34,9 @@
  * \param[in] data pointer to tx data
  * \return status of the operation
  */
-uint8_t aes132m_write_memory(uint8_t count, uint16_t word_address, const uint8_t *data)
+uint8_t aes132m_write_memory( uint8_t count, uint16_t word_address, const uint8_t *data )
 {
-    return aes132c_access_memory(count, word_address, (uint8_t*)data, AES132_WRITE);
+    return aes132c_access_memory( count, word_address, (uint8_t *)data, AES132_WRITE );
 }
 
 /** \brief This function reads data from the device.
@@ -46,12 +44,11 @@ uint8_t aes132m_write_memory(uint8_t count, uint16_t word_address, const uint8_t
  * \param[in] word_address pointer to word address
  * \param[out] data pointer to rx data
  * \return status of the operation
-*/
-uint8_t aes132m_read_memory(uint8_t size, uint16_t word_address, uint8_t *data)
+ */
+uint8_t aes132m_read_memory( uint8_t size, uint16_t word_address, uint8_t *data )
 {
-    return aes132c_access_memory(size, word_address, data, AES132_READ);
+    return aes132c_access_memory( size, word_address, data, AES132_READ );
 }
-
 
 /** \brief This function creates a command packet, sends it, and receives its response.
  *         The caller has to allocate enough space for txBuffer and rxBuffer so that
@@ -74,19 +71,17 @@ uint8_t aes132m_read_memory(uint8_t size, uint16_t word_address, uint8_t *data)
  * \param[out] rx_buffer pointer to response buffer
  * \return status of the operation
  */
-uint8_t aes132m_execute(uint8_t op_code, uint8_t mode,
-        uint16_t param1, uint16_t param2,
-        uint8_t datalen1, const uint8_t *data1,
-        uint8_t datalen2, const uint8_t *data2,
-        uint8_t datalen3, const uint8_t *data3,
-        uint8_t datalen4, const uint8_t *data4,
-        uint8_t *tx_buffer, uint8_t *rx_buffer ) {
+uint8_t aes132m_execute( uint8_t op_code, uint8_t mode, uint16_t param1, uint16_t param2, uint8_t datalen1,
+                         const uint8_t *data1, uint8_t datalen2, const uint8_t *data2, uint8_t datalen3,
+                         const uint8_t *data3, uint8_t datalen4, const uint8_t *data4, uint8_t *tx_buffer,
+                         uint8_t *rx_buffer )
+{
     uint8_t *p_buffer;
     uint8_t len;
 
     // Assemble command.
-    len = datalen1 + datalen2 + datalen3 + datalen4 + AES132_COMMAND_SIZE_MIN;
-    p_buffer = tx_buffer;
+    len         = datalen1 + datalen2 + datalen3 + datalen4 + AES132_COMMAND_SIZE_MIN;
+    p_buffer    = tx_buffer;
     *p_buffer++ = len;
     *p_buffer++ = op_code;
     *p_buffer++ = mode;
@@ -95,24 +90,23 @@ uint8_t aes132m_execute(uint8_t op_code, uint8_t mode,
     *p_buffer++ = param2 >> 8;
     *p_buffer++ = param2 & 0xFF;
 
-    if (datalen1 > 0) {
-        memcpy(p_buffer, data1, datalen1);
+    if( datalen1 > 0 ) {
+        memcpy( p_buffer, data1, datalen1 );
         p_buffer += datalen1;
     }
-    if (datalen2 > 0) {
-        memcpy(p_buffer, data2, datalen2);
+    if( datalen2 > 0 ) {
+        memcpy( p_buffer, data2, datalen2 );
         p_buffer += datalen2;
     }
-    if (datalen3 > 0) {
-        memcpy(p_buffer, data3, datalen3);
+    if( datalen3 > 0 ) {
+        memcpy( p_buffer, data3, datalen3 );
         p_buffer += datalen3;
     }
-    if (datalen4 > 0) {
-        memcpy(p_buffer, data4, datalen4);
+    if( datalen4 > 0 ) {
+        memcpy( p_buffer, data4, datalen4 );
         p_buffer += datalen4;
     }
 
     // Send command and receive response.
-    return aes132c_send_and_receive(&tx_buffer[0], AES132_RESPONSE_SIZE_MAX,
-                &rx_buffer[0], AES132_OPTION_DEFAULT);
+    return aes132c_send_and_receive( &tx_buffer[0], AES132_RESPONSE_SIZE_MAX, &rx_buffer[0], AES132_OPTION_DEFAULT );
 }

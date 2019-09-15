@@ -20,6 +20,6 @@ void jolt_gui_first_boot_create();
  * @brief Save mnemonic to storage, using the same screens from first-boot
  * @param[in] mnemonic 256-bit binary respresentation of the mnemonic
  */
-void jolt_gui_restore_sequence(const uint256_t mnemonic);
+void jolt_gui_restore_sequence( const uint256_t mnemonic );
 
 #endif

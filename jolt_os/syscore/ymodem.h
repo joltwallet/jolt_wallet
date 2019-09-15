@@ -26,7 +26,6 @@
  * this software.
  */
 
-
 #ifndef __YMODEM_H__
 #define __YMODEM_H__
 
@@ -37,9 +36,9 @@
  * @brief Receive a file
  * @param[in] ffd File Descriptor
  * @param[in] maxsize Maximum file size to accept.
- * @param[in, out] getname (optional) buffer to store filename. If provided and 
- *                 first character is NOT '\0', ymodem will test to see if 
- *                 the incoming filename matches. If it doesn't match, will 
+ * @param[in, out] getname (optional) buffer to store filename. If provided and
+ *                 first character is NOT '\0', ymodem will test to see if
+ *                 the incoming filename matches. If it doesn't match, will
  *                 abort transfer. Must be at least JOLT_FS_MAX_FILENAME_BUF_LEN
  *                 long to store incoming filename.
  * @param[in] write_fun A writer function to handle the incoming stream.
@@ -47,8 +46,7 @@
  *
  * @return 0 on success.
  */
-int ymodem_receive_write (void *ffd, unsigned int maxsize, char* getname,
-        write_fun_t write_fun, int8_t *progress) ;
+int ymodem_receive_write( void *ffd, unsigned int maxsize, char *getname, write_fun_t write_fun, int8_t *progress );
 
 /**
  * @brief Convenience function that will write the transfer to disk
@@ -59,7 +57,7 @@ int ymodem_receive_write (void *ffd, unsigned int maxsize, char* getname,
  *
  * @return 0 on success.
  */
-int ymodem_receive (FILE *ffd, unsigned int maxsize, char* getname, int8_t *progress);
+int ymodem_receive( FILE *ffd, unsigned int maxsize, char *getname, int8_t *progress );
 
 /**
  * @brief Transfer a file out of Jolt
@@ -68,7 +66,6 @@ int ymodem_receive (FILE *ffd, unsigned int maxsize, char* getname, int8_t *prog
  * @param ffd file descriptor
  * @return 0 on success.
  */
-int ymodem_transmit (char* sendFileName, unsigned int sizeFile, FILE *ffd);
-
+int ymodem_transmit( char *sendFileName, unsigned int sizeFile, FILE *ffd );
 
 #endif

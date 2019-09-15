@@ -15,10 +15,10 @@
 #ifndef __JOLT_VAULT_H__
 #define __JOLT_VAULT_H__
 
-#include "nvs.h"
 #include "bipmnemonic.h"
 #include "jolttypes.h"
 #include "lvgl/lvgl.h"
+#include "nvs.h"
 
 /**
  * @brief Maximum BIP32 Passphrase length (not including NULL character)
@@ -32,7 +32,7 @@
 /**
  * @brief Contains secret information available to an app.
  *
- * There is only a single instance of a vault in Jolt. The vault is to store 
+ * There is only a single instance of a vault in Jolt. The vault is to store
  * anything that if modified could perform something malicious.
  * A Vault only holds a single derivation node (along with the derivation path
  * describing it) as a security precaution. In the event an application is
@@ -40,10 +40,11 @@
  *
  */
 typedef struct vault_t {
-    hd_node_t node;      /**< BIP derivation node to derive private keys */
-    uint32_t purpose;    /**< first element of derivation path. Typically 44' */
-    uint32_t coin_type;  /**< The application's coin's path */
-    char bip32_key[CONFIG_JOLT_VAULT_BIP32_KEY_MAX_LEN + 1]; /**< derivation key string. Typically "bitcoin_seed" or "ed25519 seed" */
+    hd_node_t node;     /**< BIP derivation node to derive private keys */
+    uint32_t purpose;   /**< first element of derivation path. Typically 44' */
+    uint32_t coin_type; /**< The application's coin's path */
+    char bip32_key[CONFIG_JOLT_VAULT_BIP32_KEY_MAX_LEN +
+                   1]; /**< derivation key string. Typically "bitcoin_seed" or "ed25519 seed" */
     char passphrase[CONFIG_JOLT_VAULT_PASSPHRASE_MAX_LEN + 1]; /** The optional 25th mnemonic word */
     bool valid; /* True if node contains good data. False if node has been wiped */
 } vault_t;
@@ -52,11 +53,11 @@ typedef struct vault_t {
  * @brief callback to perform after user attempts to enter a PIN
  * @param[in,out] param Arbitrary user data to pass to the callback
  */
-typedef void (*vault_cb_t)( void *param );
+typedef void ( *vault_cb_t )( void *param );
 
 /**
  * @brief Take the vault's recursive semaphore
- * 
+ *
  * Blocks until the semaphore is obtained.
  */
 void vault_sem_take();
@@ -72,7 +73,7 @@ void vault_sem_give();
  * Allocates the Vault structure.
  * Initializes the Vault recursive semaphore.
  * Creates the VaultWatchDog FreeRTOS Task.
- * 
+ *
  * @return Returns true on success. Returns false if no stored mnemonic data is found.
  */
 bool vault_setup();
@@ -101,21 +102,20 @@ void vault_clear();
  *
  * @return ESP_OK on success
  */
-esp_err_t vault_set(uint32_t purpose, uint32_t coin_type,
-        const char *bip32_key, const char *passphrase,
-        vault_cb_t failure_cb, vault_cb_t success_cb, void *param);
+esp_err_t vault_set( uint32_t purpose, uint32_t coin_type, const char *bip32_key, const char *passphrase,
+                     vault_cb_t failure_cb, vault_cb_t success_cb, void *param );
 
 /**
  * @brief refreshes the node in the Vault. Will prompt for PIN if necessary.
  *
- * Internally kicks the VaultWatchDog. If the vault is no longer valid, the 
+ * Internally kicks the VaultWatchDog. If the vault is no longer valid, the
  * Node wil be rederived based on the current Vault parameters.
  *
  * @param[in] failure_cb Callback on PIN failure.
  * @param[in] success_cb Callback on PIN success or valid vault.
  * @param[in] param Arbitrary data to pass on to callback
  */
-void vault_refresh(vault_cb_t failure_cb, vault_cb_t success_cb, void *param);
+void vault_refresh( vault_cb_t failure_cb, vault_cb_t success_cb, void *param );
 
 /**
  * @brief reset the VaultWatchDog timer if vault is valid.
@@ -151,8 +151,8 @@ char *vault_get_bip32_key();
  *
  * The general work flow for an application to use the secret is as follows:
  * 1. Refresh the vault (@see vault_refresh); this will ensure that the node has good data.
- * 2. Perform cryptographic operations. This is to be done immediately after 
- *    refreshing the vault. It is assumed that the cryptographic operation 
+ * 2. Perform cryptographic operations. This is to be done immediately after
+ *    refreshing the vault. It is assumed that the cryptographic operation
  *    takes much less than the VaultWatchDog timer.
  *
  * @return node

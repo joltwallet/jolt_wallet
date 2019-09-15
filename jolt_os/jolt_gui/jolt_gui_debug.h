@@ -8,7 +8,7 @@
 #define JOLT_GUI_DEBUG_H__
 
 /**
- * @brief Prints out debug information about an object 
+ * @brief Prints out debug information about an object
  *
  * Prints the following information:
  *     * Object pointer
@@ -19,7 +19,7 @@
  *
  * @param[in] obj LVGL object
  */
-void jolt_gui_debug_obj_print(jolt_gui_obj_t *obj);
+void jolt_gui_debug_obj_print( jolt_gui_obj_t *obj );
 
 /**
  * @brief Gets the string equivalent of an event

@@ -15,17 +15,17 @@
 #include "stdbool.h"
 
 enum {
-    JOLT_LAUNCHER_ERR_OK = 0,
-    JOLT_LAUNCHER_ERR_UNKNOWN_FAIL = -1,
-    JOLT_LAUNCHER_ERR_INVALID_NAME = -2,
+    JOLT_LAUNCHER_ERR_OK               = 0,
+    JOLT_LAUNCHER_ERR_UNKNOWN_FAIL     = -1,
+    JOLT_LAUNCHER_ERR_INVALID_NAME     = -2,
     JOLT_LAUNCHER_ERR_ALREADY_LAUNCHED = -3,
-    JOLT_LAUNCHER_ERR_IN_APP = -4,
-    JOLT_LAUNCHER_ERR_DOESNT_EXIST = -5,
-    JOLT_LAUNCHER_ERR_APP_OUT_OF_DATE = -6,
-    JOLT_LAUNCHER_ERR_OS_OUT_OF_DATE = -7,
-    JOLT_LAUNCHER_ERR_LOADING_SECTION = -8,
-    JOLT_LAUNCHER_ERR_RELOCATING = -9,
-    JOLT_LAUNCHER_ERR_SIGNATURE = -10,
+    JOLT_LAUNCHER_ERR_IN_APP           = -4,
+    JOLT_LAUNCHER_ERR_DOESNT_EXIST     = -5,
+    JOLT_LAUNCHER_ERR_APP_OUT_OF_DATE  = -6,
+    JOLT_LAUNCHER_ERR_OS_OUT_OF_DATE   = -7,
+    JOLT_LAUNCHER_ERR_LOADING_SECTION  = -8,
+    JOLT_LAUNCHER_ERR_RELOCATING       = -9,
+    JOLT_LAUNCHER_ERR_SIGNATURE        = -10,
 };
 
 /**
@@ -33,7 +33,7 @@ enum {
  *
  *
  * If the app was the last app launched (or currently launched app), it will
- * use the last cached instance (unless vault has been invalidated and 
+ * use the last cached instance (unless vault has been invalidated and
  * matches derivation path)
  *
  * @param[in] fn_basename app specified without ".elf" suffix. i.e. "app"
@@ -42,11 +42,11 @@ enum {
  * @param[in] passphrase string to use during BIP32 derivation
  * @return 0 on success.
  */
-int launch_file(const char *fn_basename, int app_argc, char** app_argv, const char *passphrase);
+int launch_file( const char *fn_basename, int app_argc, char **app_argv, const char *passphrase );
 
 /**
  * @brief Checks if the user is in an application
- * @return Returns True if User is in an app (screen is non NULL) 
+ * @return Returns True if User is in an app (screen is non NULL)
  */
 bool launch_in_app();
 

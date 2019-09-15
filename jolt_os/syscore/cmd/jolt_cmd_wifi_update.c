@@ -1,27 +1,26 @@
-#include "freertos/FreeRTOS.h"
-#include "stdio.h"
 #include "esp_system.h"
-#include "syscore/set_wifi_credentials.h"
-#include "syscore/cli_helpers.h"
+#include "freertos/FreeRTOS.h"
 #include "jolt_gui/jolt_gui.h"
+#include "stdio.h"
 #include "syscore/cli.h"
+#include "syscore/cli_helpers.h"
+#include "syscore/set_wifi_credentials.h"
 
-int jolt_cmd_wifi_update(int argc, char** argv) {
+int jolt_cmd_wifi_update( int argc, char **argv )
+{
     int return_code = 0;
 
-    if( !console_check_range_argc(argc, 2, 3) ) {
+    if( !console_check_range_argc( argc, 2, 3 ) ) {
         return_code = 1;
         goto exit;
     }
 
     char *ssid = argv[1];
     char *pass = NULL;
-    if( 3 == argc ) {
-        pass = argv[2];
-    }
-    if(strlen(ssid) > 32 ) {
+    if( 3 == argc ) { pass = argv[2]; }
+    if( strlen( ssid ) > 32 ) {
         return_code = 2;
-        printf("SSID must be <=32 characters long.");
+        printf( "SSID must be <=32 characters long." );
         goto exit;
     }
 
@@ -32,4 +31,3 @@ int jolt_cmd_wifi_update(int argc, char** argv) {
 exit:
     return return_code;
 }
-

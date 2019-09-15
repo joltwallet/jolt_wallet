@@ -11,11 +11,11 @@
 
 #if CONFIG_BT_ENABLED
 
-#include "stdint.h"
-#include "bluetooth_cfg.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
+    #include "bluetooth_cfg.h"
+    #include "freertos/FreeRTOS.h"
+    #include "freertos/queue.h"
+    #include "freertos/task.h"
+    #include "stdint.h"
 
 /**
  * @brief GATTS profile object

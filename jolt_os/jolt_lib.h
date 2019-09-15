@@ -16,47 +16,46 @@
 
 #if ESP_PLATFORM
 
-#include "bipmnemonic.h"
-#include "cJSON.h"
-#include "driver/uart.h"
-#include "esp_console.h"
-#include "esp_log.h"
-#include "esp_vfs_dev.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include "freertos/task.h"
-#include "linenoise/linenoise.h"
-#include "math.h"
-#include "mbedtls/bignum.h"
-#include "qrcode.h"
-#include "sodium.h"
-#include "sodium/crypto_verify_32.h"
-#include "sodium/private/curve25519_ref10.h"
+    #include "bipmnemonic.h"
+    #include "cJSON.h"
+    #include "driver/uart.h"
+    #include "esp_console.h"
+    #include "esp_log.h"
+    #include "esp_vfs_dev.h"
+    #include "freertos/FreeRTOS.h"
+    #include "freertos/queue.h"
+    #include "freertos/task.h"
+    #include "hal/display.h"
+    #include "hal/storage/storage.h"
+    #include "jolt_gui/jolt_gui.h"
+    #include "jolt_helpers.h"
+    #include "json_config.h"
+    #include "linenoise/linenoise.h"
+    #include "math.h"
+    #include "mbedtls/bignum.h"
+    #include "qrcode.h"
+    #include "sodium.h"
+    #include "sodium/crypto_verify_32.h"
+    #include "sodium/private/curve25519_ref10.h"
+    #include "syscore/cli.h"
+    #include "syscore/cli_helpers.h"
+    #include "syscore/cli_sub.h"
+    #include "syscore/filesystem.h"
+    #include "syscore/https.h"
+    #include "vault.h"
 
-#include "hal/display.h"
-#include "hal/storage/storage.h"
-#include "jolt_gui/jolt_gui.h"
-#include "jolt_helpers.h"
-#include "json_config.h"
-#include "syscore/cli_helpers.h"
-#include "syscore/cli.h"
-#include "syscore/cli_sub.h"
-#include "syscore/filesystem.h"
-#include "syscore/https.h"
-#include "vault.h"
-
-#endif // ESP_PLATFORM
+#endif  // ESP_PLATFORM
 
 /**
  * @brief Whether this was compiled for development or release
  */
-enum{
+enum {
     JOLT_VERSION_RELEASE = 0,
-    JOLT_VERSION_DEV = 1,
+    JOLT_VERSION_DEV     = 1,
 };
 typedef uint8_t jolt_release_type_t;
 
-enum{
+enum {
     JOLT_HW_JOLT = 0,
 };
 typedef uint8_t jolt_hw_type_t;
@@ -69,7 +68,7 @@ typedef struct jolt_version_t {
             uint8_t patch;
             uint8_t padding; /**< explicit 0-padding */
         };
-        uint32_t version; // For easy comparison
+        uint32_t version;  // For easy comparison
     };
     jolt_release_type_t release;
 } jolt_version_t;
@@ -82,6 +81,6 @@ extern const jolt_version_t JOLT_HW_VERSION;   /**< To check hardware compatabil
 extern const jelfLoaderEnv_t jelf_loader_env;
 
 #define cJSON_Get cJSON_GetObjectItemCaseSensitive
-#define HARDEN 0x80000000
+#define HARDEN    0x80000000
 
 #endif
