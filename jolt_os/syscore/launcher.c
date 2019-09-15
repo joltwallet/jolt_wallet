@@ -69,6 +69,9 @@ int launch_file(const char *fn_basename, int app_argc, char** app_argv, const ch
     LOADER_FD_T program = NULL;
     char *exec_fn = NULL;
 
+    ESP_LOGI(TAG, "Attempting to launching \"%s\" with passphrase \"%s\" and %d args",
+            fn_basename, passphrase, app_argc);
+
     if( true == app_cache.loading ){
         ESP_LOGW(TAG, "Cannot process additional app requests until "
                 "previous app request resolves.");
@@ -190,7 +193,7 @@ exec:
     vault_set(app_cache.ctx->coin_purpose, 
             app_cache.ctx->coin_path,
             app_cache.ctx->bip32_key, 
-            "",
+            passphrase,
             launch_vault_fail_cb, launch_app_from_store, NULL);
 
     app_cache.loading = false;

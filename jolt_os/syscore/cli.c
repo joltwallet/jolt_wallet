@@ -254,10 +254,45 @@ static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job) {
             }
             ESP_LOGD(TAG, "Not an internal command; looking for app of name %s", argv[0]);
 #endif
-            // TODO: parse passphrase argument
-            if( launch_file(argv[0], argc-1, &argv[1], "") ) {
+            /* Check for optional parameters for launching */
+            const char *passphrase = EMPTY_STR;
+            uint8_t i;
+            for(i=1; i < argc; i++) {
+                char *key = argv[i];
+                char *value = NULL;
+
+                /* Check if key startswith "--" */
+                if( '-' != key[0] && '-' != key[1] ) break;
+                key = &key[2]; // skip the "--"
+
+                if(i+1 >= argc) {
+                    printf("No value was provided for launching argument --%s", key);
+                    goto exit;
+                }
+
+                /* Parse Flags Here, followed by a "continue" */
+
+                /* Parsing Key/Value arguments */
+                value = argv[++i];
+
+                if(0 == strcmp(key, "passphrase") ) {
+                    if(strlen(value) > CONFIG_JOLT_VAULT_PASSPHRASE_MAX_LEN){
+                        printf("Passphrase too long (max length %d)", CONFIG_JOLT_VAULT_PASSPHRASE_MAX_LEN);
+                        goto exit;
+                    }
+                    passphrase = value;
+                    ESP_LOGD(TAG, "Parsed passphrase \"%s\"", passphrase);
+                    continue;
+                }
+
+                printf("Unknown argument \"--%s\"", key);
+                goto exit;
+            }
+
+            /* Launch application, only passing the non-launching arguments */
+            if( launch_file(argv[0], argc-i, &argv[i], passphrase) ) {
                 printf("App failed to launch\n");
-                jolt_cli_return(-1);
+                goto exit;
             }
             else {
                 app_call = true;
@@ -265,12 +300,15 @@ static int32_t jolt_cli_process_task(jolt_bg_job_t *bg_job) {
             break;
         }
         default:
-            jolt_cli_return(-1);
             jolt_cli_resume();
-            break;
+            goto exit;
     }
 
+    return 0; // Don't repeat
+
 exit:
+    /* On Error */
+    jolt_cli_return(-1);
     return 0; // Don't repeat
 }
 

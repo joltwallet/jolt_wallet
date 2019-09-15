@@ -35,7 +35,7 @@ static volatile bool need_refresh = false;
 static int launch_app_task(jolt_bg_job_t *job){
     char *fn_c = jolt_bg_get_param(job);
     // Launching App from homescreen uses an empty passphrase.
-    launch_file(fn_c, 0, NULL, "");
+    launch_file(fn_c, 0, NULL, EMPTY_STR);
     return 0; // Don't repeat.
 }
 
