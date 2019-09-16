@@ -43,6 +43,8 @@ lint:
 
 cppcheck:
 	cppcheck \
+		-j7 \
+		--enable=all \
 		--inline-suppr \
 		--force \
 		-ijolt_os/hal/lv_drivers/ \
