@@ -5,18 +5,15 @@ EXTRA_COMPONENT_DIRS := \
 	$(abspath jolt_os) \
 	$(IDF_PATH)/tools/unit-test-app/components/
 
-GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
-
 CFLAGS += \
 		-Werror \
-		-DJOLT_OS \
-		-DJOLT_OS_COMMIT_STR=\"$(GIT_VERSION)\"
+		-DJOLT_OS
 
 include $(IDF_PATH)/make/project.mk
 
 print-%  : ; @echo $* = $($*)
 
-.PHONY: tests test-menu lint cppcheck
+.PHONY: tests test-menu lint compilation_db cppcheck
 
 tests:
 	CFLAGS='-DUNIT_TESTING=1' \
@@ -41,9 +38,15 @@ lint:
 		! -path 'jolt_os/hal/lv_drivers/*' \
 		| xargs clang-format -style=file -i -fallback-style=google
 
-cppcheck:
+compile_commands.json:
+	rm -rf build
+	bear $(MAKE) -j
+
+compilation_db: compile_commands.json
+
+cppcheck: compile_commands.json
 	cppcheck \
-		-j7 \
+		--project=compile_commands.json \
 		--enable=all \
 		--inline-suppr \
 		--force \

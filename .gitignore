@@ -1,11 +1,23 @@
+# Build artifacts
 sdkconfig*
 !sdkconfig.defaults
 build/
+
+# Misc
 *.DS_Store
 .*project
 .settings
+
+# Jolt Specific
 jolt_os/jolt_commit.c
+
+# Documentation
 docs/html/
 docs/latex/
+
+# Misc
 *.sh
+
+# Static Analysis
 cppcheck.log
+compile_commands.json

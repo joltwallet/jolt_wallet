@@ -21,15 +21,13 @@ COMPONENT_ADD_INCLUDEDIRS := . \
     hal/storage/aes132_library \
     jelf_loader/include
 
-jolt_lib.o: jolt_lib.c
+COMPONENT_EXTRA_CLEAN := \
+	$(COMPONENT_PATH)/jolt_lib.c \
+	$(COMPONENT_PATH)/jolt_commit.c
 
-jolt_lib.c: $(COMPONENT_PATH)/../elf2jelf/export_list.txt $(COMPONENT_PATH)/../elf2jelf/jolt_lib_template.txt $(COMPONENT_PATH)/../elf2jelf/elf2jelf.py
+# Generate the C source files before building JoltOS
+$(COMPONENT_LIBRARY): $(COMPONENT_PATH)/jolt_lib.c $(COMPONENT_PATH)/jolt_commit.c
+
+# Generate C source files via python script
+$(COMPONENT_PATH)/jolt_lib.c $(COMPONENT_PATH)/jolt_commit.c: $(COMPONENT_PATH)/../elf2jelf/export_list.txt $(COMPONENT_PATH)/../elf2jelf/jolt_lib_template.c $(COMPONENT_PATH)/../elf2jelf/elf2jelf.py $(COMPONENT_PATH)/../elf2jelf/common_structs.py
 	cd $(COMPONENT_PATH)/../elf2jelf; python3 elf2jelf.py --export_only;
-
-
-$(COMPONENT_PATH)/../elf2jelf/export_list.txt: ;
-
-$(COMPONENT_PATH)/../elf2jelf/jolt_lib_template.txt: ;
-
-$(COMPONENT_PATH)/../elf2jelf/elf2jelf.py: ;
-
