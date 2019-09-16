@@ -41,8 +41,8 @@ end:
 
 static bool print_response( cJSON *json )
 {
-    char *response = NULL;
-    response       = cJSON_Print( json );
+    char *response;
+    response = cJSON_Print( json );
     if( NULL == response ) return false;
     printf( response );
     printf( "\n" );
@@ -126,8 +126,8 @@ int jolt_cmd_about( int argc, char **argv )
 
         /* Get IP Address */
         {
-            char *ip = NULL;
-            ip       = jolt_wifi_get_ip();
+            char *ip;
+            ip = jolt_wifi_get_ip();
             if( NULL == ip ) {
                 if( NULL == cJSON_AddStringToObject( json, "ip", EMPTY_STR ) ) goto end;
             }

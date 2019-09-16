@@ -46,7 +46,7 @@ static jolt_err_t get_nth_word( char buf[], size_t buf_len, const char *str, con
         return E_SUCCESS;
     }
     // Copy over number prefix
-    snprintf( buf, buf_len, "%d. ", n + 1 );  // 1-indexing
+    snprintf( buf, buf_len, "%u. ", n + 1 );  // 1-indexing
     buf_len -= 3;
     buf += 3;
     if( ( n + 1 ) > 9 ) {
@@ -86,7 +86,7 @@ static void generate_mnemonic( mnemonic_setup_t *param )
 /* BG Task for stretching */
 static int bg_stretch_task( jolt_bg_job_t *job )
 {
-    int8_t *progress = NULL;
+    int8_t *progress;
     lv_obj_t *loading_scr;
     mnemonic_setup_t *param;
 
@@ -239,10 +239,12 @@ static void screen_mnemonic_create( lv_obj_t *btn, lv_event_t event )
         RESTART_IF_NULL( scr );
         for( uint8_t i = 0; i < 24; i++ ) {
             char buf[SINGLE_WORD_BUF_LEN] = {0};
-            jolt_gui_obj_t *elem          = NULL;
+            jolt_gui_obj_t *elem;
+
             get_nth_word( buf, sizeof( buf ), param->mnemonic, i );
+
 #if JOLT_GUI_TEST_MENU
-            // so devs dont have to scroll down every time
+            /* so devs dont have to scroll down every time */
             elem = jolt_gui_scr_menu_add( scr, NULL, buf, screen_pin_entry_create );
 #else
             elem = jolt_gui_scr_menu_add( scr, NULL, buf, NULL );
@@ -264,8 +266,8 @@ static void screen_mnemonic_create( lv_obj_t *btn, lv_event_t event )
  */
 void jolt_gui_first_boot_create()
 {
-    mnemonic_setup_t *param = NULL;
-    param                   = RESTART_IF_NULL( malloc( sizeof( mnemonic_setup_t ) ) );
+    mnemonic_setup_t *param;
+    param = RESTART_IF_NULL( malloc( sizeof( mnemonic_setup_t ) ) );
 
     generate_mnemonic( param );
 
@@ -279,8 +281,8 @@ void jolt_gui_first_boot_create()
 /* Prompts user for pin and performs the rest of setup for a given entropy */
 void jolt_gui_restore_sequence( const uint256_t mnemonic )
 {
-    mnemonic_setup_t *param = NULL;
-    param                   = RESTART_IF_NULL( malloc( sizeof( mnemonic_setup_t ) ) );
+    mnemonic_setup_t *param;
+    param = RESTART_IF_NULL( malloc( sizeof( mnemonic_setup_t ) ) );
 
     memcpy( param->mnemonic_bin, mnemonic, 32 );
 

@@ -94,7 +94,7 @@ exit:
 
 int jolt_json_write( const char *fn, const cJSON *json )
 {
-    FILE *f   = NULL;
+    FILE *f;
     char *str = NULL;
 
     /* Open the file */

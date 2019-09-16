@@ -39,7 +39,7 @@ static esp_err_t esp_fatfs_info( size_t *out_total_bytes, size_t *out_free_bytes
 
 void jolt_fs_init()
 {
-    esp_err_t ret = ESP_FAIL;
+    esp_err_t ret;
 
 #if CONFIG_JOLT_FS_SPIFFS
     const esp_vfs_spiffs_conf_t conf = {.base_path              = JOLT_FS_MOUNTPT,
@@ -57,6 +57,8 @@ void jolt_fs_init()
     const esp_vfs_fat_mount_config_t conf = {
             .max_files = MAX_FILES, .format_if_mount_failed = true, .allocation_unit_size = CONFIG_WL_SECTOR_SIZE};
     ret = esp_vfs_fat_spiflash_mount( JOLT_FS_MOUNTPT, JOLT_FS_PARTITION, &conf, &s_wl_handle );
+#else
+    ret = ESP_FAIL;
 #endif
 
     if( ret != ESP_OK ) {
@@ -235,6 +237,8 @@ esp_err_t jolt_fs_format()
     return esp_littlefs_format( JOLT_FS_PARTITION );
 #elif CONFIG_JOLT_FS_FAT
     return fat_format();
+#else
+    return ESP_FAIL;
 #endif
 }
 
@@ -246,6 +250,8 @@ esp_err_t jolt_fs_info( size_t *total_bytes, size_t *used_bytes )
     return esp_littlefs_info( JOLT_FS_PARTITION, total_bytes, used_bytes );
 #elif CONFIG_JOLT_FS_FAT
     return esp_fatfs_info( total_bytes, used_bytes );
+#else
+    return ESP_FAIL;
 #endif
 }
 
@@ -272,16 +278,6 @@ char *jolt_fs_type()
     return "UNKNOWN";
 #endif
 }
-
-#if 0
-    #if CONFIG_JOLT_FS_SPIFFS
-    assert(0);
-    #elif CONFIG_JOLT_FS_LITTLEFS 
-    assert(0);
-    #elif CONFIG_JOLT_FS_FAT
-    assert(0);
-    #endif
-#endif
 
 #if CONFIG_JOLT_FS_FAT
 static esp_err_t setup_fat()

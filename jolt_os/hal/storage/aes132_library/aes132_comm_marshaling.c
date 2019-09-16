@@ -107,6 +107,8 @@ uint8_t aes132m_execute( uint8_t op_code, uint8_t mode, uint16_t param1, uint16_
         p_buffer += datalen4;
     }
 
+    (void)p_buffer;
+
     // Send command and receive response.
     return aes132c_send_and_receive( &tx_buffer[0], AES132_RESPONSE_SIZE_MAX, &rx_buffer[0], AES132_OPTION_DEFAULT );
 }

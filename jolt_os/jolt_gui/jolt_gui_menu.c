@@ -156,8 +156,8 @@ lv_obj_t *jolt_gui_scr_menu_add_info( jolt_gui_obj_t *btn, const char *info )
     jolt_gui_obj_t *info_label = NULL;
     JOLT_GUI_CTX
     {
-        jolt_gui_obj_t *info_label_tmp = NULL;
-        jolt_gui_obj_t *btn_label      = lv_list_get_btn_label( btn );
+        jolt_gui_obj_t *info_label_tmp, *btn_label;
+        btn_label = lv_list_get_btn_label( btn );
 
         /* Creating another child label under a list element interfere's with
          * how lvgl handles signal callbacks, so we have to first create a container */
@@ -227,10 +227,10 @@ void jolt_gui_scr_menu_set_param( jolt_gui_obj_t *par, void *param )
 {
     JOLT_GUI_CTX
     {
-        jolt_gui_obj_t *list = NULL;
-        jolt_gui_obj_t *btn  = NULL;
-        list                 = BREAK_IF_NULL( jolt_gui_scr_menu_get_list( par ) );
+        jolt_gui_obj_t *list, *btn;
+        list = BREAK_IF_NULL( jolt_gui_scr_menu_get_list( par ) );
         jolt_gui_obj_set_param( list, param );
+        btn = NULL;
         while( NULL != ( btn = lv_list_get_next_btn( list, btn ) ) ) { jolt_gui_obj_set_param( btn, param ); }
     }
 }

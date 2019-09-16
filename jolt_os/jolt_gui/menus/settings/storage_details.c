@@ -68,8 +68,7 @@ static void delete_file_confirm( lv_obj_t *btn, lv_event_t event )
  */
 static lv_obj_t *menu_file_options_create()
 {
-    lv_obj_t *scr = NULL;
-    lv_obj_t *btn;
+    lv_obj_t *scr, *btn;
     scr = jolt_gui_scr_menu_create( gettext( JOLT_TEXT_STORAGE_DETAILS ) );
     if( NULL == scr ) goto exit;
 
@@ -119,7 +118,7 @@ static lv_obj_t *create_and_add_files_to_menu()
             if( NULL == scr ) goto exit;
         }
 
-        lv_obj_t *btn = NULL, *info_label = NULL;
+        lv_obj_t *btn, *info_label;
         btn = jolt_gui_scr_menu_add( scr, NULL, ent->d_name, menu_storage_details_options_callback );
         if( NULL == btn ) goto exit;
 

@@ -166,12 +166,12 @@ void jelfLoaderProfilerPrint()
     INFO( "\n-----------------------------\n"
           "JELF Loader Profiling Results:\n"
           "Function Name          Time (uS)    Calls \n"
-          "relocateSymbol:        %8d    %8d\n"
-          "findSymAddr:           %8d    %8d\n"
-          "relocateSection:       %8d    %8d\n"
-          "total time:            %8d\n"
-          "Relocations Performed: %8d\n"
-          "Max RELA r_offset:     %8d (0x%08X)\n"
+          "relocateSymbol:        %8d    %8u\n"
+          "findSymAddr:           %8d    %8u\n"
+          "relocateSection:       %8d    %8u\n"
+          "total time:            %8u\n"
+          "Relocations Performed: %8u\n"
+          "Max RELA r_offset:     %8u (0x%08X)\n"
           "-----------------------------\n\n",
           profiler_relocateSymbol.t, profiler_relocateSymbol.n, profiler_findSymAddr.t, profiler_findSymAddr.n,
           profiler_relocateSection.t, profiler_relocateSection.n, total_time, profiler_rel_count,
@@ -714,7 +714,6 @@ static int relocateSymbol( Jelf_Addr relAddr, int type, Jelf_Addr symAddr, Jelf_
 
             ERR( "Relocation: unknown opcode %08X", v );
             goto err;
-            break;
         }
         case R_XTENSA_ASM_EXPAND: {
             *from = unalignedGet32( (void *)relAddr );

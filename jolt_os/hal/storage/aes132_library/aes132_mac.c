@@ -237,7 +237,6 @@ static void aes132crypt_cbc_block( struct aes132crypt_in_out *param, uint8_t *ou
 {
     // Local variables
     uint8_t temporary[16];
-    uint8_t *p_input;
 
     uint8_t alen_remaining;
     uint8_t plen_remaining;
@@ -258,6 +257,7 @@ static void aes132crypt_cbc_block( struct aes132crypt_in_out *param, uint8_t *ou
     // To save memory space, the CBC mode operations (block B) are done serially
     //   pass is used to indicate the index of B (B_pass)
     do {
+        uint8_t *p_input;
         // Input is initialized to point to temporary array for filling
         p_input = temporary;
 
@@ -284,6 +284,8 @@ static void aes132crypt_cbc_block( struct aes132crypt_in_out *param, uint8_t *ou
             *p_input++ = 0x00;
             *p_input++ = param->plen_bytes;
             // good so far
+
+            (void)p_input;
 
             // Point input back to the temporary array
             p_input = temporary;
@@ -460,7 +462,6 @@ static void aes132crypt_ctr_block( struct aes132crypt_ctr_block_in_out *param )
  */
 uint8_t aes132h_nonce( struct aes132h_nonce_in_out *param )
 {
-    uint8_t ret_code;
     struct aes132crypt_nonce_in_out aes132crypt_nonce_param;
     uint8_t block_a[16];
     uint8_t block_b[16];
@@ -490,6 +491,7 @@ uint8_t aes132h_nonce( struct aes132h_nonce_in_out *param )
 
     // Check mode parameter bit 0 (Random/Inbound) and do appropriate operations
     if( param->mode & 0x01 ) {
+        uint8_t ret_code;
         // Assemble block A and B
         block_a[0] = AES132_OPCODE_NONCE;
         block_a[1] = param->mode;

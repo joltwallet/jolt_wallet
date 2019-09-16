@@ -104,7 +104,7 @@ uint8_t aes132c_read_device_status_register( uint8_t *device_status_register )
  */
 uint8_t aes132c_wait_for_status_register_bit( uint8_t mask, uint8_t is_set, uint16_t n_retries )
 {
-    uint8_t aes132_lib_return, device_status_register = 0;
+    uint8_t device_status_register = 0;
     ESP_LOGD( TAG,
               "aes132c_wait_for_status_register_bit; "
               "target mask %.2X",
@@ -112,8 +112,8 @@ uint8_t aes132c_wait_for_status_register_bit( uint8_t mask, uint8_t is_set, uint
 
     do {  // debug: this is looping
         ESP_LOGD( TAG, "Reading Status Register" );
-        aes132_lib_return = aes132p_read_memory_physical( 1, AES132_STATUS_ADDR, &device_status_register );
-        if( aes132_lib_return != AES132_FUNCTION_RETCODE_SUCCESS ) {
+        if( AES132_FUNCTION_RETCODE_SUCCESS !=
+            aes132p_read_memory_physical( 1, AES132_STATUS_ADDR, &device_status_register ) ) {
             ESP_LOGD( TAG,
                       "Device busy while trying to read Status Register. "
                       "Continue polling until n_retries (%d) is depleted.",

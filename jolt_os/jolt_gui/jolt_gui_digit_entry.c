@@ -273,11 +273,10 @@ int8_t jolt_gui_scr_digit_entry_get_arr( jolt_gui_obj_t *scr, uint8_t *arr, uint
     int8_t n_entries = -1;
     JOLT_GUI_CTX
     {
-        jolt_gui_obj_t *cont_body   = NULL;
-        jolt_gui_obj_t *digit_entry = NULL;
-        cont_body                   = JOLT_GUI_FIND_AND_CHECK( scr, JOLT_GUI_OBJ_ID_CONT_BODY );
-        digit_entry                 = JOLT_GUI_FIND_AND_CHECK( cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY );
-        n_entries                   = jolt_gui_obj_digit_entry_get_arr( digit_entry, arr, arr_len );
+        jolt_gui_obj_t *cont_body, *digit_entry;
+        cont_body   = JOLT_GUI_FIND_AND_CHECK( scr, JOLT_GUI_OBJ_ID_CONT_BODY );
+        digit_entry = JOLT_GUI_FIND_AND_CHECK( cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY );
+        n_entries   = jolt_gui_obj_digit_entry_get_arr( digit_entry, arr, arr_len );
     }
     return n_entries;
 }
@@ -319,11 +318,10 @@ uint8_t jolt_gui_scr_digit_entry_get_hash( jolt_gui_obj_t *scr, uint8_t *hash )
         /* Make sure that the scr is a screen */
         scr = jolt_gui_scr_get( scr );
 
-        jolt_gui_obj_t *cont_body   = NULL;
-        jolt_gui_obj_t *digit_entry = NULL;
-        cont_body                   = JOLT_GUI_FIND_AND_CHECK( scr, JOLT_GUI_OBJ_ID_CONT_BODY );
-        digit_entry                 = JOLT_GUI_FIND_AND_CHECK( cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY );
-        res                         = jolt_gui_obj_digit_entry_get_hash( digit_entry, hash );
+        jolt_gui_obj_t *cont_body, *digit_entry;
+        cont_body   = JOLT_GUI_FIND_AND_CHECK( scr, JOLT_GUI_OBJ_ID_CONT_BODY );
+        digit_entry = JOLT_GUI_FIND_AND_CHECK( cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY );
+        res         = jolt_gui_obj_digit_entry_get_hash( digit_entry, hash );
     }
     return res;
 }
@@ -367,11 +365,10 @@ double jolt_gui_scr_digit_entry_get_double( jolt_gui_obj_t *scr )
     double res = -1;
     JOLT_GUI_CTX
     {
-        jolt_gui_obj_t *cont_body   = NULL;
-        jolt_gui_obj_t *digit_entry = NULL;
-        cont_body                   = JOLT_GUI_FIND_AND_CHECK( scr, JOLT_GUI_OBJ_ID_CONT_BODY );
-        digit_entry                 = JOLT_GUI_FIND_AND_CHECK( cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY );
-        res                         = jolt_gui_obj_digit_entry_get_double( digit_entry );
+        jolt_gui_obj_t *cont_body, *digit_entry;
+        cont_body   = JOLT_GUI_FIND_AND_CHECK( scr, JOLT_GUI_OBJ_ID_CONT_BODY );
+        digit_entry = JOLT_GUI_FIND_AND_CHECK( cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY );
+        res         = jolt_gui_obj_digit_entry_get_double( digit_entry );
     }
     return res;
 }
@@ -397,11 +394,10 @@ int32_t jolt_gui_scr_digit_entry_get_int( jolt_gui_obj_t *scr )
     int32_t res = -1;
     JOLT_GUI_CTX
     {
-        jolt_gui_obj_t *cont_body   = NULL;
-        jolt_gui_obj_t *digit_entry = NULL;
-        cont_body                   = JOLT_GUI_FIND_AND_CHECK( scr, JOLT_GUI_OBJ_ID_CONT_BODY );
-        digit_entry                 = JOLT_GUI_FIND_AND_CHECK( cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY );
-        res                         = jolt_gui_obj_digit_entry_get_int( digit_entry );
+        jolt_gui_obj_t *cont_body, *digit_entry;
+        cont_body   = JOLT_GUI_FIND_AND_CHECK( scr, JOLT_GUI_OBJ_ID_CONT_BODY );
+        digit_entry = JOLT_GUI_FIND_AND_CHECK( cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY );
+        res         = jolt_gui_obj_digit_entry_get_int( digit_entry );
     }
     return res;
 }
@@ -432,8 +428,7 @@ void jolt_gui_scr_digit_entry_set_pos( jolt_gui_obj_t *scr, int8_t pos )
 {
     JOLT_GUI_CTX
     {
-        jolt_gui_obj_t *cont_body   = NULL;
-        jolt_gui_obj_t *digit_entry = NULL;
+        jolt_gui_obj_t *cont_body, *digit_entry;
         cont_body                   = JOLT_GUI_FIND_AND_CHECK( scr, JOLT_GUI_OBJ_ID_CONT_BODY );
         digit_entry                 = JOLT_GUI_FIND_AND_CHECK( cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY );
         digit_entry_cont_ext_t *ext = lv_obj_get_ext_attr( digit_entry );

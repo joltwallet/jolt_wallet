@@ -49,6 +49,7 @@ cppcheck: compile_commands.json
 		--project=compile_commands.json \
 		--enable=all \
 		--inline-suppr \
+		–template=gcc \
 		--force \
 		-ijolt_os/hal/lv_drivers/ \
 		jolt_os/ 2>cppcheck.log

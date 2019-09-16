@@ -81,6 +81,7 @@ void i2c_enable_phys( void )
 
     ESP_LOGI( TAG, "i2c_param_config %d", conf.mode );
     err = i2c_param_config( CONFIG_JOLT_I2C_MASTER_NUM, &conf );
+    if( ESP_OK != err ) { esp_restart(); }
 
     // Install i2c driver
     ESP_LOGI( TAG, "i2c_driver_install %d", CONFIG_JOLT_I2C_MASTER_NUM );

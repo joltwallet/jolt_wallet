@@ -177,7 +177,7 @@ err:
 
 esp_err_t jolt_wifi_stop()
 {
-    esp_err_t err = ESP_OK;
+    esp_err_t err;
 
     err = esp_wifi_disconnect();
     switch( err ) {

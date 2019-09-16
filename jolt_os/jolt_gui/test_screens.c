@@ -79,8 +79,9 @@ void jolt_gui_test_qrcode_create( jolt_gui_obj_t *btn, jolt_gui_event_t event )
 void jolt_gui_test_preloading_create( jolt_gui_obj_t *btn, jolt_gui_event_t event )
 {
     if( jolt_gui_event.short_clicked == event ) {
-        jolt_gui_obj_t *scr = NULL;
-        scr                 = jolt_gui_scr_preloading_create( "Preloading", "Status Message" );
+        jolt_gui_obj_t *scr;
+        scr = jolt_gui_scr_preloading_create( "Preloading", "Status Message" );
+        if( NULL == scr ) return;
         jolt_gui_scr_set_event_cb( scr, jolt_gui_event_del );
     }
 }
@@ -118,8 +119,8 @@ static void test_autoloading_cb( lv_obj_t *bar, lv_event_t event )
     }
     else if( jolt_gui_event.value_changed == event ) {
         char buf[30];
-        int8_t *progress = NULL;
-        progress         = jolt_gui_scr_loadingbar_progress_get( bar );
+        int8_t *progress;
+        progress = jolt_gui_scr_loadingbar_progress_get( bar );
         snprintf( buf, sizeof( buf ), "Progress: %d%%", *progress );
         ESP_LOGD( TAG, "(%d): %s", __LINE__, buf );
         if( *progress > 0 ) { jolt_gui_scr_loadingbar_update( bar, NULL, buf, -1 ); }

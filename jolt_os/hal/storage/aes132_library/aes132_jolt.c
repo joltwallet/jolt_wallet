@@ -25,8 +25,8 @@ static struct aes132h_nonce_s *get_nonce()
     static struct aes132h_nonce_s nonce_obj;
     struct aes132h_nonce_s *nonce = &nonce_obj;
 
-    uint8_t res;
     if( !nonce->valid ) {
+        uint8_t res;
         ESP_LOGI( TAG, "Nonce Invalid; Refreshing Nonce" );
         res = aes132_nonce( nonce, NULL );
         if( res ) {

@@ -71,8 +71,8 @@ static void jolt_cmd_mnemonic_restore_num_create( mnemonic_restore_job_param_t *
  */
 static void jolt_cmd_mnemonic_restore_begin_cb( lv_obj_t *btn, lv_event_t event )
 {
-    mnemonic_restore_job_param_t *param = NULL;
-    param                               = jolt_gui_obj_get_param( btn );
+    mnemonic_restore_job_param_t *param;
+    param = jolt_gui_obj_get_param( btn );
 
     if( MNEMONIC_RESTORE_CONFIRM_START != param->state ) {
         jolt_cli_return( -1 );
@@ -96,8 +96,8 @@ static void jolt_cmd_mnemonic_restore_begin_cb( lv_obj_t *btn, lv_event_t event 
  */
 static void jolt_cmd_mnemonic_restore_index_cb( lv_obj_t *btn, lv_event_t event )
 {
-    mnemonic_restore_job_param_t *param = NULL;
-    param                               = jolt_gui_obj_get_param( btn );
+    mnemonic_restore_job_param_t *param;
+    param = jolt_gui_obj_get_param( btn );
     if( LV_EVENT_SHORT_CLICKED == event ) { /* Do Nothing */
     }
     else if( LV_EVENT_CANCEL == event ) {
@@ -110,9 +110,9 @@ static void jolt_cmd_mnemonic_restore_index_cb( lv_obj_t *btn, lv_event_t event 
 
 static int32_t jolt_mnemonic_restore_process( jolt_bg_job_t *job )
 {
-    int32_t delay                       = 100;
-    mnemonic_restore_job_param_t *param = NULL;
-    param                               = jolt_bg_get_param( job );
+    int32_t delay = 100;
+    mnemonic_restore_job_param_t *param;
+    param = jolt_bg_get_param( job );
     if( NULL == param ) {
         jolt_cli_return( -1 );
         return 0;
