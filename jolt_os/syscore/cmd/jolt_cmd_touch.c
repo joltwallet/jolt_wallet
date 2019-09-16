@@ -6,7 +6,7 @@
 
 int jolt_cmd_touch( int argc, char **argv )
 {
-    int return_code;
+    int return_code       = -1;
     uint8_t files_created = 0;
 
     /* Input Argument Check */

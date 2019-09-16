@@ -42,6 +42,15 @@ lint:
 		| xargs clang-format -style=file -i -fallback-style=google
 
 cppcheck:
-	cppcheck jolt_os/ 2>cppcheck.log
+	cppcheck \
+		--inline-suppr \
+		--force \
+		-ijolt_os/hal/lv_drivers/ \
+		jolt_os/ 2>cppcheck.log
+	echo ""
+	echo "--------------------------"
+	echo "---- cppcheck results ----"
+	echo "--------------------------"
 	cat cppcheck.log
+	echo ""
 

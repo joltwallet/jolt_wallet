@@ -53,7 +53,7 @@ void jolt_partition_get_bootloader_hash( uint256_t hash )
 
 void jolt_partition_check_table( void )
 {
-    uint256_t hash;
+    uint256_t hash = {0};
     jolt_partition_get_table_hash( hash );
     for( uint8_t i = 0; i < sizeof( APPROVED_TABLES ); i++ ) {
         uint256_t approved_bin;
@@ -70,7 +70,7 @@ void jolt_partition_check_table( void )
 
 void jolt_partition_check_bootloader( void )
 {
-    uint256_t hash;
+    uint256_t hash = {0};
     jolt_partition_get_bootloader_hash( hash );
     for( uint8_t i = 0; i < sizeof( APPROVED_BOOTLOADERS ); i++ ) {
         uint256_t approved_bin;

@@ -39,7 +39,7 @@ static esp_err_t esp_fatfs_info( size_t *out_total_bytes, size_t *out_free_bytes
 
 void jolt_fs_init()
 {
-    esp_err_t ret;
+    esp_err_t ret = ESP_FAIL;
 
 #if CONFIG_JOLT_FS_SPIFFS
     const esp_vfs_spiffs_conf_t conf = {.base_path              = JOLT_FS_MOUNTPT,

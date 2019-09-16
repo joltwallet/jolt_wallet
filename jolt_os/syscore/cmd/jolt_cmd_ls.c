@@ -11,8 +11,8 @@ static const char TAG[] = "jolt_cmd_ls";
 
 int jolt_cmd_ls( int argc, char **argv )
 {
-    int return_code;
-    DIR *dir = NULL;
+    int return_code = -1;
+    DIR *dir        = NULL;
     struct dirent *ent;
     struct stat sb;
     cJSON *json = NULL, *json_files = NULL, *entry = NULL;

@@ -10,9 +10,9 @@
 
 int jolt_cmd_download( int argc, char **argv )
 {
-    int return_code;
-    char *fname = NULL;
-    FILE *ffd   = NULL;
+    int return_code = -1;
+    char *fname     = NULL;
+    FILE *ffd       = NULL;
 
     if( !console_check_equal_argc( argc, 2 ) ) EXIT( -1 );
 

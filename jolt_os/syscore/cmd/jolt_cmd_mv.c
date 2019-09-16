@@ -6,9 +6,9 @@
 
 int jolt_cmd_mv( int argc, char **argv )
 {
-    int return_code;
-    char *src_fn = NULL;
-    char *dst_fn = NULL;
+    int return_code = -1;
+    char *src_fn    = NULL;
+    char *dst_fn    = NULL;
 
     /* Input Argument Check */
     if( !console_check_equal_argc( argc, 3 ) ) EXIT_PRINT( -1, "Requires 3 args: mv [src] [dst]" );
