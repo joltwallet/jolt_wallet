@@ -38,6 +38,7 @@ lint:
 		\) \
 		! -iname 'jolt_lib.c' \
 		! -path 'jolt_os/hal/lv_drivers/*' \
+		! -path 'jolt_os/jolt_gui/custom_fonts/*' \
 		| xargs clang-format -style=file -i -fallback-style=google
 
 compile_commands.json:
