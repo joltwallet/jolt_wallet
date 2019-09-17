@@ -48,6 +48,7 @@ cppcheck: compile_commands.json
 	cppcheck \
 		--project=compile_commands.json \
 		--enable=all \
+		--suppressions-list=.cfg/cppcheck-suppressions.txt \
 		--inline-suppr \
 		–template=gcc \
 		--force \

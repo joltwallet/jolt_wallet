@@ -1,0 +1,3 @@
+unusedLabel
+unusedFunction:jolt_os/hal/storage/aes132_library
+
