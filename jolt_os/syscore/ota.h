@@ -9,18 +9,17 @@
 
 #include "esp_ota_ops.h"
 
-
 /**
  * @brief Initialize the OTA moduel
  * @return ESP_OK on success
  */
-esp_err_t jolt_ota_init_handle( );
+esp_err_t jolt_ota_init_handle();
 
 /**
  * @brief Perform a streaming JoltOS update via YMODEM
  * @param[out] progress YMODEM transfer progress [0~100]
  * @return ESP_OK on success
  */
-esp_err_t jolt_ota_ymodem(int8_t *progress);
+esp_err_t jolt_ota_ymodem( int8_t *progress );
 
 #endif

@@ -11,12 +11,12 @@
 #define JOLT_BLUETOOTH_H___
 
 #include <stdint.h>
-#include "sdkconfig.h"
-#include "freertos/FreeRTOS.h"
 #include "esp_vfs_dev.h"
+#include "freertos/FreeRTOS.h"
+#include "sdkconfig.h"
 
-#define JOLT_BLE_WHITELIST_ADD    true
-#define JOLT_BLE_WHITELIST_REMOVE false
+#define JOLT_BLE_WHITELIST_ADD       true
+#define JOLT_BLE_WHITELIST_REMOVE    false
 #define JOLT_BLE_WHITELIST_ADDR_TYPE BLE_WL_ADDR_TYPE_RANDOM
 
 /**
@@ -92,15 +92,15 @@ esp_err_t jolt_bluetooth_adv_stop();
  * @brief Security Config
  * @param[in] bond To bond with client device after pairing
  */
-void jolt_bluetooth_config_security(bool bond);
+void jolt_bluetooth_config_security( bool bond );
 
 /**
  * @brief Read a character from the bluetooth stream.
  * @param[in] fd File Descriptor; ignored. Just set it to 0.
  * @param[in] timeout; Maximum number of ticks to wait.
- * @return Character read. Returns -1 on timeout. 
+ * @return Character read. Returns -1 on timeout.
  */
-int ble_read_char(int fd, TickType_t timeout);
+int ble_read_char( int fd, TickType_t timeout );
 
 /**
  * @brief Read data from bluetooth stream with timeout.
@@ -110,12 +110,12 @@ int ble_read_char(int fd, TickType_t timeout);
  * @param[in] timeout; Maximum number of ticks to wait.
  * @return Number of bytes read.
  */
-ssize_t ble_read_timeout(int fd, void* data, size_t size, TickType_t timeout);
+ssize_t ble_read_timeout( int fd, void *data, size_t size, TickType_t timeout );
 
 /**
  * @brief Set line ending rules.
  * @param[in] type ending rule. -1 for no rules.
  */
-void ble_set_rx_line_endings(esp_line_endings_t mode);
+void ble_set_rx_line_endings( esp_line_endings_t mode );
 
 #endif

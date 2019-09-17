@@ -33,7 +33,7 @@
 typedef struct decomp_t decomp_t;
 
 /**
- * @brief Allocates and returns a decompressor object 
+ * @brief Allocates and returns a decompressor object
  * @param[in] writer a writer function to handle the decompression stream.
  * @param[in] cookie user-defined metadata thats passed into the writer function
  * @return initialized decompression object
@@ -54,6 +54,6 @@ int decompress_obj_chunk( decomp_t *d, uint8_t *data, size_t len );
  * Does NOT close or do anything to clean up cookie/writer things.
  * param[in] d decompressor object to deallocate.
  */
-void decompress_obj_del ( decomp_t *d);
+void decompress_obj_del( decomp_t *d );
 
 #endif

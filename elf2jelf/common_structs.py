@@ -3,8 +3,6 @@ from collections import OrderedDict, namedtuple
 import bitstruct as bs
 from copy import deepcopy
 
-import ipdb as pdb
-
 '''
 Defines all the structs to parse from an ELF32 file
 '''

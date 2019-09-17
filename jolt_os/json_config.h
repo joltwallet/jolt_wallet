@@ -42,12 +42,9 @@ int jolt_json_write_app( const cJSON *json );
  * @brief delete a cJSON object; can be NULL
  * @param[in,out] json cJSON object to delete
  */
-static inline void jolt_json_del( cJSON *json ) {
-    if( NULL != json ) {
-        cJSON_Delete( json );
-    }
+static inline void jolt_json_del( cJSON *json )
+{
+    if( NULL != json ) { cJSON_Delete( json ); }
 }
 
-
 #endif
-

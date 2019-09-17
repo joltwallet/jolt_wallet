@@ -7,7 +7,7 @@
 #ifndef JOLT_GUI_LOADING_H__
 #define JOLT_GUI_LOADING_H__
 
-#include "lvgl/lvgl.h"
+#include "jolt_gui/jolt_gui.h"
 
 #ifndef CONFIG_JOLT_GUI_LOADINGBAR_W
     #define CONFIG_JOLT_GUI_LOADINGBAR_W 100
@@ -20,14 +20,14 @@
 #endif
 
 /**
- * @brief Creates a loading-bar screen 
- * 
+ * @brief Creates a loading-bar screen
+ *
  * Progress is started at 0 by default.
  *
  * @param[in] title Statusbar title string
  * @return loading-bar screen
  */
-jolt_gui_obj_t *jolt_gui_scr_loadingbar_create(const char *title);
+jolt_gui_obj_t *jolt_gui_scr_loadingbar_create( const char *title );
 
 /**
  * @brief Update the loading-bar progress
@@ -36,19 +36,18 @@ jolt_gui_obj_t *jolt_gui_scr_loadingbar_create(const char *title);
  * @param[in] text subtitle text displayed above the loading-bar. NULL for an empty subtitle.
  * @param[in] percentage Current progress [0~100]
  */
-void jolt_gui_scr_loadingbar_update(jolt_gui_obj_t *parent,
-        const char *title, const char *text,
-        int8_t percentage);
+void jolt_gui_scr_loadingbar_update( jolt_gui_obj_t *parent, const char *title, const char *text, int8_t percentage );
 /**
  * @brief Automatically updates the loading bar according to the value of progress [0~100]
- * 
+ *
  * Will send an jolt_gui_event.value_changed to the active element's event_cb.
  * Will send an jolt_gui_event.apply to the active element's event_cb upon 100%
  *
  * @param[in,out] parent loading-bar screen
- * @return Pointer to current progress [0~100] which will be periodically read from. Writing to this value will update the progress bar.
+ * @return Pointer to current progress [0~100] which will be periodically read from. Writing to this value will update
+ * the progress bar.
  */
-int8_t *jolt_gui_scr_loadingbar_autoupdate(jolt_gui_obj_t *parent);
+int8_t *jolt_gui_scr_loadingbar_autoupdate( jolt_gui_obj_t *parent );
 
 /**
  * @brief Cleanup the autoupdate task.
@@ -57,11 +56,11 @@ int8_t *jolt_gui_scr_loadingbar_autoupdate(jolt_gui_obj_t *parent);
  *
  * @param[in,out] parent loading-bar screen
  */
-void jolt_gui_scr_loadingbar_autoupdate_del(jolt_gui_obj_t *parent);
+void jolt_gui_scr_loadingbar_autoupdate_del( jolt_gui_obj_t *parent );
 
 /**
  * @brief Get pointer to progress value
- * @param[in,out] obj Screen or bar object 
+ * @param[in,out] obj Screen or bar object
  */
 int8_t *jolt_gui_scr_loadingbar_progress_get( lv_obj_t *obj );
 
@@ -75,7 +74,7 @@ int8_t *jolt_gui_scr_loadingbar_progress_get( lv_obj_t *obj );
 
  * @return preloading screen
  */
-jolt_gui_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *text);
+jolt_gui_obj_t *jolt_gui_scr_preloading_create( const char *title, const char *text );
 
 /**
  * @brief Update the preloading screen's text fields.
@@ -83,7 +82,6 @@ jolt_gui_obj_t *jolt_gui_scr_preloading_create(const char *title, const char *te
  * @param[in] title Statusbar title string. NULL to not update title.
  * @param[in] text subtitle text displayed above the spinning arc. NULL to not update subtitle.
  */
-void jolt_gui_scr_preloading_update(jolt_gui_obj_t *parent,
-        const char *title, const char *text);
+void jolt_gui_scr_preloading_update( jolt_gui_obj_t *parent, const char *title, const char *text );
 
 #endif

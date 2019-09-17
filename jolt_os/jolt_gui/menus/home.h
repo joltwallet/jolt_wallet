@@ -8,7 +8,7 @@
 #define __JOLT_GUI_MENU_HOME_H__
 
 /**
- * @brief Creates the Jolt GUI screen 
+ * @brief Creates the Jolt GUI screen
  */
 void jolt_gui_menu_home_create();
 

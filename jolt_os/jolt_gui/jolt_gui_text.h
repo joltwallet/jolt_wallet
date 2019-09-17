@@ -8,11 +8,11 @@
 #define JOLT_GUI_TEXT_H__
 
 /**
- * @brief Display Text; Pressing any button returns to previous screen 
+ * @brief Display Text; Pressing any button returns to previous screen
  * @param[in] title title-bar string
  * @param[in] body Text to display
  * @return scroll screen object containing text
  */
-jolt_gui_obj_t *jolt_gui_scr_text_create(const char *title, const char *body);
+jolt_gui_obj_t *jolt_gui_scr_text_create( const char *title, const char *body );
 
 #endif

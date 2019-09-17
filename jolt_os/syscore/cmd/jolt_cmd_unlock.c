@@ -4,15 +4,16 @@
 
 #if JOLT_GUI_TEST_MENU
 
-#include "stdio.h"
-#include "esp_log.h"
-#include "jolt_helpers.h"
-#include "cJSON.h"
+    #include "cJSON.h"
+    #include "esp_log.h"
+    #include "jolt_helpers.h"
+    #include "stdio.h"
 
-//static const char TAG[] = "jolt_cmd_unlock";
+// static const char TAG[] = "jolt_cmd_unlock";
 
-int jolt_cmd_unlock(int argc, char **argv) {
-    jolt_settings_vault_set(NULL, NULL, NULL);
+int jolt_cmd_unlock( int argc, char **argv )
+{
+    jolt_settings_vault_set( NULL, NULL, NULL );
     return 0;
 }
 

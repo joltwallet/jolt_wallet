@@ -11,27 +11,28 @@
 #include "qrcode.h"
 
 static const uint8_t lv_img_color_header[] = {
-    0x04, 0x02, 0x04, 0xff,     /*Color of index 0*/
-    0xff, 0xff, 0xff, 0xff,     /*Color of index 1*/
+        0x04, 0x02, 0x04, 0xff, /*Color of index 0*/
+        0xff, 0xff, 0xff, 0xff, /*Color of index 1*/
 };
 
 /**
  * @brief Maximum QR Version that will fit at 1 pixel per module.
  */
-#define JOLT_GUI_QR_VERSION ((uint8_t)((LV_VER_RES_MAX - CONFIG_JOLT_GUI_STATUSBAR_H -17)/4))
+#define JOLT_GUI_QR_VERSION ( ( uint8_t )( ( LV_VER_RES_MAX - CONFIG_JOLT_GUI_STATUSBAR_H - 17 ) / 4 ) )
 
 /**
  * @brief Height/Width of maximum QR Code
  */
-#define JOLT_GUI_QR_SIZE (4*JOLT_GUI_QR_VERSION+17)
+#define JOLT_GUI_QR_SIZE ( 4 * JOLT_GUI_QR_VERSION + 17 )
 
 /**
  * @brief Number of bytes require for qrcode internal buffer
  */
-#define JOLT_GUI_QR_BUF_SIZE ((JOLT_GUI_QR_SIZE*JOLT_GUI_QR_SIZE+7)/8)
+#define JOLT_GUI_QR_BUF_SIZE ( ( JOLT_GUI_QR_SIZE * JOLT_GUI_QR_SIZE + 7 ) / 8 )
 
-#define JOLT_GUI_QR_LVGL_IMG_BYTE_WIDTH  ((JOLT_GUI_QR_SIZE+7)/8)
-#define JOLT_GUI_QR_LVGL_IMG_BUF_SIZE (JOLT_GUI_QR_SIZE*JOLT_GUI_QR_LVGL_IMG_BYTE_WIDTH+sizeof(lv_img_color_header))
+#define JOLT_GUI_QR_LVGL_IMG_BYTE_WIDTH ( ( JOLT_GUI_QR_SIZE + 7 ) / 8 )
+#define JOLT_GUI_QR_LVGL_IMG_BUF_SIZE \
+    ( JOLT_GUI_QR_SIZE * JOLT_GUI_QR_LVGL_IMG_BYTE_WIDTH + sizeof( lv_img_color_header ) )
 
 /**
  * @brief Add a QR code to a scroll screen
@@ -40,7 +41,7 @@ static const uint8_t lv_img_color_header[] = {
  * @param[in] data_len length of data
  * @return image object representing the QR code
  */
-jolt_gui_obj_t *jolt_gui_scr_scroll_add_qr(jolt_gui_obj_t *scr, const char *data, uint16_t data_len);
+jolt_gui_obj_t *jolt_gui_scr_scroll_add_qr( jolt_gui_obj_t *scr, const char *data, uint16_t data_len );
 
 /**
  * @brief Convenience function to create scroll screen with a QR code
@@ -49,7 +50,6 @@ jolt_gui_obj_t *jolt_gui_scr_scroll_add_qr(jolt_gui_obj_t *scr, const char *data
  * @param[in] data_len length of data
  * @return scroll screen
  */
-jolt_gui_obj_t *jolt_gui_scr_qr_create(const char *title, const char *data,
-        uint16_t data_len);
+jolt_gui_obj_t *jolt_gui_scr_qr_create( const char *title, const char *data, uint16_t data_len );
 
 #endif

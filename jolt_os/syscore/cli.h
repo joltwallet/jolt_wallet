@@ -6,8 +6,8 @@
 #ifndef JOLT_SYSCORE_CLI_H__
 #define JOLT_SYSCORE_CLI_H__
 
-#include "stdint.h"
 #include "cli_helpers.h"
+#include "stdint.h"
 
 /**
  * @brief In a CLI function, return this if your function will explicitly call
@@ -18,10 +18,10 @@
 extern volatile bool jolt_cli_display_prompt;
 
 typedef struct {
-    char *line; /**< NULL-terminated line entered via some CLI */
-    FILE *in;   /**< Where it came from */
-    FILE *out;  /**< Where to print to */
-    FILE *err;  /**< Where to print errors to */
+    char *line;         /**< NULL-terminated line entered via some CLI */
+    FILE *in;           /**< Where it came from */
+    FILE *out;          /**< Where to print to */
+    FILE *err;          /**< Where to print errors to */
     const char *prompt; /**< Prompt to print */
 } jolt_cli_src_t;
 
@@ -43,19 +43,19 @@ void jolt_cli_init();
  * @param timeout Maximum time in milliseconds to wait. -1 for forever.
  * @return pointer to NULL-terminated string. Caller must free. NULL on timeout.
  */
-char *jolt_cli_get_line(int16_t timeout);
+char *jolt_cli_get_line( int16_t timeout );
 
 /**
  * @brief Adds NULL-terminated string to the cmd queue.
  *
  * Will block until the data is queued.
  *
- * NOTE: Only the pointer is added to the queue, meaning the actual string 
+ * NOTE: Only the pointer is added to the queue, meaning the actual string
  * *must* be in the heap. Recipient must free the allocated memory.
  *
  * @param[in] src Data to add to queue.
  */
-void jolt_cli_set_src(jolt_cli_src_t *src);
+void jolt_cli_set_src( jolt_cli_src_t *src );
 
 /**
  * @brief Pause the task that is currently feeding data into the msg_queue
@@ -77,6 +77,5 @@ void jolt_cli_resume();
  * @param[in] val Return value for the CLI cmd.
  */
 void jolt_cli_return( int val );
-
 
 #endif

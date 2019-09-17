@@ -4,20 +4,19 @@
  * @author Brian Pugh
  */
 
-
 #ifndef __JOLT_HAL_HW_MONITORS_H__
 #define __JOLT_HAL_HW_MONITORS_H__
 
 #include <stdint.h>
-#include "sdkconfig.h"
 #include "jolt_gui/jolt_gui_statusbar.h"
+#include "sdkconfig.h"
 
 /**
  * @brief Generic hardware monitor structure
  */
 typedef struct hardware_monitor_t {
-    int8_t val;                                  /**< System's reported value */
-    void (*update)(struct hardware_monitor_t *); /**< function to periodically call to update val */
+    int8_t val;                                     /**< System's reported value */
+    void ( *update )( struct hardware_monitor_t* ); /**< function to periodically call to update val */
 } hardware_monitor_t;
 
 /**
@@ -46,7 +45,7 @@ typedef enum jolt_bluetooth_level_t {
 } jolt_bluetooth_level_t;
 
 /**
- * @brief Holds all hw_monitors 
+ * @brief Holds all hw_monitors
  */
 extern hardware_monitor_t statusbar_indicators[JOLT_HW_MONITOR_INDEX_NUM];
 

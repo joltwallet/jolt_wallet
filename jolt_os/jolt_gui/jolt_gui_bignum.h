@@ -16,6 +16,6 @@
  * @param[in] n_digits number of digits to display. Set to -1 for no-leading zeros
  * @return screen
  */
-jolt_gui_obj_t *jolt_gui_scr_bignum_create(const char *title, const char *subtitle, uint32_t n, int8_t n_digits);
+jolt_gui_obj_t *jolt_gui_scr_bignum_create( const char *title, const char *subtitle, uint32_t n, int8_t n_digits );
 
 #endif

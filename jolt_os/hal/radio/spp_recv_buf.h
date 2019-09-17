@@ -12,7 +12,7 @@
 #include "sdkconfig.h"
 
 #if CONFIG_BT_ENABLED
-#include "esp_gatts_api.h"
+    #include "esp_gatts_api.h"
 
 /**
  * @brief Copy data into the write buffer
@@ -22,17 +22,17 @@
  * @param[in] p_data
  * @return True on success, false otherwise
  */
-bool store_wr_buffer(esp_ble_gatts_cb_param_t *p_data);
+bool store_wr_buffer( esp_ble_gatts_cb_param_t *p_data );
 
 /**
  * @brief free the entire singly linked list buffer
  */
-void free_write_buffer(void);
+void free_write_buffer( void );
 
 /**
  * @brief Print the current contexts of the buffer to UART console
  */
-void print_write_buffer(void);
+void print_write_buffer( void );
 
 #endif
 

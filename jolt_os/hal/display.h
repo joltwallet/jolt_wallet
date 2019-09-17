@@ -19,7 +19,7 @@
 void display_init();
 
 /**
- * @brief Gets the current screen brightness level 
+ * @brief Gets the current screen brightness level
  *
  * level is an index into the brightness configuration arrays [0, DISPLAY_BRIGHTNESS_LEVELS)
  *
@@ -28,22 +28,16 @@ void display_init();
 uint8_t get_display_brightness();
 
 /**
- * @brief Saves the provided screen brightness level to NVS 
+ * @brief Saves the provided screen brightness level to NVS
  * @param[in] index into the brightness array to save
  */
-void save_display_brightness(uint8_t level);
+void save_display_brightness( uint8_t level );
 
 /**
- * @brief Sets the screen brightness to the provided level ( up to DISPLAY_BRIGHTNESS_LEVELS ) 
+ * @brief Sets the screen brightness to the provided level ( up to DISPLAY_BRIGHTNESS_LEVELS )
  * @param[in] index into the brightness array to set
  */
-void set_display_brightness(uint8_t level);
-
-/**
- * @brief get memory chunk being used for display buffer
- * @return display buffer
- */
-uint8_t *get_display_buf();
+void set_display_brightness( uint8_t level );
 
 /**
  * @brief print the display buffer to stdout

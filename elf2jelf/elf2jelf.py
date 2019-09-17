@@ -45,7 +45,7 @@ this_path = os.path.dirname(os.path.realpath(__file__))
 
 repo = git.Repo(this_path, search_parent_directories=True)
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.WARN)
 
 from elf32_structs import \
         Elf32_Ehdr, Elf32_Shdr, Elf32_Sym, Elf32_Rela, \
@@ -139,7 +139,8 @@ def read_export_list():
 
 def write_export_file(export_list, major, minor, patch, release):
     """
-    Writes the export struct used in jolt_lib.c
+    Writes the export struct used in jolt_lib.c.
+    Also writes jolt_commit.c
     """
     with open(os.path.join(this_path, 'jolt_lib_template.c')) as f:
         template = f.read()
@@ -153,18 +154,9 @@ def write_export_file(export_list, major, minor, patch, release):
             export_string, len(export_list) )
 
     # Write it to where the hardware firmware expects it
-    write_file = False # only write file if it changes contents
     jolt_lib_path = os.path.join(this_path, '..', 'jolt_os', 'jolt_lib.c')
-    if os.path.isfile(jolt_lib_path):
-        with open(jolt_lib_path, 'r') as f:
-            data = f.read()
-        if data != jolt_lib:
-            write_file = True
-    else:
-        write_file = True
-    if write_file:
-        with open(jolt_lib_path, 'w') as f:
-            f.write(jolt_lib)
+    with open(jolt_lib_path, 'w') as f:
+        f.write(jolt_lib)
 
     # Write commit hash
     git_hash = "%s%s" % (repo.head.object.hexsha, "_dirty" if repo.is_dirty() else "")

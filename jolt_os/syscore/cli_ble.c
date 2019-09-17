@@ -1,31 +1,26 @@
 //#define LOG_LOCAL_LEVEL 4
 
+#include "syscore/cli_ble.h"
+#include "driver/uart.h"
 #include "esp_log.h"
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
-
-#include "string.h"
-
 #include "hal/radio/bluetooth.h"
-#include "syscore/cli_ble.h"
-
-#include "driver/uart.h"
-
+#include "string.h"
 
 #if CONFIG_BT_ENABLED
 static void jolt_cli_ble_listener_task( void *param );
 static TaskHandle_t listener_task_h = NULL;
 #endif
 
-void jolt_cli_ble_init(){
+void jolt_cli_ble_init()
+{
 #if CONFIG_BT_ENABLED
     static TaskHandle_t ble_in_task = NULL;
-    if( NULL == ble_in_task) {
-        xTaskCreate(&jolt_cli_ble_listener_task, "ble_spp_listener", 
-                CONFIG_JOLT_TASK_STACK_SIZE_BLE_CONSOLE, NULL,
-                CONFIG_JOLT_TASK_PRIORITY_BLE_CONSOLE, &listener_task_h);
+    if( NULL == ble_in_task ) {
+        xTaskCreate( &jolt_cli_ble_listener_task, "ble_spp_listener", CONFIG_JOLT_TASK_STACK_SIZE_BLE_CONSOLE, NULL,
+                     CONFIG_JOLT_TASK_PRIORITY_BLE_CONSOLE, &listener_task_h );
     }
 #endif
 }
@@ -35,50 +30,48 @@ void jolt_cli_ble_init(){
 static const char TAG[] = "cli_ble";
 
 /**
- * @brief FreeRTOS task that forwards ble_stdin to the CLI engine 
+ * @brief FreeRTOS task that forwards ble_stdin to the CLI engine
  */
-static void jolt_cli_ble_listener_task( void *param ) {
+static void jolt_cli_ble_listener_task( void *param )
+{
     esp_vfs_dev_ble_spp_register();
-    ble_stdin  = fopen("/dev/ble/0", "r");
-    ble_stdout = fopen("/dev/ble/0", "w");
-    ble_stderr = fopen("/dev/ble/0", "w");
+    ble_stdin  = fopen( "/dev/ble/0", "r" );
+    ble_stdout = fopen( "/dev/ble/0", "w" );
+    ble_stderr = fopen( "/dev/ble/0", "w" );
 
-    setvbuf(ble_stdin, NULL, _IONBF, 0);
-    //setvbuf(ble_stdout, NULL, _IONBF, 0);
-    setvbuf(ble_stderr, NULL, _IONBF, 0);
+    setvbuf( ble_stdin, NULL, _IONBF, 0 );
+    // setvbuf(ble_stdout, NULL, _IONBF, 0);
+    setvbuf( ble_stderr, NULL, _IONBF, 0 );
 
     char *line = NULL;
-    for(;;){
-        if ( NULL == line ) {
-            line = calloc(1, CONFIG_JOLT_CONSOLE_MAX_CMD_LEN);
-        }
+    for( ;; ) {
+        if( NULL == line ) { line = calloc( 1, CONFIG_JOLT_CONSOLE_MAX_CMD_LEN ); }
         char *ptr = line;
         uint16_t i;
-        for(i=0; i<CONFIG_JOLT_CONSOLE_MAX_CMD_LEN-1; i++, ptr++){
-            fread(ptr, 1, 1, ble_stdin);
-            if('\n' == *ptr){
+        for( i = 0; i < CONFIG_JOLT_CONSOLE_MAX_CMD_LEN - 1; i++, ptr++ ) {
+            fread( ptr, 1, 1, ble_stdin );
+            if( '\n' == *ptr ) {
                 *ptr = '\0';
                 break;
             }
         }
-        if(i>0){
-            ESP_LOGD(TAG, "sending command from ble: \"%s\"", line);
+        if( i > 0 ) {
+            ESP_LOGD( TAG, "sending command from ble: \"%s\"", line );
             bool suspend = false;
-            if( 0 == strcmp(line, "upload_firmware")
-                    || 0 == strcmp(line, "upload")
-                    || 0 == strncmp(line, "upload ", 7)){
+            if( 0 == strcmp( line, "upload_firmware" ) || 0 == strcmp( line, "upload" ) ||
+                0 == strncmp( line, "upload ", 7 ) ) {
                 suspend = true;
             }
-            else if( 0 == strcmp(line, "ping") ) {
-                fwrite("pong\n", 1, 5, ble_stdout);
+            else if( 0 == strcmp( line, "ping" ) ) {
+                fwrite( "pong\n", 1, 5, ble_stdout );
                 continue;
             }
 
             jolt_cli_src_t src;
-            src.line = line;
-            src.in = ble_stdin;
-            src.out = ble_stdout;
-            src.err = ble_stderr;
+            src.line   = line;
+            src.in     = ble_stdin;
+            src.out    = ble_stdout;
+            src.err    = ble_stderr;
             src.prompt = NULL;
             jolt_cli_set_src( &src );
 
@@ -88,17 +81,19 @@ static void jolt_cli_ble_listener_task( void *param ) {
         }
     }
 
-    vTaskDelete(NULL);
+    vTaskDelete( NULL );
 }
 #endif
 
-void jolt_cli_ble_suspend(){
+void jolt_cli_ble_suspend()
+{
 #if CONFIG_BT_ENABLED
     vTaskSuspend( listener_task_h );
 #endif
 }
 
-void jolt_cli_ble_resume(){
+void jolt_cli_ble_resume()
+{
 #if CONFIG_BT_ENABLED
     vTaskResume( listener_task_h );
 #endif

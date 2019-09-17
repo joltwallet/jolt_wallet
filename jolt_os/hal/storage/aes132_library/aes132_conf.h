@@ -9,10 +9,10 @@
 #define AES132_LOCK_CONFIG        0b10
 #define AES132_LOCK_ZONECONFIG_RO 0b11
 
-#define AES132_EEPROM_RNG_UPDATE (1 << 1)
+#define AES132_EEPROM_RNG_UPDATE ( 1 << 1 )
 
-#define AES132_MACFLAG_DEVICE 0x01 // For mac vlaues output by the ATAES132a
-#define AES132_MACFLAG_HOST 0x03 // For MAC values sent to the device as inputs
+#define AES132_MACFLAG_DEVICE 0x01  // For mac vlaues output by the ATAES132a
+#define AES132_MACFLAG_HOST   0x03  // For MAC values sent to the device as inputs
 
 #include "stdbool.h"
 
