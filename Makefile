@@ -1,5 +1,7 @@
 PROJECT_NAME := jolt
 
+# Have to add current path to EXTRA_COMPONENT_DIRS so unit tester will work.
+# Unfortunately, JoltOS gets built twice.
 EXTRA_COMPONENT_DIRS := \
 	$(abspath .) \
 	$(abspath jolt_os) \
