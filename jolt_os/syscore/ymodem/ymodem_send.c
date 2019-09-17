@@ -56,7 +56,7 @@ static void IRAM_ATTR ymodem_prepare_initial_packet( uint8_t *data, char *fileNa
     sprintf( (char *)( data + PACKET_HEADER ), "%s", fileName );
 
     // add file site
-    sprintf( (char *)( data + PACKET_HEADER + strlen( (char *)( data + PACKET_HEADER ) ) + 1 ), "%d", length );
+    sprintf( (char *)( data + PACKET_HEADER + strlen( (char *)( data + PACKET_HEADER ) ) + 1 ), "%u", length );
     data[PACKET_HEADER + strlen( (char *)( data + PACKET_HEADER ) ) + 1 +
          strlen( (char *)( data + PACKET_HEADER + strlen( (char *)( data + PACKET_HEADER ) ) + 1 ) )] = ' ';
 
@@ -83,8 +83,7 @@ static void IRAM_ATTR ymodem_prepare_last_packet( uint8_t *data )
 //-----------------------------------------------------------------------------------------
 static void IRAM_ATTR ymodem_prepare_packet( uint8_t *data, uint8_t pktNo, uint32_t sizeBlk, FILE *ffd )
 {
-    uint16_t i, size;
-    uint16_t tempCRC;
+    uint16_t size, tempCRC;
 
     data[0] = STX;
     data[1] = ( pktNo & 0x000000ff );
@@ -95,7 +94,7 @@ static void IRAM_ATTR ymodem_prepare_packet( uint8_t *data, uint8_t pktNo, uint3
     if( size > 0 ) { size = fread( data + PACKET_HEADER, 1, size, ffd ); }
 
     if( size < PACKET_1K_SIZE ) {
-        for( i = size + PACKET_HEADER; i < PACKET_1K_SIZE + PACKET_HEADER; i++ ) {
+        for( uint16_t i = size + PACKET_HEADER; i < PACKET_1K_SIZE + PACKET_HEADER; i++ ) {
             data[i] = 0x00;  // EOF (0x1A) or 0x00
         }
     }
@@ -140,8 +139,8 @@ static uint8_t IRAM_ATTR ymodem_wait_response( uint8_t ackchr, uint8_t tmo )
     goto exit;
 int IRAM_ATTR ymodem_transmit( char *sendFileName, unsigned int sizeFile, FILE *ffd )
 {
-    int error_code       = 0;
-    uint8_t *packet_data = NULL;
+    int error_code = 0;
+    uint8_t *packet_data;
 
     uint16_t blkNumber;
     unsigned char receivedC;

@@ -26,12 +26,6 @@ typedef struct jolt_bg_job_t {
  */
 static inline uint64_t get_time_us() { return esp_timer_get_time(); }
 
-/**
- * @brief Get current time in milliseconds since boot/deep_sleep_awake
- * @return Time in microseconds
- */
-static inline uint64_t get_time_ms() { return get_time_us() / 1000; }
-
 static void add_job_to_queue( jolt_bg_job_t *job )
 {
     ESP_LOGD( TAG, "Re-adding job %p to queue", job );

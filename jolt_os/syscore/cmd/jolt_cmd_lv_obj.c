@@ -9,8 +9,8 @@
 
 static bool print_response( cJSON *json )
 {
-    char *response = NULL;
-    response       = cJSON_Print( json );
+    char *response;
+    response = cJSON_Print( json );
     if( NULL == response ) return false;
     printf( response );
     printf( "\n" );

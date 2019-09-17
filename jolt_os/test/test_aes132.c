@@ -37,6 +37,7 @@ TEST_CASE( "Random Buffer Fill", MODULE_NAME )
     const uint8_t soln2[10] = {0xA5, 0xA5, 0xA5, 0xA5, 0xA5};
     sodium_memzero( out, sizeof( out ) );
     res = aes132_rand( out, 5 );
+    TEST_ASSERT_EQUAL_UINT8( 0, res );
     TEST_ASSERT_EQUAL_UINT8_ARRAY( soln2, out, sizeof( soln2 ) );
 
     // TEST 3 41 Random Bytes
@@ -45,6 +46,7 @@ TEST_CASE( "Random Buffer Fill", MODULE_NAME )
                                0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5, 0xA5};
     sodium_memzero( out, sizeof( out ) );
     res = aes132_rand( out, 41 );
+    TEST_ASSERT_EQUAL_UINT8( 0, res );
     TEST_ASSERT_EQUAL_UINT8_ARRAY( soln3, out, sizeof( soln3 ) );
 }
 
@@ -101,7 +103,7 @@ TEST_CASE( "Load Key/Attempt Key", MODULE_NAME )
     res = aes132_stretch( (uint8_t *)pin_entry_hash, sizeof( pin_entry_hash ), n_iterations, NULL );
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
     int64_t end = esp_timer_get_time();
-    printf( "Performed %d encrypt iterations over %lld uS.\n"
+    printf( "Performed %u encrypt iterations over %ld uS.\n"
             "Average time per iteration: %lld uS\n",
             n_iterations, end - start, ( end - start ) / n_iterations );
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
@@ -151,7 +153,7 @@ TEST_CASE( "Key Stretch", MODULE_NAME )
     res           = aes132_stretch( (uint8_t *)payload, sizeof( payload ), n_iterations, NULL );
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
     int64_t end = esp_timer_get_time();
-    printf( "Performed %d encrypt iterations over %lld uS.\n"
+    printf( "Performed %u encrypt iterations over %ld uS.\n"
             "Average time per iteration: %lld uS\n",
             n_iterations, end - start, ( end - start ) / n_iterations );
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
@@ -164,5 +166,6 @@ TEST_CASE( "BlockRead: Check if LockConfig", MODULE_NAME )
     uint8_t data;
     uint8_t res;
     res = aes132_blockread( &data, AES132_LOCK_CONFIG_ADDR, sizeof( data ) );
+    TEST_ASSERT_EQUAL_UINT8( 0, res );
     TEST_ASSERT_EQUAL_HEX8( 0x55, data );
 }

@@ -50,7 +50,6 @@ typedef struct pin_store_t {
     /* PIN and derivation Stuff */
     lv_obj_t *scr;
     CONFIDENTIAL uint256_t pin_hash;
-    char *mnemonic;
 
     /* User Stuff */
     vault_cb_t failure_cb;
@@ -123,20 +122,20 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
 /* Assemble Title */
 #if CONFIG_JOLT_PIN_TITLE_PIN
             {
-                snprintf( title, sizeof( title ), "PIN (%d/%d)", pin_attempts + 1,
+                snprintf( title, sizeof( title ), "PIN (%u/%u)", pin_attempts + 1,
                           CONFIG_JOLT_PIN_DEFAULT_MAX_ATTEMPT );
             }
 #elif CONFIG_JOLT_PIN_TITLE_NAME
             {
                 char *app_name = launch_get_name();
-                snprintf( title, sizeof( title ), "%s (%d/%d)", app_name, pin_attempts + 1,
+                snprintf( title, sizeof( title ), "%s (%u/%u)", app_name, pin_attempts + 1,
                           CONFIG_JOLT_PIN_DEFAULT_MAX_ATTEMPT );
             }
 #elif CONFIG_JOLT_PIN_TITLE_PATH
             {
                 uint32_t purpose = vault_get_purpose();
                 uint32_t type    = vault_get_coin_type();
-                snprintf( title, sizeof( title ), "%d\'%d (%d/%d)", purpose & ~BM_HARDENED, type & ~BM_HARDENED,
+                snprintf( title, sizeof( title ), "%d\'%d (%u/%u)", purpose & ~BM_HARDENED, type & ~BM_HARDENED,
                           pin_attempts + 1, CONFIG_JOLT_PIN_DEFAULT_MAX_ATTEMPT );
             }
 #endif
@@ -241,8 +240,8 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
             /**** We now have the master_seed ******/
 
             /* Derive the coin specific node */
-            bm_master_seed_to_node( &( vault->node ), master_seed, vault->bip32_key, 2, vault->purpose,
-                                    vault->coin_type );
+            bm_master_seed_to_node( &( vault->node ), master_seed, vault_get_bip32_key(), 2, vault_get_purpose(),
+                                    vault_get_coin_type() );
 
             /* We no longer need the master seed */
             sodium_memzero( master_seed, sizeof( master_seed ) );

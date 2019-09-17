@@ -40,12 +40,6 @@ void save_display_brightness( uint8_t level );
 void set_display_brightness( uint8_t level );
 
 /**
- * @brief get memory chunk being used for display buffer
- * @return display buffer
- */
-uint8_t *get_display_buf();
-
-/**
  * @brief print the display buffer to stdout
  */
 void print_display_buf();

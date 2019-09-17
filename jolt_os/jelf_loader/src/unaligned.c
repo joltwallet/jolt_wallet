@@ -55,20 +55,3 @@ void unalignedSet32( void* dest, uint32_t value )
         cdest++;
     }
 }
-
-/* Copies n bytes from src to dest.
- *     * Operates on single bytes
- *     * Could be further optimized
- */
-void unalignedCpy( void* dest, void* src, size_t n )
-{
-    uintptr_t csrc  = (uintptr_t)src;
-    uintptr_t cdest = (uintptr_t)dest;
-    while( n > 0 ) {
-        uint8_t v = unalignedGet8( (void*)csrc );
-        unalignedSet8( (void*)cdest, v );
-        csrc++;
-        cdest++;
-        n--;
-    }
-}

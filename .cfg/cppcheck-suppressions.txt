@@ -1,3 +1,5 @@
 unusedLabel
-unusedFunction:jolt_os/hal/storage/aes132_library
-
+unusedFunction:jolt_os/hal/storage/aes132_library/*
+unusedFunction:jolt_os/hal/storage/storage.c
+unusedFunction:jolt_os/jolt_gui/jolt_gui_theme.c
+fflushOnInputStream

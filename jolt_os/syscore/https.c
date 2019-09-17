@@ -201,7 +201,7 @@ esp_err_t jolt_network_client_init( char *uri )
 
     /* Allocate a static copy of the uri */
     {
-        char *tmp          = NULL;
+        char *tmp;
         size_t uri_buf_len = strlen( uri ) + 1;
         tmp                = malloc( uri_buf_len );
         if( NULL == tmp ) {

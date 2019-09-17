@@ -13,9 +13,8 @@ int jolt_cmd_touch( int argc, char **argv )
     if( argc < 2 ) EXIT_PRINT( -1, "Specify at least 1 filename" );
 
     for( uint8_t i = 1; i < argc; i++ ) {
-        FILE *f  = NULL;
         char *fn = BREAK_IF_NULL( jolt_fs_parse( argv[i], NULL ) );
-        f        = fopen( fn, "wb" );
+        FILE *f  = fopen( fn, "wb" );
         if( NULL != f ) jolt_fn_home_refresh( fn );
         SAFE_FREE( fn );
         if( NULL == f ) break;

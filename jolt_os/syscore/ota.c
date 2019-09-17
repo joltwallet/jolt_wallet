@@ -46,7 +46,7 @@ static int ota_ymodem_write_wrapper( const void *data, unsigned int size, unsign
 esp_err_t jolt_ota_ymodem( int8_t *progress )
 {
     /* Performs OTA update over Ymodem */
-    esp_err_t err = ESP_FAIL;
+    esp_err_t err;
 
     /**********************************
      * Get/Init Handle of OTA Process *

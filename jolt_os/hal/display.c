@@ -53,12 +53,6 @@ void display_init()
     set_display_brightness( get_display_brightness() );
 }
 
-uint8_t *get_display_buf()
-{
-    assert( BUF_LINES == 8 );
-    return (uint8_t *)buf;
-}
-
 void print_display_buf()
 {
     assert( LV_HOR_RES_MAX == 128 );

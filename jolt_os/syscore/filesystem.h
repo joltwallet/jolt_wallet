@@ -91,12 +91,13 @@ uint16_t jolt_fs_get_all_jelf_fns( char ***fns );
  *
  * @param[out] fns String array to populate. If NULL, only the file count will be returned
  * @param[in] Length of fns string pointer array. fns_len Ignored if fns is NULL
- * @param[in] ext NULL-terminated string of extension to filter by (e.x. ".jelf"). NULL for all files.
+ * @param[in] ext NULL-terminated string of extension to filter by without the period (e.x. "jelf").
+ *            NULL for all files.
  * @param[in] remove_ext return files without ext. Saves memory.
  *
  * @return Number of files
  */
-uint32_t jolt_fs_get_all_fns( char **fns, uint32_t fns_len, const char *ext, bool remove_ext );
+uint16_t jolt_fs_get_all_fns( char **fns, uint32_t fns_len, const char *ext, bool remove_ext );
 
 /**
  * @brief Starts up the Filesystem
@@ -161,10 +162,26 @@ char *jolt_fs_parse( const char *fn, const char *ext );
 void jolt_fs_parse_buf( char **fullpath, char **fn );
 
 /**
- * @brief Strip the extension from the file inplace
+ * @brief Strip the extension from the file inplace.
+ *
+ * Basically just replaces the last '.' with '\0'
+ *
  * @param[in,out] fname File path to strip.
  */
 void jolt_fs_strip_ext( char *fname );
+
+/**
+ * @brief Get the inplace extension of a file.
+ *
+ *     char *ext;
+ *     ext = jolt_fs_get_ext("jolt/file.png");
+ *     assert( 0 == strcmp(ext, "png") );
+ *
+ * @param[in] fname File path to strip.
+ * @return Pointer to extension. Returns NULL if no extension was found. Guarenteed to
+ * have a '.' 1 character previous.
+ */
+const char *jolt_fs_get_ext( const char *fname );
 
 /**
  * @brief Move a file, deleting the old destination if it existed.

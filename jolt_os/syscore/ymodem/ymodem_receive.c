@@ -73,7 +73,7 @@ static uint32_t n_ymodem_packet         = 0;
 //--------------------------------------------------------------------------
 static int32_t IRAM_ATTR receive_packet( uint8_t *data, int *length, uint32_t timeout )
 {
-    int count, packet_size, rec_bytes;
+    int packet_size, rec_bytes;
     unsigned char ch;
     *length = 0;
 
@@ -113,8 +113,7 @@ static int32_t IRAM_ATTR receive_packet( uint8_t *data, int *length, uint32_t ti
     {
         *data         = (uint8_t)ch;
         uint8_t *dptr = data + 1;
-        count         = packet_size + PACKET_OVERHEAD - 1;
-        rec_bytes     = receive_bytes( dptr, timeout, count );
+        rec_bytes     = receive_bytes( dptr, timeout, packet_size + PACKET_OVERHEAD - 1 );
     }
 
 #if CONFIG_JOLT_BT_YMODEM_PROFILING
@@ -161,8 +160,8 @@ int IRAM_ATTR ymodem_receive_write( void *ffd, unsigned int maxsize, char *getna
     jolt_suspend_logging();
 
     char name[JOLT_FS_MAX_FILENAME_BUF_LEN] = {0};
-    uint8_t *packet_data                    = NULL;
-    int size                                = 0;
+    uint8_t *packet_data;
+    int size = 0;
     uint8_t *file_ptr;
     char file_size[FILE_SIZE_LENGTH + 1];
     unsigned int i, file_len, write_len, session_done, file_done, packets_received, errors = 0;

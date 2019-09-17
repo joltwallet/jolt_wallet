@@ -205,8 +205,8 @@ static int32_t jolt_mnemonic_restore_process( jolt_bg_job_t *job )
 
 int jolt_cmd_mnemonic_restore( int argc, char **argv )
 {
-    lv_obj_t *scr                       = NULL;
-    mnemonic_restore_job_param_t *param = NULL;
+    lv_obj_t *scr = NULL;
+    mnemonic_restore_job_param_t *param;
 
     param = malloc( sizeof( mnemonic_restore_job_param_t ) );
     if( NULL == param ) goto exit;
@@ -226,6 +226,6 @@ int jolt_cmd_mnemonic_restore( int argc, char **argv )
     return JOLT_CLI_NON_BLOCKING;
 
 exit:
-    if( param ) free( param );
+    SAFE_FREE( param );
     return -1;
 }

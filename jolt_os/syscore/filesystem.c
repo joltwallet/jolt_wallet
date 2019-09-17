@@ -74,12 +74,14 @@ void jolt_fs_init()
     }
 }
 
-uint32_t jolt_fs_get_all_fns( char **fns, uint32_t fns_len, const char *ext, bool remove_ext )
+uint16_t jolt_fs_get_all_fns( char **fns, uint32_t fns_len, const char *ext, bool remove_ext )
 {
     DIR *dir;
     uint32_t tot = 0;
     struct dirent *ent;
-    char *ext_ptr;
+
+    /* Get rid of the leading '.' of the ext, if provided */
+    if( NULL != ext && '.' == ext[0] ) ext++;
 
     dir = opendir( JOLT_FS_MOUNTPT );
     if( !dir ) {
@@ -88,32 +90,32 @@ uint32_t jolt_fs_get_all_fns( char **fns, uint32_t fns_len, const char *ext, boo
         return 0;
     }
 
-    // Get file count if fns is NULL
-    if( fns == NULL ) {
-        while( ( ent = readdir( dir ) ) != NULL ) {
-            // ent->d_name is a char array of form "cat.jpg"
-            // Check if the file has extension ".elf"
-            ext_ptr = ent->d_name + strlen( ent->d_name ) - strlen( ext );
-            if( !ext || ( strlen( ent->d_name ) > strlen( ext ) && strcmp( ext_ptr, ext ) == 0 ) ) { tot++; }
-        }
-        closedir( dir );
-        return tot;
-    }
-
     while( ( ent = readdir( dir ) ) != NULL ) {
-        // Check if the file has extension ".elf"
-        ext_ptr = ent->d_name + strlen( ent->d_name ) - strlen( ext );
-        if( !ext || ( strlen( ent->d_name ) > strlen( ext ) && strcmp( ext_ptr, ext ) == 0 ) ) {
-            uint8_t copy_len = strlen( ent->d_name ) + 1;
-            if( remove_ext ) { copy_len -= strlen( ext ); }
-            fns[tot] = malloc( copy_len );
-            strlcpy( fns[tot], ent->d_name, copy_len );
-            tot++;
-            if( tot >= fns_len ) { break; }
-        }
-    }
-    closedir( dir );
+        // ent->d_name is a char array of form "cat.jpg"
+        const char *ext_ptr;
+        ext_ptr = jolt_fs_get_ext( ent->d_name );
 
+        /* Skip if extension doesn't match */
+        if( NULL != ext && ( NULL == ext_ptr || 0 != strcmp( ext_ptr, ext ) ) ) continue;
+
+        if( fns ) {
+            uint8_t copy_len = strlen( ent->d_name );
+            if( ext_ptr && remove_ext ) { copy_len -= ( strlen( ext_ptr ) + 1 ); /* +1 for '.' */ }
+            fns[tot] = malloc( copy_len + 1 ); /* For NULL-terminator */
+            if( NULL == fns[tot] ) {
+                ESP_LOGE( TAG, "OOM provided filenames. Returning early." );
+                break;
+            }
+            strncpy( fns[tot], ent->d_name, copy_len );
+            fns[tot][copy_len] = '\0';
+        }
+
+        tot++;
+
+        if( tot == UINT16_MAX || ( fns && tot >= fns_len ) ) break;
+    }
+
+    closedir( dir );
     return tot;
 }
 
@@ -121,11 +123,11 @@ uint16_t jolt_fs_get_all_jelf_fns( char ***fns )
 {
     uint16_t n;
 
-    n = jolt_fs_get_all_fns( NULL, 0, ".jelf", true );
+    n = jolt_fs_get_all_fns( NULL, 0, "jelf", true );
     ESP_LOGI( TAG, "Found %x apps.", n );
     if( n > 0 ) {
         *fns = jolt_malloc_char_array( n );
-        jolt_fs_get_all_fns( *fns, n, ".jelf", true );
+        jolt_fs_get_all_fns( *fns, n, "jelf", true );
     }
     return n;
 }
@@ -151,8 +153,8 @@ bool jolt_fs_exists( const char *fname )
     bool res = false;
     struct stat sb;
 
-    char *f = NULL;
-    f       = jolt_fs_parse( fname, NULL );
+    char *f;
+    f = jolt_fs_parse( fname, NULL );
     if( NULL == f ) return false;
 
     if( stat( f, &sb ) == 0 ) res = true;
@@ -223,10 +225,20 @@ void jolt_fs_parse_buf( char **fullpath, char **fn )
 
 void jolt_fs_strip_ext( char *fname )
 {
-    char *end = fname + strlen( fname );
+    char *ext = (char *)jolt_fs_get_ext( fname );
+    if( NULL != ext ) {
+        ext--;
+        *ext = '\0';
+    }
+}
+
+const char *jolt_fs_get_ext( const char *fname )
+{
+    const char *end = fname + strlen( fname );
 
     while( end > fname && *end != '.' && *end != '\\' && *end != '/' ) { --end; }
-    if( ( end > fname && *end == '.' ) && ( *( end - 1 ) != '\\' && *( end - 1 ) != '/' ) ) { *end = '\0'; }
+    if( ( end > fname && *end == '.' ) && ( *( end - 1 ) != '\\' && *( end - 1 ) != '/' ) ) { return end + 1; }
+    return NULL;
 }
 
 esp_err_t jolt_fs_format()

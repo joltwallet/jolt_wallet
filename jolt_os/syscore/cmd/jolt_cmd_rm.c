@@ -11,8 +11,8 @@ int jolt_cmd_rm( int argc, char** argv )
     if( !console_check_range_argc( argc, 2, 32 ) ) EXIT( -1 );
 
     for( uint8_t i = 1; i < argc; i++ ) {
-        char* fn = NULL;
-        fn       = jolt_fs_parse( argv[i], NULL );
+        char* fn;
+        fn = jolt_fs_parse( argv[i], NULL );
         if( NULL == fn ) continue;
 
         if( jolt_fs_exists( fn ) ) {
