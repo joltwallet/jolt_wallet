@@ -44,9 +44,6 @@
 #include "unity.h"
 #include "vault.h"
 
-/* Dbg to test muzzle */
-#include "hal/radio/radio.h"
-
 #if CONFIG_HEAP_TASK_TRACING
     #include "esp_heap_trace.h"
     #define HEAP_TRACING_NUM_RECORDS 100
