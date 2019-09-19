@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('Cats Cats Cats') {
             steps {
-                bash '''#!/bin/bash
+                sh '''#!/bin/bash
                  echo "meow"
                 '''
             }
