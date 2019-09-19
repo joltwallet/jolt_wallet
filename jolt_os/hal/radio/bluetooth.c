@@ -143,10 +143,11 @@ static ssize_t ble_write( int fd, const void *data, size_t size )
     return size;
 }
 
+    #define LINE_OFF_INVALID -1
 static int peek_c = NONE;
 int ble_read_char( int fd, TickType_t timeout )
 {
-    static int32_t line_off    = -1;  // offset into most recent queue item
+    static int32_t line_off    = LINE_OFF_INVALID;  // offset into most recent queue item
     static ble_packet_t packet = {0};
 
     if( peek_c != NONE ) {
@@ -166,8 +167,8 @@ int ble_read_char( int fd, TickType_t timeout )
     BLE_UART_LOGD( "line_off: %d\n", line_off );
     BLE_UART_LOGD( "packet.len: %d\n\n", packet.len );
 
-    if( line_off == packet.len ) {
-        line_off = -1;
+    if( line_off >= packet.len ) {
+        line_off = LINE_OFF_INVALID;
     #if CONFIG_JOLT_BT_PROFILING
         ble_packet_cum_life += esp_timer_get_time() - packet.t_receive;
         ble_packet_n++;
@@ -196,8 +197,8 @@ ssize_t ble_read_timeout( int fd, void *data, size_t size, TickType_t timeout )
 
     ESP_LOGD( TAG, "Attempting to receive %d bytes with timeout %d.", size, timeout );
 
-    size_t received = 0;
-    while( received < size ) {
+    size_t received;
+    for( received = 0; received < size; received++ ) {
         int c = ble_read_char( fd, timeout );
 
         if( c == NONE ) break;
@@ -233,7 +234,6 @@ ssize_t ble_read_timeout( int fd, void *data, size_t size, TickType_t timeout )
         }
 
         data_c[received] = (char)c;
-        ++received;
     }
 
     #if LOG_LOCAL_LEVEL >= 4 /* debug */

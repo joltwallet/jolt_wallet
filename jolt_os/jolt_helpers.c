@@ -217,3 +217,23 @@ int jolt_bytes_to_hstr( char *buf, size_t size, size_t bytes, uint8_t precision 
 
     return snprintf( buf, size, "%0.*lf %s", precision, dbytes, suffix[i] );
 }
+
+int jolt_copy_until_space( char *buf, size_t size, const char *input )
+{
+    int i;
+
+    /* Input Validation */
+    if( NULL == input ) return -1;
+    if( 0 == size ) buf = NULL;
+
+    for( i = 0; i < INT_MAX && *input != '\0' && *input != ' '; input++, i++ ) {
+        if( buf && size > 1 ) { /* To leave room for NULL-terminator */
+            *buf++ = *input;
+            size--;
+        }
+    }
+
+    if( size > 0 ) *buf = '\0';
+
+    return i;
+}

@@ -62,6 +62,7 @@ static void jolt_hw_monitor_get_battery_level( hardware_monitor_t *monitor )
     // compute average
     uint32_t cum = 0;
     uint8_t n    = 0;
+    assert( CONFIG_JOLT_VBATT_AVG_WINDOW <= UINT8_MAX );
     for( uint8_t i = 0; i < CONFIG_JOLT_VBATT_AVG_WINDOW; i++ ) {
         if( vals[i] != 0 ) {
             cum += vals[i];

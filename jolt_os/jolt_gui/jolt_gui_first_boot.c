@@ -35,39 +35,56 @@ static void screen_pin_entry_create( lv_obj_t *btn, lv_event_t event );
 static lv_obj_t *screen_pin_entry_create_( mnemonic_setup_t *param );
 static void screen_mnemonic_create( lv_obj_t *btn, lv_event_t event );
 
-static jolt_err_t get_nth_word( char buf[], size_t buf_len, const char *str, const uint32_t n );
+static jolt_err_t get_nth_word( char buf[], size_t buf_len, const char *str, uint8_t n );
 
-static jolt_err_t get_nth_word( char buf[], size_t buf_len, const char *str, const uint32_t n )
+/**
+ * @brief Get the nth word (0-indexed) from a space-separated string (mnemonic).
+ *
+ * Assumes a single space between words; no leading/trailing spaces.
+ *
+ * Will prepend the word with it's 1-indexed equivalent; e.g.
+ *     20. cat
+ *
+ * Will return E_FAILURE if word is not found or if there is insufficient buffer.
+ *
+ * @param[out] buf Output buffer to store a copy of the word in.
+ * @param[in] buf_len Size of output buffer.
+ * @param[in] str NULL-terminated, space-delimited list of words
+ * @param[in] n 0-indexed word to copy back. Must be <=24. For n==24, will return
+ *              a "continue" string.
+ */
+static jolt_err_t get_nth_word( char buf[], size_t buf_len, const char *str, uint8_t n )
 {
-    // Assumes a single space between words; no leading/trailing spaces
-    // Copies the nth word of null-terminated str into buf.
-    if( ( n + 1 ) >= 25 ) {
+    uint16_t bytes_written;
+    const char list_prefix[] = "%d. ";
+
+    if( NULL == buf || NULL == str ) return E_FAILURE;
+
+    if( n == 24 ) {
         strlcpy( buf, gettext( JOLT_TEXT_CONTINUE ), buf_len );
         return E_SUCCESS;
     }
-    // Copy over number prefix
-    snprintf( buf, buf_len, "%u. ", n + 1 );  // 1-indexing
-    buf_len -= 3;
-    buf += 3;
-    if( ( n + 1 ) > 9 ) {
-        buf_len--;
-        buf++;
+    else if( n > 24 ) {
+        ESP_LOGE( TAG, "IndexError: %d", n );
+        return E_FAILURE;
     }
+
+    // Copy over list prefix
+    bytes_written = snprintf( buf, buf_len, list_prefix, n + 1 ); /* One-Index */
+    if( bytes_written >= buf_len ) return E_FAILURE;
+    buf_len -= bytes_written;
+    buf += bytes_written;
+
     // Copy over the nth word
-    for( uint8_t i = 0; str != 0; str++ ) {
-        if( i == n ) {
-            if( *str == ' ' || *str == '\0' || buf_len <= 1 ) {
-                *buf = '\0';
+    for( uint8_t space_count = 0; *str != '\0'; str++ ) {
+        if( *str == ' ' ) { space_count++; }
+        else if( space_count == n ) {
+            int word_len;
+            word_len = jolt_copy_until_space( buf, buf_len, str );
+            if( word_len < buf_len )
                 return E_SUCCESS;
-            }
-            else {
-                *buf = *str;
-                buf++;
-                buf_len--;
-            }
-        }
-        else if( *str == ' ' ) {
-            i++;
+            else
+                return E_FAILURE;
         }
     }
     return E_FAILURE;

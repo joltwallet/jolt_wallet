@@ -227,6 +227,16 @@ void jolt_resume_logging();
  */
 int jolt_bytes_to_hstr( char *buf, size_t size, size_t bytes, uint8_t precision );
 
+/**
+ * @brief Copy a string to buf until a space is reached.
+ * @param[out] buf Output buffer to store NULL-terminated string.
+ * @param[in] size Size of buf.
+ * @param[in] input NULL-terminated string.
+ * @return Number of characters that would have been copied if buf was big enough.
+ *         (not including NULL-terminator).
+ */
+int jolt_copy_until_space( char *buf, size_t size, const char *input );
+
 #include <driver/uart.h>
 #include "hal/radio/bluetooth.h"
 /* Log something to uart if BLE is the stdin */
