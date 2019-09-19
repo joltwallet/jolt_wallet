@@ -3,7 +3,9 @@ pipeline {
     stages {
         stage('Build Docker Image') {
             steps {
-                /bin/bash echo 'meow'
+                bash '''#!/bin/bash
+                 echo "meow"
+                '''
             }
         }
     }
