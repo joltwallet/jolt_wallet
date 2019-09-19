@@ -1,7 +1,7 @@
 pipeline {
     agent any
     stages {
-        stage('Build Docker Image') {
+        stage('Cats Cats Cats') {
             steps {
                 bash '''#!/bin/bash
                  echo "meow"
