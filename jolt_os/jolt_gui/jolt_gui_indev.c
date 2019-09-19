@@ -9,8 +9,6 @@
 
 static const char TAG[] = "jolt_gui_indev";
 
-static QueueHandle_t input_queue;
-
 /**
  * @brief Function thats periodically read to get the state of user input
  *
@@ -23,35 +21,34 @@ static QueueHandle_t input_queue;
  */
 static bool easy_input_read( lv_indev_drv_t *indev_drv, lv_indev_data_t *data )
 {
-    data->state = LV_INDEV_STATE_REL;
-
-    uint64_t input_buf;
-
-    // Don't block if there's nothing on the queue
-    if( xQueueReceive( input_queue, &input_buf, 0 ) ) {
+    if( easy_input_state ) {
         data->state = LV_INDEV_STATE_PR;
-        if( input_buf & ( 1ULL << EASY_INPUT_BACK ) ) {
+
+        if( easy_input_state & ( 1ULL << EASY_INPUT_BACK ) ) {
             ESP_LOGD( TAG, "back" );
             data->key = LV_KEY_ESC;
         }
-        else if( input_buf & ( 1ULL << EASY_INPUT_UP ) ) {
+        else if( easy_input_state & ( 1ULL << EASY_INPUT_UP ) ) {
             ESP_LOGD( TAG, "up" );
             data->key = LV_KEY_UP;
         }
-        else if( input_buf & ( 1ULL << EASY_INPUT_DOWN ) ) {
+        else if( easy_input_state & ( 1ULL << EASY_INPUT_DOWN ) ) {
             ESP_LOGD( TAG, "down" );
             data->key = LV_KEY_DOWN;
         }
-        else if( input_buf & ( 1ULL << EASY_INPUT_ENTER ) ) {
+        else if( easy_input_state & ( 1ULL << EASY_INPUT_ENTER ) ) {
             ESP_LOGD( TAG, "enter" );
             data->key = LV_KEY_ENTER;
         }
         else {
         }
-        if( xQueuePeek( input_queue, &input_buf, 0 ) ) { return true; }
+
+    }
+    else {
+        data->state = LV_INDEV_STATE_REL;
     }
 
-    return false;
+    return false; /* No buffering */
 }
 
 void jolt_gui_indev_init()
@@ -59,8 +56,7 @@ void jolt_gui_indev_init()
     /* Setup Input Button Debouncing Code */
     lv_group_t *group;
 
-    easy_input_queue_init( &input_queue );
-    easy_input_run( &input_queue );
+    easy_input_run( NULL );
 
     jolt_gui_group_create();
 
