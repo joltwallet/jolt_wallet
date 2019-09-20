@@ -122,7 +122,8 @@ void app_main( void )
     }
 
     #if CONFIG_EFUSE_VIRTUAL
-    ESP_LOGW( TAG, "********************************************\n"
+    ESP_LOGW( TAG, "\n"
+                   "********************************************\n"
                    "* WARNING: EMULATING ALL EFUSE ACTIONS.    *\n"
                    "* -- DO NOT EMULATE ON CONSUMER RELEASES --*\n"
                    "********************************************\n" );
@@ -130,19 +131,22 @@ void app_main( void )
     #endif
 
     #if CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
-    ESP_LOGW( TAG, "********************************************\n"
+    ESP_LOGW( TAG, "\n"
+                   "********************************************\n"
                    "* WARNING: EMULATING EFUSE SECURE VERSION. *\n"
                    "* -- DO NOT EMULATE ON CONSUMER RELEASES --*\n"
                    "********************************************\n" );
     #endif
 
 #if CONFIG_HEAP_POISONING_DISABLE
-    ESP_LOGW( TAG, "********************************************\n"
+    ESP_LOGW( TAG, "\n"
+                   "********************************************\n"
                    "* WARNING: HEAP POISONING DISABLED.        *\n"
                    "* -- DO NOT DISABLE ON CONSUMER RELEASES --*\n"
                    "********************************************\n" );
 #elif CONFIG_HEAP_POISONING_COMPREHENSIVE
-    ESP_LOGW( TAG, "********************************************\n"
+    ESP_LOGW( TAG, "\n"
+                   "********************************************\n"
                    "* WARNING: HEAP POISONING COMPREHENSIVE.   *\n"
                    "* PERFORMANCE DEGRADED; ONLY FOR DEBUGGING *\n"
                    "********************************************\n" );
