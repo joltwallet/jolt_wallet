@@ -345,6 +345,7 @@ static void jolt_cli_cmds_register()
     };
     ESP_ERROR_CHECK( esp_console_cmd_register( &cmd ) );
 
+#if JOLT_GUI_TEST_MENU
     cmd = ( esp_console_cmd_t ) {
             .command = "cat",
             .help    = "Print the contents of a file",
@@ -352,6 +353,17 @@ static void jolt_cli_cmds_register()
             .func    = &jolt_cmd_cat,
     };
     ESP_ERROR_CHECK( esp_console_cmd_register( &cmd ) );
+#endif
+
+#if JOLT_GUI_TEST_MENU
+    cmd = ( esp_console_cmd_t ) {
+            .command = "consume_mem",
+            .help    = "[DEBUG] Consume memory leaving N bytes remain",
+            .hint    = NULL,
+            .func    = &jolt_cmd_consume_mem,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register( &cmd ) );
+#endif
 
 #if JOLT_GUI_TEST_MENU
     cmd = ( esp_console_cmd_t ) {

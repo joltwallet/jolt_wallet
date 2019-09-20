@@ -37,12 +37,25 @@ int jolt_cmd_app_key( int argc, char** argv );
  */
 int jolt_cmd_bt_whitelist( int argc, char** argv );
 
+#if JOLT_GUI_TEST_MENU
 /**
  * @brief Print the contents of a file
  *
  * Takes 1 argument: file to print
  */
 int jolt_cmd_cat( int argc, char** argv );
+#endif
+
+#if JOLT_GUI_TEST_MENU
+/**
+ * @brief Consume a bunch of memory.
+ *
+ * While consuming, takes in 1 argument: Number of bytes to leave free.
+ * While releasing, takes 0 arguments.
+ *
+ */
+int jolt_cmd_consume_mem( int argc, char **argv );
+#endif
 
 /**
  * @brief Print the display buffer to stdout

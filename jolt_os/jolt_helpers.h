@@ -237,6 +237,24 @@ int jolt_bytes_to_hstr( char *buf, size_t size, size_t bytes, uint8_t precision 
  */
 int jolt_copy_until_space( char *buf, size_t size, const char *input );
 
+/**
+ * @brief Consume all heap memory leaving `remain` bytes of memory left.
+ *
+ * Internally allocates it as a singly linked list.
+ *
+ * @param[in] remain Number of bytes to leave in the heap.
+ * @param[in] chunksize Size of chunks of contiguous memory to allocate.
+ *            Must be at least 4 bytes.
+ * @param[out] pointer to consumed memory.
+ */
+void **jolt_consume_mem(size_t remain, size_t chunksize);
+
+/**
+ * @brief Free the memory allocated via `jolt_consume_mem()`.
+ * @param[in] consumed Pointer to consumed memory.
+ */
+void jolt_consume_mem_free( void **consumed );
+
 #include <driver/uart.h>
 #include "hal/radio/bluetooth.h"
 /* Log something to uart if BLE is the stdin */
