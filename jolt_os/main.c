@@ -138,19 +138,19 @@ void app_main( void )
                    "********************************************\n" );
     #endif
 
-#if CONFIG_HEAP_POISONING_DISABLE
+    #if CONFIG_HEAP_POISONING_DISABLE
     ESP_LOGW( TAG, "\n"
                    "********************************************\n"
                    "* WARNING: HEAP POISONING DISABLED.        *\n"
                    "* -- DO NOT DISABLE ON CONSUMER RELEASES --*\n"
                    "********************************************\n" );
-#elif CONFIG_HEAP_POISONING_COMPREHENSIVE
+    #elif CONFIG_HEAP_POISONING_COMPREHENSIVE
     ESP_LOGW( TAG, "\n"
                    "********************************************\n"
                    "* WARNING: HEAP POISONING COMPREHENSIVE.   *\n"
                    "* PERFORMANCE DEGRADED; ONLY FOR DEBUGGING *\n"
                    "********************************************\n" );
-#endif
+    #endif
 
     /* Ensure High Quality RNG */
     #if CONFIG_NO_BLOBS

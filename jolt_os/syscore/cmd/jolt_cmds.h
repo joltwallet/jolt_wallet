@@ -54,7 +54,7 @@ int jolt_cmd_cat( int argc, char** argv );
  * While releasing, takes 0 arguments.
  *
  */
-int jolt_cmd_consume_mem( int argc, char **argv );
+int jolt_cmd_consume_mem( int argc, char** argv );
 #endif
 
 /**

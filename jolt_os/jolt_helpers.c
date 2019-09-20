@@ -239,25 +239,28 @@ int jolt_copy_until_space( char *buf, size_t size, const char *input )
 }
 
 #if CONFIG_HEAP_POISONING_LIGHT || CONFIG_HEAP_POISONING_COMPREHENSIVE
-    #define HEAP_OVERHEAD (4+12)
+    #define HEAP_OVERHEAD ( 4 + 12 )
 #else
-    #define HEAP_OVERHEAD (4) // TODO verify this value
+    #define HEAP_OVERHEAD ( 4 )  // TODO verify this value
 #endif
 
-void **jolt_consume_mem(size_t remain, size_t chunksize) {
+void **jolt_consume_mem( size_t remain, size_t chunksize )
+{
 #if JOLT_GUI_TEST_MENU
-    if( chunksize < sizeof(void *)) return NULL;
+    if( chunksize < sizeof( void * ) ) return NULL;
     void **consumed = NULL, **prev = NULL, **current;
     size_t available;
-    available = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+    available = heap_caps_get_free_size( MALLOC_CAP_8BIT );
 
-    while(available > remain + chunksize + HEAP_OVERHEAD) {
-        current = calloc(1, chunksize);
-        if( NULL == prev ) consumed = current;
-        else *prev = current;
+    while( available > remain + chunksize + HEAP_OVERHEAD ) {
+        current = calloc( 1, chunksize );
+        if( NULL == prev )
+            consumed = current;
+        else
+            *prev = current;
         if( NULL == current ) break;
-        prev = current;
-        available = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+        prev      = current;
+        available = heap_caps_get_free_size( MALLOC_CAP_8BIT );
     }
 
     return consumed;
@@ -266,7 +269,8 @@ void **jolt_consume_mem(size_t remain, size_t chunksize) {
 #endif
 }
 
-void jolt_consume_mem_free( void **consumed ) {
+void jolt_consume_mem_free( void **consumed )
+{
     if( NULL == consumed ) return;
 
     void *next;

@@ -247,7 +247,7 @@ int jolt_copy_until_space( char *buf, size_t size, const char *input );
  *            Must be at least 4 bytes.
  * @param[out] pointer to consumed memory.
  */
-void **jolt_consume_mem(size_t remain, size_t chunksize);
+void **jolt_consume_mem( size_t remain, size_t chunksize );
 
 /**
  * @brief Free the memory allocated via `jolt_consume_mem()`.

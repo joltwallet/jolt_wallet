@@ -14,19 +14,19 @@
 int jolt_cmd_consume_mem( int argc, char **argv )
 {
     static void *consumed = NULL;
-    if( consumed ){
+    if( consumed ) {
         /* free */
-        if(1!=argc) return -1;
-        jolt_consume_mem_free(consumed);
+        if( 1 != argc ) return -1;
+        jolt_consume_mem_free( consumed );
         consumed = NULL;
     }
-    else{
+    else {
         /* consume */
-        if(2!=argc) return -1;
-        int remain = atoi(argv[1]);
-        if(remain == 0 ) return -1;
-        consumed = jolt_consume_mem(remain, 128);
-        if(NULL == consumed) return -1;
+        if( 2 != argc ) return -1;
+        int remain = atoi( argv[1] );
+        if( remain == 0 ) return -1;
+        consumed = jolt_consume_mem( remain, 128 );
+        if( NULL == consumed ) return -1;
     }
     return 0;
 }

@@ -42,7 +42,6 @@ static bool easy_input_read( lv_indev_drv_t *indev_drv, lv_indev_data_t *data )
         }
         else {
         }
-
     }
     else {
         data->state = LV_INDEV_STATE_REL;
