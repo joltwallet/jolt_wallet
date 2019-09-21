@@ -69,14 +69,7 @@ static void unity_task( void *pvParameters )
     esp_task_wdt_delete( xTaskGetIdleTaskHandle() );
     unity_run_menu(); /* Doesn't return */
 }
-
-void app_main( void )
-{
-    ESP_LOGI( TAG, "Running Unit Tester" );
-    xTaskCreatePinnedToCore( unity_task, "unityTask", UNITY_FREERTOS_STACK_SIZE, NULL, UNITY_FREERTOS_PRIORITY, NULL,
-                             UNITY_FREERTOS_CPU );
-}
-#else
+#endif
 
 static void littlevgl_task()
 {
@@ -97,21 +90,21 @@ static void littlevgl_task()
 
 void app_main( void )
 {
-    /* Setup Heap Logging */
-    #if CONFIG_HEAP_TRACING
+/* Setup Heap Logging */
+#if CONFIG_HEAP_TRACING
     {
         ESP_ERROR_CHECK( heap_trace_init_standalone( trace_records, HEAP_TRACING_NUM_RECORDS ) );
     }
-    #endif
+#endif
 
     /* Verify Partitions */
     {
-    #if CONFIG_JOLT_TABLE_CHECK
+#if CONFIG_JOLT_TABLE_CHECK
         jolt_partition_check_table();
-    #endif
-    #if CONFIG_JOLT_BOOTLOADER_CHECK
+#endif
+#if CONFIG_JOLT_BOOTLOADER_CHECK
         jolt_partition_check_bootloader();
-    #endif
+#endif
 
         /* Check currently running partition */
         {
@@ -121,41 +114,41 @@ void app_main( void )
         }
     }
 
-    #if CONFIG_EFUSE_VIRTUAL
+#if CONFIG_EFUSE_VIRTUAL
     ESP_LOGW( TAG, "\n"
                    "********************************************\n"
                    "* WARNING: EMULATING ALL EFUSE ACTIONS.    *\n"
                    "* -- DO NOT EMULATE ON CONSUMER RELEASES --*\n"
                    "********************************************\n" );
 
-    #endif
+#endif
 
-    #if CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
+#if CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
     ESP_LOGW( TAG, "\n"
                    "********************************************\n"
                    "* WARNING: EMULATING EFUSE SECURE VERSION. *\n"
                    "* -- DO NOT EMULATE ON CONSUMER RELEASES --*\n"
                    "********************************************\n" );
-    #endif
+#endif
 
-    #if CONFIG_HEAP_POISONING_DISABLE
+#if CONFIG_HEAP_POISONING_DISABLE
     ESP_LOGW( TAG, "\n"
                    "********************************************\n"
                    "* WARNING: HEAP POISONING DISABLED.        *\n"
                    "* -- DO NOT DISABLE ON CONSUMER RELEASES --*\n"
                    "********************************************\n" );
-    #elif CONFIG_HEAP_POISONING_COMPREHENSIVE
+#elif CONFIG_HEAP_POISONING_COMPREHENSIVE
     ESP_LOGW( TAG, "\n"
                    "********************************************\n"
                    "* WARNING: HEAP POISONING COMPREHENSIVE.   *\n"
                    "* PERFORMANCE DEGRADED; ONLY FOR DEBUGGING *\n"
                    "********************************************\n" );
-    #endif
+#endif
 
-    /* Ensure High Quality RNG */
-    #if CONFIG_NO_BLOBS
+/* Ensure High Quality RNG */
+#if CONFIG_NO_BLOBS
     bootloader_random_enable();
-    #endif
+#endif
 
     /* Setup and Install I2C Driver */
     {
@@ -196,18 +189,18 @@ void app_main( void )
     {
         esp_vfs_dev_ble_spp_register();
         uint8_t bluetooth_en;
-    #if CONFIG_JOLT_BT_ENABLE_DEFAULT
+#if CONFIG_JOLT_BT_ENABLE_DEFAULT
         storage_get_u8( &bluetooth_en, "user", "bluetooth_en", 1 );
-    #else
+#else
         storage_get_u8( &bluetooth_en, "user", "bluetooth_en", 0 );
-    #endif
+#endif
         if( 1 == bluetooth_en ) {
             ESP_LOGI( TAG, "Starting Bluetooth" );
             jolt_bluetooth_start();
         }
-    #if CONFIG_JOLT_BT_DEBUG_ALWAYS_ADV
+#if CONFIG_JOLT_BT_DEBUG_ALWAYS_ADV
         jolt_bluetooth_adv_all_start();
-    #endif
+#endif
     }
 
     /* Start side-channel mitigation noise */
@@ -266,6 +259,11 @@ void app_main( void )
         }
     }
 
+    /* Capacitive Touch LED Setup */
+    {
+        jolt_led_setup();
+    }
+
     /* Create GUI StatusBar */
     {
         ESP_LOGI( TAG, "Creating Statusbar" );
@@ -275,6 +273,12 @@ void app_main( void )
                                       JOLT_GUI_STATUSBAR_ICON_LOCK );
     }
 
+#if UNIT_TESTING
+    /* Unit Testing Console Interface */
+    ESP_LOGI( TAG, "Running Unit Tester" );
+    xTaskCreatePinnedToCore( unity_task, "unityTask", UNITY_FREERTOS_STACK_SIZE, NULL, UNITY_FREERTOS_PRIORITY, NULL,
+                             UNITY_FREERTOS_CPU );
+#else
     /* Check and run first-boot routine if necessary */
     {
         ESP_LOGI( TAG, "Setting up Vault" );
@@ -288,11 +292,6 @@ void app_main( void )
         }
     }
 
-    /* Capacitive Touch LED Setup */
-    {
-        jolt_led_setup();
-    }
-
     /* Initialize Console */
     {
         ESP_LOGI( TAG, "Initializing Console" );
@@ -300,21 +299,20 @@ void app_main( void )
         jolt_cli_uart_init();
         jolt_cli_ble_init();
     }
+#endif
 
-    /* Setup Power Management */
-    #if CONFIG_PM_ENABLE
+/* Setup Power Management */
+#if CONFIG_PM_ENABLE
     {
         vTaskDelay( pdMS_TO_TICKS( 5000 ) );
         esp_pm_config_esp32_t cfg = {
-            .max_freq_mhz       = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ,
-            .min_freq_mhz       = 40,
-        #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+            .max_freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ,
+            .min_freq_mhz = 40,
+    #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
             .light_sleep_enable = true
-        #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
+    #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
         };
         ESP_ERROR_CHECK( esp_pm_configure( &cfg ) );
     }
-    #endif     /* CONFIG_PM_ENABLE */
+#endif /* CONFIG_PM_ENABLE */
 }
-
-#endif /* UNIT_TESTING */
