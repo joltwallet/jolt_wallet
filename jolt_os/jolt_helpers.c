@@ -99,6 +99,8 @@ void jolt_free_char_array( char **arr, int n )
 
 bool jolt_strcmp_suffix( const char *str, const char *suffix )
 {
+    if( NULL == str || NULL == suffix ) return false;
+
     uint32_t str_len    = strlen( str );
     uint32_t suffix_len = strlen( suffix );
 

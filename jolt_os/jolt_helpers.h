@@ -173,7 +173,7 @@ void jolt_free_char_array( char **arr, int n );
 /**
  * @brief Checks if the str ends with suffix
  * @param[in] str NULL-terminated string to search
- * @param[in] suffix NULL-terminated suffix to check
+ * @param[in] suffix NULL-terminated suffix to check.
  * @return True if str ends with suffix; false otherwise.
  */
 bool jolt_strcmp_suffix( const char *str, const char *suffix );
