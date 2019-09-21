@@ -91,6 +91,35 @@ void print_display_buf()
     }
 }
 
+
+display_data_t *jolt_copy_display_buf() {
+
+    display_data_t *output = NULL;
+
+    /* Allocate output data and buffer */
+    EXIT_IF_NULL(output = malloc(sizeof(output)));
+    EXIT_IF_NULL(output->data = malloc(sizeof(buf)));
+    output->type = JOLT_DISPLAY_SSD1306;
+    
+
+    JOLT_GUI_CTX
+    {
+        lv_obj_invalidate( lv_scr_act() );
+        lv_refr_now( NULL );
+        memcpy(output->data, buf, sizeof(buf));
+        // TODO: Print output as string or something
+    }
+
+    return output;
+
+exit:
+    if( output ) {
+        if( output->data ) free(output->data);
+        free(output);
+    }
+    return NULL;
+}
+
 static const uint8_t brightness_levels[] = {0, 1, 2, 50, 120, 255};
 static const uint8_t precharge_levels[]  = {10, 10, 10, 90, 130, 255};
 
