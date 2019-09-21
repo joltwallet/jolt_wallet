@@ -210,7 +210,7 @@ void app_main( void )
     {
         ESP_LOGI( TAG, "Initializing LVGL graphics system" );
         lv_init();
-        display_init();
+        jolt_display_init();
 
         /* Set GUI Language
          * This must be done before setting up indev so that the group

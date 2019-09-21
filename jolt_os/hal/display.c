@@ -8,7 +8,7 @@ static const char TAG[]   = "display.c";
 static ssd1306_t disp_hal = {0};
 static DRAM_ATTR lv_color_t buf[LV_HOR_RES_MAX * BUF_LINES];
 
-void display_init()
+void jolt_display_init()
 {
     static lv_disp_drv_t lv_disp_drv;
     static lv_disp_buf_t disp_buf;
@@ -50,10 +50,10 @@ void display_init()
 
     ssd1306_set_whole_display_lighting( &disp_hal, false );
     ssd1306_set_inversion( &disp_hal, true );
-    set_display_brightness( get_display_brightness() );
+    jolt_display_set_brightness( jolt_display_get_brightness() );
 }
 
-void print_display_buf()
+void jolt_display_print()
 {
     assert( LV_HOR_RES_MAX == 128 );
     assert( BUF_LINES == 8 );
@@ -91,7 +91,7 @@ void print_display_buf()
     }
 }
 
-display_data_t *jolt_copy_display_buf()
+display_data_t *jolt_display_copy()
 {
     display_data_t *output = NULL;
 
@@ -110,14 +110,19 @@ display_data_t *jolt_copy_display_buf()
     return output;
 
 exit:
-    if( output ) {
-        if( output->data ) free( output->data );
-        free( output );
-    }
+    jolt_display_free( output );
     return NULL;
 }
 
-void jolt_display_buf_dump()
+void jolt_display_free( display_data_t *d )
+{
+    if( d ) {
+        if( d->data ) free( d->data );
+        free( d );
+    }
+}
+
+void jolt_display_dump()
 {
     char buf_copy[sizeof( buf )];
 
@@ -145,7 +150,7 @@ void jolt_display_buf_dump()
 static const uint8_t brightness_levels[] = {0, 1, 2, 50, 120, 255};
 static const uint8_t precharge_levels[]  = {10, 10, 10, 90, 130, 255};
 
-uint8_t get_display_brightness()
+uint8_t jolt_display_get_brightness()
 {
     /* Returns saved brightness level or default */
     uint8_t brightness;
@@ -154,9 +159,9 @@ uint8_t get_display_brightness()
     return brightness;
 }
 
-void save_display_brightness( uint8_t level ) { storage_set_u8( level, "user", "disp_bright" ); }
+void jolt_display_save_brightness( uint8_t level ) { storage_set_u8( level, "user", "disp_bright" ); }
 
-void set_display_brightness( uint8_t level )
+void jolt_display_set_brightness( uint8_t level )
 {
     ssd1306_set_contrast( &disp_hal, brightness_levels[level] );
     ssd1306_set_precharge_period( &disp_hal, precharge_levels[level] );

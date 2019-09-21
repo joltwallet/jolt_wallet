@@ -24,7 +24,7 @@ typedef struct {
  *
  * Will reset device on failure.
  */
-void display_init();
+void jolt_display_init();
 
 /**
  * @brief Gets the current screen brightness level
@@ -33,29 +33,38 @@ void display_init();
  *
  * return current display brightness level
  */
-uint8_t get_display_brightness();
+uint8_t jolt_display_get_brightness();
 
 /**
  * @brief Saves the provided screen brightness level to NVS
  * @param[in] index into the brightness array to save
  */
-void save_display_brightness( uint8_t level );
+void jolt_display_save_brightness( uint8_t level );
 
 /**
  * @brief Sets the screen brightness to the provided level ( up to DISPLAY_BRIGHTNESS_LEVELS )
  * @param[in] index into the brightness array to set
  */
-void set_display_brightness( uint8_t level );
+void jolt_display_set_brightness( uint8_t level );
 
 /**
- * @brief print the display buffer to stdout
+ * @brief print the display buffer to stdout in a pretty format.
  */
-void print_display_buf();
+void jolt_display_print();
 
 /**
  * @brief Copy the current display to an output buffer.
  * @return Copy of the current screen buffer.
  */
-display_data_t *jolt_copy_display_buf();
+display_data_t *jolt_display_copy();
 
+/**
+ * @brief Free a `display_data_t` object.
+ */
+void jolt_display_free( display_data_t *d );
+
+/**
+ * @brief Dump the display buffer to stdout as a data array.
+ */
+void jolt_display_dump();
 #endif
