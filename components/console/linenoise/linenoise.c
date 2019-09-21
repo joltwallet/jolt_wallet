@@ -743,6 +743,7 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
 
         nread = fread(&c, 1, 1, stdin);
         if (nread <= 0) return l.len;
+        if( l.pos == 0 ) refreshLine(&l);
 
         /* Only autocomplete when the callback is set. It returns < 0 when
          * there was an error reading from fd. Otherwise it will return the
