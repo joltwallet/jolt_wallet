@@ -209,7 +209,7 @@ void jolt_resume_logging()
 int jolt_bytes_to_hstr( char *buf, size_t size, size_t bytes, uint8_t precision )
 {
     const char *suffix[] = {"B", "KB", "MB", "GB", "TB"};
-    uint8_t n_suffix        = sizeof( suffix ) / sizeof( suffix[0] );
+    uint8_t n_suffix     = sizeof( suffix ) / sizeof( suffix[0] );
 
     uint8_t i;
     double dbytes = bytes;

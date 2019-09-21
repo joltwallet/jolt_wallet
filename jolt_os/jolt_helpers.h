@@ -172,7 +172,7 @@ void jolt_free_char_array( char **arr, int n );
 
 /**
  * @brief Checks if the str ends with suffix
- * 
+ *
  * If either argument is `NULL`, returns `false`.
  * @param[in] str NULL-terminated string to search
  * @param[in] suffix NULL-terminated suffix to check.

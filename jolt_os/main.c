@@ -270,7 +270,7 @@ void app_main( void )
     /* Create GUI StatusBar */
     {
         ESP_LOGI( TAG, "Creating Statusbar" );
-        statusbar_create();
+        jolt_gui_statusbar_create();
     }
 
     /* Check and run first-boot routine if necessary */

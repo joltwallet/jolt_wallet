@@ -19,12 +19,12 @@
  * Creates all the necessary LVGL objects and creates an lv_task to periodically
  * update the statusbar based on hw_monitors values.
  */
-void statusbar_create();
+void jolt_gui_statusbar_create();
 
 /**
  * @brief Get the statusbar label that displays symbols
  * @return lv_label object
  */
-jolt_gui_obj_t *statusbar_get_label();
+jolt_gui_obj_t *jolt_gui_statusbar_get_label();
 
 #endif

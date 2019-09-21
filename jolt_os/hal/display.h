@@ -11,10 +11,8 @@
 
 #define DISPLAY_BRIGHTNESS_LEVELS 6
 
-enum jolt_display_type{
-    JOLT_DISPLAY_SSD1306
-};
-typedef uint8_t jolt_display_type_t; 
+enum jolt_display_type { JOLT_DISPLAY_SSD1306 };
+typedef uint8_t jolt_display_type_t;
 
 typedef struct {
     jolt_display_type_t type;

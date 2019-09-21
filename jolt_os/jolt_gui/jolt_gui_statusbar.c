@@ -109,7 +109,7 @@ static void statusbar_update( lv_task_t *task )
 
 /* Assumes that hardware_monitors have been externally intialized and the
  * hardware_monitor task is running */
-void statusbar_create()
+void jolt_gui_statusbar_create()
 {
     ESP_LOGD( TAG, "Creating Statusbar Object" );
 
@@ -145,4 +145,4 @@ void statusbar_create()
     lv_task_ready( task );
 }
 
-jolt_gui_obj_t *statusbar_get_label() { return statusbar_label; }
+jolt_gui_obj_t *jolt_gui_statusbar_get_label() { return statusbar_label; }
