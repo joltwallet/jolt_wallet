@@ -64,3 +64,6 @@ cppcheck: compile_commands.json
 	cat cppcheck.log
 	echo ""
 
+clean-jolt:
+	rm -rf build/jolt_os
+	rm -rf build/jolt_wallet

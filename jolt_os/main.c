@@ -247,8 +247,7 @@ void app_main( void )
     /* Create Hardware Monitors */
     {
         ESP_LOGI( TAG, "Starting Hardware Monitors" );
-        xTaskCreate( jolt_hw_monitor_task, "HW_Monitor", CONFIG_JOLT_TASK_STACK_SIZE_HW_MONITORS, NULL,
-                     CONFIG_JOLT_TASK_PRIORITY_HW_MONITORS, NULL );
+        jolt_hw_monitor_init();
     }
 
     /* Create GUI Drawing Loop */
@@ -271,6 +270,9 @@ void app_main( void )
     {
         ESP_LOGI( TAG, "Creating Statusbar" );
         jolt_gui_statusbar_create();
+        jolt_gui_statusbar_set_icons( JOLT_GUI_STATUSBAR_ICON_BATTERY | JOLT_GUI_STATUSBAR_ICON_CHIP |
+                                      JOLT_GUI_STATUSBAR_ICON_BLUETOOTH | JOLT_GUI_STATUSBAR_ICON_WIFI |
+                                      JOLT_GUI_STATUSBAR_ICON_LOCK );
     }
 
     /* Check and run first-boot routine if necessary */

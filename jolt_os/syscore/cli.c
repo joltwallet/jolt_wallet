@@ -7,6 +7,7 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "linenoise/linenoise.h"
+#include "sdkconfig.h"
 #include "syscore/bg.h"
 #include "syscore/cli_ble.h"
 #include "syscore/cli_uart.h"
@@ -48,7 +49,8 @@ void jolt_cli_init()
     if( NULL == ret_val_queue ) goto exit;
 
     BaseType_t res;
-    res = xTaskCreate( jolt_cli_dispatcher_task, "cli_dispatcher", 2048, NULL, 6, NULL );
+    res = xTaskCreate( jolt_cli_dispatcher_task, "cli_dispatcher", CONFIG_JOLT_TASK_STACK_SIZE_CLI_DISPATCHER, NULL,
+                       CONFIG_JOLT_TASK_PRIORITY_CLI_DISPATCHER, NULL );
     if( pdPASS != res ) goto exit;
 
     /* Initialize the console */

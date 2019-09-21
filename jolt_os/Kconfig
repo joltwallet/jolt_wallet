@@ -123,7 +123,6 @@ menu "JoltOS"
             help
                 help text here.
 
-
     endmenu
 
     menu "Compression"
@@ -246,19 +245,19 @@ menu "JoltOS"
     endmenu
 
     menu "Task Stack Size"
+        config JOLT_TASK_STACK_SIZE_CLI_DISPATCHER
+            int
+            prompt "CLI Dispatcher Task Stack Size"
+            default 2560
+            help
+                help text here
+
         config JOLT_TASK_STACK_SIZE_LVGL
             int
             prompt "LittleVGL Task Stack Size"
             default 5008
             help
                 help text here
-
-        config JOLT_TASK_STACK_SIZE_HW_MONITORS
-            int
-            prompt "Hardware Monitors Task Stack Size"
-            default 1520
-            help
-                HW Monitors periodically read and store the state of various systems.
 
         config JOLT_TASK_STACK_SIZE_VAULT_WATCHDOG
             int
@@ -270,7 +269,7 @@ menu "JoltOS"
         config JOLT_TASK_STACK_SIZE_UART_CONSOLE
             int
             prompt "UART Linenoise Console Task Stack Size"
-            default 2048
+            default 3072
             help
                 Task that receives UART CLI commands and sends them to BG as a job.
 
@@ -291,18 +290,19 @@ menu "JoltOS"
     endmenu
 
     menu "Task Priority"
-        config JOLT_TASK_PRIORITY_LVGL
+        config JOLT_TASK_PRIORITY_CLI_DISPATCHER
             int
-            prompt "LittleVGL Task Priority"
-            default 17
+            prompt "CLI Dispatcher Task Priority"
+            default 6
             range 1 20
             help
                 help text here.
 
-        config JOLT_TASK_PRIORITY_HW_MONITORS
+   
+        config JOLT_TASK_PRIORITY_LVGL
             int
-            prompt "Hardware Monitors Task Priority"
-            default 2
+            prompt "LittleVGL Task Priority"
+            default 17
             range 1 20
             help
                 help text here.
