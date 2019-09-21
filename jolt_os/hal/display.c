@@ -107,7 +107,6 @@ display_data_t *jolt_copy_display_buf() {
         lv_obj_invalidate( lv_scr_act() );
         lv_refr_now( NULL );
         memcpy(output->data, buf, sizeof(buf));
-        // TODO: Print output as string or something
     }
 
     return output;
@@ -118,6 +117,28 @@ exit:
         free(output);
     }
     return NULL;
+}
+
+void jolt_display_buf_dump() {
+    char buf_copy[sizeof(buf)];
+
+    JOLT_GUI_CTX
+    {
+        lv_obj_invalidate( lv_scr_act() );
+        lv_refr_now( NULL );
+        memcpy(buf_copy, buf, sizeof(buf_copy));
+    }
+
+    /* Print it to STDOUT */
+    printf("\nDisplayDump:\n{");
+    for(uint32_t i=0; i < sizeof(buf); i++) {
+        printf("0x%02X", buf_copy[i]);
+        if(i == sizeof(buf) - 1) printf("\n");
+        else if( i>0 && 0 == i % 8 ) printf(",\n");
+        else printf(", ");
+    }
+    printf("\n}\n");
+
 }
 
 static const uint8_t brightness_levels[] = {0, 1, 2, 50, 120, 255};

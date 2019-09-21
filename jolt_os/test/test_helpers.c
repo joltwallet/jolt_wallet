@@ -48,7 +48,7 @@ TEST_CASE( "jolt_bytes_to_hstr", MODULE_NAME ) {
         len = jolt_bytes_to_hstr( buf, buf_size, val, pre ); \
         soln = solution; \
         TEST_ASSERT_EQUAL_INT(strlen(soln), len); \
-        TEST_ASSERT_EQUAL_MEMORY(solution, buf, buf_size-1);\
+        TEST_ASSERT_EQUAL_MEMORY(soln, buf, buf_size-1);\
         TEST_ASSERT_EQUAL_INT8('\0', buf[buf_size-1]);
 
     #define TEST_HSTR_SUFFICIENT(solution, val, pre, buf_size) \
@@ -73,5 +73,48 @@ TEST_CASE( "jolt_bytes_to_hstr", MODULE_NAME ) {
 }
 
 TEST_CASE( "jolt_copy_until_space", MODULE_NAME ) {
+    int len;
+    char buf[32] = { 0 };
+    char *soln;
+
+    /* Standard Usage Tests */
+    #define TEST_SUFFICIENT(solution, test_input, buf_size) \
+        len = jolt_copy_until_space(buf, buf_size, test_input); \
+        soln = solution; \
+        TEST_ASSERT_EQUAL_INT(strlen(soln), len); \
+        TEST_ASSERT_LESS_THAN(buf_size, len); \
+        TEST_ASSERT_EQUAL_STRING(soln, buf );
+
+    TEST_SUFFICIENT("the", "the quick", sizeof(buf));
+    TEST_SUFFICIENT("jolt", "jolt", sizeof(buf));
+    TEST_SUFFICIENT("", " leading space", sizeof(buf));
+    TEST_SUFFICIENT("", " ", sizeof(buf));
+    TEST_SUFFICIENT("", "", sizeof(buf));
+
+
+    /* Insufficient Buffer Tests */
+    #define TEST_INSUFFICIENT(solution, soln_len, test_input, buf_size) \
+        len = jolt_copy_until_space(buf, buf_size, test_input); \
+        soln = solution; \
+        TEST_ASSERT_EQUAL_INT(soln_len, len); \
+        if(buf_size > 1) { TEST_ASSERT_EQUAL_MEMORY(soln, buf, buf_size-1); } \
+        if(buf_size > 0) { TEST_ASSERT_EQUAL_INT8('\0', buf[buf_size-1]); }
+
+    TEST_INSUFFICIENT("", 3, "the quick", 1);
+    TEST_INSUFFICIENT("t", 3, "the quick", 2);
+    TEST_INSUFFICIENT("the", 3, "the quick", 3);
+    TEST_SUFFICIENT("the", "the quick", 4);
+    TEST_SUFFICIENT("", " leading space", 1);
+
+    /* Other edge-cases */
+    len = jolt_copy_until_space(NULL, 10, "test space");
+    TEST_ASSERT_EQUAL_INT(strlen("test"), len);
+
+    TEST_ASSERT_EQUAL(-1, jolt_copy_until_space(buf, 10, NULL));
+    TEST_ASSERT_EQUAL(-1, jolt_copy_until_space(NULL, 10, NULL));
+    TEST_ASSERT_EQUAL(-1, jolt_copy_until_space(NULL, 0, NULL));
+
+    #undef TEST_SUFFICIENT
+    #undef TEST_INSUFFICIENT
 }
 

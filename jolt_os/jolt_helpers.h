@@ -238,7 +238,7 @@ int jolt_bytes_to_hstr( char *buf, size_t size, size_t bytes, uint8_t precision 
  * @param[in] size Size of buf.
  * @param[in] input NULL-terminated string.
  * @return Number of characters that would have been copied if buf was big enough.
- *         (not including NULL-terminator).
+ *         (not including NULL-terminator). Returns -1 on error..
  */
 int jolt_copy_until_space( char *buf, size_t size, const char *input );
 

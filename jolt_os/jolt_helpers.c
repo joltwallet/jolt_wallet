@@ -235,7 +235,7 @@ int jolt_copy_until_space( char *buf, size_t size, const char *input )
         }
     }
 
-    if( size > 0 ) *buf = '\0';
+    if( buf && size > 0 ) *buf = '\0';
 
     return i;
 }
