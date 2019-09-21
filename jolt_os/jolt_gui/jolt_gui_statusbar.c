@@ -10,6 +10,8 @@ static const char TAG[] = "statusbar";
 static lv_style_t header_style;
 static jolt_gui_obj_t *statusbar_cont;
 static jolt_gui_obj_t *statusbar_label;
+static volatile uint32_t statusbar_icons_enabled = 0;
+static lv_task_t *statusbar_task                 = NULL;
 
 #define JOLT_STATUSBAR_SYMBOL_SPACE 1
 #define JOLT_STATUSBAR_BUF_LEN      20
@@ -41,13 +43,13 @@ static void statusbar_update( lv_task_t *task )
 
     char statusbar_symbols[JOLT_STATUSBAR_BUF_LEN] = {0};
 
-    {
+    if( statusbar_icons_enabled & JOLT_GUI_STATUSBAR_ICON_LOCK ) {
         int8_t lock_status;
         lock_status = statusbar_indicators[JOLT_HW_MONITOR_INDEX_LOCK].val;
         if( lock_status != 0 ) strlcat( statusbar_symbols, JOLT_GUI_SYMBOL_LOCK, sizeof( statusbar_symbols ) );
     }
 
-    {
+    if( statusbar_icons_enabled & JOLT_GUI_STATUSBAR_ICON_BLUETOOTH ) {
         int8_t bluetooth_level;
         bluetooth_level = statusbar_indicators[JOLT_HW_MONITOR_INDEX_BLUETOOTH].val;
         switch( bluetooth_level ) {
@@ -66,7 +68,7 @@ static void statusbar_update( lv_task_t *task )
         }
     }
 
-    {
+    if( statusbar_icons_enabled & JOLT_GUI_STATUSBAR_ICON_WIFI ) {
         int8_t wifi_level;
         wifi_level = statusbar_indicators[JOLT_HW_MONITOR_INDEX_WIFI].val;
         if( wifi_level == -1 )
@@ -82,10 +84,12 @@ static void statusbar_update( lv_task_t *task )
     }
 
 #if CONFIG_JOLT_STORE_ATAES132A
-    strlcat( statusbar_symbols, JOLT_GUI_SYMBOL_CHIP, sizeof( statusbar_symbols ) );
+    if( statusbar_icons_enabled & JOLT_GUI_STATUSBAR_ICON_CHIP ) {
+        strlcat( statusbar_symbols, JOLT_GUI_SYMBOL_CHIP, sizeof( statusbar_symbols ) );
+    }
 #endif
 
-    {
+    if( statusbar_icons_enabled & JOLT_GUI_STATUSBAR_ICON_BATTERY ) {
         int8_t battery_level = statusbar_indicators[JOLT_HW_MONITOR_INDEX_BATTERY].val;
         if( battery_level > 100 )
             strlcat( statusbar_symbols, JOLT_GUI_SYMBOL_BATTERY_CHARGING, sizeof( statusbar_symbols ) );
@@ -109,8 +113,12 @@ static void statusbar_update( lv_task_t *task )
 
 /* Assumes that hardware_monitors have been externally intialized and the
  * hardware_monitor task is running */
-void statusbar_create()
+void jolt_gui_statusbar_create()
 {
+    if( NULL != statusbar_task ) {
+        ESP_LOGW( TAG, "Statusbar already running" );
+        return;
+    }
     ESP_LOGD( TAG, "Creating Statusbar Object" );
 
     /* Create StatusBar Container */
@@ -139,10 +147,12 @@ void statusbar_create()
 
     /* Periodically update the statusbar symbols */
     ESP_LOGD( TAG, "Creating Statusbar Update lv_task" );
-    lv_task_t *task =
+    statusbar_task =
             lv_task_create( &statusbar_update, CONFIG_JOLT_GUI_STATUSBAR_UPDATE_PERIOD_MS, LV_TASK_PRIO_LOW, NULL );
-    RESTART_IF_NULL( task );
-    lv_task_ready( task );
+    RESTART_IF_NULL( statusbar_task );
+    lv_task_ready( statusbar_task );
 }
 
-jolt_gui_obj_t *statusbar_get_label() { return statusbar_label; }
+jolt_gui_obj_t *jolt_gui_statusbar_get_label() { return statusbar_label; }
+
+void jolt_gui_statusbar_set_icons( uint32_t flags ) { statusbar_icons_enabled = flags; }

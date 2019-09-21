@@ -29,20 +29,22 @@ enum {
     JOLT_HW_MONITOR_INDEX_LOCK,
     JOLT_HW_MONITOR_INDEX_NUM,
 };
+typedef uint8_t jolt_hw_monitor_idx_t;
 
 /**
- * @brief FreeRTOS task that periodically calls all hw_monitors' update functinos.
+ * @brief Initializes hw_monitors and creates task
  */
-void jolt_hw_monitor_task();
+void jolt_hw_monitor_init();
 
 /**
  * @brief Bluetooth connection GUI states.
  */
-typedef enum jolt_bluetooth_level_t {
+enum {
     JOLT_BLUETOOTH_LEVEL_OFF = 0, /**< Bluetooth is off */
     JOLT_BLUETOOTH_LEVEL_ON,      /**< Bluetooth is on, but not connected */
     JOLT_BLUETOOTH_LEVEL_CONN,    /**< Bluetooth is on and connected */
-} jolt_bluetooth_level_t;
+};
+typedef uint8_t jolt_bluetooth_level_t;
 
 /**
  * @brief Holds all hw_monitors

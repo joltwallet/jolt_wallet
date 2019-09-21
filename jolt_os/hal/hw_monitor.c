@@ -2,6 +2,7 @@
 #include <driver/adc.h>
 #include "esp_bt.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -21,7 +22,6 @@ hardware_monitor_t statusbar_indicators[JOLT_HW_MONITOR_INDEX_NUM];
 static void jolt_hw_monitor_get_battery_level( hardware_monitor_t *monitor );
 static void jolt_hw_monitor_get_bluetooth_level( hardware_monitor_t *monitor );
 static void jolt_hw_monitor_get_wifi_level( hardware_monitor_t *monitor );
-static void jolt_hw_monitor_init();
 static void jolt_hw_monitor_update();
 
 /**********************
@@ -33,16 +33,6 @@ static const char TAG[] = "hal/monitor";
  *  DEFINE MACROS
  **********************/
 #define MONITOR_UPDATE( x ) monitor->val = x;
-
-void jolt_hw_monitor_task()
-{
-    ESP_LOGI( TAG, "Starting hardware monitor task" );
-    jolt_hw_monitor_init();
-    for( ;; ) {
-        jolt_hw_monitor_update();
-        vTaskDelay( pdMS_TO_TICKS( CONFIG_JOLT_HW_MONITOR_UPDATE_PERIOD_MS ) );
-    }
-}
 
 /* Responds with a value between 0 and 100.
  * If a value above 100 is returned, the battery is charging.
@@ -126,12 +116,20 @@ static void jolt_hw_monitor_get_wifi_level( hardware_monitor_t *monitor )
 static void jolt_hw_monitor_get_lock_status( hardware_monitor_t *monitor ) { MONITOR_UPDATE( !vault_get_valid() ); }
 
 /* Creates all the hardware_monitor mutex's and sets their updater functions */
-static void jolt_hw_monitor_init()
+void jolt_hw_monitor_init()
 {
+    ESP_LOGI( TAG, "Starting hardware monitor task" );
     statusbar_indicators[JOLT_HW_MONITOR_INDEX_BATTERY].update   = &jolt_hw_monitor_get_battery_level;
     statusbar_indicators[JOLT_HW_MONITOR_INDEX_WIFI].update      = &jolt_hw_monitor_get_wifi_level;
     statusbar_indicators[JOLT_HW_MONITOR_INDEX_BLUETOOTH].update = &jolt_hw_monitor_get_bluetooth_level;
     statusbar_indicators[JOLT_HW_MONITOR_INDEX_LOCK].update      = &jolt_hw_monitor_get_lock_status;
+
+    const esp_timer_create_args_t timer_args = {.callback = &jolt_hw_monitor_update, .name = "hw_monitor"};
+
+    esp_timer_handle_t statusbar_update_timer;
+    ESP_ERROR_CHECK( esp_timer_create( &timer_args, &statusbar_update_timer ) );
+    ESP_ERROR_CHECK(
+            esp_timer_start_periodic( statusbar_update_timer, CONFIG_JOLT_HW_MONITOR_UPDATE_PERIOD_MS * 1000 ) );
 }
 
 /* Iterates through all hardware_monitor's and call's their updater function */

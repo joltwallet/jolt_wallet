@@ -198,7 +198,7 @@ lv_obj_t *jolt_gui_obj_title_create( lv_obj_t *parent, const char *title )
     lv_obj_t *label = NULL;
     JOLT_GUI_CTX
     {
-        lv_obj_t *statusbar_label = statusbar_get_label();
+        lv_obj_t *statusbar_label = jolt_gui_statusbar_get_label();
         /* Create a non-transparent background to block out old titles */
         lv_obj_t *title_cont = BREAK_IF_NULL( lv_cont_create( parent, NULL ) );
         jolt_gui_obj_id_set( title_cont, JOLT_GUI_OBJ_ID_CONT_TITLE );

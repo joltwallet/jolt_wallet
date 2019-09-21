@@ -11,6 +11,14 @@
 
 #define DISPLAY_BRIGHTNESS_LEVELS 6
 
+enum jolt_display_type { JOLT_DISPLAY_SSD1306 };
+typedef uint8_t jolt_display_type_t;
+
+typedef struct {
+    jolt_display_type_t type;
+    uint8_t *data;
+} display_data_t;
+
 /**
  * @brief Configure LVGL display driver and hardware.
  *
@@ -43,5 +51,11 @@ void set_display_brightness( uint8_t level );
  * @brief print the display buffer to stdout
  */
 void print_display_buf();
+
+/**
+ * @brief Copy the current display to an output buffer.
+ * @return Copy of the current screen buffer.
+ */
+display_data_t *jolt_copy_display_buf();
 
 #endif

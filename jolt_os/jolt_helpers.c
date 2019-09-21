@@ -99,6 +99,8 @@ void jolt_free_char_array( char **arr, int n )
 
 bool jolt_strcmp_suffix( const char *str, const char *suffix )
 {
+    if( NULL == str || NULL == suffix ) return false;
+
     uint32_t str_len    = strlen( str );
     uint32_t suffix_len = strlen( suffix );
 
@@ -207,7 +209,7 @@ void jolt_resume_logging()
 int jolt_bytes_to_hstr( char *buf, size_t size, size_t bytes, uint8_t precision )
 {
     const char *suffix[] = {"B", "KB", "MB", "GB", "TB"};
-    char n_suffix        = sizeof( suffix ) / sizeof( suffix[0] );
+    uint8_t n_suffix     = sizeof( suffix ) / sizeof( suffix[0] );
 
     uint8_t i;
     double dbytes = bytes;
@@ -233,7 +235,50 @@ int jolt_copy_until_space( char *buf, size_t size, const char *input )
         }
     }
 
-    if( size > 0 ) *buf = '\0';
+    if( buf && size > 0 ) *buf = '\0';
 
     return i;
+}
+
+#if CONFIG_HEAP_POISONING_LIGHT || CONFIG_HEAP_POISONING_COMPREHENSIVE
+    #define HEAP_OVERHEAD ( 4 + 12 )
+#else
+    #define HEAP_OVERHEAD ( 4 )  // TODO verify this value
+#endif
+
+void **jolt_consume_mem( size_t remain, size_t chunksize )
+{
+#if JOLT_GUI_TEST_MENU
+    if( chunksize < sizeof( void * ) ) return NULL;
+    void **consumed = NULL, **prev = NULL, **current;
+    size_t available;
+    available = heap_caps_get_free_size( MALLOC_CAP_8BIT );
+
+    while( available > remain + chunksize + HEAP_OVERHEAD ) {
+        current = calloc( 1, chunksize );
+        if( NULL == prev )
+            consumed = current;
+        else
+            *prev = current;
+        if( NULL == current ) break;
+        prev      = current;
+        available = heap_caps_get_free_size( MALLOC_CAP_8BIT );
+    }
+
+    return consumed;
+#else
+    return NULL;
+#endif
+}
+
+void jolt_consume_mem_free( void **consumed )
+{
+    if( NULL == consumed ) return;
+
+    void *next;
+    while( NULL != *consumed ) {
+        next = *consumed;
+        free( consumed );
+        consumed = next;
+    }
 }

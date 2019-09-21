@@ -172,8 +172,10 @@ void jolt_free_char_array( char **arr, int n );
 
 /**
  * @brief Checks if the str ends with suffix
+ *
+ * If either argument is `NULL`, returns `false`.
  * @param[in] str NULL-terminated string to search
- * @param[in] suffix NULL-terminated suffix to check
+ * @param[in] suffix NULL-terminated suffix to check.
  * @return True if str ends with suffix; false otherwise.
  */
 bool jolt_strcmp_suffix( const char *str, const char *suffix );
@@ -218,10 +220,13 @@ void jolt_resume_logging();
 
 /**
  * @brief Converts bytes into a human-friendly string.
+ *
+ * Output will be truncated if insufficient buffer is provided.
+ *
  * @param[out] buf Output buffer
  * @param[in] size size of buf
- * @param[in] Value of bytes to stringify.
- * @param[in] Number of decimal places.
+ * @param[in] bytes Value of bytes to stringify.
+ * @param[in] precision Number of decimal places.
  * @return The number of characters that would have been written if `size` had
  *         been sufficiently large, not counting the terminating null character.
  */
@@ -233,9 +238,27 @@ int jolt_bytes_to_hstr( char *buf, size_t size, size_t bytes, uint8_t precision 
  * @param[in] size Size of buf.
  * @param[in] input NULL-terminated string.
  * @return Number of characters that would have been copied if buf was big enough.
- *         (not including NULL-terminator).
+ *         (not including NULL-terminator). Returns -1 on error..
  */
 int jolt_copy_until_space( char *buf, size_t size, const char *input );
+
+/**
+ * @brief Consume all heap memory leaving `remain` bytes of memory left.
+ *
+ * Internally allocates it as a singly linked list.
+ *
+ * @param[in] remain Number of bytes to leave in the heap.
+ * @param[in] chunksize Size of chunks of contiguous memory to allocate.
+ *            Must be at least 4 bytes.
+ * @param[out] pointer to consumed memory.
+ */
+void **jolt_consume_mem( size_t remain, size_t chunksize );
+
+/**
+ * @brief Free the memory allocated via `jolt_consume_mem()`.
+ * @param[in] consumed Pointer to consumed memory.
+ */
+void jolt_consume_mem_free( void **consumed );
 
 #include <driver/uart.h>
 #include "hal/radio/bluetooth.h"
