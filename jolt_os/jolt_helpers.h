@@ -172,6 +172,8 @@ void jolt_free_char_array( char **arr, int n );
 
 /**
  * @brief Checks if the str ends with suffix
+ * 
+ * If either argument is `NULL`, returns `false`.
  * @param[in] str NULL-terminated string to search
  * @param[in] suffix NULL-terminated suffix to check.
  * @return True if str ends with suffix; false otherwise.
@@ -218,10 +220,13 @@ void jolt_resume_logging();
 
 /**
  * @brief Converts bytes into a human-friendly string.
+ *
+ * Output will be truncated if insufficient buffer is provided.
+ *
  * @param[out] buf Output buffer
  * @param[in] size size of buf
- * @param[in] Value of bytes to stringify.
- * @param[in] Number of decimal places.
+ * @param[in] bytes Value of bytes to stringify.
+ * @param[in] precision Number of decimal places.
  * @return The number of characters that would have been written if `size` had
  *         been sufficiently large, not counting the terminating null character.
  */
