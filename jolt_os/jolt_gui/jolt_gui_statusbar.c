@@ -126,7 +126,7 @@ void jolt_gui_statusbar_create()
     lv_style_copy( &header_style, lv_cont_get_style( statusbar_cont, LV_CONT_STYLE_MAIN ) );
     header_style.body.border.width = 1;
     header_style.body.border.part  = LV_BORDER_BOTTOM;
-    header_style.body.border.color = LV_COLOR_BLACK;
+    header_style.body.border.color = LV_COLOR_WHITE;
     lv_cont_set_style( statusbar_cont, LV_CONT_STYLE_MAIN, &header_style );
     lv_obj_set_size( statusbar_cont, LV_HOR_RES, CONFIG_JOLT_GUI_STATUSBAR_H );
 
