@@ -66,18 +66,19 @@ void jolt_display_print( const jolt_display_t *disp )
         {
             lv_obj_invalidate( lv_scr_act() );
             lv_refr_now( NULL );
-            memcpy(buf_copy, vdb, sizeof(buf_copy));
+            memcpy( buf_copy, vdb, sizeof( buf_copy ) );
         }
     }
     else {
         int len;
         jolt_encoding_t decoder;
         assert( disp->type == JOLT_DISPLAY_TYPE_SSD1306 );
-        decoder = jolt_encoding_get_decoder(disp->encoding);
-        len = decoder(buf_copy, sizeof(buf_copy), vdb, sizeof(vdb));
-        if(len <= 0 || len > sizeof(buf_copy)) return;
+        decoder = jolt_encoding_get_decoder( disp->encoding );
+        len     = decoder( buf_copy, sizeof( buf_copy ), vdb, sizeof( vdb ) );
+        if( len <= 0 || len > sizeof( buf_copy ) ) return;
     }
 
+    /* Print the resulting buf_copy */
     jolt_suspend_logging();
     for( uint8_t y1 = 0; y1 < LV_VER_RES_MAX - 1; y1 += 2 ) {
         memzero( print_buf, sizeof( print_buf ) );
@@ -117,19 +118,19 @@ bool jolt_display_copy( jolt_display_t *copy )
     {
         lv_obj_invalidate( lv_scr_act() );
         lv_refr_now( NULL );
-        memcpy(buf_copy, vdb, sizeof(vdb));
+        memcpy( buf_copy, vdb, sizeof( vdb ) );
     }
 
-    encoder = jolt_encoding_get_encoder(copy->encoding);
+    encoder = jolt_encoding_get_encoder( copy->encoding );
 
     /* Allocate output data and buffer */
-    encoded_len = encoder(NULL, 0, buf_copy, sizeof(buf_copy));
-    if( encoded_len <=0 ) return false;
-    
+    encoded_len = encoder( NULL, 0, buf_copy, sizeof( buf_copy ) );
+    if( encoded_len <= 0 ) return false;
+
     if( NULL == ( copy->data = malloc( encoded_len ) ) ) return false;
     copy->len  = encoded_len;
     copy->type = JOLT_DISPLAY_TYPE_SSD1306;
-    encoder(copy->data, encoded_len, buf_copy, sizeof(buf_copy));
+    encoder( copy->data, encoded_len, buf_copy, sizeof( buf_copy ) );
 
     return true;
 }
@@ -138,20 +139,20 @@ void jolt_display_dump( const jolt_display_t *disp )
 {
     uint8_t buf_copy[sizeof( vdb )];
 
-    jolt_display_t default_disp = { 0 };
+    jolt_display_t default_disp = {0};
 
     if( NULL == disp ) {
         /* No encoding */
-        default_disp.type = JOLT_DISPLAY_TYPE_SSD1306;
+        default_disp.type     = JOLT_DISPLAY_TYPE_SSD1306;
         default_disp.encoding = JOLT_ENCODING_NONE;
-        default_disp.data = buf_copy;
-        default_disp.len = sizeof(buf_copy);
+        default_disp.data     = buf_copy;
+        default_disp.len      = sizeof( buf_copy );
 
         JOLT_GUI_CTX
         {
             lv_obj_invalidate( lv_scr_act() );
             lv_refr_now( NULL );
-            jolt_encoding_none_encode(default_disp.data, default_disp.len, vdb, sizeof(vdb));
+            jolt_encoding_none_encode( default_disp.data, default_disp.len, vdb, sizeof( vdb ) );
         }
         disp = &default_disp;
     }
@@ -159,7 +160,7 @@ void jolt_display_dump( const jolt_display_t *disp )
     assert( disp->type == JOLT_DISPLAY_TYPE_SSD1306 );
 
     /* Dump to stdout */
-    printf( "\nDisplayDump (%s encoding):\n{\n", jolt_encoding_get_str(disp->encoding) );
+    printf( "\nDisplayDump (%s encoding):\n{\n", jolt_encoding_get_str( disp->encoding ) );
     for( int i = 0; i < disp->len; i++ ) {
         printf( "0x%02X", disp->data[i] );
         if( i == disp->len - 1 )

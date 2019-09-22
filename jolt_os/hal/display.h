@@ -16,7 +16,6 @@
 /* For SSD1306 */
 #define JOLT_DISPLAY_BUF_SIZE ( LV_HOR_RES_MAX * LV_VER_RES_MAX / 8 )
 
-
 enum { JOLT_DISPLAY_TYPE_SSD1306 = 0 };
 typedef uint8_t jolt_display_type_t;
 
