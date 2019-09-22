@@ -15,6 +15,7 @@ COMPONENT_SRCDIRS := . \
 	lang \
     syscore \
     syscore/cmd \
+	syscore/encoding \
 	syscore/ymodem
 
 COMPONENT_ADD_INCLUDEDIRS := . \

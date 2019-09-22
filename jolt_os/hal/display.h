@@ -9,27 +9,20 @@
 
 #include "hal/lv_drivers/display/SSD1306.h"
 #include "lvgl/lvgl.h"
+#include "syscore/encoding.h"
 
 #define JOLT_DISPLAY_BRIGHTNESS_LEVELS 6
 
 /* For SSD1306 */
 #define JOLT_DISPLAY_BUF_SIZE ( LV_HOR_RES_MAX * LV_VER_RES_MAX / 8 )
 
-/**
- * @brief Encoding method for copying/printing the display buffer.
- */
-enum {
-    JOLT_DISPLAY_DUMP_ENCODING_NONE = 0,
-    JOLT_DISPLAY_DUMP_ENCODING_RLE,
-};
-typedef uint8_t jolt_display_dump_encoding_t;
 
 enum { JOLT_DISPLAY_TYPE_SSD1306 = 0 };
 typedef uint8_t jolt_display_type_t;
 
 typedef struct jolt_display_t {
     jolt_display_type_t type;
-    jolt_display_dump_encoding_t encoding;
+    jolt_encoding_type_t encoding;
     uint32_t len;  /**< Length of data */
     uint8_t *data; /**< Data encoding via `encoding` */
 } jolt_display_t;
