@@ -1,3 +1,25 @@
+/**
+ * Jolt Run-Length Encoding (JRLE)
+ * JRLE encoding is based off of RLE, but significantly reduces overhead during
+ * sequences of differing bytes. It is still incredibly fast, memory-constant,
+ * and the exact required minimum decoded buffer can be computed without a
+ * buffer. JRLE was developed to provide a quick, manageable way to perform
+ * dispay buffer dumps of a 128x64 monochrome OLED screen.
+ *
+ * There are two sequence types: `repeating` and `differing`. Each sequence is
+ * preceeded with a `uint8_t` counter.
+ *     * Repeating counters have the MSb 1 (i.e. true == counter & 0x80)
+ *     * Differing counters have the MSb 0 (i.e. false == counter & 0x80)
+ * The lower 7 bits are used for counting, meaning a max interpretted counter
+ * value of 0x7F (127).
+ *
+ * Edge-cases:
+ *     * When a differing sequence is followed by a repeating sequence, the
+ *       first byte of the repeating sequence is NOT to be including with the
+ *       previous differing sequence.
+ *       i.e. input "abcdd" gets encoded as `{3, 'a', 'b', 'c', 2 | 0x80, 'd'}`
+ */
+
 //#define LOG_LOCAL_LEVEL 4
 
 #include "assert.h"
