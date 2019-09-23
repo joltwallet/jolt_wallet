@@ -21,6 +21,7 @@ typedef int ( *jolt_encoding_t )( uint8_t *, size_t, const uint8_t *, size_t );
 enum {
     JOLT_ENCODING_NONE = 0,
     JOLT_ENCODING_RLE,
+    JOLT_ENCODING_JRLE,
 };
 typedef uint8_t jolt_encoding_type_t;
 
@@ -64,6 +65,16 @@ int jolt_encoding_rle_encode( uint8_t *out, size_t out_len, const uint8_t *in, s
  * @brief Run-length decoder
  */
 int jolt_encoding_rle_decode( uint8_t *out, size_t out_len, const uint8_t *in, size_t in_len );
+
+/**
+ * @brief Jolt run-length encoder (optimized for screen buffers)
+ */
+int jolt_encoding_jrle_encode( uint8_t *out, size_t out_len, const uint8_t *in, size_t in_len );
+
+/**
+ * @brief Jolt run-length decoder (optimized for screen buffers)
+ */
+int jolt_encoding_jrle_decode( uint8_t *out, size_t out_len, const uint8_t *in, size_t in_len );
 
 /**
  * @brief ZLIB encoder

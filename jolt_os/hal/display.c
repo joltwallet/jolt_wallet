@@ -165,7 +165,7 @@ void jolt_display_dump( const jolt_display_t *disp )
     assert( disp->type == JOLT_DISPLAY_TYPE_SSD1306 );
 
     /* Dump to stdout */
-    printf( "\nDisplayDump (%s encoding):\n{\n", jolt_encoding_get_str( disp->encoding ) );
+    printf( "\nDisplayDump (%s encoding, %d long):\n{\n", jolt_encoding_get_str( disp->encoding ), disp->len );
     for( int i = 0; i < disp->len; i++ ) {
         printf( "0x%02X", disp->data[i] );
         if( i == disp->len - 1 )
