@@ -21,4 +21,6 @@ TEST_CASE( "encoding & decoding", MODULE_NAME )
     TEST_ASSERT_EQUAL_INT( strlen( test_str_1 ), len );
     buf[len] = '\0';
     TEST_ASSERT_EQUAL_STRING( test_str_1, buf );
+
+    // TODO test with 255 and  >255
 }

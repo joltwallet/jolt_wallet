@@ -29,7 +29,7 @@ int jolt_encoding_rle_decode( uint8_t *out, size_t out_len, const uint8_t *in, s
 {
     size_t out_idx = 0;
 
-    if( in_len % 2 != 0 || NULL == in ) return -1;
+    if( in_len % 2 != 0 || 0 == in_len || NULL == in ) return -1;
 
     for( size_t in_idx = 0; in_idx < in_len; in_idx += 2 ) {
         uint8_t n = in[in_idx];

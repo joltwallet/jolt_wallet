@@ -49,6 +49,10 @@ const char *jolt_encoding_get_str( jolt_encoding_type_t encoding );
  * @brief Dummy encoding scheme that just copies `in` to `out`.
  */
 int jolt_encoding_none_encode( uint8_t *out, size_t out_len, const uint8_t *in, size_t in_len );
+
+/**
+ * @brief Dummy decoding scheme that just copies `in` to `out`.
+ */
 int jolt_encoding_none_decode( uint8_t *out, size_t out_len, const uint8_t *in, size_t in_len );
 
 /**
@@ -60,5 +64,15 @@ int jolt_encoding_rle_encode( uint8_t *out, size_t out_len, const uint8_t *in, s
  * @brief Run-length decoder
  */
 int jolt_encoding_rle_decode( uint8_t *out, size_t out_len, const uint8_t *in, size_t in_len );
+
+/**
+ * @brief ZLIB encoder
+ */
+int jolt_encoding_zlib_encode( uint8_t *out, size_t out_len, const uint8_t *in, size_t in_len );
+
+/**
+ * @brief ZLIB encoder
+ */
+int jolt_encoding_zlib_decode( uint8_t *out, size_t out_len, const uint8_t *in, size_t in_len );
 
 #endif

@@ -128,9 +128,14 @@ bool jolt_display_copy( jolt_display_t *copy )
     if( encoded_len <= 0 ) return false;
 
     if( NULL == ( copy->data = malloc( encoded_len ) ) ) return false;
-    copy->len  = encoded_len;
+    copy->len = encoder( copy->data, encoded_len, buf_copy, sizeof( buf_copy ) );
+    if( copy->len < encoded_len ) {
+        /* Shrink the allocated area */
+        void *tmp;
+        tmp = realloc( copy->data, copy->len );
+        if( tmp ) copy->data = tmp;
+    }
     copy->type = JOLT_DISPLAY_TYPE_SSD1306;
-    encoder( copy->data, encoded_len, buf_copy, sizeof( buf_copy ) );
 
     return true;
 }
