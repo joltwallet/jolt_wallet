@@ -13,11 +13,14 @@ TEST_CASE( "encoding & decoding", MODULE_NAME )
 {
     int len;
     uint8_t buf[512] = {0};
+
     /* Basic Use-Case 1 */
     {
         const char test_str[]            = "AAAAbbbCDEFGHIJJJJ";
         const uint8_t expected_encoded[] = {4 | 0x80, 'A', 3 | 0x80, 'b', 7,   'C',      'D',
                                             'E',      'F', 'G',      'H', 'I', 4 | 0x80, 'J'};
+        len = jolt_encoding_jrle_encode( NULL, 0, (uint8_t*)test_str, strlen( test_str ) );
+        TEST_ASSERT_EQUAL_INT( sizeof( expected_encoded ), len );
 
         len = jolt_encoding_jrle_encode( buf, sizeof( buf ), (uint8_t*)test_str, strlen( test_str ) );
         TEST_ASSERT_EQUAL_HEX8_ARRAY( expected_encoded, buf, sizeof( expected_encoded ) );
@@ -28,7 +31,6 @@ TEST_CASE( "encoding & decoding", MODULE_NAME )
         TEST_ASSERT_EQUAL_INT( strlen( test_str ), len );
         buf[len] = '\0';
         TEST_ASSERT_EQUAL_STRING( test_str, buf );
-        printf( "passed %d\n", 1 );
     }
 
     /* Basic Use-Case 2 */
@@ -46,7 +48,6 @@ TEST_CASE( "encoding & decoding", MODULE_NAME )
         TEST_ASSERT_EQUAL_INT( strlen( test_str ), len );
         buf[len] = '\0';
         TEST_ASSERT_EQUAL_STRING( test_str, buf );
-        printf( "passed %d\n", 2 );
     }
 
     /* Basic Use-Case 3 */
@@ -63,7 +64,6 @@ TEST_CASE( "encoding & decoding", MODULE_NAME )
         TEST_ASSERT_EQUAL_INT( strlen( test_str ), len );
         buf[len] = '\0';
         TEST_ASSERT_EQUAL_STRING( test_str, buf );
-        printf( "passed %d\n", 3 );
     }
 
     /* Repeating exceeding 127 1 */
@@ -83,7 +83,6 @@ TEST_CASE( "encoding & decoding", MODULE_NAME )
         TEST_ASSERT_EQUAL_INT( strlen( test_str ), len );
         buf[len] = '\0';
         TEST_ASSERT_EQUAL_STRING( test_str, buf );
-        printf( "passed %d\n", 3 );
     }
 
     /* Repeating exceeding 127 2 */
@@ -103,7 +102,6 @@ TEST_CASE( "encoding & decoding", MODULE_NAME )
         TEST_ASSERT_EQUAL_INT( strlen( test_str ), len );
         buf[len] = '\0';
         TEST_ASSERT_EQUAL_STRING( test_str, buf );
-        printf( "passed %d\n", 3 );
     }
 
     /* Repeating exceeding 127 2 */
@@ -123,18 +121,17 @@ TEST_CASE( "encoding & decoding", MODULE_NAME )
         TEST_ASSERT_EQUAL_INT( strlen( test_str ), len );
         buf[len] = '\0';
         TEST_ASSERT_EQUAL_STRING( test_str, buf );
-        printf( "passed %d\n", 3 );
     }
 
     /* Auto Testing */
-    for( uint32_t i = 0; i < 100; i++ ) {
-        uint8_t rand_data[100];
+    for( uint32_t i = 0; i < 1000; i++ ) {
+        uint8_t rand_data[1000];
         uint8_t encoded[2000], decoded[2000];
         esp_fill_random( rand_data, sizeof( rand_data ) );
         len = jolt_encoding_jrle_encode( encoded, sizeof( encoded ), rand_data, sizeof( rand_data ) );
         TEST_ASSERT_GREATER_THAN( 0, len );
         len = jolt_encoding_jrle_decode( decoded, sizeof( decoded ), encoded, len );
-        TEST_ASSERT_EQUAL( sizeof( rand_data ), len );
         TEST_ASSERT_EQUAL_HEX8_ARRAY( rand_data, decoded, sizeof( rand_data ) );
+        TEST_ASSERT_EQUAL( sizeof( rand_data ), len );
     }
 }

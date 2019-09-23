@@ -108,7 +108,7 @@ int jolt_encoding_jrle_encode( uint8_t *out, size_t out_len, const uint8_t *in, 
                 if( out && out_idx < out_len ) out[out_idx] = prev_c;
                 out_idx++;
 
-                if( curr_c != next_c ) {
+                if( in_idx == in_len - 1 || curr_c != next_c ) {
                     counter_idx = out_idx;
                     out_idx++;
                     ESP_LOGD( TAG, "(%d) Writing differing value \"%c\" (0x%02X) to idx %d", __LINE__, (char)curr_c,
@@ -116,6 +116,12 @@ int jolt_encoding_jrle_encode( uint8_t *out, size_t out_len, const uint8_t *in, 
                     if( out && out_idx < out_len ) out[out_idx] = curr_c;
                     out_idx++;
                     n = 1;
+                    if( in_idx == in_len - 1 ) {
+                        ESP_LOGD( TAG, "(%d) Writing differing counter %d (0x%02X) to idx %d", __LINE__,
+                                  n & ~OPCODE_MASK, n, counter_idx );
+                        if( out && counter_idx < out_len ) out[counter_idx] = n;
+                        n = 0;
+                    }
                 }
                 else {
                     n = OPCODE_MASK + 1;

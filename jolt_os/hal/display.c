@@ -74,7 +74,7 @@ void jolt_display_print( const jolt_display_t *disp )
         jolt_encoding_t decoder;
         assert( disp->type == JOLT_DISPLAY_TYPE_SSD1306 );
         decoder = jolt_encoding_get_decoder( disp->encoding );
-        len     = decoder( buf_copy, sizeof( buf_copy ), vdb, sizeof( vdb ) );
+        len     = decoder( buf_copy, sizeof( buf_copy ), disp->data, disp->len );
         if( len <= 0 || len > sizeof( buf_copy ) ) return;
     }
 

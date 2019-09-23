@@ -421,7 +421,7 @@ void jolt_gui_obj_set_param( lv_obj_t *obj, void *param ) { lv_obj_get_user_data
 
 void TEST_ASSERT_DISPLAY( const jolt_display_t *expected, const jolt_display_t *actual )
 {
-    TEST_ASSERT_DISPLAY_MESSAGE( expected, actual, "Display buffer mismatch" );
+    TEST_ASSERT_DISPLAY_MESSAGE( expected, actual, "Display buffer mismatch." );
 }
 
 void TEST_ASSERT_DISPLAY_MESSAGE( const jolt_display_t *expected, const jolt_display_t *actual, const char *msg )
