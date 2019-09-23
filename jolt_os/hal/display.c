@@ -3,12 +3,11 @@
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_helpers.h"
 
-#define BUF_LINES 8
 static const char TAG[]   = "display.c";
 static ssd1306_t disp_hal = {0};
-static DRAM_ATTR lv_color_t buf[LV_HOR_RES_MAX * BUF_LINES];
+static DRAM_ATTR uint8_t vdb[JOLT_DISPLAY_BUF_SIZE];
 
-void display_init()
+void jolt_display_init()
 {
     static lv_disp_drv_t lv_disp_drv;
     static lv_disp_buf_t disp_buf;
@@ -41,7 +40,7 @@ void display_init()
 #endif
 
     lv_disp_drv_init( &lv_disp_drv );
-    lv_disp_buf_init( &disp_buf, buf, NULL, LV_HOR_RES_MAX * BUF_LINES * 8 ); /*Initialize the display buffer*/
+    lv_disp_buf_init( &disp_buf, vdb, NULL, LV_HOR_RES_MAX * LV_VER_RES_MAX ); /*Initialize the display buffer*/
     lv_disp_drv.buffer     = &disp_buf;
     lv_disp_drv.flush_cb   = ssd1306_flush;
     lv_disp_drv.set_px_cb  = ssd1306_vdb_wr;
@@ -49,92 +48,129 @@ void display_init()
     lv_disp_drv_register( &lv_disp_drv );
 
     ssd1306_set_whole_display_lighting( &disp_hal, false );
-    ssd1306_set_inversion( &disp_hal, true );
-    set_display_brightness( get_display_brightness() );
+    jolt_display_set_brightness( jolt_display_get_brightness() );
 }
 
-void print_display_buf()
+void jolt_display_print( const jolt_display_t *disp )
 {
+    uint8_t buf_copy[sizeof( vdb )];
+
+    assert( LV_VER_RES == 64 );
     assert( LV_HOR_RES_MAX == 128 );
-    assert( BUF_LINES == 8 );
     printf( "\n" );
     char print_buf[LV_HOR_RES_MAX * 4 + 2] = {0};  // newline + null-terminator
 
-    JOLT_GUI_CTX
-    {
-        jolt_suspend_logging();
-        lv_obj_invalidate( lv_scr_act() );
-        lv_refr_now( NULL );
-        for( uint8_t y1 = 0; y1 < LV_VER_RES_MAX - 1; y1 += 2 ) {
-            memzero( print_buf, sizeof( print_buf ) );
-            uint8_t y2 = y1 + 1;
-            for( uint8_t x = 0; x < LV_HOR_RES_MAX; x++ ) {
-                bool val1, val2;
-                uint8_t *disp_buf_ptr;
-                disp_buf_ptr = (uint8_t *)buf + LV_HOR_RES_MAX * ( y1 >> 3 ) + x;
-                val1         = (bool)( *disp_buf_ptr & ( 1 << ( y1 % 8 ) ) );
-                disp_buf_ptr = (uint8_t *)buf + LV_HOR_RES_MAX * ( y2 >> 3 ) + x;
-                val2         = (bool)( *disp_buf_ptr & ( 1 << ( y2 % 8 ) ) );
-                if( val1 && val2 )
-                    strlcat( print_buf, " ", sizeof( print_buf ) );
-                else if( val1 )
-                    strlcat( print_buf, "▄", sizeof( print_buf ) );
-                else if( val2 )
-                    strlcat( print_buf, "▀", sizeof( print_buf ) );
-                else
-                    strlcat( print_buf, "█", sizeof( print_buf ) );
-            }
-            strlcat( print_buf, "\n", sizeof( print_buf ) );
-            printf( print_buf );
+    /* Fill buf_copy with non-encoded data */
+    if( NULL == disp ) {
+        JOLT_GUI_CTX
+        {
+            lv_obj_invalidate( lv_scr_act() );
+            lv_refr_now( NULL );
+            memcpy( buf_copy, vdb, sizeof( buf_copy ) );
         }
-        jolt_resume_logging();
     }
+    else {
+        int len;
+        jolt_encoding_t decoder;
+        assert( disp->type == JOLT_DISPLAY_TYPE_SSD1306 );
+        decoder = jolt_encoding_get_decoder( disp->encoding );
+        len     = decoder( buf_copy, sizeof( buf_copy ), disp->data, disp->len );
+        if( len <= 0 || len > sizeof( buf_copy ) ) return;
+    }
+
+    /* Print the resulting buf_copy */
+    jolt_suspend_logging();
+    for( uint8_t y1 = 0; y1 < LV_VER_RES_MAX - 1; y1 += 2 ) {
+        memzero( print_buf, sizeof( print_buf ) );
+        uint8_t y2 = y1 + 1;
+        for( uint8_t x = 0; x < LV_HOR_RES_MAX; x++ ) {
+            bool val1, val2;
+            uint8_t *disp_buf_ptr;
+            disp_buf_ptr = (uint8_t *)buf_copy + LV_HOR_RES_MAX * ( y1 >> 3 ) + x;
+            val1         = (bool)( *disp_buf_ptr & ( 1 << ( y1 % 8 ) ) );
+            disp_buf_ptr = (uint8_t *)buf_copy + LV_HOR_RES_MAX * ( y2 >> 3 ) + x;
+            val2         = (bool)( *disp_buf_ptr & ( 1 << ( y2 % 8 ) ) );
+            if( val1 && val2 )
+                strlcat( print_buf, "█", sizeof( print_buf ) );
+            else if( val1 )
+                strlcat( print_buf, "▀", sizeof( print_buf ) );
+            else if( val2 )
+                strlcat( print_buf, "▄", sizeof( print_buf ) );
+            else
+                strlcat( print_buf, " ", sizeof( print_buf ) );
+        }
+        strlcat( print_buf, "\n", sizeof( print_buf ) );
+        printf( print_buf );
+    }
+    jolt_resume_logging();
 }
 
-display_data_t *jolt_copy_display_buf()
+bool jolt_display_copy( jolt_display_t *copy )
 {
-    display_data_t *output = NULL;
+    int encoded_len;
+    jolt_encoding_t encoder;
+    uint8_t buf_copy[sizeof( vdb )];
+
+    if( NULL == copy ) return false;
+
+    /* Copy over the current vdb */
+    JOLT_GUI_CTX
+    {
+        lv_obj_invalidate( lv_scr_act() );
+        lv_refr_now( NULL );
+        memcpy( buf_copy, vdb, sizeof( vdb ) );
+    }
+
+    encoder = jolt_encoding_get_encoder( copy->encoding );
 
     /* Allocate output data and buffer */
-    EXIT_IF_NULL( output = malloc( sizeof( output ) ) );
-    EXIT_IF_NULL( output->data = malloc( sizeof( buf ) ) );
-    output->type = JOLT_DISPLAY_SSD1306;
+    encoded_len = encoder( NULL, 0, buf_copy, sizeof( buf_copy ) );
+    if( encoded_len <= 0 ) return false;
 
-    JOLT_GUI_CTX
-    {
-        lv_obj_invalidate( lv_scr_act() );
-        lv_refr_now( NULL );
-        memcpy( output->data, buf, sizeof( buf ) );
+    if( NULL == ( copy->data = malloc( encoded_len ) ) ) return false;
+    copy->len = encoder( copy->data, encoded_len, buf_copy, sizeof( buf_copy ) );
+    if( copy->len < encoded_len ) {
+        /* Shrink the allocated area */
+        void *tmp;
+        tmp = realloc( copy->data, copy->len );
+        if( tmp ) copy->data = tmp;
     }
+    copy->type = JOLT_DISPLAY_TYPE_SSD1306;
 
-    return output;
-
-exit:
-    if( output ) {
-        if( output->data ) free( output->data );
-        free( output );
-    }
-    return NULL;
+    return true;
 }
 
-void jolt_display_buf_dump()
+void jolt_display_dump( const jolt_display_t *disp )
 {
-    char buf_copy[sizeof( buf )];
+    uint8_t buf_copy[sizeof( vdb )];
 
-    JOLT_GUI_CTX
-    {
-        lv_obj_invalidate( lv_scr_act() );
-        lv_refr_now( NULL );
-        memcpy( buf_copy, buf, sizeof( buf_copy ) );
+    jolt_display_t default_disp = {0};
+
+    if( NULL == disp ) {
+        /* No encoding */
+        default_disp.type     = JOLT_DISPLAY_TYPE_SSD1306;
+        default_disp.encoding = JOLT_ENCODING_NONE;
+        default_disp.data     = buf_copy;
+        default_disp.len      = sizeof( buf_copy );
+
+        JOLT_GUI_CTX
+        {
+            lv_obj_invalidate( lv_scr_act() );
+            lv_refr_now( NULL );
+            jolt_encoding_none_encode( default_disp.data, default_disp.len, vdb, sizeof( vdb ) );
+        }
+        disp = &default_disp;
     }
 
-    /* Print it to STDOUT */
-    printf( "\nDisplayDump:\n{" );
-    for( uint32_t i = 0; i < sizeof( buf ); i++ ) {
-        printf( "0x%02X", buf_copy[i] );
-        if( i == sizeof( buf ) - 1 )
+    assert( disp->type == JOLT_DISPLAY_TYPE_SSD1306 );
+
+    /* Dump to stdout */
+    printf( "\nDisplayDump (%s encoding, %d long):\n{\n", jolt_encoding_get_str( disp->encoding ), disp->len );
+    for( int i = 0; i < disp->len; i++ ) {
+        printf( "0x%02X", disp->data[i] );
+        if( i == disp->len - 1 )
             printf( "\n" );
-        else if( i > 0 && 0 == i % 8 )
+        else if( 0 == ( i + 1 ) % 16 )
             printf( ",\n" );
         else
             printf( ", " );
@@ -142,10 +178,17 @@ void jolt_display_buf_dump()
     printf( "\n}\n" );
 }
 
+void jolt_display_free( jolt_display_t *disp )
+{
+    if( NULL == disp ) return;
+    SAFE_FREE( disp->data );
+    disp->len = 0;
+}
+
 static const uint8_t brightness_levels[] = {0, 1, 2, 50, 120, 255};
 static const uint8_t precharge_levels[]  = {10, 10, 10, 90, 130, 255};
 
-uint8_t get_display_brightness()
+uint8_t jolt_display_get_brightness()
 {
     /* Returns saved brightness level or default */
     uint8_t brightness;
@@ -154,9 +197,9 @@ uint8_t get_display_brightness()
     return brightness;
 }
 
-void save_display_brightness( uint8_t level ) { storage_set_u8( level, "user", "disp_bright" ); }
+void jolt_display_save_brightness( uint8_t level ) { storage_set_u8( level, "user", "disp_bright" ); }
 
-void set_display_brightness( uint8_t level )
+void jolt_display_set_brightness( uint8_t level )
 {
     ssd1306_set_contrast( &disp_hal, brightness_levels[level] );
     ssd1306_set_precharge_period( &disp_hal, precharge_levels[level] );

@@ -210,7 +210,7 @@ void app_main( void )
     {
         ESP_LOGI( TAG, "Initializing LVGL graphics system" );
         lv_init();
-        display_init();
+        jolt_display_init();
 
         /* Set GUI Language
          * This must be done before setting up indev so that the group
@@ -275,6 +275,7 @@ void app_main( void )
 
 #if UNIT_TESTING
     /* Unit Testing Console Interface */
+    jolt_gui_statusbar_set_icons( 0 );
     ESP_LOGI( TAG, "Running Unit Tester" );
     xTaskCreatePinnedToCore( unity_task, "unityTask", UNITY_FREERTOS_STACK_SIZE, NULL, UNITY_FREERTOS_PRIORITY, NULL,
                              UNITY_FREERTOS_CPU );

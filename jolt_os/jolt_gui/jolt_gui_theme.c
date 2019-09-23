@@ -47,19 +47,14 @@ static const lv_font_t *_font;
 static void basic_init( void )
 {
     /* Notes:
-     *    * On the 1bpp OLED screen, white is off, black is on.
-     */
-
-    /* Default configuration:
-     *     * white body
-     *     * no frame
+     *    * On the 1bpp OLED screen, white is on, black is off.
      */
 
     lv_style_copy( &def, &lv_style_plain ); /*Initialize the default style*/
 
     /* Body Configuration */
-    def.body.main_color = LV_COLOR_WHITE;
-    def.body.grad_color = LV_COLOR_WHITE;
+    def.body.main_color = LV_COLOR_BLACK;
+    def.body.grad_color = LV_COLOR_BLACK;
     def.body.radius     = 0;
     def.body.opa        = LV_OPA_COVER;
 
@@ -69,24 +64,24 @@ static void basic_init( void )
     def.body.padding.bottom = 1;
     def.body.padding.inner  = 1;
 
-    def.body.border.color = LV_COLOR_WHITE;
+    def.body.border.color = LV_COLOR_BLACK;
     def.body.border.width = 1;
     def.body.border.opa   = LV_OPA_COVER;
     def.body.border.part  = LV_BORDER_NONE;
 
     /* Text Configuration */
-    def.text.font         = _font;  // de
-    def.text.color        = LV_COLOR_BLACK;
+    def.text.font         = _font;
+    def.text.color        = LV_COLOR_WHITE;
     def.text.letter_space = 0;
     def.text.line_space   = 1;
 
     /* Line Configuration */
-    def.line.color = LV_COLOR_BLACK;
+    def.line.color = LV_COLOR_WHITE;
     def.line.opa   = LV_OPA_COVER;
     def.line.width = 1;
 
     /* Image Configuration */
-    def.image.color   = LV_COLOR_BLACK;
+    def.image.color   = LV_COLOR_WHITE;
     def.image.intense = LV_OPA_TRANSP;
     def.image.opa     = LV_OPA_COVER;
 
@@ -94,7 +89,7 @@ static void basic_init( void )
      * light_frame: white body, black borders *
      ******************************************/
     lv_style_copy( &light_frame, &def );
-    light_frame.body.border.color = LV_COLOR_BLACK;
+    light_frame.body.border.color = LV_COLOR_WHITE;
     light_frame.body.border.width = 1;
     light_frame.body.border.opa   = LV_OPA_COVER;
     light_frame.body.border.part  = LV_BORDER_FULL;
@@ -109,12 +104,12 @@ static void basic_init( void )
      * dark_plain: black body, white borders, white text *
      *****************************************************/
     lv_style_copy( &dark_plain, &def );
-    dark_plain.body.main_color   = LV_COLOR_BLACK;
-    dark_plain.body.grad_color   = LV_COLOR_BLACK;
-    dark_plain.body.border.color = LV_COLOR_WHITE;
-    dark_plain.text.color        = LV_COLOR_WHITE;
-    dark_plain.line.color        = LV_COLOR_WHITE;
-    dark_plain.image.color       = LV_COLOR_WHITE;
+    dark_plain.body.main_color   = LV_COLOR_WHITE;
+    dark_plain.body.grad_color   = LV_COLOR_WHITE;
+    dark_plain.body.border.color = LV_COLOR_BLACK;
+    dark_plain.text.color        = LV_COLOR_BLACK;
+    dark_plain.line.color        = LV_COLOR_BLACK;
+    dark_plain.image.color       = LV_COLOR_BLACK;
 
     /**************************************************
      * dark_plain_round: dark_plain with round radius *
@@ -126,8 +121,8 @@ static void basic_init( void )
      * Scrollbar style *
      *******************/
     lv_style_copy( &scrollbar_style, &dark_plain );
-    scrollbar_style.body.main_color     = LV_COLOR_BLACK;
-    scrollbar_style.body.grad_color     = LV_COLOR_BLACK;
+    scrollbar_style.body.main_color     = LV_COLOR_WHITE;
+    scrollbar_style.body.grad_color     = LV_COLOR_WHITE;
     scrollbar_style.body.border.width   = 0;
     scrollbar_style.body.border.opa     = LV_OPA_COVER;
     scrollbar_style.body.border.part    = LV_BORDER_FULL;
@@ -260,12 +255,12 @@ static void lmeter_init( void )
     static lv_style_t lmeter_bg;
     lv_style_copy( &lmeter_bg, &def );
     lmeter_bg.body.empty         = 1;
-    lmeter_bg.body.main_color    = LV_COLOR_BLACK;
-    lmeter_bg.body.grad_color    = LV_COLOR_BLACK;
+    lmeter_bg.body.main_color    = LV_COLOR_WHITE;
+    lmeter_bg.body.grad_color    = LV_COLOR_WHITE;
     lmeter_bg.body.padding.left  = LV_DPI / 20;
     lmeter_bg.body.padding.right = LV_DPI / 20;
     lmeter_bg.body.padding.inner = LV_DPI / 8;
-    lmeter_bg.line.color         = LV_COLOR_WHITE;
+    lmeter_bg.line.color         = LV_COLOR_BLACK;
     lmeter_bg.line.width         = 1;
 
     theme.style.lmeter = &lmeter_bg;
@@ -277,7 +272,7 @@ static void gauge_init( void )
 #if LV_USE_GAUGE != 0
     static lv_style_t gauge_bg;
     lv_style_copy( &gauge_bg, theme.style.lmeter );
-    gauge_bg.line.color = LV_COLOR_BLACK;
+    gauge_bg.line.color = LV_COLOR_WHITE;
     gauge_bg.line.width = 1;
 
     theme.style.gauge = &gauge_bg;

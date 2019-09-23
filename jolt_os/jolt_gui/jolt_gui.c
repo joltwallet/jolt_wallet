@@ -412,3 +412,52 @@ void jolt_gui_obj_set_event_cb( lv_obj_t *obj, lv_event_cb_t event_cb ) { lv_obj
 void *jolt_gui_obj_get_param( lv_obj_t *obj ) { return lv_obj_get_user_data_ptr( obj )->param; }
 
 void jolt_gui_obj_set_param( lv_obj_t *obj, void *param ) { lv_obj_get_user_data_ptr( obj )->param = param; }
+
+/*****************
+ * Unity Asserts *
+ *****************/
+#if UNIT_TESTING
+    #include "unity.h"
+
+void TEST_ASSERT_DISPLAY( const jolt_display_t *expected, const jolt_display_t *actual )
+{
+    TEST_ASSERT_DISPLAY_MESSAGE( expected, actual, "Display buffer mismatch." );
+}
+
+void TEST_ASSERT_DISPLAY_MESSAGE( const jolt_display_t *expected, const jolt_display_t *actual, const char *msg )
+{
+    if( NULL == expected || NULL == actual ) goto dump;
+    if( expected->len != actual->len ) goto dump;
+
+    if( 0 == memcmp( expected->data, actual->data, expected->len ) )
+        TEST_PASS();
+    else
+        goto dump;
+
+    return;
+
+dump:
+    printf( "\nExpected:\n" );
+    if( expected )
+        jolt_display_print( expected );
+    else
+        printf( "NULL\n" );
+
+    printf( "\nActual:\n" );
+    if( actual )
+        jolt_display_print( actual );
+    else
+        printf( "NULL\n" );
+
+    printf( "\nDump actual:\n" );
+    if( actual )
+        jolt_display_dump( actual );
+    else
+        printf( "NULL\n" );
+
+    printf( "\n" );
+
+    TEST_FAIL_MESSAGE( msg );
+}
+
+#endif

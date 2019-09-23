@@ -111,7 +111,6 @@ esp_log_timestamp
 esp_log_write
 esp_restart
 free
-get_display_brightness
 hd_node_copy
 hd_node_iterate
 heap_caps_calloc
@@ -121,6 +120,7 @@ jolt_cli_sub_cmd_free
 jolt_cli_sub_cmd_register
 jolt_cli_sub_cmd_run
 jolt_cli_sub_init
+jolt_display_get_brightness
 jolt_gui_debug_obj_print
 jolt_gui_err_to_str
 jolt_gui_event

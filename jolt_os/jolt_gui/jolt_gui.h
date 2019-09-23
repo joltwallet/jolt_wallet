@@ -26,6 +26,7 @@
 #include "lv_conf.h"
 #include "lvgl/lvgl.h"
 #include "mp.h"
+#include "sdkconfig.h"
 
 #ifndef CONFIG_JOLT_GUI_LOADING_BUF_SIZE
     #define CONFIG_JOLT_GUI_LOADING_BUF_SIZE 30
@@ -392,5 +393,19 @@ lv_obj_t *jolt_gui_obj_get_parent( const lv_obj_t *obj );
 #include "jolt_gui_text.h"
 #include "jolt_gui_theme.h"
 #include "jolt_gui_yesno.h"
+
+#if UNIT_TESTING
+
+    /* Unity Asserts */
+    #include "hal/display.h"
+
+/**
+ * @brief Compare display buffers. Pass test if same. Print displays and fail test if different.
+ */
+void TEST_ASSERT_DISPLAY( const jolt_display_t *expected, const jolt_display_t *actual );
+
+void TEST_ASSERT_DISPLAY_MESSAGE( const jolt_display_t *expected, const jolt_display_t *actual, const char *msg );
+
+#endif
 
 #endif
