@@ -13,6 +13,10 @@ static const char TAG[] = "jolt_gui_indev";
 
 volatile uint64_t *jolt_btn_state = &easy_input_state;
 
+#if UNIT_TESTING
+static volatile uint64_t jolt_btn_sim_state = 0;
+#endif
+
 /**
  * @brief Function thats periodically read to get the state of user input
  *
@@ -25,22 +29,29 @@ volatile uint64_t *jolt_btn_state = &easy_input_state;
  */
 static bool easy_input_read( lv_indev_drv_t *indev_drv, lv_indev_data_t *data )
 {
-    if( *jolt_btn_state ) {
+    uint64_t state;
+    state = *jolt_btn_state;
+
+#if UNIT_TESTING
+    state |= jolt_btn_sim_state;
+#endif
+
+    if( state ) {
         data->state = LV_INDEV_STATE_PR;
 
-        if( *jolt_btn_state & ( 1ULL << JOLT_BTN_BACK ) ) {
+        if( state & ( 1ULL << JOLT_BTN_BACK ) ) {
             ESP_LOGD( TAG, "back" );
             data->key = LV_KEY_ESC;
         }
-        else if( *jolt_btn_state & ( 1ULL << JOLT_BTN_UP ) ) {
+        else if( state & ( 1ULL << JOLT_BTN_UP ) ) {
             ESP_LOGD( TAG, "up" );
             data->key = LV_KEY_UP;
         }
-        else if( *jolt_btn_state & ( 1ULL << JOLT_BTN_DOWN ) ) {
+        else if( state & ( 1ULL << JOLT_BTN_DOWN ) ) {
             ESP_LOGD( TAG, "down" );
             data->key = LV_KEY_DOWN;
         }
-        else if( *jolt_btn_state & ( 1ULL << JOLT_BTN_ENTER ) ) {
+        else if( state & ( 1ULL << JOLT_BTN_ENTER ) ) {
             ESP_LOGD( TAG, "enter" );
             data->key = LV_KEY_ENTER;
         }
@@ -81,7 +92,7 @@ void jolt_gui_indev_init()
 static void btn_timer_cb( void *arg )
 {
     jolt_btn_t btn = ( jolt_btn_t )(uint32_t)arg;
-    *jolt_btn_state &= ~( 1 << btn );
+    jolt_btn_sim_state &= ~( 1ULL << btn );
 }
 
 void jolt_btn_press( jolt_btn_t btn, uint32_t duration, bool blocking )
@@ -93,9 +104,9 @@ void jolt_btn_press( jolt_btn_t btn, uint32_t duration, bool blocking )
     if( 0 == duration ) duration = JOLT_BTN_DEFAULT_DURATION_MS;
 
     if( blocking ) {
-        *jolt_btn_state |= ( 1 << btn );
+        jolt_btn_sim_state |= ( 1ULL << btn );
         vTaskDelay( pdMS_TO_TICKS( duration ) );
-        *jolt_btn_state &= ~( 1 << btn );
+        jolt_btn_sim_state &= ~( 1ULL << btn );
     }
     else {
         args.callback = btn_timer_cb;
@@ -107,7 +118,7 @@ void jolt_btn_press( jolt_btn_t btn, uint32_t duration, bool blocking )
             goto exit;
         }
 
-        *jolt_btn_state |= ( 1 << btn );
+        jolt_btn_sim_state |= ( 1 << btn );
 
         err = esp_timer_start_once( handle, duration * 1000 );
         if( ESP_OK != err ) {
@@ -119,7 +130,7 @@ void jolt_btn_press( jolt_btn_t btn, uint32_t duration, bool blocking )
     return;
 
 exit:
-    *jolt_btn_state &= ~( 1 << btn );
+    jolt_btn_sim_state &= ~( 1 << btn );
     if( handle ) esp_timer_delete( handle );
 }
 
