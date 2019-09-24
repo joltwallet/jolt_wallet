@@ -3,9 +3,9 @@
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_helpers.h"
 
-static const char TAG[]   = "display.c";
-static ssd1306_t disp_hal = {0};
-static DRAM_ATTR uint8_t vdb[JOLT_DISPLAY_BUF_SIZE];
+static const char TAG[]                             = "display.c";
+static ssd1306_t disp_hal                           = {0};
+static DRAM_ATTR uint8_t vdb[JOLT_DISPLAY_BUF_SIZE] = {0};
 
 void jolt_display_init()
 {
