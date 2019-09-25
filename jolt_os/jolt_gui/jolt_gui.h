@@ -401,10 +401,23 @@ lv_obj_t *jolt_gui_obj_get_parent( const lv_obj_t *obj );
 
 /**
  * @brief Compare display buffers. Pass test if same. Print displays and fail test if different.
+ * @param[in] expected Exected display. Fail if NULL
+ * @param[in] actual Display to compare against. If NULL, the current screen is used.
  */
-void TEST_ASSERT_DISPLAY( const jolt_display_t *expected, const jolt_display_t *actual );
+void TEST_ASSERT_EQUAL_DISPLAY( const jolt_display_t *expected, const jolt_display_t *actual );
 
-void TEST_ASSERT_DISPLAY_MESSAGE( const jolt_display_t *expected, const jolt_display_t *actual, const char *msg );
+void TEST_ASSERT_EQUAL_DISPLAY_MESSAGE( const jolt_display_t *expected, const jolt_display_t *actual,
+                                        const char *msg );
+
+/**
+ * @brief Compare display to "blank" state.
+ *
+ * Note: The "blank" state may not be a blank screen. For example, the statusbar
+ * line may still be present.
+ */
+void TEST_ASSERT_BLANK_DISPLAY( const jolt_display_t *actual );
+
+void TEST_ASSERT_BLANK_DISPLAY_MESSAGE( const jolt_display_t *actual, const char *msg );
 
 #endif
 

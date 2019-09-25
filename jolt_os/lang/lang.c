@@ -1,3 +1,5 @@
+#define LOG_LOCAL_LEVEL 4
+
 #include "esp_log.h"
 #include "hal/storage/storage.h"
 #include "jolt_gui/jolt_gui.h"
@@ -70,7 +72,11 @@ bool jolt_lang_set( jolt_lang_t lang )
 
     lv_theme_t *theme = jolt_gui_theme_init( 0, font );
     lv_theme_set_current( theme );
-    lv_obj_refresh_style( lv_scr_act() );
+
+    /* For some reason, LVGL was having issues wth fullscreen refreshes without
+     * this dummy object taking up the entire screen. To be investigated */
+    lv_obj_t *dummy = RESTART_IF_NULL( lv_cont_create( lv_scr_act(), NULL ) );
+    lv_obj_set_size( dummy, LV_HOR_RES_MAX, LV_VER_RES_MAX );
 
     return true;
 }

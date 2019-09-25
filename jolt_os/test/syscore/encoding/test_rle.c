@@ -7,7 +7,7 @@ static const char MODULE_NAME[] = "[syscore/encoding/rle]";
 TEST_CASE( "encoding & decoding", MODULE_NAME )
 {
     int len;
-    uint8_t buf[512]                   = {0};
+    uint8_t buf[512] = {0};
 
     /* Basic Use-Case 1 */
     {
@@ -20,7 +20,7 @@ TEST_CASE( "encoding & decoding", MODULE_NAME )
         memzero( buf, sizeof( buf ) );
 
         len = jolt_encoding_rle_decode( buf, sizeof( buf ), expected_encoded, sizeof( expected_encoded ) );
-        TEST_ASSERT_EQUAL_MEMORY( test_str, buf, strlen(test_str) );
+        TEST_ASSERT_EQUAL_MEMORY( test_str, buf, strlen( test_str ) );
         TEST_ASSERT_EQUAL_INT( strlen( test_str ), len );
         memzero( buf, sizeof( buf ) );
     }
@@ -36,14 +36,17 @@ TEST_CASE( "encoding & decoding", MODULE_NAME )
         memzero( buf, sizeof( buf ) );
 
         len = jolt_encoding_rle_decode( buf, sizeof( buf ), expected_encoded, sizeof( expected_encoded ) );
-        TEST_ASSERT_EQUAL_MEMORY( test_str, buf, strlen(test_str) );
+        TEST_ASSERT_EQUAL_MEMORY( test_str, buf, strlen( test_str ) );
         TEST_ASSERT_EQUAL_INT( strlen( test_str ), len );
         memzero( buf, sizeof( buf ) );
     }
 
     /* Repeating exceeding 255 */
     {
-        const char test_str[]            = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabc";
+        const char test_str[] =
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabc";
         const uint8_t expected_encoded[] = {255, 'a', 25, 'a', 1, 'b', 1, 'c'};
 
         len = jolt_encoding_rle_encode( buf, sizeof( buf ), (uint8_t*)test_str, strlen( test_str ) );
@@ -52,11 +55,11 @@ TEST_CASE( "encoding & decoding", MODULE_NAME )
         memzero( buf, sizeof( buf ) );
 
         len = jolt_encoding_rle_decode( buf, sizeof( buf ), expected_encoded, sizeof( expected_encoded ) );
-        TEST_ASSERT_EQUAL_MEMORY( test_str, buf, strlen(test_str) );
+        TEST_ASSERT_EQUAL_MEMORY( test_str, buf, strlen( test_str ) );
         TEST_ASSERT_EQUAL_INT( strlen( test_str ), len );
         memzero( buf, sizeof( buf ) );
     }
-    
+
     /* Auto Testing */
     for( uint32_t i = 0; i < 1000; i++ ) {
         uint8_t rand_data[1000];
@@ -68,5 +71,4 @@ TEST_CASE( "encoding & decoding", MODULE_NAME )
         TEST_ASSERT_EQUAL_HEX8_ARRAY( rand_data, decoded, sizeof( rand_data ) );
         TEST_ASSERT_EQUAL( sizeof( rand_data ), len );
     }
-
 }

@@ -19,11 +19,11 @@
  *       previous differing sequence.
  *       i.e. input "abcdd" gets encoded as `{3, 'a', 'b', 'c', 2 | 0x80, 'd'}`.
  *
- * The worst-case scenario for RLE is where every byte changes; this results in 
+ * The worst-case scenario for RLE is where every byte changes; this results in
  * an encoded output `2L`, where L is the input length.
  *
  * The worst-case scenario for JRLE is where every byte changes; this results in
- * an encoded output `L + ceil(L / 127)`. 
+ * an encoded output `L + ceil(L / 127)`.
  */
 
 //#define LOG_LOCAL_LEVEL 4
