@@ -1,3 +1,7 @@
+#include "sdkconfig.h"
+
+#if CONFIG_JOLT_STORE_ATAES132A
+
 #include <esp_timer.h>
 #include "aes132_cmd.h"
 #include "aes132_comm_marshaling.h"
@@ -7,7 +11,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
-#include "setup.h"
 #include "sodium.h"
 #include "stdbool.h"
 #include "string.h"
@@ -16,13 +19,13 @@
 static const char MODULE_NAME[] = "[aes132a]";
 static const char TAG[]         = "test_aes132";
 
-/* Many of these tests only work on an unlocked ataes132a */
+/**
+ * Many of these tests only work on an unlocked ataes132a.
+ * Locking action is independently tested.
+ */
 
 TEST_CASE( "Random Buffer Fill", MODULE_NAME )
 {
-    // Setup required hardware
-    test_setup_i2c();
-
     uint8_t res;
     uint8_t out[100];
 
@@ -53,13 +56,13 @@ TEST_CASE( "Random Buffer Fill", MODULE_NAME )
 TEST_CASE( "Configure Device", MODULE_NAME )
 {
     /* Incomplete */
-    // Setup required hardware
-    test_setup_i2c();
 
     aes132_write_chipconfig();
     aes132_write_counterconfig();
     aes132_write_keyconfig();
     aes132_write_zoneconfig();
+    
+    TEST_FAIL_MESSAGE("Incomplete Test");
 
     // todo: Make sure Legacy command fails
     // todo: Make sure DecRead or WriteCompute fails
@@ -73,8 +76,6 @@ TEST_CASE( "Load Key/Attempt Key", MODULE_NAME )
      * 2) KeyCreate
      * 3) Encrypt
      */
-    // Setup required hardware
-    test_setup_i2c();
     uint8_t res;
 
     /* Load the Master Key and setup random nonce */
@@ -117,13 +118,13 @@ TEST_CASE( "Load Key/Attempt Key", MODULE_NAME )
     uint32_t counter      = 0;
     /* Bad PIN attempt */
     res = aes132_pin_attempt( zeros, &counter, pred_secret );
-    ESP_LOGE( TAG, "Counter Value: %d", counter );
+    ESP_LOGD( TAG, "Counter Value: %d", counter );
     if( counter >= AES132_CUM_COUNTER_MAX ) { ESP_LOGI( TAG, "Device Deactivated; key use completely exhausted." ); }
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_MAC_ERROR, res );
 
     /* Good PIN attempt */
     res = aes132_pin_attempt( pin_entry_hash, &counter, pred_secret );
-    ESP_LOGE( TAG, "Counter Value: %d", counter );
+    ESP_LOGD( TAG, "Counter Value: %d", counter );
     if( counter >= AES132_CUM_COUNTER_MAX ) { ESP_LOGI( TAG, "Device Deactivated; key use completely exhausted." ); }
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
 }
@@ -135,8 +136,6 @@ TEST_CASE( "Key Stretch", MODULE_NAME )
      * 2) KeyCreate
      * 3) Encrypt
      */
-    // Setup required hardware
-    test_setup_i2c();
 
     uint8_t res;
     const uint32_t n_iterations = 300;
@@ -165,11 +164,10 @@ TEST_CASE( "Key Stretch", MODULE_NAME )
 
 TEST_CASE( "BlockRead: Check if LockConfig", MODULE_NAME )
 {
-    // Setup required hardware
-    test_setup_i2c();
     uint8_t data;
     uint8_t res;
     res = aes132_blockread( &data, AES132_LOCK_CONFIG_ADDR, sizeof( data ) );
     TEST_ASSERT_EQUAL_UINT8( 0, res );
     TEST_ASSERT_EQUAL_HEX8( 0x55, data );
 }
+#endif

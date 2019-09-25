@@ -78,6 +78,10 @@ uint8_t aes132_jolt_setup()
             /* Check the Master UserZone */
             uint8_t rx[16];
             res = aes132_blockread( rx, AES132_USER_ZONE_ADDR( 0 ), sizeof( rx ) );
+            if( res ) {
+                ESP_LOGE(TAG, "Failed to blockread master key (0x%02X).", res);
+                esp_restart();
+            }
             ESP_LOGI( TAG, "Read memory result: %d", res );
             ESP_LOGI( TAG,
                       "Confidential; "
@@ -135,14 +139,19 @@ uint8_t aes132_jolt_setup()
         ESP_LOGI( TAG, "Writing encrypted Master Key backup to UserZone0" );
         res = aes132m_write_memory( sizeof( enc_master_key ), AES132_USER_ZONE_ADDR( AES132_KEY_ID_MASTER ),
                                     enc_master_key );
-        ESP_LOGI( TAG, "Write memory result: %d", res );  // TODO error handling
+        if( res ) {
+            ESP_LOGE(TAG, "Failed to backup masterkey to userzone0 (0x%02X).", res);
+            esp_restart();
+        }
 
         /* Confirm AES132 Backup */
         {
             uint8_t rx[16];
             res = aes132m_read_memory( sizeof( enc_master_key ), AES132_USER_ZONE_ADDR( AES132_KEY_ID_MASTER ), rx );
-            ESP_LOGI( TAG, "Confirming UserZone 0 contents" );
-            ESP_LOGI( TAG, "Read memory result: %d", res );
+            if( res ) {
+                ESP_LOGE(TAG, "Failed to readback masterkey backup (0x%02X).", res);
+                esp_restart();
+            }
             ESP_LOGI( TAG,
                       "Confidential; "
                       "ATAES132A Master Key Backup Response: 0x"
@@ -155,17 +164,41 @@ uint8_t aes132_jolt_setup()
         }
 
         /* Write Master Key to Key0 */
-        ESP_LOGI( TAG, "Writing Master Key to Key %d", AES132_KEY_ID_MASTER );
+        ESP_LOGI( TAG, "Writing Master Key to Key %d (Address: 0x%04X)",
+                AES132_KEY_ID_MASTER, AES132_KEY_ADDR( AES132_KEY_ID_MASTER ) );
         res = aes132m_write_memory( 16, AES132_KEY_ADDR( AES132_KEY_ID_MASTER ), master_key );
-        ESP_LOGI( TAG, "Write memory to 0x%04X result: %d", AES132_KEY_ADDR( AES132_KEY_ID_MASTER ),
-                  res );  // TODO error handling
+        if( res ) {
+            ESP_LOGE(TAG, "Failed to write master key to Key %d (0X%02X).",
+                    AES132_KEY_ID_MASTER, res);
+            esp_restart();
+        }
 
         /* Configure Device */
         ESP_LOGI( TAG, "Configuring Device" );
-        aes132_write_chipconfig();
-        aes132_write_counterconfig();
-        aes132_write_keyconfig();
-        aes132_write_zoneconfig();
+
+        res = aes132_write_chipconfig();
+        if( res ) {
+            ESP_LOGE(TAG, "Failed configuring chip (0x%02X).", res);
+            esp_restart();
+        }
+
+        res = aes132_write_counterconfig();
+        if( res ) {
+            ESP_LOGE(TAG, "Failed configuring counters (0x%02X).", res);
+            esp_restart();
+        }
+
+        res = aes132_write_keyconfig();
+        if( res ) {
+            ESP_LOGE(TAG, "Failed configuring keys (0x%02X).", res);
+            esp_restart();
+        }
+
+        res = aes132_write_zoneconfig();
+        if( res ) {
+            ESP_LOGE(TAG, "Failed configuring zones (0x%02X).", res);
+            esp_restart();
+        }
 
         /* Lock Device */
         ESP_LOGI( TAG, "AES132 Config Complete." );
