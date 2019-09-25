@@ -109,6 +109,9 @@ static void statusbar_update( lv_task_t *task )
 
     ESP_LOGD( TAG, "statusbar_label x: %d w: %d", lv_obj_get_x( statusbar_label ),
               lv_obj_get_width( statusbar_label ) );
+    ESP_LOGD( TAG, "statusbar_cont pos XY: (%d, %d) size WH: (%d, %d)", lv_obj_get_x( statusbar_cont ),
+              lv_obj_get_y( statusbar_cont ), lv_obj_get_width( statusbar_cont ),
+              lv_obj_get_height( statusbar_cont ) );
 }
 
 /* Assumes that hardware_monitors have been externally intialized and the
@@ -127,8 +130,18 @@ void jolt_gui_statusbar_create()
     header_style.body.border.width = 1;
     header_style.body.border.part  = LV_BORDER_BOTTOM;
     header_style.body.border.color = LV_COLOR_WHITE;
+    header_style.body.border.opa   = LV_OPA_COVER;
+    header_style.body.opa          = LV_OPA_COVER;
+    header_style.glass             = true;
     lv_cont_set_style( statusbar_cont, LV_CONT_STYLE_MAIN, &header_style );
     lv_obj_set_size( statusbar_cont, LV_HOR_RES, CONFIG_JOLT_GUI_STATUSBAR_H );
+    lv_obj_align( statusbar_cont, NULL, LV_ALIGN_IN_TOP_MID, 0, 0 );
+
+    ESP_LOGD( TAG, "statusbar_cont pos XY: (%d, %d) size WH: (%d, %d)", lv_obj_get_x( statusbar_cont ),
+              lv_obj_get_y( statusbar_cont ), lv_obj_get_width( statusbar_cont ),
+              lv_obj_get_height( statusbar_cont ) );
+
+    ESP_LOGD( TAG, "%d lv_obj's.", lv_obj_count_children_recursive( lv_scr_act() ) );
 
     /* Create Indicator Label*/
     static lv_style_t statusbar_style;

@@ -321,6 +321,7 @@ CONFIG_SPI_SLAVE_ISR_IN_IRAM=y
 #
 # Easy_Input Config
 #
+CONFIG_EASY_INPUT_VOLATILE=y
 
 #
 # Push Buttons

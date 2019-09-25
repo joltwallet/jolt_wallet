@@ -198,14 +198,16 @@ lv_obj_t *jolt_gui_obj_title_create( lv_obj_t *parent, const char *title )
     lv_obj_t *label = NULL;
     JOLT_GUI_CTX
     {
-        lv_obj_t *statusbar_label = jolt_gui_statusbar_get_label();
+        lv_coord_t title_cont_w = LV_HOR_RES_MAX;
+        {
+            lv_obj_t *statusbar_label = jolt_gui_statusbar_get_label();
+            if( NULL != statusbar_label ) title_cont_w = lv_obj_get_x( statusbar_label ) - 1;
+        }
         /* Create a non-transparent background to block out old titles */
         lv_obj_t *title_cont = BREAK_IF_NULL( lv_cont_create( parent, NULL ) );
         jolt_gui_obj_id_set( title_cont, JOLT_GUI_OBJ_ID_CONT_TITLE );
         lv_obj_align( title_cont, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0 );
-        lv_obj_set_size( title_cont,
-                         lv_obj_get_x( statusbar_label ) - 1,  // todo: use style padding
-                         CONFIG_JOLT_GUI_STATUSBAR_H - 1 );
+        lv_obj_set_size( title_cont, title_cont_w, CONFIG_JOLT_GUI_STATUSBAR_H - 1 );
 
         label = BREAK_IF_NULL( lv_label_create( title_cont, NULL ) );
         jolt_gui_obj_id_set( label, JOLT_GUI_OBJ_ID_LABEL_0 );
@@ -419,20 +421,57 @@ void jolt_gui_obj_set_param( lv_obj_t *obj, void *param ) { lv_obj_get_user_data
 #if UNIT_TESTING
     #include "unity.h"
 
-void TEST_ASSERT_DISPLAY( const jolt_display_t *expected, const jolt_display_t *actual )
+void TEST_ASSERT_EQUAL_DISPLAY( const jolt_display_t *expected, const jolt_display_t *actual )
 {
-    TEST_ASSERT_DISPLAY_MESSAGE( expected, actual, "Display buffer mismatch." );
+    TEST_ASSERT_EQUAL_DISPLAY_MESSAGE( expected, actual, "Display buffer mismatch." );
 }
 
-void TEST_ASSERT_DISPLAY_MESSAGE( const jolt_display_t *expected, const jolt_display_t *actual, const char *msg )
+void TEST_ASSERT_EQUAL_DISPLAY_MESSAGE( const jolt_display_t *expected, const jolt_display_t *actual, const char *msg )
 {
-    if( NULL == expected || NULL == actual ) goto dump;
-    if( expected->len != actual->len ) goto dump;
+    bool needs_free = false;
+    jolt_display_t actual_proxy;
 
-    if( 0 == memcmp( expected->data, actual->data, expected->len ) )
-        TEST_PASS();
-    else
+    if( NULL == expected ) {
+        printf( "\nNo Expected data provided.\n" );
         goto dump;
+    }
+    else if( NULL == actual ) {
+        /* Capture a screen and perform a comparison */
+        actual_proxy.type     = expected->type;
+        actual_proxy.encoding = JOLT_ENCODING_JRLE;
+        actual                = &actual_proxy;
+        needs_free            = true;
+        TEST_ASSERT_TRUE_MESSAGE( jolt_display_copy( &actual_proxy ), "Failed to copy display buffer." );
+    }
+
+    if( expected->type != actual->type ) {
+        printf( "\nDisplay type mismatch.\n" );
+        goto dump;
+    }
+
+    /* Decode both buffers incase encoding doesn't match */
+    int decode_len;
+    uint8_t buf1[JOLT_DISPLAY_BUF_SIZE], buf2[JOLT_DISPLAY_BUF_SIZE];
+    jolt_encoding_t decoder1, decoder2;
+    decoder1   = jolt_encoding_get_decoder( expected->encoding );
+    decoder2   = jolt_encoding_get_decoder( actual->encoding );
+    decode_len = decoder1( buf1, sizeof( buf1 ), expected->data, expected->len );
+    if( JOLT_DISPLAY_BUF_SIZE != decode_len ) {
+        printf( "\nExpected Data didn't decode to correct length ( %d expected vs %d actual ).\n",
+                JOLT_DISPLAY_BUF_SIZE, decode_len );
+        goto dump;
+    }
+    decode_len = decoder2( buf2, sizeof( buf2 ), actual->data, actual->len );
+    if( JOLT_DISPLAY_BUF_SIZE != decode_len ) {
+        printf( "\nActual Data didn't decode to correct length ( %d expected vs %d actual ).\n", JOLT_DISPLAY_BUF_SIZE,
+                decode_len );
+        goto dump;
+    }
+
+    if( 0 != memcmp( buf1, buf2, JOLT_DISPLAY_BUF_SIZE ) ) {
+        printf( "\nDisplay buffer mismatch.\n" );
+        goto dump;
+    }
 
     return;
 
@@ -442,22 +481,41 @@ dump:
         jolt_display_print( expected );
     else
         printf( "NULL\n" );
-
     printf( "\nActual:\n" );
     if( actual )
         jolt_display_print( actual );
     else
         printf( "NULL\n" );
-
     printf( "\nDump actual:\n" );
     if( actual )
         jolt_display_dump( actual );
     else
         printf( "NULL\n" );
-
     printf( "\n" );
 
-    TEST_FAIL_MESSAGE( msg );
+    if( needs_free ) jolt_display_free( &actual_proxy );
+    if( msg )
+        TEST_FAIL_MESSAGE( msg );
+    else
+        TEST_FAIL();
+}
+
+void TEST_ASSERT_BLANK_DISPLAY( const jolt_display_t *actual )
+{
+    TEST_ASSERT_BLANK_DISPLAY_MESSAGE( actual, "Dirty screen." );
+}
+
+void TEST_ASSERT_BLANK_DISPLAY_MESSAGE( const jolt_display_t *actual, const char *msg )
+{
+    uint8_t empty_display_data[] = {0x80, 0x00, 0x80, 0x08, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0x03, 0x00};
+
+    const jolt_display_t empty_display = {
+            .type     = JOLT_DISPLAY_TYPE_SSD1306,
+            .encoding = JOLT_ENCODING_RLE,
+            .len      = sizeof( empty_display_data ),
+            .data     = empty_display_data,
+    };
+    TEST_ASSERT_EQUAL_DISPLAY_MESSAGE( &empty_display, actual, msg );
 }
 
 #endif

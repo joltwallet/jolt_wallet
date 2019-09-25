@@ -11,13 +11,34 @@ int jolt_encoding_rle_encode( uint8_t *out, size_t out_len, const uint8_t *in, s
     for( size_t in_idx = 0; in_idx < in_len; in_idx++ ) {
         if( in[in_idx] == prev ) {
             n++;
-            if( UINT8_MAX != n || in_idx != in_len - 1 ) continue;
+            if( UINT8_MAX == n ) {
+                /* Write Output */
+                if( out && out_idx < out_len ) out[out_idx] = n;
+                out_idx++;
+                if( out && out_idx < out_len ) out[out_idx] = prev;
+                out_idx++;
+                n = 0;
+                continue;
+            }
+            if( in_idx != in_len - 1 ) continue;
         }
-        /* write to output */
-        if( out && out_idx < out_len ) out[out_idx] = n;
-        out_idx++;
-        if( out && out_idx < out_len ) out[out_idx] = prev;
-        out_idx++;
+
+        /* write sequence to output */
+        if( n > 0 ) {
+            if( out && out_idx < out_len ) out[out_idx] = n;
+            out_idx++;
+            if( out && out_idx < out_len ) out[out_idx] = prev;
+            out_idx++;
+
+            if( in[in_idx] != prev && in_idx == in_len - 1 ) {
+                /* write final differing character to output */
+                if( out && out_idx < out_len ) out[out_idx] = 1;
+                out_idx++;
+                if( out && out_idx < out_len ) out[out_idx] = in[in_idx];
+                out_idx++;
+                break;
+            }
+        }
 
         prev = in[in_idx];
         n    = 1;
