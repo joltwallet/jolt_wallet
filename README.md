@@ -11,6 +11,8 @@
 
 [![Updates](https://pyup.io/repos/github/joltwallet/jolt_wallet/shield.svg)](https://pyup.io/repos/github/joltwallet/jolt_wallet/)
 
+![GitHub repo size](https://img.shields.io/github/repo-size/joltwallet/jolt_wallet)
+
 ## Table of Contents
 
 - [Introduction](#introduction)
