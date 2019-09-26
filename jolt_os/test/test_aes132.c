@@ -2,19 +2,19 @@
 
 #if CONFIG_JOLT_STORE_ATAES132A
 
-#include <esp_timer.h>
-#include "aes132_cmd.h"
-#include "aes132_comm_marshaling.h"
-#include "aes132_conf.h"
-#include "aes132_jolt.h"
-#include "esp_log.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include "freertos/task.h"
-#include "sodium.h"
-#include "stdbool.h"
-#include "string.h"
-#include "unity.h"
+    #include <esp_timer.h>
+    #include "aes132_cmd.h"
+    #include "aes132_comm_marshaling.h"
+    #include "aes132_conf.h"
+    #include "aes132_jolt.h"
+    #include "esp_log.h"
+    #include "freertos/FreeRTOS.h"
+    #include "freertos/queue.h"
+    #include "freertos/task.h"
+    #include "sodium.h"
+    #include "stdbool.h"
+    #include "string.h"
+    #include "unity.h"
 
 static const char MODULE_NAME[] = "[aes132a]";
 static const char TAG[]         = "test_aes132";
@@ -61,8 +61,8 @@ TEST_CASE( "Configure Device", MODULE_NAME )
     aes132_write_counterconfig();
     aes132_write_keyconfig();
     aes132_write_zoneconfig();
-    
-    TEST_FAIL_MESSAGE("Incomplete Test");
+
+    TEST_FAIL_MESSAGE( "Incomplete Test" );
 
     // todo: Make sure Legacy command fails
     // todo: Make sure DecRead or WriteCompute fails
@@ -99,23 +99,26 @@ TEST_CASE( "Load Key/Attempt Key", MODULE_NAME )
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
 
     /* Stretch Key */
-    const uint32_t n_iterations = 100;
-    int64_t start               = esp_timer_get_time();
-    res = aes132_stretch( (uint8_t *)pin_entry_hash, sizeof( pin_entry_hash ), n_iterations, NULL );
-    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
-    int64_t diff = esp_timer_get_time() - start;
-    diff /= 1000;
-    if( diff > UINT32_MAX ) diff = UINT32_MAX;
-    printf( "Performed %u encrypt iterations over %u mS.\n"
-            "Average time per iteration: %u mS\n",
-            n_iterations, (uint32_t)diff, (uint32_t)diff / n_iterations );
-    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+    {
+        const uint32_t n_iterations = 100;
+        int64_t start               = esp_timer_get_time();
+        res = aes132_stretch( (uint8_t *)pin_entry_hash, sizeof( pin_entry_hash ), n_iterations, NULL );
+        TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+        int64_t diff = esp_timer_get_time() - start;
+        diff /= 1000;
+        if( diff > UINT32_MAX ) diff = UINT32_MAX;
+        printf( "Performed %u encrypt iterations over %u mS.\n"
+                "Average time per iteration: %u mS\n",
+                n_iterations, (uint32_t)diff, (uint32_t)diff / n_iterations );
+        TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+    }
 
     res = aes132_pin_load_keys( pin_entry_hash );
     TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
 
     const uint128_t zeros = {0};
     uint32_t counter      = 0;
+
     /* Bad PIN attempt */
     res = aes132_pin_attempt( zeros, &counter, pred_secret );
     ESP_LOGD( TAG, "Counter Value: %d", counter );
