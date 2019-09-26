@@ -21,3 +21,6 @@ docs/latex/
 # Static Analysis
 cppcheck.log
 compile_commands.json
+
+# RNG analysis
+rng.raw
