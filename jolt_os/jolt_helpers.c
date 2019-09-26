@@ -37,7 +37,7 @@ const char *EMPTY_STR                     = "";
 const char JOLT_OS_DERIVATION_BIP32_KEY[] = "JOLT_OS";
 const char *JOLT_OS_DERIVATION_PASSPHRASE = "";
 
-void jolt_get_random( uint8_t *buf, uint8_t n_bytes )
+void jolt_random( uint8_t *buf, uint8_t n_bytes )
 {
     if( NULL == buf || 0 == n_bytes ) return;
 
@@ -75,13 +75,44 @@ void jolt_get_random( uint8_t *buf, uint8_t n_bytes )
     }
 }
 
+uint32_t jolt_random_range( uint32_t min, uint32_t max )
+{
+    uint32_t rand;
+    uint32_t range = max - min;
+    uint32_t v;
+
+    if( min >= max - 1 ) {
+        ESP_LOGE( TAG, "Invalid params." );
+        return 0;
+    }
+
+    /* https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2 */
+    {
+        /* Round up to the nearest power of 2 */
+        v = range - 1;
+        v |= v >> 1;
+        v |= v >> 2;
+        v |= v >> 4;
+        v |= v >> 8;
+        v |= v >> 16;
+        v++;
+    }
+
+    do {
+        jolt_random( (uint8_t *)&rand, sizeof( rand ) );
+        rand %= v;
+        rand += min;
+    } while( rand >= max );
+
+    return rand;
+}
+
 void shuffle_arr( uint8_t *arr, int arr_len )
 {
     uint8_t tmp;
     for( int i = arr_len - 1; i > 0; i-- ) {
         uint32_t idx;
-        jolt_get_random( (uint8_t *)&idx, sizeof( idx ) );
-        idx      = idx % ( i + 1 );
+        idx      = jolt_random_range( 0, i + 1 );
         tmp      = arr[idx];
         arr[idx] = arr[i];
         arr[i]   = tmp;

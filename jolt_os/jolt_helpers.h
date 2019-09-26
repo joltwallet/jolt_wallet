@@ -143,7 +143,25 @@ extern const char *JOLT_OS_DERIVATION_PASSPHRASE;
  * @param[out] buf Store random bytes.
  * @param[in] n_bytes Number of random bytes to generate.
  */
-void jolt_get_random( uint8_t *buf, uint8_t n_bytes );
+void jolt_random( uint8_t *buf, uint8_t n_bytes );
+
+/**
+ * @brief Get a random value in range [min, max).
+ *
+ * Algorithm:
+ *     1. Compute the range max-min.
+ *     2. Round up to the nearest power of 2 for
+ *     3. Generate a random uint32_t number (from jolt_random()).
+ *     4. Modulo it by the power of 2 and add min to it
+ *     5. If it exceeds max, repeat steps 3 & 4.
+ *
+ * This is to ensure no bias from modulo.
+ *
+ * @param[in] min Minimum possible value to return (inclusive).
+ * @param[in] max Maximum possible value to return (exclusive).
+ * @return random value in that range.
+ */
+uint32_t jolt_random_range( uint32_t min, uint32_t max );
 
 /**
  * @brief Fisher Yates random shuffling for an array of uint8_t

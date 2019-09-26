@@ -95,7 +95,7 @@ static jolt_err_t get_nth_word( char buf[], size_t buf_len, const char *str, uin
  * used for display/backup purposes only.*/
 static void generate_mnemonic( mnemonic_setup_t *param )
 {
-    jolt_get_random( param->mnemonic_bin, MNEMONIC_STRENGTH / 8 );
+    jolt_random( param->mnemonic_bin, MNEMONIC_STRENGTH / 8 );
     bm_bin_to_mnemonic( param->mnemonic, sizeof( param->mnemonic ), param->mnemonic_bin, MNEMONIC_STRENGTH );
     ESP_LOGI( TAG, "mnemonic: %s", param->mnemonic );
 }

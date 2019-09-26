@@ -27,7 +27,7 @@ int jolt_cmd_rng( int argc, char** argv )
     for( uint64_t i = 0; i < n_bytes; i += 4 ) {
         uint8_t gen_bytes = sizeof( bin_buf );
         if( n_bytes - i < 4 ) { gen_bytes = n_bytes - i; }
-        jolt_get_random( bin_buf, gen_bytes );
+        jolt_random( bin_buf, gen_bytes );
         if( output_hex ) {
             char hex_buf[9];
             sodium_bin2hex( hex_buf, sizeof( hex_buf ), bin_buf, gen_bytes );
