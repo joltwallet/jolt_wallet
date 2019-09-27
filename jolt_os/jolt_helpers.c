@@ -39,6 +39,12 @@ const char *JOLT_OS_DERIVATION_PASSPHRASE = "";
 
 void jolt_random( uint8_t *buf, uint8_t n_bytes )
 {
+    /*
+     * Notes:
+     *     * The ATAES132a RNG generator is about 4x slower than the ESP32 
+     *       internal.
+     */
+
     if( NULL == buf || 0 == n_bytes ) return;
 
 #if CONFIG_JOLT_STORE_ATAES132A
