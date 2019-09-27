@@ -228,6 +228,8 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_json_read_app ),
     EXPORT_SYMBOL( jolt_json_write_app ),
     EXPORT_SYMBOL( jolt_network_post ),
+    EXPORT_SYMBOL( jolt_random ),
+    EXPORT_SYMBOL( jolt_random_range ),
     EXPORT_SYMBOL( linenoise ),
     EXPORT_SYMBOL( malloc ),
     EXPORT_SYMBOL( mbedtls_mpi_add_abs ),
@@ -252,7 +254,6 @@ static const void *exports[] = {
     EXPORT_SYMBOL( puts ),
     EXPORT_SYMBOL( qrcode_getBufferSize ),
     EXPORT_SYMBOL( qrcode_initText ),
-    EXPORT_SYMBOL( randombytes_random ),
     EXPORT_SYMBOL( snprintf ),
     EXPORT_SYMBOL( sodium_bin2hex ),
     EXPORT_SYMBOL( sodium_hex2bin ),
@@ -299,7 +300,7 @@ const jolt_version_t JOLT_JELF_VERSION = { 0 };
 const char *JOLT_OS_COMMIT = NULL;
 
 /* Dummy place holder */
-static const void *exports[247] = { 0 };
+static const void *exports[248] = { 0 };
 
 #endif
 

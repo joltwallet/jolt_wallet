@@ -32,7 +32,7 @@ void jolt_noise_init()
 
     const esp_timer_create_args_t oneshot_timer_args = {.callback = &oneshot_timer_callback, .name = "noise"};
 
-    jolt_get_random( (uint8_t *)&rng, sizeof( rng ) );
+    jolt_random( (uint8_t *)&rng, sizeof( rng ) );
     srand( rng );
 
     ESP_ERROR_CHECK( esp_timer_create( &oneshot_timer_args, &oneshot_timer ) );

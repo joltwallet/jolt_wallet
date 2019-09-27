@@ -185,6 +185,8 @@ jolt_gui_sem_take
 jolt_json_read_app
 jolt_json_write_app
 jolt_network_post
+jolt_random
+jolt_random_range
 linenoise
 malloc
 mbedtls_mpi_add_abs
@@ -209,7 +211,6 @@ putchar
 puts
 qrcode_getBufferSize
 qrcode_initText
-randombytes_random
 snprintf
 sodium_bin2hex
 sodium_hex2bin

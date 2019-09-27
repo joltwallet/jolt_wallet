@@ -54,7 +54,7 @@ bool storage_ataes132a_exists_mnemonic()
 void storage_ataes132a_stretch_init()
 {
     CONFIDENTIAL uint8_t stretch_secret[32];
-    jolt_get_random( stretch_secret, sizeof( stretch_secret ) );
+    jolt_random( stretch_secret, sizeof( stretch_secret ) );
     storage_set_blob( stretch_secret, sizeof( stretch_secret ), "secret", "stretch" );
     sodium_memzero( stretch_secret, sizeof( stretch_secret ) );
     if( 0 != aes132_create_stretch_key() ) esp_restart();
@@ -115,7 +115,7 @@ void storage_ataes132a_set_mnemonic( const uint256_t bin, const uint256_t pin_ha
     CONFIDENTIAL uint256_t esp_secret;
 
     /* One piece of data is purely random, choosing esp_secret to be random */
-    jolt_get_random( esp_secret, sizeof( esp_secret ) );
+    jolt_random( esp_secret, sizeof( esp_secret ) );
     xor256( aes132_secret, esp_secret, bin );
 
     /* Set the pin keys */
