@@ -1,5 +1,8 @@
 PROJECT_NAME := jolt
 
+export IDF_TOOLS_PATH = $(PWD)/xtensa-esp32-elf
+export IDF_PATH = $(PWD)/esp-idf
+
 # Have to add current path to EXTRA_COMPONENT_DIRS so unit tester will work.
 # Unfortunately, JoltOS gets built twice.
 EXTRA_COMPONENT_DIRS := \
@@ -15,7 +18,12 @@ include $(IDF_PATH)/make/project.mk
 
 print-%  : ; @echo $* = $($*)
 
-.PHONY: tests test-menu lint compilation_db cppcheck
+.PHONY: setup tests test-menu lint compilation_db cppcheck
+
+setup:
+	mkdir -p $(IDF_TOOLS_PATH)
+	pip install -r $(IDF_PATH)/requirements.txt
+	$(IDF_PATH)/tools/idf_tools.py install
 
 tests:
 	CFLAGS='-DUNIT_TESTING=1' \

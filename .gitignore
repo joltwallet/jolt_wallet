@@ -1,7 +1,8 @@
-# Build artifacts
+# Build artifacts, esp-idf, and toolchain
 sdkconfig*
 !sdkconfig.defaults
 build/
+xtensa-esp32-elf/
 
 # Misc
 *.DS_Store

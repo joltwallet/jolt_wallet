@@ -50,6 +50,14 @@ To see the latest on what we've done, what we're planning, and where we're heade
 * App loading only works when set to release mode or stack protection is disabled.
 
 
+## Environment setup
+
+```
+git pull
+git submodule update --init --recursive
+make setup
+```
+
 ## Flashing
 
 #### Default JoltOS
