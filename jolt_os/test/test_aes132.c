@@ -55,16 +55,40 @@ TEST_CASE( "Random Buffer Fill", MODULE_NAME )
 
 TEST_CASE( "Configure Device", MODULE_NAME )
 {
-    /* Incomplete */
+    uint128_t data = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
 
-    aes132_write_chipconfig();
-    aes132_write_counterconfig();
-    aes132_write_keyconfig();
-    aes132_write_zoneconfig();
+    uint8_t res;
+
+    res = aes132_write_chipconfig();
+    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+
+    res = aes132_write_counterconfig();
+    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+
+    res = aes132_write_keyconfig();
+    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+
+    res = aes132_write_zoneconfig();
+    TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+
+    /* Make sure Legacy command fails, excpet on stretch key */
+    {
+        printf( "Testing key slot %d\n", AES132_KEY_ID_MASTER );
+        res = aes132_legacy( AES132_KEY_ID_MASTER, data );
+        TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_KEY_ERROR, res );
+
+        printf( "Testing key slot %d\n", AES132_KEY_ID_STRETCH );
+        res = aes132_legacy( AES132_KEY_ID_STRETCH, data );
+        TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_SUCCESS, res );
+
+        for( uint8_t i = AES132_KEY_ID_PIN( 0 ); i < 16; i++ ) {
+            printf( "Testing key slot %d\n", i );
+            res = aes132_legacy( i, data );
+            TEST_ASSERT_EQUAL_HEX8( AES132_DEVICE_RETCODE_KEY_ERROR, res );
+        }
+    }
 
     TEST_FAIL_MESSAGE( "Incomplete Test" );
-
-    // todo: Make sure Legacy command fails
     // todo: Make sure DecRead or WriteCompute fails
     // todo: Make sure AuthCompute fails
 }

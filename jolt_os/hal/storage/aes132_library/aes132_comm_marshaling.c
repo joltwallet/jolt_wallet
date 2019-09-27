@@ -19,6 +19,8 @@
  *  \date   June 08, 2015
  */
 
+//#define LOG_LOCAL_LEVEL 4
+
 #include "aes132_comm_marshaling.h"  // definitions and declarations for the Command Marshaling module
 #include <string.h>                  // needed for memcpy()
 #include "aes132_i2c.h"              // For ReturnCode macros
@@ -28,6 +30,7 @@
 #include "i2c_phys.h"  // For res macros
 #include "sodium.h"
 
+static const char TAG[] = "aes132_comm_marshaling";
 /** \brief This function sends data to the device.
  * \param[in] count number of bytes to send
  * \param[in] word_address word address
@@ -79,6 +82,8 @@ uint8_t aes132m_execute( uint8_t op_code, uint8_t mode, uint16_t param1, uint16_
     uint8_t *p_buffer;
     uint8_t len;
 
+    ESP_LOGD( TAG, "Executing opcode 0x%02X", op_code );
+
     // Assemble command.
     len         = datalen1 + datalen2 + datalen3 + datalen4 + AES132_COMMAND_SIZE_MIN;
     p_buffer    = tx_buffer;
@@ -109,6 +114,26 @@ uint8_t aes132m_execute( uint8_t op_code, uint8_t mode, uint16_t param1, uint16_
 
     (void)p_buffer;
 
-    // Send command and receive response.
+#if LOG_LOCAL_LEVEL >= 4
+    {
+        printf( "TX Buffer (%d):\n", len );
+        for( uint8_t i = 0; i < len; i++ ) {
+            switch( i ) {
+                case 0: printf( "\033[31m" ); break;
+                case 1: printf( "\033[32m" ); break;
+                case 2: printf( "\033[33m" ); break;
+                case 3:
+                case 4: printf( "\033[34m" ); break;
+                case 5:
+                case 6: printf( "\033[35m" ); break;
+            }
+            if( i >= len - 2 ) printf( "\033[36m" );
+            printf( "0x%02X \033[0m", tx_buffer[i] );
+            if( ( i + 1 ) % 8 == 0 ) printf( "\n" );
+        }
+        printf( "\n" );
+    }
+#endif
+
     return aes132c_send_and_receive( &tx_buffer[0], AES132_RESPONSE_SIZE_MAX, &rx_buffer[0], AES132_OPTION_DEFAULT );
 }

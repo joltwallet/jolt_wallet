@@ -11,6 +11,7 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "hal/storage/storage.h"
+#include "jolt_helpers.h"
 #include "jolttypes.h"
 #include "sodium.h"
 
@@ -100,16 +101,18 @@ uint8_t aes132_jolt_setup()
          * We cannot use ataes132a for additional entropy since its unlocked */
         /* aes132 will generate non-random 0xA5 bytes until the LockConfig
          * reigster is locked, so we cannot use it for additional entropy,
-         * so we cannot use it for additional entropy.
-         * todo: investigate more sources of entropy. */
-        for( uint8_t i = 0; i < 4; i++ ) {
-            uint32_t entropy = randombytes_random();  // TODO: change to jolt_get_random
-            memcpy( &( (uint32_t *)master_key )[i], &entropy, sizeof( uint32_t ) );
+         * so we cannot use it for additional entropy. */
 #ifdef UNIT_TESTING
+        {
             // deterministic key for easier unit testing
-            ( (uint32_t *)master_key )[i] = 0x11111111;
-#endif
+            const uint8_t dummy[] = {0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+                                     0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11};
+
+            memcpy( master_key, dummy, 16 );
         }
+#else
+        jolt_random( master_key, 16 );
+#endif
 
         ESP_LOGI( TAG,
                   "Confidential; ATAES132A Master Key: 0x"

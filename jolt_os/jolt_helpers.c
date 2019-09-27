@@ -41,7 +41,7 @@ void jolt_random( uint8_t *buf, uint8_t n_bytes )
 {
     /*
      * Notes:
-     *     * The ATAES132a RNG generator is about 4x slower than the ESP32 
+     *     * The ATAES132a RNG generator is about 4x slower than the ESP32
      *       internal.
      */
 

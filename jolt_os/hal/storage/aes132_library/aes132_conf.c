@@ -44,117 +44,137 @@ uint8_t aes132_write_counterconfig()
 uint8_t aes132_write_keyconfig()
 {
     uint8_t res;
-    uint8_t config_master[4] = {0};
-    config_master[0] =
-            // AES132_KEY_CONFIG_EXTERNAL_CRYPTO | // Prohibit Encrypt/Decrypt
-            // AES132_KEY_CONFIG_INBOUND_AUTH | // Can be used for other purposes
-            AES132_KEY_CONFIG_RANDOM_NONCE |  // Prevent Spoofing of Nonces
-            // AES132_KEY_CONFIG_LEGACY_OK | // Never allow dangerous Legacy cmd
-            // AES132_KEY_CONFIG_AUTH_KEY | // Prior authentication not required
-            // AES132_KEY_CONFIG_CHILD | // Prohibit update via KeyCreate/KeyLoad
-            // AES132_KEY_CONFIG_PARENT | // VolatileKey isn't used
-            // AES132_KEY_CONFIG_CHANGE_KEYS | // Cannot be overwrited via EncWrite
-            0;
-    config_master[1] =
-            // AES132_KEY_CONFIG_COUNTER_LIMIT | // No usage limit
-            // AES132_KEY_CONFIG_CHILD_MAC | // Irrelevant; KeyCreate can't target
-            // AES132_KEY_CONFIG_AUTH_OUT | // I2C auth signaling disabled
-            // AES132_KEY_CONFIG_AUTH_OUT_HOLD | // Irrelevant; Auth signaling disabled
-            // AES132_KEY_CONFIG_IMPORT_OK | // Prohibit KeyImport
-            // AES132_KEY_CONFIG_EXPORT_AUTH | // Irreleant; KeyCreate can't target
-            // AES132_KEY_CONFIG_TRANSFER_OK | // Prohibit KeyTransfer
-            // AES132_KEY_CONFIG_AUTH_COMPUTE | // Key cannot be used for auth_compute
-            0;
-    config_master[2] = AES132_KEY_CONFIG_COUNTER_NUM( 0 ) |  // Not used
-                       AES132_KEY_CONFIG_LINK_POINTER( 0 );  // Not used
-    config_master[3] =
-            // AES_132_KEY_CONFIG_DEC_READ | // DecRead and WriteCompute prohibited
-            0;
-    res = aes132m_write_memory( sizeof( config_master ), AES132_KEY_CONFIG_ADDR( AES132_KEY_ID_MASTER ),
-                                config_master );
-    if( res ) {
-        ESP_LOGE( TAG,
-                  "Failed writing Master KeyConfig "
-                  "Error Return Code 0x%02X",
-                  res );
-        return res;
-    }
 
-    /* Stretch is only used for Key stretching via Encrypt command */
-    uint8_t config_stretch[4] = {0};
-    config_stretch[0] =
-            // AES132_KEY_CONFIG_EXTERNAL_CRYPTO | // Prohibit Encrypt/Decrypt
-            // AES132_KEY_CONFIG_INBOUND_AUTH | // Can be used for other purposes
-            AES132_KEY_CONFIG_RANDOM_NONCE |  // Prevent Spoofing of Nonces
-            AES132_KEY_CONFIG_LEGACY_OK |     // Key Stretching
-            // AES132_KEY_CONFIG_AUTH_KEY | // Prior authentication not required
-            AES132_KEY_CONFIG_CHILD |  // Allow update via KeyCreate/KeyLoad
-            // AES132_KEY_CONFIG_PARENT | // VolatileKey isn't used
-            // AES132_KEY_CONFIG_CHANGE_KEYS | // Cannot be overwrited via EncWrite
-            0;
-    config_stretch[1] =
-            // AES132_KEY_CONFIG_COUNTER_LIMIT | // No usage limit
-            // AES132_KEY_CONFIG_CHILD_MAC | // Irrelevant; KeyCreate can't target
-            // AES132_KEY_CONFIG_AUTH_OUT | // I2C auth signaling disabled
-            // AES132_KEY_CONFIG_AUTH_OUT_HOLD | // Irrelevant; Auth signaling disabled
-            // AES132_KEY_CONFIG_IMPORT_OK | // Prohibit KeyImport
-            // AES132_KEY_CONFIG_EXPORT_AUTH | // Irreleant; KeyCreate can't target
-            // AES132_KEY_CONFIG_TRANSFER_OK | // Prohibit KeyTransfer
-            // AES132_KEY_CONFIG_AUTH_COMPUTE | // Key cannot be used for auth_compute
-            0;
-    config_stretch[2] = AES132_KEY_CONFIG_COUNTER_NUM( 1 ) |  // Not used; 1 for consistency
-                        AES132_KEY_CONFIG_LINK_POINTER( 0 );  // Not used
-    config_stretch[3] =
-            // AES_132_KEY_CONFIG_DEC_READ | // DecRead and WriteCompute prohibited
-            0;
-    res = aes132m_write_memory( sizeof( config_stretch ), AES132_KEY_CONFIG_ADDR( AES132_KEY_ID_STRETCH ),
-                                config_stretch );
-    if( res ) {
-        ESP_LOGE( TAG,
-                  "Failed writing Stretch KeyConfig "
-                  "Error Return Code 0x%02X",
-                  res );
-        return res;
-    }
-
-    uint8_t config_pin[4] = {0};
-    config_pin[0] =
-            // AES132_KEY_CONFIG_EXTERNAL_CRYPTO | // Prohibit Encrypt/Decrypt
-            AES132_KEY_CONFIG_INBOUND_AUTH |  // Key only used for authentication
-            AES132_KEY_CONFIG_RANDOM_NONCE |  // Prevent Spoofing of Nonces
-            // AES132_KEY_CONFIG_LEGACY_OK | // Never allow dangerous Legacy cmd
-            // AES132_KEY_CONFIG_AUTH_KEY | // Prior authentication not required
-            AES132_KEY_CONFIG_CHILD |  // Allow update via KeyCreate/KeyLoad
-            // AES132_KEY_CONFIG_PARENT | // VolatileKey isn't used
-            // AES132_KEY_CONFIG_CHANGE_KEYS | // Cannot be overwrited via EncWrite
-            0;
-    config_pin[1] =
-            AES132_KEY_CONFIG_COUNTER_LIMIT |  // Limit Key Usage
-                                               // AES132_KEY_CONFIG_CHILD_MAC | // Irrelevant; KeyCreate can't target
-                                               // AES132_KEY_CONFIG_AUTH_OUT | // I2C auth signaling disabled
-                                               // AES132_KEY_CONFIG_AUTH_OUT_HOLD | // Irrelevant; Auth signaling
-                                               // disabled AES132_KEY_CONFIG_IMPORT_OK | // Prohibit KeyImport
-                                               // AES132_KEY_CONFIG_EXPORT_AUTH | // Irreleant; KeyCreate can't target
-                                               // AES132_KEY_CONFIG_TRANSFER_OK | // Prohibit KeyTransfer
-                                               // AES132_KEY_CONFIG_AUTH_COMPUTE | // Key cannot be used for
-                                               // auth_compute
-            0;
-    config_pin[2] = AES132_KEY_CONFIG_COUNTER_NUM( 0 ) |  // To be updated in loop
-                    AES132_KEY_CONFIG_LINK_POINTER( 0 );  // Always Master Key
-    config_pin[3] =
-            // AES_132_KEY_CONFIG_DEC_READ | // DecRead and WriteCompute prohibited
-            0;
-    for( uint8_t i = AES132_KEY_ID_PIN( 0 ); i < 16; i++ ) {
-        config_pin[2] = AES132_KEY_CONFIG_COUNTER_NUM( i ) | AES132_KEY_CONFIG_LINK_POINTER( 0 );
-        res           = aes132m_write_memory( sizeof( config_pin ), AES132_KEY_CONFIG_ADDR( i ), config_pin );
+    {
+        uint8_t config_master[4] = {0};
+        config_master[0] =
+                // AES132_KEY_CONFIG_EXTERNAL_CRYPTO | // Prohibit Encrypt/Decrypt
+                // AES132_KEY_CONFIG_INBOUND_AUTH | // Can be used for other purposes
+                AES132_KEY_CONFIG_RANDOM_NONCE |  // Prevent Spoofing of Nonces
+                // AES132_KEY_CONFIG_LEGACY_OK | // Never allow dangerous Legacy cmd
+                // AES132_KEY_CONFIG_AUTH_KEY | // Prior authentication not required
+                // AES132_KEY_CONFIG_CHILD | // Prohibit update via KeyCreate/KeyLoad
+                // AES132_KEY_CONFIG_PARENT | // VolatileKey isn't used
+                // AES132_KEY_CONFIG_CHANGE_KEYS | // Cannot be overwrited via EncWrite
+                0;
+        config_master[1] =
+                // AES132_KEY_CONFIG_COUNTER_LIMIT | // No usage limit
+                // AES132_KEY_CONFIG_CHILD_MAC | // Irrelevant; KeyCreate can't target
+                // AES132_KEY_CONFIG_AUTH_OUT | // I2C auth signaling disabled
+                // AES132_KEY_CONFIG_AUTH_OUT_HOLD | // Irrelevant; Auth signaling disabled
+                // AES132_KEY_CONFIG_IMPORT_OK | // Prohibit KeyImport
+                // AES132_KEY_CONFIG_EXPORT_AUTH | // Irreleant; KeyCreate can't target
+                // AES132_KEY_CONFIG_TRANSFER_OK | // Prohibit KeyTransfer
+                // AES132_KEY_CONFIG_AUTH_COMPUTE | // Key cannot be used for auth_compute
+                0;
+        config_master[2] = AES132_KEY_CONFIG_COUNTER_NUM( 0 ) |  // Not used
+                           AES132_KEY_CONFIG_LINK_POINTER( 0 );  // Not used
+        config_master[3] =
+                // AES_132_KEY_CONFIG_DEC_READ | // DecRead and WriteCompute prohibited
+                0;
+        res = aes132m_write_memory( sizeof( config_master ), AES132_KEY_CONFIG_ADDR( AES132_KEY_ID_MASTER ),
+                                    config_master );
         if( res ) {
             ESP_LOGE( TAG,
-                      "Failed writing PIN (Key%d) KeyConfig "
+                      "Failed writing Master KeyConfig "
                       "Error Return Code 0x%02X",
-                      i, res );
+                      res );
             return res;
         }
+        else {
+            ESP_LOGI( TAG, "KeyConfig[%d]: 0x%02X 0x%02X 0x%02X 0x%02X", AES132_KEY_ID_MASTER, config_master[0],
+                      config_master[1], config_master[2], config_master[3] );
+        }
     }
+
+    /* Stretch is only used for Key stretching via Encrypt (Legacy) command */
+    {
+        uint8_t config_stretch[4] = {0};
+        config_stretch[0] =
+                // AES132_KEY_CONFIG_EXTERNAL_CRYPTO | // Prohibit Encrypt/Decrypt
+                // AES132_KEY_CONFIG_INBOUND_AUTH | // Can be used for other purposes
+                AES132_KEY_CONFIG_RANDOM_NONCE |  // Prevent Spoofing of Nonces
+                AES132_KEY_CONFIG_LEGACY_OK |     // Key Stretching
+                // AES132_KEY_CONFIG_AUTH_KEY | // Prior authentication not required
+                AES132_KEY_CONFIG_CHILD |  // Allow update via KeyCreate/KeyLoad
+                // AES132_KEY_CONFIG_PARENT | // VolatileKey isn't used
+                // AES132_KEY_CONFIG_CHANGE_KEYS | // Cannot be overwrited via EncWrite
+                0;
+        config_stretch[1] =
+                // AES132_KEY_CONFIG_COUNTER_LIMIT | // No usage limit
+                // AES132_KEY_CONFIG_CHILD_MAC | // Irrelevant; KeyCreate can't target
+                // AES132_KEY_CONFIG_AUTH_OUT | // I2C auth signaling disabled
+                // AES132_KEY_CONFIG_AUTH_OUT_HOLD | // Irrelevant; Auth signaling disabled
+                // AES132_KEY_CONFIG_IMPORT_OK | // Prohibit KeyImport
+                // AES132_KEY_CONFIG_EXPORT_AUTH | // Irreleant; KeyCreate can't target
+                // AES132_KEY_CONFIG_TRANSFER_OK | // Prohibit KeyTransfer
+                // AES132_KEY_CONFIG_AUTH_COMPUTE | // Key cannot be used for auth_compute
+                0;
+        config_stretch[2] = AES132_KEY_CONFIG_COUNTER_NUM( 1 ) |  // Not used; 1 for consistency
+                            AES132_KEY_CONFIG_LINK_POINTER( 0 );  // Not used
+        config_stretch[3] =
+                // AES_132_KEY_CONFIG_DEC_READ | // DecRead and WriteCompute prohibited
+                0;
+        res = aes132m_write_memory( sizeof( config_stretch ), AES132_KEY_CONFIG_ADDR( AES132_KEY_ID_STRETCH ),
+                                    config_stretch );
+        if( res ) {
+            ESP_LOGE( TAG,
+                      "Failed writing Stretch KeyConfig "
+                      "Error Return Code 0x%02X",
+                      res );
+            return res;
+        }
+        else {
+            ESP_LOGI( TAG, "KeyConfig[%d]: 0x%02X 0x%02X 0x%02X 0x%02X", AES132_KEY_ID_STRETCH, config_stretch[0],
+                      config_stretch[1], config_stretch[2], config_stretch[3] );
+        }
+    }
+
+    {
+        uint8_t config_pin[4] = {0};
+        config_pin[0] =
+                // AES132_KEY_CONFIG_EXTERNAL_CRYPTO | // Prohibit Encrypt/Decrypt
+                AES132_KEY_CONFIG_INBOUND_AUTH |  // Key only used for authentication
+                AES132_KEY_CONFIG_RANDOM_NONCE |  // Prevent Spoofing of Nonces
+                // AES132_KEY_CONFIG_LEGACY_OK | // Never allow dangerous Legacy cmd
+                // AES132_KEY_CONFIG_AUTH_KEY | // Prior authentication not required
+                AES132_KEY_CONFIG_CHILD |  // Allow update via KeyCreate/KeyLoad
+                // AES132_KEY_CONFIG_PARENT | // VolatileKey isn't used
+                // AES132_KEY_CONFIG_CHANGE_KEYS | // Cannot be overwrited via EncWrite
+                0;
+        config_pin[1] =
+                AES132_KEY_CONFIG_COUNTER_LIMIT |  // Limit Key Usage
+                                                   // AES132_KEY_CONFIG_CHILD_MAC | // Irrelevant; KeyCreate can't
+                                                   // target AES132_KEY_CONFIG_AUTH_OUT | // I2C auth signaling
+                                                   // disabled AES132_KEY_CONFIG_AUTH_OUT_HOLD | // Irrelevant; Auth
+                                                   // signaling disabled AES132_KEY_CONFIG_IMPORT_OK | // Prohibit
+                                                   // KeyImport AES132_KEY_CONFIG_EXPORT_AUTH | // Irreleant; KeyCreate
+                                                   // can't target AES132_KEY_CONFIG_TRANSFER_OK | // Prohibit
+                                                   // KeyTransfer AES132_KEY_CONFIG_AUTH_COMPUTE | // Key cannot be
+                                                   // used for auth_compute
+                0;
+        /* config_pin[2] is configured in loop */
+        config_pin[3] =
+                // AES_132_KEY_CONFIG_DEC_READ | // DecRead and WriteCompute prohibited
+                0;
+        for( uint8_t i = AES132_KEY_ID_PIN( 0 ); i < 16; i++ ) {
+            /* Always use master key */
+            config_pin[2] = AES132_KEY_CONFIG_COUNTER_NUM( i ) | AES132_KEY_CONFIG_LINK_POINTER( 0 );
+            res           = aes132m_write_memory( sizeof( config_pin ), AES132_KEY_CONFIG_ADDR( i ), config_pin );
+            if( res ) {
+                ESP_LOGE( TAG,
+                          "Failed writing PIN (Key%d) KeyConfig "
+                          "Error Return Code 0x%02X",
+                          i, res );
+                return res;
+            }
+            else {
+                ESP_LOGI( TAG, "KeyConfig[%d]: 0x%02X 0x%02X 0x%02X 0x%02X", i, config_pin[0], config_pin[1],
+                          config_pin[2], config_pin[3] );
+            }
+        }
+    }
+
     return res;
 }
 
