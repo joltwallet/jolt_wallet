@@ -22,6 +22,7 @@ print-%  : ; @echo $* = $($*)
 
 install:
 	mkdir -p $(IDF_TOOLS_PATH)
+	pip install -r requirements.txt
 	$(IDF_PATH)/tools/idf_tools.py install
 
 tests:
