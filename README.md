@@ -52,10 +52,21 @@ To see the latest on what we've done, what we're planning, and where we're heade
 
 ## Environment setup
 
+#### Prerequisites
+Install the prerequisites specified in the [ESP-IDF docs](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started-get-prerequisites). The rest of the ESP-iDF steps are handled below.
+
+#### Setup toolchain and other dependencies
+Setup the build environement by running the following command. 
+
 ```
-git pull
-git submodule update --init --recursive
-make setup
+make install
+```
+
+#### Export variables
+
+Finally, run the command below. This must be done in every new bash instance.
+```
+source export.sh
 ```
 
 ## Flashing
