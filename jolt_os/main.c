@@ -3,7 +3,7 @@
  https://www.joltwallet.com/
  */
 
-//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include <driver/adc.h>
 #include <esp_system.h>
@@ -305,15 +305,22 @@ void app_main( void )
 /* Setup Power Management */
 #if CONFIG_PM_ENABLE
     {
+        esp_err_t err;
+        ESP_LOGI(TAG, "Initializing power management");
         vTaskDelay( pdMS_TO_TICKS( 5000 ) );
         esp_pm_config_esp32_t cfg = {
             .max_freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ,
-            .min_freq_mhz = 40,
+            .min_freq_mhz = 80,
     #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
             .light_sleep_enable = true
     #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
         };
-        ESP_ERROR_CHECK( esp_pm_configure( &cfg ) );
+        err = esp_pm_configure( &cfg );
+        if( ESP_OK != err ) {
+            ESP_LOGE(TAG, "Error %s initializing power management.", esp_err_to_name(err));
+            esp_restart();
+        }
+        ESP_LOGI(TAG, "Power management initialized");
     }
 #endif /* CONFIG_PM_ENABLE */
 }

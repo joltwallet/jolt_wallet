@@ -58,6 +58,14 @@ menu "JoltOS"
             default 1000
             help
                 Help Text Here
+
+        config JOLT_I2C_ERROR_RESET
+            bool
+            prompt "Reset if unable to contact i2c device"
+            default n
+            help
+                If yes, Jolt will reboot on failure to communicate with the 
+                an i2c device (display, etc). If no, it will continue operating as usual.
     endmenu
 
     menu "Display"
@@ -90,14 +98,6 @@ menu "JoltOS"
            default 16
            help
               GPIO thats connected to the display's RST pin.
-
-        config JOLT_I2C_ERROR_RESET
-            bool
-            prompt "Reset if unable to contact display"
-            default y
-            help
-                If yes, Jolt will reboot on failure to communicate with the 
-                dislay. If no, it will continue operating as usual.
     endmenu
 
     menu "GUI"
@@ -239,7 +239,7 @@ menu "JoltOS"
         config JOLT_CONSOLE_OVERRIDE_LOGGING
             bool
             prompt "Disable ESP_LOG while console is running"
-            default y
+            default n
             help
                 help text here
     endmenu
@@ -538,12 +538,12 @@ menu "JoltOS"
     config JOLT_BOOTLOADER_CHECK
         bool
         prompt "Enable Bootloader Hash check"
-        default y
+        default n
 
     config JOLT_TABLE_CHECK
         bool
         prompt "Enable Partition Table Hash check"
-        default y
+        default n
 
     menu "Filesystem"
         choice
