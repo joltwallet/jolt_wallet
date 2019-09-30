@@ -32,6 +32,8 @@ bool storage_startup()
     res = storage_internal_startup();
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_startup();
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_startup();
 #else
     res = false;
 #endif
@@ -44,6 +46,8 @@ void storage_stretch_init()
     storage_internal_stretch_init();
 #elif CONFIG_JOLT_STORE_ATAES132A
     storage_ataes132a_stretch_init();
+#elif CONFIG_JOLT_STORE_ATECC608A
+    storage_atecc608a_stretch_init();
 #endif
 }
 
@@ -53,6 +57,8 @@ void storage_stretch( uint256_t hash, int8_t *progress )
     storage_internal_stretch( hash, progress );
 #elif CONFIG_JOLT_STORE_ATAES132A
     storage_ataes132a_stretch( hash, progress );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    storage_atecc608a_stretch( hash, progress );
 #endif
 }
 
@@ -65,6 +71,8 @@ bool storage_exists_mnemonic()
     res = storage_internal_exists_mnemonic();
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_exists_mnemonic();
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_exists_mnemonic();
 #else
     res = false;
 #endif
@@ -78,6 +86,8 @@ void storage_set_mnemonic( const uint256_t bin, const uint256_t pin_hash )
     storage_internal_set_mnemonic( bin, pin_hash );
 #elif CONFIG_JOLT_STORE_ATAES132A
     storage_ataes132a_set_mnemonic( bin, pin_hash );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    storage_atecc608a_set_mnemonic( bin, pin_hash );
 #endif
     return;
 }
@@ -90,6 +100,8 @@ bool storage_get_mnemonic( uint256_t bin, const uint256_t pin_hash )
     res = storage_internal_get_mnemonic( bin, pin_hash );
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_get_mnemonic( bin, pin_hash );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_get_mnemonic( bin, pin_hash );
 #else
     res = false;
 #endif
@@ -106,6 +118,8 @@ uint32_t storage_get_pin_count()
     res = storage_internal_get_pin_count();
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_get_pin_count();
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_get_in_count();
 #else
     res = UINT32_MAX; /* Safety default towards failure */
 #endif
@@ -119,6 +133,8 @@ void storage_set_pin_count( uint32_t count )
     storage_internal_set_pin_count( count );
 #elif CONFIG_JOLT_STORE_ATAES132A
     storage_ataes132a_set_pin_count( count );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    storage_atecc608a_set_pin_count( count );
 #endif
 }
 
@@ -131,6 +147,8 @@ uint32_t storage_get_pin_last()
     res = storage_internal_get_pin_last();
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_get_pin_last();
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_get_pin_last();
 #else
     res = 0;          /* Safety default towards failure */
 #endif
@@ -145,6 +163,8 @@ void storage_set_pin_last( uint32_t count )
     storage_internal_set_pin_last( count );
 #elif CONFIG_JOLT_STORE_ATAES132A
     storage_ataes132a_set_pin_last( count );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    storage_atecc608a_set_pin_last( count );
 #endif
 }
 
@@ -160,6 +180,8 @@ bool storage_get_u8( uint8_t *value, const char *namespace, const char *key, uin
     res = storage_internal_get_u8( value, namespace, key, default_value );
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_get_u8( value, namespace, key, default_value );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_get_u8( value, namespace, key, default_value );
 #else
     res = false;
 #endif
@@ -177,6 +199,8 @@ bool storage_set_u8( uint8_t value, const char *namespace, const char *key )
     res = storage_internal_set_u8( value, namespace, key );
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_set_u8( value, namespace, key );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_set_u8( value, namespace, key );
 #else
     res = false;
 #endif
@@ -195,6 +219,8 @@ bool storage_get_u16( uint16_t *value, const char *namespace, const char *key, u
     res = storage_internal_get_u16( value, namespace, key, default_value );
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_get_u16( value, namespace, key, default_value );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_get_u16( value, namespace, key, default_value );
 #else
     res = false;
 #endif
@@ -212,6 +238,8 @@ bool storage_set_u16( uint16_t value, const char *namespace, const char *key )
     res = storage_internal_set_u16( value, namespace, key );
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_set_u16( value, namespace, key );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_set_u16( value, namespace, key );
 #else
     res = false;
 #endif
@@ -230,6 +258,8 @@ bool storage_get_u32( uint32_t *value, const char *namespace, const char *key, u
     res = storage_internal_get_u32( value, namespace, key, default_value );
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_get_u32( value, namespace, key, default_value );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_get_u32( value, namespace, key, default_value );
 #else
     res = false;
 #endif
@@ -247,6 +277,8 @@ bool storage_set_u32( uint32_t value, const char *namespace, const char *key )
     res = storage_internal_set_u32( value, namespace, key );
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_set_u32( value, namespace, key );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_set_u32( value, namespace, key );
 #else
     res = false;
 #endif
@@ -265,6 +297,8 @@ bool storage_get_blob( unsigned char *buf, size_t *required_size, const char *na
     res = storage_internal_get_blob( buf, required_size, namespace, key );
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_get_blob( buf, required_size, namespace, key );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_get_blob( buf, required_size, namespace, key );
 #else
     res = false;
 #endif
@@ -282,6 +316,8 @@ bool storage_set_blob( const unsigned char *buf, size_t len, const char *namespa
     res = storage_internal_set_blob( buf, len, namespace, key );
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_set_blob( buf, len, namespace, key );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_set_blob( buf, len, namespace, key );
 #else
     res = false;
 #endif
@@ -296,6 +332,8 @@ bool storage_get_str( char *buf, size_t *required_size, const char *namespace, c
     res = storage_internal_get_str( buf, required_size, namespace, key, default_value );
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_get_str( buf, required_size, namespace, key, default_value );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_get_str( buf, required_size, namespace, key, default_value );
 #else
     res = false;
 #endif
@@ -309,6 +347,8 @@ bool storage_set_str( const char *str, const char *namespace, const char *key )
     res = storage_internal_set_str( str, namespace, key );
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_set_str( str, namespace, key );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_set_str( str, namespace, key );
 #else
     res = false;
 #endif
@@ -322,6 +362,8 @@ void storage_factory_reset( bool reset )
     storage_internal_factory_reset();
 #elif CONFIG_JOLT_STORE_ATAES132A
     storage_ataes132a_factory_reset();
+#elif CONFIG_JOLT_STORE_ATECC608A
+    storage_atecc608a_factory_reset();
 #endif
     if( reset ) { esp_restart(); }
 }
@@ -333,6 +375,8 @@ bool storage_erase_key( const char *namespace, const char *key )
     res = storage_internal_erase_key( namespace, key );
 #elif CONFIG_JOLT_STORE_ATAES132A
     res = storage_ataes132a_erase_key( namespace, key );
+#elif CONFIG_JOLT_STORE_ATECC608A
+    res = storage_atecc608a_erase_key( namespace, key );
 #else
     res = false;
 #endif

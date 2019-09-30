@@ -1,3 +1,6 @@
+###########
+# Primary #
+###########
 COMPONENT_NAME := jolt_os
 
 COMPONENT_SRCDIRS := . \
@@ -25,6 +28,11 @@ COMPONENT_ADD_INCLUDEDIRS := . \
 COMPONENT_EXTRA_CLEAN := \
 	$(COMPONENT_PATH)/jolt_lib.c \
 	$(COMPONENT_PATH)/jolt_commit.c
+
+
+##############################
+# Additional Build Artifacts #
+##############################
 
 # Generate the C source files before building JoltOS
 $(COMPONENT_LIBRARY): $(COMPONENT_PATH)/jolt_lib.c $(COMPONENT_PATH)/jolt_commit.c

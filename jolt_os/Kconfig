@@ -170,6 +170,12 @@ menu "JoltOS"
                 Use ATAES132A to store Mnemonic and pin attempts. Also uses
                 device to stretch keys, making brute force attempts less
                 feasible.
+        config JOLT_STORE_ATECC608A
+            bool "ATECC608A Secure Co-Processor"
+            help
+                [NOT READY] Use ATECC608A to store Mnemonic, pin attempts, and Jolt 
+                authentication data. Also uses device to stretch keys, making 
+                brute force attempts less feasible.
     endchoice
 
     menu "ATAES132A"

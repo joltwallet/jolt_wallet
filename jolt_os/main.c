@@ -306,7 +306,7 @@ void app_main( void )
 #if CONFIG_PM_ENABLE
     {
         esp_err_t err;
-        ESP_LOGI(TAG, "Initializing power management");
+        ESP_LOGI( TAG, "Initializing power management" );
         vTaskDelay( pdMS_TO_TICKS( 5000 ) );
         esp_pm_config_esp32_t cfg = {
             .max_freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ,
@@ -317,10 +317,10 @@ void app_main( void )
         };
         err = esp_pm_configure( &cfg );
         if( ESP_OK != err ) {
-            ESP_LOGE(TAG, "Error %s initializing power management.", esp_err_to_name(err));
+            ESP_LOGE( TAG, "Error %s initializing power management.", esp_err_to_name( err ) );
             esp_restart();
         }
-        ESP_LOGI(TAG, "Power management initialized");
+        ESP_LOGI( TAG, "Power management initialized" );
     }
 #endif /* CONFIG_PM_ENABLE */
 }
