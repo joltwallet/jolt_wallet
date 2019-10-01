@@ -150,7 +150,9 @@ uint8_t aes132_nonce( struct aes132h_nonce_s *nonce, const uint8_t *in_seed );
 
 /**
  * @brief Generate n_bytes of cryptographically strong random data.
- * @param[out] out Buffer to store random data.
+ * @param[out] out Buffer to store random data. XORs with the currently available
+ *             buffer. This is useful if combining RNG sources, and has no
+ *             impact if not.
  * @param[in] n_bytes Number of random bytes to generate.
  * @return 0 on success
  */

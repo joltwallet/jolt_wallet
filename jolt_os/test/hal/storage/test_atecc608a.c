@@ -1,63 +1,12 @@
 #define LOG_LOCAL_LEVEL 4
 
+#include "atecc608a.h"
 #include "cryptoauthlib.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
 #include "unity.h"
 
 static const char MODULE_NAME[] = "[atecc608a]";
-
-/**
- * @brief Convert an ATCA retcode to a string.
- * TODO: move to a helper function file.
- * @param[in] retcode Return code to fetch string for.
- */
-static const char *atca_retcode2str( uint8_t retcode )
-{
-#define STRCASE( name ) \
-    case name: return #name;
-
-    switch( retcode ) {
-        STRCASE( ATCA_SUCCESS )
-        STRCASE( ATCA_CONFIG_ZONE_LOCKED )
-        STRCASE( ATCA_DATA_ZONE_LOCKED )
-        STRCASE( ATCA_WAKE_FAILED )
-        STRCASE( ATCA_CHECKMAC_VERIFY_FAILED )
-        STRCASE( ATCA_PARSE_ERROR )
-        STRCASE( ATCA_STATUS_CRC )
-        STRCASE( ATCA_STATUS_UNKNOWN )
-        STRCASE( ATCA_STATUS_ECC )
-        STRCASE( ATCA_STATUS_SELFTEST_ERROR )
-        STRCASE( ATCA_FUNC_FAIL )
-        STRCASE( ATCA_GEN_FAIL )
-        STRCASE( ATCA_BAD_PARAM )
-        STRCASE( ATCA_INVALID_ID )
-        STRCASE( ATCA_INVALID_SIZE )
-        STRCASE( ATCA_RX_CRC_ERROR )
-        STRCASE( ATCA_RX_FAIL )
-        STRCASE( ATCA_RX_NO_RESPONSE )
-        STRCASE( ATCA_RESYNC_WITH_WAKEUP )
-        STRCASE( ATCA_PARITY_ERROR )
-        STRCASE( ATCA_TX_TIMEOUT )
-        STRCASE( ATCA_RX_TIMEOUT )
-        STRCASE( ATCA_TOO_MANY_COMM_RETRIES )
-        STRCASE( ATCA_SMALL_BUFFER )
-        STRCASE( ATCA_COMM_FAIL )
-        STRCASE( ATCA_TIMEOUT )
-        STRCASE( ATCA_BAD_OPCODE )
-        STRCASE( ATCA_WAKE_SUCCESS )
-        STRCASE( ATCA_EXECUTION_ERROR )
-        STRCASE( ATCA_UNIMPLEMENTED )
-        STRCASE( ATCA_ASSERT_FAILURE )
-        STRCASE( ATCA_TX_FAIL )
-        STRCASE( ATCA_NOT_LOCKED )
-        STRCASE( ATCA_NO_DEVICES )
-        STRCASE( ATCA_HEALTH_TEST_ERROR )
-        STRCASE( ATCA_ALLOC_FAILURE )
-        default: return "<unknown_retcode>";
-    }
-#undef STRCASE
-}
 
 /**
  * @brief Unity test for ATCA return codes
@@ -73,6 +22,7 @@ static const char *atca_retcode2str( uint8_t retcode )
 TEST_CASE( "rand", MODULE_NAME )
 {
     uint8_t retcode;
+    // TODO move this into general init in main.c
     ATCAIfaceCfg cfg = {.iface_type            = ATCA_I2C_IFACE,
                         .devtype               = ATECC608A,
                         .atcai2c.slave_address = 0XC0, /* Default I2C Address */

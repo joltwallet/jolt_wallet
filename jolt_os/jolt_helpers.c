@@ -12,6 +12,7 @@
 #include <string.h>
 #include "bipmnemonic.h"
 #include "bootloader_random.h"
+#include "cryptoauthlib.h"
 #include "esp_err.h"
 #include "esp_hdiffz.h"
 #include "esp_log.h"
@@ -61,6 +62,25 @@ void jolt_random( uint8_t *buf, uint8_t n_bytes )
         }
         else {
             ESP_LOGD( TAG, "ATAES132A is not locked; not a secure RNG source." );
+        }
+    }
+#endif
+
+#if CONFIG_JOLT_STORE_ATECC608A
+    {
+        bool locked;
+        status = atcab_is_locked( LOCK_ZONE_CONFIG, &locked );
+        if( ATCA_SUCCESS != status ) { ESP_LOGE( TAG, "Unable to check ATECC608A lock status." ); }
+        if( locked ) {
+            ESP_LOGD( TAG, "Getting %d bytes from ATECC608A RNG Source", n_bytes );
+            uint8_t res = atecc608a_rand( buf, n_bytes );
+            if( ESP_OK != res ) {
+                ESP_LOGE( TAG, "aes132_rand returned nonzero value %d", res );
+                esp_restart();
+            }
+        }
+        else {
+            ESP_LOGD( TAG, "ATECC608A is not locked; not a secure RNG source." );
         }
     }
 #endif
