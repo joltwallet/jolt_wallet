@@ -10,7 +10,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "atecc608a.h"
 #include "bipmnemonic.h"
+#include "cryptoauthlib.h"
 #include "esp_log.h"
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_helpers.h"
@@ -66,6 +68,14 @@ void storage_atecc608a_stretch_init()
     if( 0 != aes132_create_stretch_key() ) esp_restart();
 #else
     // TODO
+    {
+        // helpful snippet
+        ATCA_STATUS status;
+        status = atcab_genkey( ATECC608A_KEY_ID_STRETCH, NULL );
+        if( ATCA_SUCCESS != status ) esp_restart();
+        esp_restart();
+    }
+
     esp_restart();
 #endif
 }
@@ -97,7 +107,7 @@ void storage_atecc608a_stretch( uint256_t hash, int8_t *progress )
     sodium_memzero( result, sizeof( result ) );
 #else
     // TODO
-    esp_restart();
+
 #endif
 }
 
@@ -174,6 +184,15 @@ void storage_atecc608a_set_mnemonic( const uint256_t bin, const uint256_t pin_ha
     sodium_memzero( aes132_secret, sizeof( aes132_secret ) );
 #else
     // TODO
+    // Helpful snippets
+    {
+        ATCA_STATUS status;
+        uint32_t counter_value;
+        status = atcab_counter_read( 0, &counter_value );
+        if( ATCA_SUCCESS != status ) esp_restart();
+        status = atcab_counter_read( 1, &counter_value );
+        if( ATCA_SUCCESS != status ) esp_restart();
+    }
     esp_restart();
 #endif
 }
