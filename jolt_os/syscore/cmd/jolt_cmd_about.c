@@ -1,3 +1,4 @@
+#include "esp_ota_ops.h"
 #include "esp_spi_flash.h"
 #include "esp_system.h"
 #include "hal/radio/wifi.h"
@@ -99,7 +100,11 @@ int jolt_cmd_about( int argc, char **argv )
         if( !add_semver_to_object( json, "jolt_os", JOLT_OS_VERSION.major, JOLT_OS_VERSION.minor,
                                    JOLT_OS_VERSION.patch ) )
             goto end;
-        if( NULL == cJSON_AddStringToObject( json, "jolt_os_commit", JOLT_OS_COMMIT ) ) goto end;
+        {
+            const esp_app_desc_t *desc = esp_ota_get_app_description();
+            if( NULL == cJSON_AddStringToObject( json, "jolt_os_commit", desc->version ) ) goto end;
+            if( NULL == cJSON_AddStringToObject( json, "jolt_os_idf_commit", desc->idf_ver ) ) goto end;
+        }
         if( !add_semver_to_object( json, "jelf_loader", JOLT_JELF_VERSION.major, JOLT_JELF_VERSION.minor,
                                    JOLT_JELF_VERSION.patch ) )
             goto end;

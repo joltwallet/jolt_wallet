@@ -297,8 +297,6 @@ static const void *exports[] = {
 
 const jolt_version_t JOLT_JELF_VERSION = { 0 };
 
-const char *JOLT_OS_COMMIT = NULL;
-
 /* Dummy place holder */
 static const void *exports[248] = { 0 };
 

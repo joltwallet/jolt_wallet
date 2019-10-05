@@ -73,7 +73,6 @@ typedef struct jolt_version_t {
     jolt_release_type_t release;
 } jolt_version_t;
 
-extern const char *JOLT_OS_COMMIT;             /**< JoltOS commit */
 extern const jolt_version_t JOLT_OS_VERSION;   /**< JoltOS version */
 extern const jolt_version_t JOLT_JELF_VERSION; /**< Used to determine app compatibility */
 extern const jolt_version_t JOLT_HW_VERSION;   /**< To check hardware compatability */
