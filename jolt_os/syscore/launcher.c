@@ -165,6 +165,7 @@ int launch_file( const char *fn_basename, int app_argc, char **app_argv, const c
     preloading_scr = NULL;
 
     strlcpy( app_cache.name, fn_basename, sizeof( app_cache.name ) );
+    ESP_LOGD(TAG, "app_cache name set to \"%s\"", app_cache.name);
 
 exec:
     /* Verify Signature */

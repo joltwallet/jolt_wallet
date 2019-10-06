@@ -87,7 +87,9 @@ static char *display_name_to_fn( char *fn, const char *display_name )
 static void launch_file_proxy( lv_obj_t *btn, lv_event_t event )
 {
     if( LV_EVENT_SHORT_CLICKED == event ) {
-        char fn[JOLT_FS_MAX_FILENAME_BUF_LEN] = {0};
+        /* Has to be static since launcher doesn't copy-in-memory the filename
+         * until application is successfully loaded */
+        static char fn[JOLT_FS_MAX_FILENAME_BUF_LEN] = {0};
         display_name_to_fn( fn, lv_list_get_btn_text( btn ) );
         ESP_LOGI( TAG, "Launching %s", fn );
         jolt_bg_create( launch_app_task, (void *)fn, NULL );
