@@ -12,6 +12,8 @@ COMPONENT_SRCDIRS := . \
     hal/storage \
     hal/storage/aes132_library \
     hal/storage/atca \
+	hash/ \
+	hash/algorithms \
     jelf_loader/src \
     jolt_gui \
     jolt_gui/custom_fonts \
@@ -26,6 +28,7 @@ COMPONENT_SRCDIRS := . \
 COMPONENT_ADD_INCLUDEDIRS := . \
     hal/storage/aes132_library \
 	hal/storage/atca \
+	hash \
     jelf_loader/include
 
 COMPONENT_EXTRA_CLEAN := \
