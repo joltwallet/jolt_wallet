@@ -44,14 +44,14 @@ static void statusbar_update( lv_task_t *task )
     char statusbar_symbols[JOLT_STATUSBAR_BUF_LEN] = {0};
 
     if( statusbar_icons_enabled & JOLT_GUI_STATUSBAR_ICON_LOCK ) {
-        ESP_LOGD(TAG, "Updating Lock Icon");
+        ESP_LOGD( TAG, "Updating Lock Icon" );
         int8_t lock_status;
         lock_status = statusbar_indicators[JOLT_HW_MONITOR_INDEX_LOCK].val;
         if( lock_status != 0 ) strlcat( statusbar_symbols, JOLT_GUI_SYMBOL_LOCK, sizeof( statusbar_symbols ) );
     }
 
     if( statusbar_icons_enabled & JOLT_GUI_STATUSBAR_ICON_BLUETOOTH ) {
-        ESP_LOGD(TAG, "Updating Bluetooth Icon");
+        ESP_LOGD( TAG, "Updating Bluetooth Icon" );
         int8_t bluetooth_level;
         bluetooth_level = statusbar_indicators[JOLT_HW_MONITOR_INDEX_BLUETOOTH].val;
         switch( bluetooth_level ) {
@@ -71,7 +71,7 @@ static void statusbar_update( lv_task_t *task )
     }
 
     if( statusbar_icons_enabled & JOLT_GUI_STATUSBAR_ICON_WIFI ) {
-        ESP_LOGD(TAG, "Updating Lock Icon");
+        ESP_LOGD( TAG, "Updating Lock Icon" );
         int8_t wifi_level;
         wifi_level = statusbar_indicators[JOLT_HW_MONITOR_INDEX_WIFI].val;
         if( wifi_level == -1 )
@@ -93,7 +93,7 @@ static void statusbar_update( lv_task_t *task )
 #endif
 
     if( statusbar_icons_enabled & JOLT_GUI_STATUSBAR_ICON_BATTERY ) {
-        ESP_LOGD(TAG, "Updating Battery Icon");
+        ESP_LOGD( TAG, "Updating Battery Icon" );
         int8_t battery_level = statusbar_indicators[JOLT_HW_MONITOR_INDEX_BATTERY].val;
         if( battery_level > 100 )
             strlcat( statusbar_symbols, JOLT_GUI_SYMBOL_BATTERY_CHARGING, sizeof( statusbar_symbols ) );
@@ -153,7 +153,7 @@ void jolt_gui_statusbar_create()
     lv_style_copy( &statusbar_style, lv_obj_get_style( statusbar_label ) );
     statusbar_style.text.letter_space = JOLT_STATUSBAR_SYMBOL_SPACE;
     statusbar_style.text.font         = &jolt_symbols;
-    statusbar_style.text.color = LV_COLOR_WHITE;
+    statusbar_style.text.color        = LV_COLOR_WHITE;
     lv_obj_set_style( statusbar_label, &statusbar_style );
     lv_label_set_long_mode( statusbar_label, LV_LABEL_LONG_CROP );
     lv_label_set_align( statusbar_label, LV_LABEL_ALIGN_RIGHT );
