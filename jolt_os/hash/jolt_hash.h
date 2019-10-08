@@ -40,7 +40,7 @@ typedef struct {
 
 /**
  * @brief
- * @param[in] type Enumerated hashing algorith identifier
+ * @param[in] type Enumerated hashing algorithm identifier
  * @param[out] hash Output hash buffer.
  * @param[in] hash_len Output hash buffer size.
  * @param[in] msg Data to hash.

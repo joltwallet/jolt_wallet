@@ -30,7 +30,7 @@ static jolt_hash_status_t check_hashing_ctx_common( jolt_hash_t *ctx )
     }
     else if( ctx->hash_len > jolt_hash_registry[ctx->type].size.max ) {
         ESP_LOGE( TAG, "Output hash has a maximum length of %d bytes", jolt_hash_registry[ctx->type].size.max );
-        return JOLT_HASH_STATUS_INSUFF_BUF;
+        return JOLT_HASH_STATUS_PARAM;
     }
     else if( ctx->hash_len < jolt_hash_registry[ctx->type].size.min ) {
         ESP_LOGE( TAG, "Output hash has a minimum length of %d bytes", jolt_hash_registry[ctx->type].size.min );
@@ -58,7 +58,7 @@ jolt_hash_status_t jolt_hash( jolt_hash_type_t type, uint8_t *hash, size_t hash_
     }
     else if( hash_len > jolt_hash_registry[type].size.max ) {
         ESP_LOGE( TAG, "Output hash has a maximum length of %d bytes", jolt_hash_registry[type].size.max );
-        return JOLT_HASH_STATUS_INSUFF_BUF;
+        return JOLT_HASH_STATUS_PARAM;
     }
     else if( hash_len < jolt_hash_registry[type].size.min ) {
         ESP_LOGE( TAG, "Output hash has a minimum length of %d bytes", jolt_hash_registry[type].size.min );
