@@ -11,11 +11,17 @@ typedef jolt_hash_status_t ( *jolt_hash_func_update_t )( jolt_hash_t *ctx, const
 typedef jolt_hash_status_t ( *jolt_hash_func_final_t )( jolt_hash_t *ctx );
 
 typedef struct {
-    jolt_hash_func_single_t single;
+    const char name[15]; /**< NULL terminated string */
+    struct {
+        uint8_t min; /**< Minimum output buffer size (inclusive) */
+        uint8_t max; /**< Maximum output buffer size (inclusive) */
+    } size;
 
-    jolt_hash_func_init_t init;
-    jolt_hash_func_update_t update;
-    jolt_hash_func_final_t final;
+    jolt_hash_func_single_t single; /**< Function for single-pass hash */
+
+    jolt_hash_func_init_t init;     /**< Initialize multipart hashing */
+    jolt_hash_func_update_t update; /**< Update multipart hashing */
+    jolt_hash_func_final_t final;   /**< Finalize multipart hashing */
 
 } jolt_hash_entry_t;
 

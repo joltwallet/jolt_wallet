@@ -1,21 +1,20 @@
-#include "algorithms/sha256.h"
 #include "jolt_hash.h"
 #include "string.h"
 #include "unity.h"
 
-static const char MODULE_NAME[] = "[jolt_hash_sha256]";
+static const char MODULE_NAME[] = "[jolt_hash_ripemd160]";
 
-TEST_CASE( "sha256 basic", MODULE_NAME )
+TEST_CASE( "ripemd160 basic", MODULE_NAME )
 {
-    /* From https://www.di-mgt.com.au/sha_testvectors.html */
+    /* From https://homes.esat.kuleuven.be/~bosselae/ripemd160.html */
 
     jolt_hash_status_t status;
-    uint8_t expected[32], out[32];
+    uint8_t expected[20], out[20];
     const uint8_t msg[] = "abc"; /* Don't hash the NULL-terminator */
 
     {
         /* Populate Expected */
-        const char hex[] = "ba7816bf 8f01cfea 414140de 5dae2223 b00361a3 96177a9c b410ff61 f20015ad";
+        const char hex[] = "8eb208f7e05d987a9b044a8e98c6b087f15a0bfc";
         int res;
         res = sodium_hex2bin( expected, sizeof( expected ), hex, strlen( hex ), " ", NULL, NULL );
         TEST_ASSERT_EQUAL_INT( 0, res );
@@ -23,7 +22,7 @@ TEST_CASE( "sha256 basic", MODULE_NAME )
 
     /* Single */
     {
-        status = jolt_hash( JOLT_HASH_SHA256, out, sizeof( out ), msg, 3, NULL, 0 );
+        status = jolt_hash( JOLT_HASH_RIPEMD160, out, sizeof( out ), msg, 3, NULL, 0 );
         TEST_ASSERT_EQUAL_UINT8( JOLT_HASH_STATUS_SUCCESS, status );
         TEST_ASSERT_EQUAL_UINT8_ARRAY( expected, out, sizeof( expected ) );
     }
@@ -31,7 +30,7 @@ TEST_CASE( "sha256 basic", MODULE_NAME )
     /* Multi */
     {
         jolt_hash_t ctx = {0};
-        ctx.type        = JOLT_HASH_SHA256;
+        ctx.type        = JOLT_HASH_RIPEMD160;
         ctx.hash        = out;
         ctx.hash_len    = sizeof( out );
         status          = jolt_hash_init( &ctx );

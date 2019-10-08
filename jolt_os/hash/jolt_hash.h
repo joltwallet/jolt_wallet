@@ -10,7 +10,7 @@
 
 enum {
     JOLT_HASH_STATUS_SUCCESS = 0, /**< Hash computation successful */
-    JOLT_HASH_STATUS_FAILURE,     /**< Generic failure */
+    JOLT_HASH_STATUS_FAIL,        /**< Generic failure */
     JOLT_HASH_STATUS_NOT_IMPL,    /**< Functionality not implemented yet */
     JOLT_HASH_STATUS_PARAM,       /**< Invalid input parameters */
     JOLT_HASH_STATUS_OOM,         /**< Ran out of memory */
@@ -23,6 +23,8 @@ enum {
     JOLT_HASH_UNDEFINED = 0,
     JOLT_HASH_BLAKE2B,
     JOLT_HASH_SHA256,
+    JOLT_HASH_SHA512,
+    JOLT_HASH_RIPEMD160,
     JOLT_HASH_MAX_IDX,
 };
 typedef uint8_t jolt_hash_type_t;
@@ -40,7 +42,7 @@ typedef struct {
 
 /**
  * @brief
- * @param[in] type Enumerated hashing algorith identifier
+ * @param[in] type Enumerated hashing algorithm identifier
  * @param[out] hash Output hash buffer.
  * @param[in] hash_len Output hash buffer size.
  * @param[in] msg Data to hash.
@@ -88,5 +90,12 @@ jolt_hash_status_t jolt_hash_update( jolt_hash_t *ctx, const uint8_t *msg, size_
  * @return Jolt hashing status code.
  */
 jolt_hash_status_t jolt_hash_final( jolt_hash_t *ctx );
+
+/**
+ * @brief Converts a hash name-string to a valid jolt identifier.
+ * @param[in] name Hash name. Gets matched to the `name` field in the Jolt Hash Registry.
+ * @return Hash type. Returns `JOLT_HASH_UNDEFINED` (0) if not found.
+ */
+jolt_hash_type_t jolt_hash_from_str( const char *name );
 
 #endif

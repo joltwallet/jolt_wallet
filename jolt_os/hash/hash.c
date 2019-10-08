@@ -2,6 +2,7 @@
 
 #include "esp_log.h"
 #include "hash_internal.h"
+#include "string.h"
 
 static const char TAG[] = "jolt_hash";
 
@@ -13,6 +14,7 @@ static const char TAG[] = "jolt_hash";
 static jolt_hash_status_t check_hashing_ctx_common( jolt_hash_t *ctx )
 {
     if( NULL == ctx ) return JOLT_HASH_STATUS_PARAM;
+
     if( JOLT_HASH_UNDEFINED == ctx->type ) {
         ESP_LOGE( TAG, "Must specify hashing algorithm." );
         return JOLT_HASH_STATUS_PARAM;
@@ -25,6 +27,14 @@ static jolt_hash_status_t check_hashing_ctx_common( jolt_hash_t *ctx )
     if( NULL == ctx->hash || 0 == ctx->hash_len ) {
         ESP_LOGE( TAG, "Invalid output hash buffer" );
         return JOLT_HASH_STATUS_PARAM;
+    }
+    else if( ctx->hash_len > jolt_hash_registry[ctx->type].size.max ) {
+        ESP_LOGE( TAG, "Output hash has a maximum length of %d bytes", jolt_hash_registry[ctx->type].size.max );
+        return JOLT_HASH_STATUS_PARAM;
+    }
+    else if( ctx->hash_len < jolt_hash_registry[ctx->type].size.min ) {
+        ESP_LOGE( TAG, "Output hash has a minimum length of %d bytes", jolt_hash_registry[ctx->type].size.min );
+        return JOLT_HASH_STATUS_INSUFF_BUF;
     }
 
     return JOLT_HASH_STATUS_SUCCESS;
@@ -45,6 +55,14 @@ jolt_hash_status_t jolt_hash( jolt_hash_type_t type, uint8_t *hash, size_t hash_
     if( NULL == hash || 0 == hash_len ) {
         ESP_LOGE( TAG, "Must provide output hashing buffer." );
         return JOLT_HASH_STATUS_PARAM;
+    }
+    else if( hash_len > jolt_hash_registry[type].size.max ) {
+        ESP_LOGE( TAG, "Output hash has a maximum length of %d bytes", jolt_hash_registry[type].size.max );
+        return JOLT_HASH_STATUS_PARAM;
+    }
+    else if( hash_len < jolt_hash_registry[type].size.min ) {
+        ESP_LOGE( TAG, "Output hash has a minimum length of %d bytes", jolt_hash_registry[type].size.min );
+        return JOLT_HASH_STATUS_INSUFF_BUF;
     }
 
     if( NULL == msg || 0 == msg_len ) {
@@ -111,4 +129,15 @@ jolt_hash_status_t jolt_hash_final( jolt_hash_t *ctx )
     status = jolt_hash_registry[ctx->type].final( ctx );
 
     return status;
+}
+
+jolt_hash_type_t jolt_hash_from_str( const char *name )
+{
+    if( NULL == name ) return JOLT_HASH_UNDEFINED;
+
+    for( uint8_t i = 1; i < JOLT_HASH_MAX_IDX; i++ ) {
+        if( 0 == strcmp( jolt_hash_registry[i].name, name ) ) return i;
+    }
+
+    return JOLT_HASH_UNDEFINED;
 }
