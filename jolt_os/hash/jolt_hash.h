@@ -10,7 +10,7 @@
 
 enum {
     JOLT_HASH_STATUS_SUCCESS = 0, /**< Hash computation successful */
-    JOLT_HASH_STATUS_FAILURE,     /**< Generic failure */
+    JOLT_HASH_STATUS_FAIL,        /**< Generic failure */
     JOLT_HASH_STATUS_NOT_IMPL,    /**< Functionality not implemented yet */
     JOLT_HASH_STATUS_PARAM,       /**< Invalid input parameters */
     JOLT_HASH_STATUS_OOM,         /**< Ran out of memory */
@@ -88,5 +88,12 @@ jolt_hash_status_t jolt_hash_update( jolt_hash_t *ctx, const uint8_t *msg, size_
  * @return Jolt hashing status code.
  */
 jolt_hash_status_t jolt_hash_final( jolt_hash_t *ctx );
+
+/**
+ * @brief Converts a hash name-string to a valid jolt identifier.
+ * @param[in] name Hash name. Gets matched to the `name` field in the Jolt Hash Registry.
+ * @return Hash type. Returns `JOLT_HASH_UNDEFINED` (0) if not found.
+ */
+jolt_hash_type_t jolt_hash_from_str( const char *name );
 
 #endif

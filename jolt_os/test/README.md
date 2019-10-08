@@ -37,10 +37,10 @@ all the tests.
 Then, run the script to generate 20 million bytes of RNG data to file `rng.raw`:
 
 ```
-python3 pyutils/rng_dump.py -n 4294967295 --port $YOUR_JOLT_PORT
+python3 pyutils/rng_dump.py -n 1073741824 --port $YOUR_JOLT_PORT
 ```
 
-It will take about *9 days* to generate 20MB of data from the internal RNG 
+It will take about *2 days* to generate 4GB of data from the internal RNG 
 source.
 
 ### Run Benchmark
