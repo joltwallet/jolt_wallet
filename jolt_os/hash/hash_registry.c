@@ -1,5 +1,6 @@
 #include "algorithms/blake2b.h"
 #include "algorithms/sha256.h"
+#include "algorithms/sha512.h"
 #include "hash_internal.h"
 
 const jolt_hash_entry_t jolt_hash_registry[] = {
@@ -20,5 +21,14 @@ const jolt_hash_entry_t jolt_hash_registry[] = {
                         .init   = jolt_hash_sha256_init,
                         .update = jolt_hash_sha256_update,
                         .final  = jolt_hash_sha256_final,
+                },
+        [JOLT_HASH_SHA512] =
+                {
+                        .name   = "sha512",
+                        .size   = {.min = 64, .max = 64},
+                        .single = jolt_hash_sha512,
+                        .init   = jolt_hash_sha512_init,
+                        .update = jolt_hash_sha512_update,
+                        .final  = jolt_hash_sha512_final,
                 },
 };

@@ -23,6 +23,7 @@ enum {
     JOLT_HASH_UNDEFINED = 0,
     JOLT_HASH_BLAKE2B,
     JOLT_HASH_SHA256,
+    JOLT_HASH_SHA512,
     JOLT_HASH_MAX_IDX,
 };
 typedef uint8_t jolt_hash_type_t;
