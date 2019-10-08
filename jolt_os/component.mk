@@ -5,6 +5,8 @@
 COMPONENT_NAME := jolt_os
 
 COMPONENT_SRCDIRS := . \
+	crypto/ \
+	crypto/algorithms \
     hal \
     hal/lv_drivers \
     hal/lv_drivers/display \
@@ -26,6 +28,7 @@ COMPONENT_SRCDIRS := . \
 	syscore/ymodem
 
 COMPONENT_ADD_INCLUDEDIRS := . \
+	crypto \
     hal/storage/aes132_library \
 	hal/storage/atca \
 	hash \

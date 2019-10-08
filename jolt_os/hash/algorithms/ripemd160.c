@@ -1,17 +1,17 @@
 #define LOG_LOCAL_LEVEL 4
 
+#include "mbedtls/ripemd160.h"
 #include "assert.h"
 #include "esp_log.h"
 #include "hash_internal.h"
-#include "mbedtls/ripemd160.h"
 
 jolt_hash_status_t jolt_hash_ripemd160( uint8_t *hash, size_t hash_len, const uint8_t *msg, size_t msg_len,
-                                     const uint8_t *key, uint8_t key_len )
+                                        const uint8_t *key, uint8_t key_len )
 {
     int res;
     assert( hash_len == 20 );
     assert( key_len == 0 );
-    res = mbedtls_ripemd160_ret( msg, msg_len, hash);
+    res = mbedtls_ripemd160_ret( msg, msg_len, hash );
     if( 0 == res )
         return JOLT_HASH_STATUS_SUCCESS;
     else
@@ -27,7 +27,7 @@ jolt_hash_status_t jolt_hash_ripemd160_init( jolt_hash_t *ctx )
     mbedtls_ripemd160_init( state );
     res = mbedtls_ripemd160_starts_ret( state );
     if( 0 != res ) {
-        free(state);
+        free( state );
         return JOLT_HASH_STATUS_FAIL;
     }
     ctx->state = state;

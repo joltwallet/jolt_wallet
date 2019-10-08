@@ -15,7 +15,8 @@ TEST_CASE( "sha512 basic", MODULE_NAME )
 
     {
         /* Populate Expected */
-        const char hex[] = "ddaf35a193617aba cc417349ae204131 12e6fa4e89a97ea2 0a9eeee64b55d39a 2192992a274fc1a8 36ba3c23a3feebbd 454d4423643ce80e 2a9ac94fa54ca49f";
+        const char hex[] = "ddaf35a193617aba cc417349ae204131 12e6fa4e89a97ea2 0a9eeee64b55d39a 2192992a274fc1a8 "
+                           "36ba3c23a3feebbd 454d4423643ce80e 2a9ac94fa54ca49f";
         int res;
         res = sodium_hex2bin( expected, sizeof( expected ), hex, strlen( hex ), " ", NULL, NULL );
         TEST_ASSERT_EQUAL_INT( 0, res );

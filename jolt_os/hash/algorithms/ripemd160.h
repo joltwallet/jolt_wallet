@@ -4,7 +4,7 @@
 #include "jolt_hash.h"
 
 jolt_hash_status_t jolt_hash_ripemd160( uint8_t *hash, size_t hash_len, const uint8_t *msg, size_t msg_len,
-                                     const uint8_t *key, uint8_t key_len );
+                                        const uint8_t *key, uint8_t key_len );
 
 jolt_hash_status_t jolt_hash_ripemd160_init( jolt_hash_t *ctx );
 
