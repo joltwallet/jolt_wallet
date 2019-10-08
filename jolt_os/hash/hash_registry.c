@@ -1,7 +1,7 @@
 #include "algorithms/blake2b.h"
+#include "algorithms/ripemd160.h"
 #include "algorithms/sha256.h"
 #include "algorithms/sha512.h"
-#include "algorithms/ripemd160.h"
 #include "hash_internal.h"
 
 const jolt_hash_entry_t jolt_hash_registry[] = {
