@@ -9,7 +9,6 @@ static const char MODULE_NAME[] = "[jolt_hash_blake2b]";
 TEST_CASE( "blake2b basic", MODULE_NAME )
 {
     jolt_hash_status_t status;
-    jolt_hash_t ctx = {0};
     uint8_t expected[64], out[64];
     const uint8_t msg[] = {0x00, 0x01, 0x02, 0x03};
     uint8_t key[64];
@@ -28,7 +27,7 @@ TEST_CASE( "blake2b basic", MODULE_NAME )
     }
 
     {
-        /* Populate Key */
+        /* Populate Expected */
         const char hex[] = "beaa5a3d08f3807143cf621d95cd690514d0b49efff9c91d24b59241ec0eefa5f60196d407048bba8d2146828e"
                            "bcb0488d8842fd56bb4f6df8e19c4b4daab8ac";
         int res;

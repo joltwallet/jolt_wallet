@@ -25,7 +25,7 @@ TEST_CASE( "jolt_hash single", MODULE_NAME )
     }
 
     {
-        /* Populate Key */
+        /* Populate Expected */
         const char hex[] = "beaa5a3d08f3807143cf621d95cd690514d0b49efff9c91d24b59241ec0eefa5f60196d407048bba8d2146828e"
                            "bcb0488d8842fd56bb4f6df8e19c4b4daab8ac";
         int res;
@@ -95,7 +95,7 @@ TEST_CASE( "jolt_hash multi", MODULE_NAME )
     }
 
     {
-        /* Populate Key */
+        /* Populate Expected */
         const char hex[] = "beaa5a3d08f3807143cf621d95cd690514d0b49efff9c91d24b59241ec0eefa5f60196d407048bba8d2146828e"
                            "bcb0488d8842fd56bb4f6df8e19c4b4daab8ac";
         int res;
