@@ -12,6 +12,7 @@ enum {
     JOLT_CRYPTO_STATUS_INSUFF_BUF,  /**< Output buffer is too small */
     JOLT_CRYPTO_STATUS_NOT_INIT,    /**< Current hashing state is not initialized */
     JOLT_CRYPTO_STATUS_INVALID_SIG, /**< Incorrect signature */
+    JOLT_CRYPTO_STATUS_INVALID_PUB, /**< Invalid public key */
 };
 typedef uint8_t jolt_crypto_status_t;
 
@@ -33,11 +34,10 @@ typedef struct {
     uint16_t public_len;    /**< Public key length in bytes. 0 if key is not populated*/
     uint16_t signature_len; /**< Signature length. */
 
-    jolt_hash_t hash; /**< Hashing algorithm to use */
+    jolt_hash_t hash;       /**< Jolt Hashing Context */
     jolt_crypto_type_t type;
 
     uint8_t initialized : 1;
-
 } jolt_crypto_t;
 
 /**
@@ -50,32 +50,12 @@ typedef struct {
  *    2. `ctx->hash.type` Hashing algorithm to use in the signing process. Leaving
  *       this to JOLT_HASH_UNDEFINED will default to the standard hashing algorithm
  *       for the selected signature.
- *
- * This will allocate space for the private and public key that must be
- * freed by calling `jolt_crypto_free`.
+ *    3. `ctx->public` and `ctx->public_len` must be set.
  *
  * @param[in] ctx Jolt signing context.
  * @return Status return code.
  */
 jolt_crypto_status_t jolt_crypto_derive( jolt_crypto_t *ctx );
-
-/**
- * @brief Copies the provided private key into the context.
- *
- * Will automatically derive the corresponding public key.
- *
- * @param[in] ctx Jolt signing context
- * @return Status return code.
- */
-jolt_crypto_status_t jolt_crypto_set_private( jolt_crypto_t *ctx, const uint8_t *key, uint16_t key_len );
-
-/**
- * @brief Copies the provided public key into the context.
- *
- * @param[in] ctx Jolt signing context
- * @return Status return code.
- */
-jolt_crypto_status_t jolt_crypto_set_public( jolt_crypto_t *ctx, const uint8_t *key, uint16_t key_len );
 
 /**
  * @brief Sign a message.
@@ -115,7 +95,7 @@ jolt_crypto_status_t jolt_crypto_verify( jolt_crypto_type_t sig_type, jolt_hash_
                                          const uint8_t *public_key, uint16_t public_key_len );
 
 /**
- * @brief Initialize a multi-part signature session.
+ * @brief Initialize a multi-part signature signing session.
  *
  * The following fields must be populated prior to calling:
  *    1. `ctx->type` Signature algorithm to use.
@@ -126,7 +106,22 @@ jolt_crypto_status_t jolt_crypto_verify( jolt_crypto_type_t sig_type, jolt_hash_
  * @param[in] ctx Jolt signing context
  * @return Status return code.
  */
-jolt_crypto_status_t jolt_crypto_init( jolt_crypto_t *ctx );
+jolt_crypto_status_t jolt_crypto_sign_init( jolt_crypto_t *ctx );
+
+/**
+ * @brief Initialize a multi-part signature verificiation session.
+ *
+ * The following fields must be populated prior to calling:
+ *    1. `ctx->type` Signature algorithm to use.
+ *    2. `ctx->hash.type` Hashing algorithm to use in the signing process. Leaving
+ *       this to JOLT_HASH_UNDEFINED will default to the standard hashing algorithm
+ *       for the selected signature.
+ *    3. `ctx->signature` `ctx->signature_len`
+ *
+ * @param[in] ctx Jolt signing context
+ * @return Status return code.
+ */
+jolt_crypto_status_t jolt_crypto_verify_init( jolt_crypto_t *ctx );
 
 /**
  * @brief Add part of a message to the digest.
@@ -136,7 +131,17 @@ jolt_crypto_status_t jolt_crypto_init( jolt_crypto_t *ctx );
  * @param[in] msg_len Length of message portion in bytes.
  * @return Status return code.
  */
-jolt_crypto_status_t jolt_crypto_update( jolt_crypto_t *ctx, const uint8_t *msg, size_t msg_len );
+jolt_crypto_status_t jolt_crypto_sign_update( jolt_crypto_t *ctx, const uint8_t *msg, size_t msg_len );
+
+/**
+ * @brief Add part of a message to the digest.
+ *
+ * @param[in] ctx Jolt signing context
+ * @param[in] msg Message portion to verify.
+ * @param[in] msg_len Length of message portion in bytes.
+ * @return Status return code.
+ */
+jolt_crypto_status_t jolt_crypto_verify_update( jolt_crypto_t *ctx, const uint8_t *msg, size_t msg_len );
 
 /**
  * @brief Finalize and verify the signature.
@@ -170,8 +175,8 @@ jolt_crypto_status_t jolt_crypto_sign_final( jolt_crypto_t *ctx );
 /**
  * @brief Converts an alogrithm name-string to a valid jolt identifier.
  * @param[in] name Signature name. Gets matched to the `name` field in the Jolt Signature Registry.
- * @return Hash type. Returns `JOLT_HASH_UNDEFINED` (0) if not found.
+ * @return Signing algorithm type. Returns `JOLT_CRYPTO_UNDEFINED` (0) if not found.
  */
-jolt_hash_type_t jolt_crypto_from_str( const char *name );
+jolt_crypto_type_t jolt_crypto_from_str( const char *name );
 
 #endif

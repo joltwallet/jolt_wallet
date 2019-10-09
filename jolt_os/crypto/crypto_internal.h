@@ -23,11 +23,12 @@ typedef struct {
 
     jolt_crypto_func_derive_t derive; /**< Derive public key from private. */
 
-    jolt_crypto_func_sign_t sign;     /**< Function for single-pass sign */
-    jolt_crypto_func_verify_t verify; /**< Function for single-pass verification */
+    jolt_crypto_func_init_t sign_init;          /**< Initialize multipart signing */
+    jolt_crypto_func_init_t verify_init;        /**< Initialize multipart verifying */
 
-    jolt_crypto_func_init_t init;          /**< Initialize multipart signing/verifying */
-    jolt_crypto_func_update_t update;      /**< Update multipart signing/verifying */
+    jolt_crypto_func_update_t sign_update;      /**< Update multipart signing/verifying */
+    jolt_crypto_func_update_t verify_update;
+
     jolt_crypto_func_final_t sign_final;   /**< Finalize multipart signing */
     jolt_crypto_func_final_t verify_final; /**< Finalize multipart verifying */
 
