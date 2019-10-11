@@ -127,6 +127,7 @@ jolt_hash_status_t jolt_hash_final( jolt_hash_t *ctx )
     }
 
     status = jolt_hash_registry[ctx->type].final( ctx );
+    ctx->initialized = false;
 
     return status;
 }
