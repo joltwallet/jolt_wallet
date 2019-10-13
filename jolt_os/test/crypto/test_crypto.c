@@ -5,12 +5,35 @@
 
 static const char MODULE_NAME[] = "[jolt_crypto]";
 
-TEST_CASE( "jolt_crypto single", MODULE_NAME )
+TEST_CASE( "jolt_crypto basic", MODULE_NAME )
 {
+    /* Using ED25519 for testing jolt_crypto api */
     /* https://tools.ietf.org/html/rfc8032#section-7.1 */
     jolt_crypto_status_t status;
     uint8_t private[32], public[32], signature[64];
     const uint8_t msg[] = {0x72};
+
+    /* Test invalid params */
+    status = jolt_crypto_derive( JOLT_CRYPTO_UNDEFINED, public, sizeof( public ), private, sizeof( private ) );
+    TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
+
+    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, NULL, sizeof( public ), private, sizeof( private ) );
+    TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
+
+    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, 0, private, sizeof( private ) );
+    TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
+
+    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, 31, private, sizeof( private ) );
+    TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
+
+    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, sizeof( public ), NULL, sizeof( private ) );
+    TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
+
+    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, sizeof( public ), private, 0 );
+    TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
+
+    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, sizeof( public ), private, 31 );
+    TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
 
     {
         /* Populate Private Key */
@@ -57,8 +80,6 @@ TEST_CASE( "jolt_crypto single", MODULE_NAME )
                                  sizeof( public ) );
     TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_SUCCESS, status );
 }
-
-TEST_CASE( "jolt_crypto multi", MODULE_NAME ) { TEST_IGNORE(); }
 
 TEST_CASE( "jolt_crypto_from_str", MODULE_NAME )
 {
