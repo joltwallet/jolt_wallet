@@ -1,8 +1,8 @@
 #ifndef JOLT_CRYPTO_H__
 #define JOLT_CRYPTO_H__
 
-#include "stdint.h"
 #include "stddef.h"
+#include "stdint.h"
 
 enum {
     JOLT_CRYPTO_STATUS_SUCCESS = 0, /**< Successful */
@@ -33,9 +33,8 @@ typedef uint8_t jolt_crypto_type_t;
  * @param[in] private_key_len Length of private key.
  * @return Status return code.
  */
-jolt_crypto_status_t jolt_crypto_derive( jolt_crypto_type_t type,
-        uint8_t *public_key, uint16_t public_key_len,
-        const uint8_t *private_key, uint16_t private_key_len );
+jolt_crypto_status_t jolt_crypto_derive( jolt_crypto_type_t type, uint8_t *public_key, uint16_t public_key_len,
+                                         const uint8_t *private_key, uint16_t private_key_len );
 
 /**
  * @brief Sign a message.
@@ -49,9 +48,8 @@ jolt_crypto_status_t jolt_crypto_derive( jolt_crypto_type_t type,
  * @param[in] private_key_len Length of private key.
  * @return Status return code.
  */
-jolt_crypto_status_t jolt_crypto_sign( jolt_crypto_type_t type, uint8_t *sig,
-                                       uint16_t sig_len, const uint8_t *msg, size_t msg_len,
-                                       const uint8_t *public_key, uint16_t public_key_len,
+jolt_crypto_status_t jolt_crypto_sign( jolt_crypto_type_t type, uint8_t *sig, uint16_t sig_len, const uint8_t *msg,
+                                       size_t msg_len, const uint8_t *public_key, uint16_t public_key_len,
                                        const uint8_t *private_key, uint16_t private_key_len );
 
 /**
@@ -68,9 +66,9 @@ jolt_crypto_status_t jolt_crypto_sign( jolt_crypto_type_t type, uint8_t *sig,
  *         was performed correctly, but the signature doesn't match the message and
  *         public key.
  */
-jolt_crypto_status_t jolt_crypto_verify( jolt_crypto_type_t type, const uint8_t *sig,
-                                         uint16_t sig_len, const uint8_t *msg, size_t msg_len,
-                                         const uint8_t *public_key, uint16_t public_key_len );
+jolt_crypto_status_t jolt_crypto_verify( jolt_crypto_type_t type, const uint8_t *sig, uint16_t sig_len,
+                                         const uint8_t *msg, size_t msg_len, const uint8_t *public_key,
+                                         uint16_t public_key_len );
 
 /**
  * @brief Converts an alogrithm name-string to a valid jolt identifier.
