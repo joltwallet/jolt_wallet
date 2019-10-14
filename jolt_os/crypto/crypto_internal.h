@@ -17,7 +17,7 @@ typedef jolt_crypto_status_t ( *jolt_crypto_func_verify_t )( const uint8_t *sig,
 
 /** Entry in the Jolt Crypto Registry */
 typedef struct {
-    const char name[16]; /**< NULL terminated string */
+    const char name[20]; /**< NULL terminated string */
 
     jolt_crypto_func_derive_t derive; /**< Derive public key from private. */
     jolt_crypto_func_sign_t sign;     /**< Initialize multipart signing */

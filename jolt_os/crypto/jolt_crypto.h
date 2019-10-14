@@ -5,20 +5,22 @@
 #include "stdint.h"
 
 enum {
-    JOLT_CRYPTO_STATUS_SUCCESS = 0, /**< Successful */
-    JOLT_CRYPTO_STATUS_FAIL,        /**< Generic failure */
-    JOLT_CRYPTO_STATUS_NOT_IMPL,    /**< Functionality not implemented yet */
-    JOLT_CRYPTO_STATUS_PARAM,       /**< Invalid input parameters */
-    JOLT_CRYPTO_STATUS_OOM,         /**< Ran out of memory */
-    JOLT_CRYPTO_STATUS_INSUFF_BUF,  /**< Output buffer is too small */
-    JOLT_CRYPTO_STATUS_INVALID_SIG, /**< Incorrect signature */
-    JOLT_CRYPTO_STATUS_INVALID_PUB, /**< Invalid public key */
+    JOLT_CRYPTO_STATUS_SUCCESS = 0,  /**< Successful */
+    JOLT_CRYPTO_STATUS_FAIL,         /**< Generic failure */
+    JOLT_CRYPTO_STATUS_NOT_IMPL,     /**< Functionality not implemented yet */
+    JOLT_CRYPTO_STATUS_PARAM,        /**< Invalid input parameters */
+    JOLT_CRYPTO_STATUS_OOM,          /**< Ran out of memory */
+    JOLT_CRYPTO_STATUS_INSUFF_BUF,   /**< Output buffer is too small */
+    JOLT_CRYPTO_STATUS_INVALID_SIG,  /**< Incorrect signature */
+    JOLT_CRYPTO_STATUS_INVALID_PUB,  /**< Invalid public key */
+    JOLT_CRYPTO_STATUS_INVALID_PRIV, /**< Invalid private key */
 };
 typedef uint8_t jolt_crypto_status_t;
 
 enum {
     JOLT_CRYPTO_UNDEFINED = 0,
     JOLT_CRYPTO_ED25519,
+    JOLT_CRYPTO_ECDSA_SECP256K1,
     JOLT_CRYPTO_MAX_IDX,
 };
 typedef uint8_t jolt_crypto_type_t;
