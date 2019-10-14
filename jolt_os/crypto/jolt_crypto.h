@@ -19,8 +19,8 @@ typedef uint8_t jolt_crypto_status_t;
 
 enum {
     JOLT_CRYPTO_UNDEFINED = 0,
-    JOLT_CRYPTO_ED25519,
-    JOLT_CRYPTO_ECDSA_SECP256K1,
+    JOLT_CRYPTO_ED25519,         /**< Raw 64-byte signature from 32 byte private and public keys */
+    JOLT_CRYPTO_ECDSA_SECP256K1, /**< DER encoded signature up to 73 bytes long. 32 byte private, 64 byte public */
     JOLT_CRYPTO_MAX_IDX,
 };
 typedef uint8_t jolt_crypto_type_t;
@@ -79,5 +79,23 @@ jolt_crypto_status_t jolt_crypto_verify( jolt_crypto_type_t type, const uint8_t 
  * @return Signing algorithm type. Returns `JOLT_CRYPTO_UNDEFINED` (0) if not found.
  */
 jolt_crypto_type_t jolt_crypto_from_str( const char *name );
+
+/**
+ * @brief Convert enumerated status to string.
+ * @param[in] status
+ */
+const char *jolt_crypto_status_to_str( jolt_crypto_status_t status );
+
+/**
+ * @brief UNITY Test
+ */
+#define TEST_ASSERT_JOLT_CRYPTO_STATUS( expected, actual )                                                          \
+    {                                                                                                               \
+        if( expected != actual ) {                                                                                  \
+            printf( "Expected: %s (0x%02X) Actual: %s (0x%02X)\n", jolt_crypto_status_to_str( expected ), expected, \
+                    jolt_crypto_status_to_str( actual ), actual );                                                  \
+            TEST_FAIL();                                                                                            \
+        }                                                                                                           \
+    }
 
 #endif

@@ -1,8 +1,13 @@
+//#define LOG_LOCAL_LEVEL 4
+
 #include "ecdsa_secp256k1.h"
 #include <mbedtls/ecdsa.h>
 #include "assert.h"
+#include "esp_log.h"
 #include "jolt_helpers.h"
 #include "string.h"
+
+static const char TAG[] = "ecdsa_secp256k1";
 
 /**
  * @brief Populate a keypair object.
@@ -58,7 +63,7 @@ jolt_crypto_status_t jolt_crypto_ecdsa_secp256k1_derive( uint8_t *public_key, ui
     mbedtls_ecp_keypair_init( &keypair );
 
     /* Confirm input/output buffer sizes */
-    if( 64 != *public_key_len || 32 != private_key_len ) {
+    if( 65 != *public_key_len || 32 != private_key_len ) {
         status = JOLT_CRYPTO_STATUS_PARAM;
         goto exit;
     }
@@ -67,12 +72,13 @@ jolt_crypto_status_t jolt_crypto_ecdsa_secp256k1_derive( uint8_t *public_key, ui
     if( JOLT_CRYPTO_STATUS_SUCCESS != status ) goto exit;
     status = JOLT_CRYPTO_STATUS_FAIL;
 
-    /* Export Q to public key */
-    memzero( public_key, 64 );
-    res = mbedtls_mpi_write_binary( &keypair.Q.X, public_key, 32 );
-    if( 0 != res ) goto exit;
-    res = mbedtls_mpi_write_binary( &keypair.Q.Y, public_key + 32, 32 );
-    if( 0 != res ) goto exit;
+    /* Export Q to uncompressed public key {0x04, X[32], Y[32]}*/
+    {
+        size_t olen;
+        res = mbedtls_ecp_point_write_binary( &keypair.grp, &keypair.Q, MBEDTLS_ECP_PF_UNCOMPRESSED, &olen, public_key,
+                                              *public_key_len );
+        if( 0 != res ) goto exit;
+    }
 
     status = JOLT_CRYPTO_STATUS_SUCCESS;
 
@@ -95,17 +101,15 @@ jolt_crypto_status_t jolt_crypto_ecdsa_secp256k1_sign( uint8_t *sig, uint16_t *s
     mbedtls_ecdsa_init( &ctx );
     mbedtls_ecp_keypair_init( &keypair );
 
-    /* Confirm input/output buffer sizes */
-    if( 64 != public_key_len || 32 != private_key_len ) {
-        status = JOLT_CRYPTO_STATUS_PARAM;
-        goto exit;
-    }
-    else if( *sig_len < ( 2 * 32 + 9 ) ) {
+    /* Confirm input parameters */
+    if( *sig_len < ( 2 * 32 + 9 ) ) {
         /* Must support maximum signature length size */
-        return JOLT_CRYPTO_STATUS_PARAM;
+        ESP_LOGE( TAG, "Insufficient signature buffer." );
+        return JOLT_CRYPTO_STATUS_INSUFF_BUF;
     }
     else if( 32 != msg_len ) {
         /* This is for signing a message hash, not the message itself */
+        ESP_LOGE( TAG, "msg should be a 32-byte hash." );
         return JOLT_CRYPTO_STATUS_PARAM;
     }
 
@@ -139,5 +143,42 @@ jolt_crypto_status_t jolt_crypto_ecdsa_secp256k1_verify( const uint8_t *sig, uin
                                                          size_t msg_len, const uint8_t *public_key,
                                                          uint16_t public_key_len )
 {
-    return JOLT_CRYPTO_STATUS_NOT_IMPL;
+    /* Requires DER encoded sig */
+    int res;
+    jolt_crypto_status_t status = JOLT_CRYPTO_STATUS_FAIL;
+    mbedtls_ecdsa_context ctx;
+    mbedtls_ecp_keypair keypair;
+
+    mbedtls_ecdsa_init( &ctx );
+    mbedtls_ecp_keypair_init( &keypair );
+
+    if( 32 != msg_len ) {
+        /* This is for signing a message hash, not the message itself */
+        ESP_LOGE( TAG, "msg should be a 32-byte hash." );
+        return JOLT_CRYPTO_STATUS_PARAM;
+    }
+
+    res = mbedtls_ecp_group_load( &keypair.grp, MBEDTLS_ECP_DP_SECP256K1 );
+    if( 0 != res ) goto exit;
+
+    res = mbedtls_ecp_point_read_binary( &keypair.grp, &keypair.Q, public_key, public_key_len );
+    if( 0 != res ) goto exit;
+
+    res = mbedtls_ecdsa_read_signature( &ctx, msg, msg_len, sig, sig_len );
+    if( MBEDTLS_ERR_ECP_BAD_INPUT_DATA == res ) {
+        ESP_LOGE( TAG, "Invalid signature" );
+        goto exit;
+    }
+    else if( 0 != res ) {
+        ESP_LOGE( TAG, "Failed to read/verify signature (-0x%04X)", (uint16_t)-res );
+        goto exit;
+    }
+
+    status = JOLT_CRYPTO_STATUS_SUCCESS;
+
+exit:
+    mbedtls_ecdsa_free( &ctx );
+    mbedtls_ecp_keypair_free( &keypair );
+
+    return status;
 }

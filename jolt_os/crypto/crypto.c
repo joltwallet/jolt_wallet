@@ -3,6 +3,7 @@
 #include "crypto_internal.h"
 #include "esp_log.h"
 #include "string.h"
+#include "unity.h"
 
 static const char TAG[] = "jolt_crypto";
 
@@ -114,4 +115,20 @@ jolt_crypto_type_t jolt_crypto_from_str( const char *name )
     }
 
     return JOLT_CRYPTO_UNDEFINED;
+}
+
+const char *jolt_crypto_status_to_str( jolt_crypto_status_t status )
+{
+    switch( status ) {
+        case JOLT_CRYPTO_STATUS_SUCCESS: return "JOLT_CRYPTO_STATUS_SUCCESS";
+        case JOLT_CRYPTO_STATUS_FAIL: return "JOLT_CRYPTO_STATUS_FAIL";
+        case JOLT_CRYPTO_STATUS_NOT_IMPL: return "JOLT_CRYPTO_STATUS_NOT_IMPL";
+        case JOLT_CRYPTO_STATUS_PARAM: return "JOLT_CRYPTO_STATUS_PARAM";
+        case JOLT_CRYPTO_STATUS_OOM: return "JOLT_CRYPTO_STATUS_OOM";
+        case JOLT_CRYPTO_STATUS_INSUFF_BUF: return "JOLT_CRYPTO_STATUS_INSUFF_BUF";
+        case JOLT_CRYPTO_STATUS_INVALID_SIG: return "JOLT_CRYPTO_STATUS_INVALID_SIG";
+        case JOLT_CRYPTO_STATUS_INVALID_PUB: return "JOLT_CRYPTO_STATUS_INVALID_PUB";
+        case JOLT_CRYPTO_STATUS_INVALID_PRIV: return "JOLT_CRYPTO_STATUS_INVALID_PRIV";
+        default: return "unknown";
+    }
 }
