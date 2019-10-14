@@ -30,12 +30,13 @@ typedef uint8_t jolt_crypto_type_t;
  *
  * @param[in] type Signature algorithm to use.
  * @param[out] public_key Public Key
- * @param[in] public_key_len Length of public key.
+ * @param[in,out] public_key_len Length of public key. Passed in should be the buffer size. Returned is the actual
+ * length.
  * @param[in] private_key Private Key
  * @param[in] private_key_len Length of private key.
  * @return Status return code.
  */
-jolt_crypto_status_t jolt_crypto_derive( jolt_crypto_type_t type, uint8_t *public_key, uint16_t public_key_len,
+jolt_crypto_status_t jolt_crypto_derive( jolt_crypto_type_t type, uint8_t *public_key, uint16_t *public_key_len,
                                          const uint8_t *private_key, uint16_t private_key_len );
 
 /**
@@ -43,14 +44,14 @@ jolt_crypto_status_t jolt_crypto_derive( jolt_crypto_type_t type, uint8_t *publi
  *
  * @param[in] type Signature algorithm to use.
  * @param[out] sig Output signature buffer.
- * @param[in] sig_len Output signature buffer length.
+ * @param[in,out] sig_len Output signature buffer length. Returned is the actual signature length.
  * @param[in] msg Input message buffer to sign.
  * @param[in] msg_len Length of input message buffer.
  * @param[in] private_key Private Key
  * @param[in] private_key_len Length of private key.
  * @return Status return code.
  */
-jolt_crypto_status_t jolt_crypto_sign( jolt_crypto_type_t type, uint8_t *sig, uint16_t sig_len, const uint8_t *msg,
+jolt_crypto_status_t jolt_crypto_sign( jolt_crypto_type_t type, uint8_t *sig, uint16_t *sig_len, const uint8_t *msg,
                                        size_t msg_len, const uint8_t *public_key, uint16_t public_key_len,
                                        const uint8_t *private_key, uint16_t private_key_len );
 

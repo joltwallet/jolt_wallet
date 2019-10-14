@@ -3,10 +3,10 @@
 
 #include "jolt_crypto.h"
 
-typedef jolt_crypto_status_t ( *jolt_crypto_func_derive_t )( uint8_t *public_key, uint16_t public_key_len,
+typedef jolt_crypto_status_t ( *jolt_crypto_func_derive_t )( uint8_t *public_key, uint16_t *public_key_len,
                                                              const uint8_t *private_key, uint16_t private_key_len );
 
-typedef jolt_crypto_status_t ( *jolt_crypto_func_sign_t )( uint8_t *sig, uint16_t sig_len, const uint8_t *msg,
+typedef jolt_crypto_status_t ( *jolt_crypto_func_sign_t )( uint8_t *sig, uint16_t *sig_len, const uint8_t *msg,
                                                            size_t msg_len, const uint8_t *public_key,
                                                            uint16_t public_key_len, const uint8_t *private_key,
                                                            uint16_t private_key_len );

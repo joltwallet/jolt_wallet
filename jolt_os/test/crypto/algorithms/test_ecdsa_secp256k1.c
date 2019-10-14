@@ -11,13 +11,17 @@ TEST_CASE( "ecdsa secp256k1 basic", MODULE_NAME )
 
     jolt_crypto_status_t status;
     uint8_t private[32], public[64], signature[64];
+    uint16_t public_len    = sizeof( public );
+    uint16_t signature_len = sizeof( signature );
+    uint16_t bad_public_len;
     const uint8_t msg[] = {0x72};
 
     /* Test invalid params */
-    status = jolt_crypto_derive( JOLT_CRYPTO_ECDSA_SECP256K1, public, 63, private, sizeof( private ) );
+    bad_public_len = 63;
+    status = jolt_crypto_derive( JOLT_CRYPTO_ECDSA_SECP256K1, public, &bad_public_len, private, sizeof( private ) );
     TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
 
-    status = jolt_crypto_derive( JOLT_CRYPTO_ECDSA_SECP256K1, public, sizeof( public ), private, 31 );
+    status = jolt_crypto_derive( JOLT_CRYPTO_ECDSA_SECP256K1, public, &public_len, private, 31 );
     TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
 
     {
@@ -29,7 +33,7 @@ TEST_CASE( "ecdsa secp256k1 basic", MODULE_NAME )
     }
 
     /* Test Public Key Derivation */
-    status = jolt_crypto_derive( JOLT_CRYPTO_ECDSA_SECP256K1, public, sizeof( public ), private, sizeof( private ) );
+    status = jolt_crypto_derive( JOLT_CRYPTO_ECDSA_SECP256K1, public, &public_len, private, sizeof( private ) );
     TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_SUCCESS, status );
 
     {

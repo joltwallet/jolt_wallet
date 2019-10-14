@@ -11,28 +11,36 @@ TEST_CASE( "jolt_crypto basic", MODULE_NAME )
     /* https://tools.ietf.org/html/rfc8032#section-7.1 */
     jolt_crypto_status_t status;
     uint8_t private[32], public[32], signature[64];
-    const uint8_t msg[] = {0x72};
+    uint16_t public_len = sizeof( public );
+    uint16_t bad_public_len;
+    uint16_t signature_len = sizeof( signature );
+    const uint8_t msg[]    = {0x72};
 
     /* Test invalid params */
-    status = jolt_crypto_derive( JOLT_CRYPTO_UNDEFINED, public, sizeof( public ), private, sizeof( private ) );
+    status = jolt_crypto_derive( JOLT_CRYPTO_UNDEFINED, public, &public_len, private, sizeof( private ) );
     TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
 
-    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, NULL, sizeof( public ), private, sizeof( private ) );
+    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, NULL, &public_len, private, sizeof( private ) );
     TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
 
-    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, 0, private, sizeof( private ) );
+    bad_public_len = 0;
+    status         = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, &bad_public_len, private, sizeof( private ) );
     TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
 
-    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, 31, private, sizeof( private ) );
+    bad_public_len = 31;
+    status         = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, &bad_public_len, private, sizeof( private ) );
     TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
 
-    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, sizeof( public ), NULL, sizeof( private ) );
+    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, NULL, private, sizeof( private ) );
     TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
 
-    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, sizeof( public ), private, 0 );
+    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, &public_len, NULL, sizeof( private ) );
     TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
 
-    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, sizeof( public ), private, 31 );
+    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, &public_len, private, 0 );
+    TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
+
+    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, &public_len, private, 31 );
     TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_PARAM, status );
 
     {
@@ -44,7 +52,7 @@ TEST_CASE( "jolt_crypto basic", MODULE_NAME )
     }
 
     /* Test Public Key Derivation */
-    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, sizeof( public ), private, sizeof( private ) );
+    status = jolt_crypto_derive( JOLT_CRYPTO_ED25519, public, &public_len, private, sizeof( private ) );
     TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_SUCCESS, status );
 
     {
@@ -58,7 +66,7 @@ TEST_CASE( "jolt_crypto basic", MODULE_NAME )
     }
 
     /* Test Computed Signature */
-    status = jolt_crypto_sign( JOLT_CRYPTO_ED25519, signature, sizeof( signature ), msg, sizeof( msg ), public,
+    status = jolt_crypto_sign( JOLT_CRYPTO_ED25519, signature, &signature_len, msg, sizeof( msg ), public,
                                sizeof( public ), private, sizeof( private ) );
     TEST_ASSERT_EQUAL_HEX8( JOLT_CRYPTO_STATUS_SUCCESS, status );
 
