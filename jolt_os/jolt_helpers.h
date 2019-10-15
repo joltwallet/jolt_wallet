@@ -278,6 +278,14 @@ void **jolt_consume_mem( size_t remain, size_t chunksize );
  */
 void jolt_consume_mem_free( void **consumed );
 
+/**
+ * @brief Print out all the contents of an array.
+ * @param[in] array Array to display.
+ * @param[in] len Length of array to display in bytes
+ * @param[in] split If `true`, print as "0xAB 0xCD"; otherwise "ABCD"
+ */
+void jolt_print_bytearray( const uint8_t *array, size_t len, bool split );
+
 #include <driver/uart.h>
 #include "hal/radio/bluetooth.h"
 /* Log something to uart if BLE is the stdin */

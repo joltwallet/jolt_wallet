@@ -339,3 +339,14 @@ void jolt_consume_mem_free( void **consumed )
         consumed = next;
     }
 }
+
+void jolt_print_bytearray( const uint8_t *array, size_t len, bool split )
+{
+    if( split ) {
+        for( size_t i = 0; i < len; i++ ) { printf( "0x%02X ", array[i] ); }
+    }
+    else {
+        for( size_t i = 0; i < len; i++ ) { printf( "%02X", array[i] ); }
+    }
+    printf( "\n" );
+}

@@ -1,8 +1,9 @@
 #define LOG_LOCAL_LEVEL 4
 
 #include "crypto_internal.h"
-#include "string.h"
 #include "esp_log.h"
+#include "string.h"
+#include "unity.h"
 
 static const char TAG[] = "jolt_crypto";
 
@@ -23,93 +24,86 @@ static jolt_crypto_status_t jolt_crypto_check_type( jolt_crypto_type_t type )
 static jolt_crypto_status_t jolt_crypto_check_nonzero( const uint8_t *key, uint16_t len )
 {
     if( NULL == key || 0 == len ) {
-        ESP_LOGE(TAG, "Must provide key");
+        ESP_LOGE( TAG, "Must provide key" );
         return JOLT_CRYPTO_STATUS_PARAM;
     }
 
     return JOLT_CRYPTO_STATUS_SUCCESS;
 }
 
-jolt_crypto_status_t jolt_crypto_derive( jolt_crypto_type_t type,
-        uint8_t *public_key, uint16_t public_key_len,
-        const uint8_t *private_key, uint16_t private_key_len )
-{ 
+jolt_crypto_status_t jolt_crypto_derive( jolt_crypto_type_t type, uint8_t *public_key, uint16_t *public_key_len,
+                                         const uint8_t *private_key, uint16_t private_key_len )
+{
     jolt_crypto_status_t status;
 
     status = jolt_crypto_check_type( type );
-    if (JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
+    if( JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
 
-    status = jolt_crypto_check_nonzero( public_key, public_key_len );
-    if (JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
+    if( NULL == public_key_len ) return JOLT_CRYPTO_STATUS_PARAM;
+
+    status = jolt_crypto_check_nonzero( public_key, *public_key_len );
+    if( JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
 
     status = jolt_crypto_check_nonzero( private_key, private_key_len );
-    if (JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
+    if( JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
 
-    status = jolt_crypto_registry[type].derive(
-            public_key, public_key_len,
-            private_key, private_key_len);
+    status = jolt_crypto_registry[type].derive( public_key, public_key_len, private_key, private_key_len );
 
     return status;
 }
 
-jolt_crypto_status_t jolt_crypto_sign( jolt_crypto_type_t type, uint8_t *sig,
-                                       uint16_t sig_len, const uint8_t *msg, size_t msg_len,
-                                       const uint8_t *public_key, uint16_t public_key_len,
+jolt_crypto_status_t jolt_crypto_sign( jolt_crypto_type_t type, uint8_t *sig, uint16_t *sig_len, const uint8_t *msg,
+                                       size_t msg_len, const uint8_t *public_key, uint16_t public_key_len,
                                        const uint8_t *private_key, uint16_t private_key_len )
 {
     jolt_crypto_status_t status;
 
     status = jolt_crypto_check_type( type );
-    if (JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
+    if( JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
 
-    status = jolt_crypto_check_nonzero( sig, sig_len );
-    if (JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
+    if( NULL == sig_len ) return JOLT_CRYPTO_STATUS_PARAM;
+
+    status = jolt_crypto_check_nonzero( sig, *sig_len );
+    if( JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
 
     status = jolt_crypto_check_nonzero( msg, msg_len );
-    if (JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
+    if( JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
 
     status = jolt_crypto_check_nonzero( public_key, public_key_len );
-    if (JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
+    if( JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
 
     status = jolt_crypto_check_nonzero( private_key, private_key_len );
-    if (JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
+    if( JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
 
     // TODO: Make macro to verify public key
 
-    status = jolt_crypto_registry[type].sign(
-            sig, sig_len,
-            msg, msg_len,
-            public_key, public_key_len,
-            private_key, private_key_len);
+    status = jolt_crypto_registry[type].sign( sig, sig_len, msg, msg_len, public_key, public_key_len, private_key,
+                                              private_key_len );
 
     return status;
 }
 
-jolt_crypto_status_t jolt_crypto_verify( jolt_crypto_type_t type, const uint8_t *sig,
-                                         uint16_t sig_len, const uint8_t *msg, size_t msg_len,
-                                         const uint8_t *public_key, uint16_t public_key_len )
+jolt_crypto_status_t jolt_crypto_verify( jolt_crypto_type_t type, const uint8_t *sig, uint16_t sig_len,
+                                         const uint8_t *msg, size_t msg_len, const uint8_t *public_key,
+                                         uint16_t public_key_len )
 {
     jolt_crypto_status_t status;
 
     status = jolt_crypto_check_type( type );
-    if (JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
+    if( JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
 
     status = jolt_crypto_check_nonzero( sig, sig_len );
-    if (JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
+    if( JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
 
     status = jolt_crypto_check_nonzero( msg, msg_len );
-    if (JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
+    if( JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
 
     status = jolt_crypto_check_nonzero( public_key, public_key_len );
-    if (JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
+    if( JOLT_CRYPTO_STATUS_SUCCESS != status ) return status;
 
-    status = jolt_crypto_registry[type].verify(
-            sig, sig_len,
-            msg, msg_len,
-            public_key, public_key_len);
+    status = jolt_crypto_registry[type].verify( sig, sig_len, msg, msg_len, public_key, public_key_len );
 
     return status;
-
 }
 
 jolt_crypto_type_t jolt_crypto_from_str( const char *name )
@@ -121,4 +115,20 @@ jolt_crypto_type_t jolt_crypto_from_str( const char *name )
     }
 
     return JOLT_CRYPTO_UNDEFINED;
+}
+
+const char *jolt_crypto_status_to_str( jolt_crypto_status_t status )
+{
+    switch( status ) {
+        case JOLT_CRYPTO_STATUS_SUCCESS: return "JOLT_CRYPTO_STATUS_SUCCESS";
+        case JOLT_CRYPTO_STATUS_FAIL: return "JOLT_CRYPTO_STATUS_FAIL";
+        case JOLT_CRYPTO_STATUS_NOT_IMPL: return "JOLT_CRYPTO_STATUS_NOT_IMPL";
+        case JOLT_CRYPTO_STATUS_PARAM: return "JOLT_CRYPTO_STATUS_PARAM";
+        case JOLT_CRYPTO_STATUS_OOM: return "JOLT_CRYPTO_STATUS_OOM";
+        case JOLT_CRYPTO_STATUS_INSUFF_BUF: return "JOLT_CRYPTO_STATUS_INSUFF_BUF";
+        case JOLT_CRYPTO_STATUS_INVALID_SIG: return "JOLT_CRYPTO_STATUS_INVALID_SIG";
+        case JOLT_CRYPTO_STATUS_INVALID_PUB: return "JOLT_CRYPTO_STATUS_INVALID_PUB";
+        case JOLT_CRYPTO_STATUS_INVALID_PRIV: return "JOLT_CRYPTO_STATUS_INVALID_PRIV";
+        default: return "unknown";
+    }
 }
