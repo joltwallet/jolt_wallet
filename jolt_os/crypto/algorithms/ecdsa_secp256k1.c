@@ -11,10 +11,12 @@ static const char TAG[] = "ecdsa_secp256k1";
 
 /**
  * @brief Populate a keypair object.
+ *
+ * Populates group, private key, and public key.
+ *
  * @param[out] keypair Populated keypair object. Must be previously initialized.
  */
-static jolt_crypto_status_t jolt_crypto_ecdsa_secp256k1_keypair( mbedtls_ecp_keypair *keypair,
-                                                                 const uint8_t *private_key )
+jolt_crypto_status_t jolt_crypto_ecdsa_secp256k1_keypair( mbedtls_ecp_keypair *keypair, const uint8_t *private_key )
 {
     int res;
     jolt_crypto_status_t status = JOLT_CRYPTO_STATUS_FAIL;
@@ -46,6 +48,23 @@ static jolt_crypto_status_t jolt_crypto_ecdsa_secp256k1_keypair( mbedtls_ecp_key
     /* Derive Public Key */
     res = mbedtls_ecp_mul( &keypair->grp, &keypair->Q, &keypair->d, &keypair->grp.G, NULL, NULL );
     if( 0 != res ) goto exit;
+
+    if( LOG_LOCAL_LEVEL >= 4 ) {
+        char buf[256];
+        size_t olen;
+
+        mbedtls_mpi_write_string( &keypair->d, 16, buf, sizeof( buf ), &olen );
+        ESP_LOGD( TAG, "d: %s", buf );
+
+        mbedtls_mpi_write_string( &keypair->Q.X, 16, buf, sizeof( buf ), &olen );
+        ESP_LOGD( TAG, "Q.X: %s", buf );
+
+        mbedtls_mpi_write_string( &keypair->Q.Y, 16, buf, sizeof( buf ), &olen );
+        ESP_LOGD( TAG, "Q.Y: %s", buf );
+
+        mbedtls_mpi_write_string( &keypair->Q.Z, 16, buf, sizeof( buf ), &olen );
+        ESP_LOGD( TAG, "Q.Z: %s", buf );
+    }
 
     status = JOLT_CRYPTO_STATUS_SUCCESS;
 
@@ -113,6 +132,11 @@ jolt_crypto_status_t jolt_crypto_ecdsa_secp256k1_sign( uint8_t *sig, uint16_t *s
         return JOLT_CRYPTO_STATUS_PARAM;
     }
 
+    if( LOG_LOCAL_LEVEL >= 4 ) {
+        ESP_LOGD( TAG, "Signing hash: " );
+        jolt_print_bytearray( msg, msg_len, false );
+    }
+
     /* Populate the keypair */
     status = jolt_crypto_ecdsa_secp256k1_keypair( &keypair, private_key );
     if( JOLT_CRYPTO_STATUS_SUCCESS != status ) goto exit;
@@ -126,9 +150,14 @@ jolt_crypto_status_t jolt_crypto_ecdsa_secp256k1_sign( uint8_t *sig, uint16_t *s
 
     /* Sign */
     size_t slen;
-    res = mbedtls_ecdsa_write_signature( &ctx, MBEDTLS_MD_SHA256, msg, sizeof( msg ), sig, &slen, NULL, NULL );
+    res = mbedtls_ecdsa_write_signature( &ctx, MBEDTLS_MD_SHA256, msg, msg_len, sig, &slen, NULL, NULL );
     if( 0 != res ) goto exit;
     *sig_len = slen;
+
+    if( LOG_LOCAL_LEVEL >= 4 ) {
+        ESP_LOGD( TAG, "Produced signature (%d):", slen );
+        jolt_print_bytearray( sig, slen, false );
+    }
 
     status = JOLT_CRYPTO_STATUS_SUCCESS;
 
@@ -164,9 +193,30 @@ jolt_crypto_status_t jolt_crypto_ecdsa_secp256k1_verify( const uint8_t *sig, uin
     res = mbedtls_ecp_point_read_binary( &keypair.grp, &keypair.Q, public_key, public_key_len );
     if( 0 != res ) goto exit;
 
+    res = mbedtls_ecdsa_from_keypair( &ctx, &keypair );
+    if( 0 != res ) goto exit;
+
+    if( LOG_LOCAL_LEVEL >= 4 ) {
+        char buf[256];
+        size_t olen;
+
+        ESP_LOGD( TAG, "Verifying hash: " );
+        jolt_print_bytearray( msg, msg_len, false );
+
+        mbedtls_mpi_write_string( &keypair.Q.X, 16, buf, sizeof( buf ), &olen );
+        ESP_LOGD( TAG, "Q.X: %s", buf );
+
+        mbedtls_mpi_write_string( &keypair.Q.Y, 16, buf, sizeof( buf ), &olen );
+        ESP_LOGD( TAG, "Q.Y: %s", buf );
+    }
+
     res = mbedtls_ecdsa_read_signature( &ctx, msg, msg_len, sig, sig_len );
     if( MBEDTLS_ERR_ECP_BAD_INPUT_DATA == res ) {
         ESP_LOGE( TAG, "Invalid signature" );
+        if( LOG_LOCAL_LEVEL >= 4 ) {
+            ESP_LOGD( TAG, "Signature len %d", sig_len );
+            jolt_print_bytearray( sig, sig_len, false );
+        }
         goto exit;
     }
     else if( 0 != res ) {
