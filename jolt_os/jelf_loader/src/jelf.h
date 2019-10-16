@@ -57,11 +57,10 @@ typedef struct {
  * @brief JELF Symbol Entry
  */
 typedef struct {
-    uint32_t st_name : 13;  /**< Index, also Name */
+    uint32_t st_name : 12;  /**< Index, also Name */
     uint32_t st_shndx : 12; /**< Section index */
-    uint32_t st_value : 7;  /**< Index into the auxilary table; no index if 0 */
 } Jelf_Sym;
-#define JELF_SYM_SIZE 4
+#define JELF_SYM_SIZE 3
 
 /**
  * @brief JELF Section Header

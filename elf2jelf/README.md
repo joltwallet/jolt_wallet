@@ -126,8 +126,7 @@ typedef struct {
     uint64_t      sh_type     :2;         /* Section type */
     uint64_t      sh_flags    :2;         /* Section flags */
     uint64_t      sh_size     :16;        /* Section size in bytes */
-    uint64_t      sh_info     :14;        /* Additional section information */
-    uint64_t      padding     :8;         /* Not actually in JELF file */
+    uint64_t      sh_info     :12;        /* Additional section information */
 } Jelf_Shdr;
 ```
 
@@ -174,9 +173,8 @@ typedef struct {
 
 ```
 typedef struct {
-    uint16_t         st_name;         /* Index, also Name */
-    uint16_t         st_shndx;        /* Section index */
-    uint32_t         st_value;        /* Unused most the time, but cant think of a good way of removing */
+    uint16_t         st_name:12;         /* Index, also Name */
+    uint16_t         st_shndx:12;        /* Section index */
 } Jelf_Sym;
 ```
 
@@ -186,10 +184,12 @@ typedef struct {
 
 `st_other` - Unused
 
-`st_shndx` - Indexes into sections; we already limited the number of sections to 14 bits (16,384) in the Section Header, so we reduce this is a `uint16_t`
+`st_shndx` - Indexes into sections; we already limited the number of sections to 12 bits (4,096) in the Section Header, so we reduce this is a `uint16_t`
+
+`st_value` - Unused; values that would have been linked to ROM are handled by Jolt linking
 
 The Jolt Nano App contains 258 symbols, making the original string table 
-take up 4,128 bytes. Now that each symbol has been reduced from 16 bytes to 8 bytes, we can save 2064 bytes.
+take up 4,128 bytes. Now that each symbol has been reduced from 16 bytes to 3 bytes, we can save 3354 bytes.
 
 ## RELA Information
 `uint32_t` datatypes are excessive for the size of a JELF; a `uint16_t` is
@@ -249,15 +249,13 @@ Original ELF32 Nano App: 54,604 Bytes
 | Reduced Section Headers               | +8,250       |
 | Remove `.shstrtab`                    | +4,208       |
 | Remove `.strtab`                      | +2,615       |
-| Reduced Symbols (and thus, `.symtab`) | +2,064       |
+| Reduced Symbols (and thus, `.symtab`) | +3,354       |
 
-Grand Total: 28,045 Bytes saved, reducing the binary from 54,604 bytes to 26559 bytes.
+Grand Total: 28,045 Bytes saved, reducing the binary from 54,604 bytes to 25269 bytes.
 
 todo: additionals/subtractions from program header
 
 # Misc Design Decisions
-
-`.symtab` is 4218 bytes and contains 258 entries.
 
 # Section Reordering
 We can reorder the sections so we can take advantage of:
@@ -294,12 +292,3 @@ we can stop reading. This has two nice properties:
 
 # Going Further
 Now that everything is a sequential read (with absolutely no random reads, assuming cached section header table and cached symtab), we can get rid of offsets in the section header table. In the Nano app, this saves about 681 bytes of compressed data.
-
-## Modified symtab
-The symtab also contains an unnecessary number of zeros in the `uint32_t` `st_value` slot. This value 90% of the time is `0x00000000`. To reduce this overhead, we shrink the `st_value` field to a `uint8_t` and make it's value an index into a small auxilary table. We put this table at the beginning of the `symtab section` as follows:
-
-1. `uint8_t` indicating the number of entries `n` in the table that follows
-2. n `uint32_t` non-zero `st_values`; denoted as the auxilary symbol table
-3. The actual `symtab`
-
-This only saves about of 100 bytes in the compressed binary, but will cut the amount of RAM required by the symtab cache in half. In the Nano app, this saves about 1KB of RAM.

@@ -48,14 +48,13 @@ static const char *TAG = "JelfLoader";
 /********************************
  * STATIC FUNCTIONS DECLARATION *
  ********************************/
-static uint32_t get_st_value( jelfLoaderContext_t *ctx, Jelf_Sym *sym );
 static int decompress_get( jelfLoaderContext_t *ctx, uint8_t *data, size_t len );
 static void app_hash_update( jelfLoaderContext_t *ctx, const uint8_t *data, size_t len );
 static const char *type2String( int symt );
 static jelfLoaderSection_t *findSection( jelfLoaderContext_t *ctx, int index );
 static bool app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const char *name );
 static Jelf_Addr findSymAddr( jelfLoaderContext_t *ctx, Jelf_Sym *sym );
-static int relocateSymbol( Jelf_Addr relAddr, int type, Jelf_Addr symAddr, Jelf_Addr defAddr, uint32_t *from,
+static int relocateSymbol( Jelf_Addr relAddr, int type, Jelf_Addr symAddr, uint32_t *from,
                            uint32_t *to );
 static int relocateSection( jelfLoaderContext_t *ctx, jelfLoaderSection_t *s );
 
@@ -284,15 +283,14 @@ static int loader_shdr( jelfLoaderContext_t *ctx, uint16_t n, Jelf_Shdr *h )
 
 static int loader_sym( jelfLoaderContext_t *ctx, uint16_t n, Jelf_Sym *h )
 {
-    uint8_t *buf = (uint8_t *)ctx->symtab_symbols + n * JELF_SYM_SIZE;
+    uint8_t *buf = (uint8_t *)ctx->symtab_cache + n * JELF_SYM_SIZE;
     if( n >= ctx->symtab_count ) {
-        ERR( "Attempt to index past SymbolTable" );
+        ERR( "Attempt to index past SymbolTable ( %d >= %d )", n, ctx->symtab_count );
         return -1;
     }
 
-    h->st_name  = buf[0] | ( ( uint32_t )( buf[1] & 0xF8 ) << 5 );
-    h->st_shndx = ( buf[1] & 0x07 ) | ( (uint32_t)buf[2] << 3 ) | ( ( uint32_t )( buf[3] & 0x80 ) << 4 );
-    h->st_value = buf[3] & 0x7F;
+    h->st_name  = buf[0] | ( ( uint32_t )( buf[1] & 0xF0 ) << 4 );
+    h->st_shndx = ( buf[1] & 0x0F ) | ((uint32_t)buf[2] << 4);
     return 0;
 }
 
@@ -311,17 +309,6 @@ err:
 /********************
  * STATIC FUNCTIONS *
  ********************/
-
-static uint32_t get_st_value( jelfLoaderContext_t *ctx, Jelf_Sym *sym )
-{
-    if( 0 == sym->st_value ) { return 0; }
-    if( sym->st_value > ctx->symtab_aux_len ) {
-        /* error */
-        exit( 1 );
-        return 0;
-    }
-    return ctx->symtab_aux[sym->st_value - 1];
-}
 
 /* Reads len bytes of uncompressed data. *No seeking*.
  * Returns the number of bytes read. Returns -1 on error.
@@ -573,7 +560,7 @@ static Jelf_Addr findSymAddr( jelfLoaderContext_t *ctx, Jelf_Sym *sym )
         jelfLoaderSection_t *symSec = findSection( ctx, sym->st_shndx );
         if( symSec ) {
             PROFILER_STOP_FINDSYMADDR;
-            return ( (Jelf_Addr)symSec->data ) + get_st_value( ctx, sym );
+            return (Jelf_Addr)symSec->data;
         }
     }
 
@@ -585,25 +572,18 @@ static Jelf_Addr findSymAddr( jelfLoaderContext_t *ctx, Jelf_Sym *sym )
 /* relAddr - pointer into an allocated section that needs to be updated to point to symAddr.
  * type - assembly instruction type
  * symAddr - The Symbol's memory location
- * defAddr - Used if symAddr is 0xffffffff (Symbol not found)
  * from - returned value
  * to - returned value
  *
  */
-static int relocateSymbol( Jelf_Addr relAddr, int type, Jelf_Addr symAddr, Jelf_Addr defAddr, uint32_t *from,
+static int relocateSymbol( Jelf_Addr relAddr, int type, Jelf_Addr symAddr, uint32_t *from,
                            uint32_t *to )
 {
     PROFILER_START_RELOCATESYMBOL;
     PROFILER_INC_RELOCATESYMBOL;
 
     if( symAddr == 0xffffffff ) {
-        if( defAddr == 0x00000000 ) {
-            ERR( "Relocation: undefined symAddr" );
-            goto err;
-        }
-        else {
-            symAddr = defAddr;
-        }
+		goto err;
     }
     switch( type ) {
         case R_XTENSA_32: {
@@ -788,23 +768,23 @@ static int relocateSection( jelfLoaderContext_t *ctx, jelfLoaderSection_t *s )
 
         uint32_t from = 0, to = 0;
         if( relType == R_XTENSA_NONE || relType == R_XTENSA_ASM_EXPAND ) {}
-        else if( ( symAddr == 0xffffffff ) && ( get_st_value( ctx, &sym ) == 0 ) ) {
+        else if( ( symAddr == 0xffffffff ) ) {
             ERR( "Relocation - undefined symAddr" );
-            MSG( "  %04X %04X %-20s %08zX %08zX %08X"
+            MSG( "  %04X %04X %-20s %08zX %08zX"
                  "                     + %X",
-                 symEntry, relType, type2String( relType ), relAddr, symAddr, get_st_value( ctx, &sym ),
+                 symEntry, relType, type2String( relType ), relAddr, symAddr,
                  rel.r_addend );
             r |= -1;
         }
-        else if( relocateSymbol( relAddr, relType, symAddr, get_st_value( ctx, &sym ), &from, &to ) != 0 ) {
+        else if( relocateSymbol( relAddr, relType, symAddr, &from, &to ) != 0 ) {
             ERR( "relocateSymbol fail" );
-            ERR( "  %04X %04X %-20s %08zX %08zX %08X %08X->%08X  + %X", symEntry, relType, type2String( relType ),
-                 relAddr, symAddr, get_st_value( ctx, &sym ), from, to, rel.r_addend );
+            ERR( "  %04X %04X %-20s %08zX %08zX %08X->%08X  + %X", symEntry, relType, type2String( relType ),
+                 relAddr, symAddr, from, to, rel.r_addend );
             r |= -1;
         }
         else {
-            MSG( "  %04X %04X %-20s %08zX %08zX %08X %08X->%08X  + %X", symEntry, relType, type2String( relType ),
-                 relAddr, symAddr, get_st_value( ctx, &sym ), from, to, rel.r_addend );
+            MSG( "  %04X %04X %-20s %08zX %08zX %08X->%08X  + %X", symEntry, relType, type2String( relType ),
+                 relAddr, symAddr, from, to, rel.r_addend );
         }
     }
     PROFILER_STOP_RELOCATESECTION;
@@ -1162,12 +1142,7 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
                 goto err;
             }
             LOADER_GETDATA( ctx, (char *)( ctx->symtab_cache ), sectHdr.sh_size );
-            ctx->symtab_cache_size = sectHdr.sh_size;
-            uint8_t aux_len        = *(uint8_t *)ctx->symtab_cache;
-            ctx->symtab_aux_len    = aux_len;
-            ctx->symtab_aux        = (uint32_t *)( (uint8_t *)ctx->symtab_cache + 1 );
-            ctx->symtab_symbols    = (uint8_t *)ctx->symtab_aux + aux_len * 4;
-            ctx->symtab_count      = ( ctx->symtab_cache_size - 1 - aux_len * 4 ) / 4;
+            ctx->symtab_count      = sectHdr.sh_size / JELF_SYM_SIZE;
         }
     }
     if( NULL == ctx->symtab_cache ) {
@@ -1186,7 +1161,7 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
         response = JELF_LOADER_ENTRYPOINT;
         goto err;
     }
-    ctx->exec = (void *)( ( (Jelf_Addr)symbol_section->data ) + get_st_value( ctx, &sym ) );
+    ctx->exec = (void *)((Jelf_Addr)symbol_section->data );
     MSG( "successfully set entrypoint" );
     ctx->state = JELF_CTX_LOADED;
 

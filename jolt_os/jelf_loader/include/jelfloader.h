@@ -106,10 +106,6 @@ typedef struct jelfLoaderContext_t {
     /* SymbolTable */
     uint8_t *symtab_cache;    /**< Cached copy of the application's SymTab Section */
     size_t symtab_count;      /**< Number of Symbols in the SymTab */
-    uint32_t *symtab_aux;     /**< Pointer to beginning of AuxSymTab */
-    uint8_t symtab_aux_len;   /**< Number of st_value entries in the AuxSymTab */
-    void *symtab_symbols;     /**< Pointer to beginning of SymTab*/
-    size_t symtab_cache_size; /**< */
 
     /* Coin Derivation Data */
     uint32_t coin_purpose;                 /**< BIP32 Purpose; typically 44' */
