@@ -133,7 +133,7 @@ static int32_t jolt_mnemonic_restore_process( jolt_bg_job_t *job )
         case MNEMONIC_RESTORE_RANDOMIZE:
             /* Generate Random Order for user to input mnemonic */
             for( uint8_t i = 0; i < sizeof( param->mapping ); i++ ) { param->mapping[i] = i; }
-            shuffle_arr( param->mapping, sizeof( param->mapping ) );
+            jolt_shuffle_arr( param->mapping, sizeof( param->mapping ) );
             param->state = MNEMONIC_RESTORE_24WORDS;
         /* Falls through */
         case MNEMONIC_RESTORE_24WORDS: {

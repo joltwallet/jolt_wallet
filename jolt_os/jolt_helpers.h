@@ -169,7 +169,7 @@ uint32_t jolt_random_range( uint32_t min, uint32_t max );
  * @param[in] arr_len number of elements in arr
  * @return
  */
-void shuffle_arr( uint8_t *arr, int arr_len );
+void jolt_shuffle_arr( uint8_t *arr, int arr_len );
 
 /**
  * @brief Allocates an array of character arrays

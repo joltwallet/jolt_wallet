@@ -133,7 +133,7 @@ uint32_t jolt_random_range( uint32_t min, uint32_t max )
     return rand;
 }
 
-void shuffle_arr( uint8_t *arr, int arr_len )
+void jolt_shuffle_arr( uint8_t *arr, int arr_len )
 {
     uint8_t tmp;
     for( int i = arr_len - 1; i > 0; i-- ) {
