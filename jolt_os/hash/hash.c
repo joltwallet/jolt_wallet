@@ -24,11 +24,7 @@ static jolt_hash_status_t check_hashing_ctx_common( jolt_hash_t *ctx )
         return JOLT_HASH_STATUS_PARAM;
     }
 
-    if( NULL == ctx->hash || 0 == ctx->hash_len ) {
-        ESP_LOGE( TAG, "Invalid output hash buffer" );
-        return JOLT_HASH_STATUS_PARAM;
-    }
-    else if( ctx->hash_len > jolt_hash_registry[ctx->type].size.max ) {
+    if( ctx->hash_len > jolt_hash_registry[ctx->type].size.max ) {
         ESP_LOGE( TAG, "Output hash has a maximum length of %d bytes", jolt_hash_registry[ctx->type].size.max );
         return JOLT_HASH_STATUS_PARAM;
     }
@@ -120,6 +116,10 @@ jolt_hash_status_t jolt_hash_final( jolt_hash_t *ctx )
 
     status = check_hashing_ctx_common( ctx );
     if( JOLT_HASH_STATUS_SUCCESS != status ) return status;
+    if( NULL == ctx->hash || 0 == ctx->hash_len ) {
+        ESP_LOGE( TAG, "Invalid output hash buffer" );
+        return JOLT_HASH_STATUS_PARAM;
+    }
 
     if( false == ctx->initialized ) {
         ESP_LOGE( TAG, "Hashing context not initialized" );

@@ -121,12 +121,6 @@ TEST_CASE( "jolt_hash multi", MODULE_NAME )
     status   = jolt_hash_init( &ctx );
     TEST_ASSERT_EQUAL_UINT8( JOLT_HASH_STATUS_PARAM, status );
 
-    /* Should reject NULL output buf */
-    ctx.type = JOLT_HASH_BLAKE2B;
-    ctx.hash = NULL;
-    status   = jolt_hash_init( &ctx );
-    TEST_ASSERT_EQUAL_UINT8( JOLT_HASH_STATUS_PARAM, status );
-
     /* Should reject for too large of an output buffer */
     ctx.type     = JOLT_HASH_BLAKE2B;
     ctx.hash     = out;
