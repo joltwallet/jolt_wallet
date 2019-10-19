@@ -77,8 +77,8 @@ $(ELF_BIN_NAME): $(APP_COMPONENTS_TARGETS)
 
 # Convert ELF file to JELF file
 $(JELF_BIN_NAME): $(ELF_BIN_NAME)
-	$(PYTHONBIN) $(ELF2JELF)  "$(ELF_BIN_NAME)" \
-    		--output "$(JELF_BIN_NAME)" \
+	$(PYTHONBIN) $(ELF2JELF)  $(ELF_BIN_NAME) \
+    		--output $(JELF_BIN_NAME) \
     		--coin "$(COIN_PATH)" \
     		--bip32key "$(BIP32_KEY)" \
 			--signing_key "$(JAPP_SIGNING_KEY)"

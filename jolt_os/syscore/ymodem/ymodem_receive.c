@@ -246,7 +246,7 @@ int IRAM_ATTR ymodem_receive_write( void *ffd, unsigned int maxsize, char *getna
                                         {
                                             char *name_ptr;
                                             for( name_ptr = name, i = 0, file_ptr = packet_data + PACKET_HEADER;
-                                                 *file_ptr != 0; i++ ) {
+                                                 *file_ptr != '\0'; i++ ) {
                                                 if( i >= JOLT_FS_MAX_FILENAME_LEN ) {
                                                     /* Filename too long */
                                                     SEND_CA_EXIT( -13 );
