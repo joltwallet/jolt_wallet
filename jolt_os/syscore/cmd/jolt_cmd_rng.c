@@ -1,6 +1,7 @@
 #include "jolt_helpers.h"
 #include "sodium.h"
 #include "stdio.h"
+#include "syscore/cli.h"
 #include "syscore/cli_helpers.h"
 #include "syscore/filesystem.h"
 
@@ -45,5 +46,6 @@ int jolt_cmd_rng( int argc, char** argv )
     return_code = 0;
 
 exit:
+    jolt_cli_resume();
     return return_code;
 }

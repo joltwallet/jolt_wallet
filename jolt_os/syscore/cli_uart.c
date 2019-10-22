@@ -104,9 +104,11 @@ static void jolt_cli_uart_listener_task( void *param )
 
         line = linenoise( prompt );
         if( line == NULL ) {
-            printf( prompt );
             continue; /* Ignore empty lines */
         }
+
+        /* Wait until the command is sent back */
+        uart_wait_tx_done( UART_NUM_0, portMAX_DELAY );
 
         ESP_LOGD( TAG, "UART line at %p", line );
 

@@ -54,8 +54,7 @@ static const char *type2String( int symt );
 static jelfLoaderSection_t *findSection( jelfLoaderContext_t *ctx, int index );
 static bool app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const char *name );
 static Jelf_Addr findSymAddr( jelfLoaderContext_t *ctx, Jelf_Sym *sym );
-static int relocateSymbol( Jelf_Addr relAddr, int type, Jelf_Addr symAddr, uint32_t *from,
-                           uint32_t *to );
+static int relocateSymbol( Jelf_Addr relAddr, int type, Jelf_Addr symAddr, uint32_t *from, uint32_t *to );
 static int relocateSection( jelfLoaderContext_t *ctx, jelfLoaderSection_t *s );
 
 /* Allocation Macros */
@@ -290,7 +289,7 @@ static int loader_sym( jelfLoaderContext_t *ctx, uint16_t n, Jelf_Sym *h )
     }
 
     h->st_name  = buf[0] | ( ( uint32_t )( buf[1] & 0xF0 ) << 4 );
-    h->st_shndx = ( buf[1] & 0x0F ) | ((uint32_t)buf[2] << 4);
+    h->st_shndx = ( buf[1] & 0x0F ) | ( (uint32_t)buf[2] << 4 );
     return 0;
 }
 
@@ -576,15 +575,12 @@ static Jelf_Addr findSymAddr( jelfLoaderContext_t *ctx, Jelf_Sym *sym )
  * to - returned value
  *
  */
-static int relocateSymbol( Jelf_Addr relAddr, int type, Jelf_Addr symAddr, uint32_t *from,
-                           uint32_t *to )
+static int relocateSymbol( Jelf_Addr relAddr, int type, Jelf_Addr symAddr, uint32_t *from, uint32_t *to )
 {
     PROFILER_START_RELOCATESYMBOL;
     PROFILER_INC_RELOCATESYMBOL;
 
-    if( symAddr == 0xffffffff ) {
-		goto err;
-    }
+    if( symAddr == 0xffffffff ) { goto err; }
     switch( type ) {
         case R_XTENSA_32: {
             *from = unalignedGet32( (void *)relAddr );
@@ -772,19 +768,18 @@ static int relocateSection( jelfLoaderContext_t *ctx, jelfLoaderSection_t *s )
             ERR( "Relocation - undefined symAddr" );
             MSG( "  %04X %04X %-20s %08zX %08zX"
                  "                     + %X",
-                 symEntry, relType, type2String( relType ), relAddr, symAddr,
-                 rel.r_addend );
+                 symEntry, relType, type2String( relType ), relAddr, symAddr, rel.r_addend );
             r |= -1;
         }
         else if( relocateSymbol( relAddr, relType, symAddr, &from, &to ) != 0 ) {
             ERR( "relocateSymbol fail" );
-            ERR( "  %04X %04X %-20s %08zX %08zX %08X->%08X  + %X", symEntry, relType, type2String( relType ),
-                 relAddr, symAddr, from, to, rel.r_addend );
+            ERR( "  %04X %04X %-20s %08zX %08zX %08X->%08X  + %X", symEntry, relType, type2String( relType ), relAddr,
+                 symAddr, from, to, rel.r_addend );
             r |= -1;
         }
         else {
-            MSG( "  %04X %04X %-20s %08zX %08zX %08X->%08X  + %X", symEntry, relType, type2String( relType ),
-                 relAddr, symAddr, from, to, rel.r_addend );
+            MSG( "  %04X %04X %-20s %08zX %08zX %08X->%08X  + %X", symEntry, relType, type2String( relType ), relAddr,
+                 symAddr, from, to, rel.r_addend );
         }
     }
     PROFILER_STOP_RELOCATESECTION;
@@ -1142,7 +1137,7 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
                 goto err;
             }
             LOADER_GETDATA( ctx, (char *)( ctx->symtab_cache ), sectHdr.sh_size );
-            ctx->symtab_count      = sectHdr.sh_size / JELF_SYM_SIZE;
+            ctx->symtab_count = sectHdr.sh_size / JELF_SYM_SIZE;
         }
     }
     if( NULL == ctx->symtab_cache ) {
@@ -1161,7 +1156,7 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
         response = JELF_LOADER_ENTRYPOINT;
         goto err;
     }
-    ctx->exec = (void *)((Jelf_Addr)symbol_section->data );
+    ctx->exec = (void *)( (Jelf_Addr)symbol_section->data );
     MSG( "successfully set entrypoint" );
     ctx->state = JELF_CTX_LOADED;
 

@@ -71,13 +71,18 @@ def main(args):
     sleep(5) # Wait for device to boot
     consume(ser)
 
-    log.debug('Sending "rng -1" command')
-    ser.write(b"rng %d\n" % args.n * 4)
+    cmd = b"rng %d\n" % (args.n * 4)
+    log.debug('Sending "%s" command' % cmd.decode('utf-8'))
+    ser.write( cmd )
 
     t_start = time()
     with open(args.output, 'wb') as f:
+        echo = ser.read(size=len(cmd)+1)
+        assert( echo[:-2] == cmd[:-1] )
+        assert( echo[-2] == 13 )  # carriage return
+        assert( echo[-1] == 10 )  # newline
         for i in range(args.n):
-            data = ser.read(size=4) 
+            data = ser.read(size=4)
             f.write(data)
     t_end = time()
     print("Dumped %d 32-bit RNG values in %.2f seconds" % (args.n, t_end - t_start))

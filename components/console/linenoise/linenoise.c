@@ -177,7 +177,7 @@ FILE *lndebug_fp = NULL;
 #define lndebug(...) \
     do { \
         if (lndebug_fp == NULL) { \
-            lndebug_fp = fopen("/tmp/lndebug.txt","a"); \
+            lndebug_fp = fopen("lndebug.txt","a"); \
             fprintf(lndebug_fp, \
             "[%d %d %d] p: %d, rows: %d, rpos: %d, max: %d, oldmax: %d\n", \
             (int)l->len,(int)l->pos,(int)l->oldpos,plen,rows,rpos, \
@@ -723,18 +723,6 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
     /* The latest history entry is always our current buffer, that
      * initially is just an empty string. */
     linenoiseHistoryAdd("");
-
-#if 0
-    {
-        int pos1 = getCursorPosition();
-
-        //if (fwrite(prompt,l.plen,1,stdout) == -1) return -1;
-        int pos2 = getCursorPosition();
-        if (pos1 >= 0 && pos2 >= 0) {
-            l.plen = pos2 - pos1;
-        }
-    }
-#endif
 
     while(1) {
         char c;

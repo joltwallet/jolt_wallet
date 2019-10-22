@@ -145,6 +145,12 @@ void app_main( void )
                    "********************************************\n" );
 #endif
 
+#if CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF
+    ESP_LOGW( TAG, "WARNING: UART \\n replaced with \\r\\n" );
+#elif CONFIG_NEWLIB_STDOUT_LINE_ENDING_CR
+    ESP_LOGW( TAG, "WARNING: UART \\n replaced with \\r" );
+#endif
+
 /* Ensure High Quality RNG */
 #if CONFIG_NO_BLOBS
     bootloader_random_enable();
