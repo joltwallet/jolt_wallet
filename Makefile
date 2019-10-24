@@ -76,3 +76,5 @@ cppcheck: compile_commands.json
 clean-jolt:
 	rm -rf build/jolt_os
 	rm -rf build/jolt_wallet
+
+print-%  : ; @echo $* = $($*)

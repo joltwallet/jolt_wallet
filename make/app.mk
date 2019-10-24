@@ -31,6 +31,7 @@ DEVICE_PORT  ?= /dev/ttyUSB0
 # Add all the Jolt Wallet paths
 EXTRA_COMPONENT_DIRS = \
 		$(IDF_PATH)/tools/unit-test-app/components/ \
+        $(PROJECT_PATH) \
         $(PROJECT_PATH)/src \
         $(PROJECT_PATH)/jolt_wallet/jolt_os/lvgl \
         $(PROJECT_PATH)/jolt_wallet/jolt_os \
@@ -53,7 +54,7 @@ APP_LIBRARIES := $(foreach n, $(APP_COMPONENTS), build/$(n)/lib$(n).a)
 # Component build dependencies
 APP_COMPONENTS_TARGETS := $(foreach n, $(APP_COMPONENTS), component-$(n)-build)
 
-.PHONY: jflash japp print-%
+.PHONY: tests lint clean-jolt jflash japp print-%
 
 # Build ELF file
 $(ELF_BIN_NAME): $(APP_COMPONENTS_TARGETS)
@@ -62,7 +63,7 @@ $(ELF_BIN_NAME): $(APP_COMPONENTS_TARGETS)
 			-Wl,--start-group \
     		-s -o $(ELF_BIN_NAME) \
     		-Wl,-r \
-    		-Wl,-eapp_main \
+    		-Wl,-ejapp_main \
     		-Wl,--warn-unresolved-symbols \
 			$(APP_LIBRARIES)
 	# Trim unnecessary sections
@@ -90,6 +91,26 @@ japp: $(JELF_BIN_NAME) ;
 # Upload the application's jelf file to device over USB.
 jflash: $(JELF_BIN_NAME)
 	$(PYTHONBIN) jolt_wallet/pyutils/usb_upload.py --port $(DEVICE_PORT) $(JELF_BIN_NAME)
+
+lint:
+	find main/ \
+		\( \
+			-iname '*.h' \
+			-o -iname '*.c' \
+			-o -iname '*.cpp' \
+			-o -iname '*.hpp' \
+		\) \
+		| xargs clang-format -style=file -i -fallback-style=google
+
+tests:
+	CFLAGS='-DUNIT_TESTING=1' \
+		$(MAKE) \
+		TEST_COMPONENTS='main' \
+		flash monitor;
+
+clean-jolt:
+	rm -rf build/jolt_os
+	rm -rf build/jolt_wallet
 
 # Prints a Makefile variable; for debugging purposes
 print-%  : ; @echo $* = $($*)
