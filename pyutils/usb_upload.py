@@ -63,7 +63,7 @@ def main(args):
     ser.port     = args.port
     ser.dtr = 1
     ser.rts = 1
-    ser.timeout = 3
+    ser.timeout = 0.5
 
     ser.open()
 
@@ -91,7 +91,6 @@ def main(args):
         cmd = b'upload "%s"\n' % basename.encode()
         log.debug('Sending "%s" command' % cmd.decode("utf-8")[:-1])
         ser.write(cmd)
-    time.sleep(1)
     consume(ser)
 
     log.info("Sending File")

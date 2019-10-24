@@ -143,10 +143,11 @@ static void jolt_cmd_upload_confirmation_cb( jolt_gui_obj_t *obj, jolt_gui_event
         jolt_settings_vault_set( jolt_cmd_upload_vault_failure_cb, jolt_cmd_upload_vault_success_cb, name_param );
     }
     else if( jolt_gui_event.cancel == event ) {
-        jolt_gui_scr_del( obj );
+        send_CA();
         jolt_cli_return( -1 );
         jolt_resume_logging();
         jolt_cli_resume();
+        jolt_gui_scr_del( obj );
     }
 }
 
