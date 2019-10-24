@@ -157,8 +157,35 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
 
             int8_t *progress = NULL;
             lv_obj_t *loading_scr;
-            CONFIDENTIAL char mnemonic[265] = {0};  // change this to macro
+            CONFIDENTIAL char mnemonic[BM_PASSPHRASE_BUF_LEN] = {0};
             CONFIDENTIAL uint512_t master_seed;
+
+#if UNIT_TESTING
+            /* Set a constant mnemonic for easier debugging.
+             * Doesn't access any storage.
+             * Correct PIN is 0 0 0 0 0 0 0 0 */
+            if( 0 != jolt_gui_scr_digit_entry_get_int( ps.scr ) ) {
+                /* Wrong PIN */
+                ESP_LOGE( TAG, "Incorrect PIN" );
+
+                /* Create a screen telling the user */
+                lv_obj_t *scr =
+                        jolt_gui_scr_text_create( gettext( JOLT_TEXT_PIN ), gettext( JOLT_TEXT_INCORRECT_PIN ) );
+                jolt_gui_scr_set_event_cb( scr, pin_fail_cb );
+
+                jolt_gui_sem_give();
+                ps.state = PIN_STATE_EMPTY;
+
+                break;
+            }
+            /* bin: 8080808080808080808080808080808080808080808080808080808080808080
+             * https://github.com/trezor/python-mnemonic/blob/master/vectors.json#L64 */
+            const char unit_testing_mnemonic[] = 
+                "letter advice cage absurd amount doctor acoustic "
+                "avoid letter advice cage absurd amount doctor acoustic avoid "
+                "letter advice cage absurd amount doctor acoustic bless";
+            strlcpy(mnemonic, unit_testing_mnemonic, sizeof(mnemonic));
+#else
 
             /* Get the pin_hash from the pin screen */
             if( 0 != jolt_gui_scr_digit_entry_get_hash( ps.scr, ps.pin_hash ) ) {
@@ -219,7 +246,7 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
 
                 ESP_LOGI( TAG, "ClearText Mnemonic: %s", mnemonic );
             }
-
+#endif
             /**** We now have mnemonic at this point ****/
 
             /* Create Loading Bar */
