@@ -2,7 +2,7 @@
  Copyright (C) 2018  Brian Pugh, James Coxon, Michael Smaili
  https://www.joltwallet.com/
  */
-//#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#define LOG_LOCAL_LEVEL 4
 
 #include "vault.h"
 #include <esp_system.h>
@@ -50,6 +50,7 @@ enum {
     PIN_STATE_EMPTY = 0,
     PIN_STATE_CREATE,
     PIN_STATE_STRETCH,
+    PIN_STATE_SUCCESS_CB,
     PIN_STATE_NUM_STATES, /* Not an actual state */
 };
 typedef int8_t pin_state_t;
@@ -283,17 +284,15 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
 
             vault->valid = true;
             sodium_mprotect_readonly( vault );
-
+            ps.state = PIN_STATE_SUCCESS_CB;
+        }
+            /* falls through */
+        case PIN_STATE_SUCCESS_CB: {
             /* Cleanup and Call the user callback */
-            {
-                vault_cb_t cb = ps.success_cb;
-                void *param   = ps.param;
-
-                ps_state_cleanup();
-
-                if( NULL != cb ) { cb( param ); }
-            }
-
+            vault_cb_t cb = ps.success_cb;
+            void *param   = ps.param;
+            ps_state_cleanup();
+            if( NULL != cb ) { cb( param ); }
             break;
         }
         case PIN_STATE_FAIL:
@@ -480,6 +479,13 @@ esp_err_t vault_set( uint32_t purpose, uint32_t coin_type, const char *bip32_key
 
     vault_sem_take();
 
+    /* Zero out the pin state */
+    memzero( &ps, sizeof( ps ) );
+    ps.failure_cb = failure_cb;
+    ps.success_cb = success_cb;
+    ps.param      = param;
+    ps.state      = PIN_STATE_CREATE;
+
     /* Don't require pin if logging into app with identical vault parameters.
      * Directly call the success callback */
     if( true == vault->valid && vault->purpose == purpose && vault->coin_type == coin_type &&
@@ -487,25 +493,18 @@ esp_err_t vault_set( uint32_t purpose, uint32_t coin_type, const char *bip32_key
         ESP_LOGI( TAG, "%s: identical vault parameters; no PIN required.", __func__ );
         vault_kick();
         vault_sem_give();
-        success_cb( param );
-        return ESP_OK;
+        ps.state = PIN_STATE_SUCCESS_CB;
     }
-
-    /* Populate Vault with derivation parameters */
-    sodium_mprotect_readwrite( vault );
-    vault->valid     = false;
-    vault->purpose   = purpose;
-    vault->coin_type = coin_type;
-    strlcpy( vault->bip32_key, bip32_key, sizeof( vault->bip32_key ) );
-    strlcpy( vault->passphrase, passphrase, sizeof( vault->passphrase ) );
-    sodium_mprotect_readonly( vault );
-
-    /* Zero out the pin state */
-    memzero( &ps, sizeof( ps ) );
-    ps.failure_cb = failure_cb;
-    ps.success_cb = success_cb;
-    ps.param      = param;
-    ps.state      = PIN_STATE_CREATE;
+    else{
+        /* Populate Vault with derivation parameters */
+        sodium_mprotect_readwrite( vault );
+        vault->valid     = false;
+        vault->purpose   = purpose;
+        vault->coin_type = coin_type;
+        strlcpy( vault->bip32_key, bip32_key, sizeof( vault->bip32_key ) );
+        strlcpy( vault->passphrase, passphrase, sizeof( vault->passphrase ) );
+        sodium_mprotect_readonly( vault );
+    }
 
     /* Note: don't give up vault semaphore here; give it up after
      * pin entry and derivation */
@@ -525,7 +524,9 @@ void vault_set_unit_test( const char *str, const char *bip32_key )
 
     taskYIELD();
 
-    // TODO: Check if PIN screen was created
+    // If Vault is already valid, no need to auto-enter PIN
+    if(vault_get_valid()) return;
+
     /* Enter the PIN 0 0 0 0 0 0 0 0 */
     for(uint8_t i=0; i<CONFIG_JOLT_GUI_PIN_LEN; i++) {
         JOLT_ENTER;
