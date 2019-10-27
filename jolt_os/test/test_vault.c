@@ -25,3 +25,7 @@ TEST_CASE( "vault_str_to_purpose_type", MODULE_NAME )
     TEST_ASSERT_EQUAL_UINT32(0, coin_type);
 }
 
+TEST_CASE("vault_set_unit_test", MODULE_NAME)
+{
+    vault_set_unit_test("44'/165'", "ed25519 seed");
+}

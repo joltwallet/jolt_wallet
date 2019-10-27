@@ -88,9 +88,9 @@ bool vault_setup();
 void vault_clear();
 
 /**
- * @brief Sets the vault.
+ * @brief Sets the vault (non-blocking).
  *
- * Internally will prompt the user for PIN, if necessary
+ * Internally will prompt the user for PIN, if necessary.
  *
  * @param[in] purpose Coin purpose; typically 44'
  * @param[in] coin_type Coin type
@@ -173,5 +173,22 @@ bool vault_get_valid();
  * @return 0 on success.
  */
 uint8_t vault_str_to_purpose_type(const char *str, uint32_t *purpose, uint32_t *coin_type);
+
+
+/**
+ * @brief Convenience function for app unit testing to set the vault according
+ * to the derivation path string.
+ *
+ * No callback since it's always successful (Or will call TEST_FAIL).
+ * Blocks until derivation is complete.
+ *
+ * To be ONLY used in a Unity Unit Test.
+ *
+ * On consumer builds, this function does nothing.
+ *
+ * @param[in] str Input path string like "44'/165'"
+ * @param[in] bip32_key Input bip32 key like "ed25519 seed"
+ */
+void vault_set_unit_test( const char *str, const char *bip32_key );
 
 #endif

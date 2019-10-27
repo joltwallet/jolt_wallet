@@ -279,6 +279,10 @@ void app_main( void )
                                       JOLT_GUI_STATUSBAR_ICON_LOCK );
     }
 
+    bool first_boot;
+    ESP_LOGI( TAG, "Setting up Vault" );
+    first_boot = vault_setup();
+
 #if UNIT_TESTING
     /* Unit Testing Console Interface */
     jolt_gui_statusbar_set_icons( 0 );
@@ -286,18 +290,9 @@ void app_main( void )
     xTaskCreatePinnedToCore( unity_task, "unityTask", UNITY_FREERTOS_STACK_SIZE, NULL, UNITY_FREERTOS_PRIORITY, NULL,
                              UNITY_FREERTOS_CPU );
 #else
-    /* Check and run first-boot routine if necessary */
-    {
-        ESP_LOGI( TAG, "Setting up Vault" );
-        if( vault_setup() ) {
-            /* Create Home Menu */
-            jolt_gui_menu_home_create();
-        }
-        else {
-            /* Create First Boot Screen */
-            jolt_gui_first_boot_create();
-        }
-    }
+    ESP_LOGI( TAG, "Setting up Vault" );
+    if( first_boot ) jolt_gui_menu_home_create();
+    else jolt_gui_first_boot_create();
 
     /* Initialize Console */
     {

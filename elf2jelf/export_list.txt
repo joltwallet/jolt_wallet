@@ -482,4 +482,5 @@ vault_get_valid
 vault_refresh
 vault_sem_give
 vault_sem_take
+vault_set_unit_test
 vault_str_to_purpose_type

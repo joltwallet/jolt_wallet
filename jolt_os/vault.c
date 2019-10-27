@@ -20,9 +20,17 @@
 #include "jolttypes.h"
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "sdkconfig.h"
 #include "sodium.h"
 #include "syscore/bg.h"
 #include "syscore/filesystem.h"
+#include "vault.h"
+
+
+#if UNIT_TESTING
+#include "jolt_gui/jolt_gui_indev.h"
+#include "unity.h"
+#endif
 
 /* Overall vault steps
  * 1. Check to see if vault is valid and params match; if so, kick the dog, then
@@ -504,6 +512,33 @@ esp_err_t vault_set( uint32_t purpose, uint32_t coin_type, const char *bip32_key
 
     /* Execute the State Machine */
     return ps_state_exec();
+}
+
+void vault_set_unit_test( const char *str, const char *bip32_key )
+{
+#if UNIT_TESTING
+    esp_err_t err;
+    uint32_t purpose, coin_type;
+    if( 0 != vault_str_to_purpose_type(str, &purpose, &coin_type) )
+        TEST_FAIL_MESSAGE("Failed to parse derivation path string");
+    err = vault_set( purpose, coin_type, bip32_key, EMPTY_STR, NULL, NULL, NULL);
+
+    taskYIELD();
+
+    /* Enter the PIN 0 0 0 0 0 0 0 0 */
+    for(uint8_t i=0; i<CONFIG_JOLT_GUI_PIN_LEN; i++) {
+        JOLT_ENTER;
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+
+    for(uint8_t i=0; i < 40; i++) {
+        /* Lame polling, but works fine for testing and makes the API easier */
+        vTaskDelay(pdMS_TO_TICKS(50));
+        if(vault_get_valid()) break;
+    }
+
+    if(!vault_get_valid()) TEST_FAIL_MESSAGE("Failed to set vault");
+#endif
 }
 
 /* Kicks dog if vault is valid.
