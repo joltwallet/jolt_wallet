@@ -18,6 +18,11 @@ typedef struct jolt_bg_job_t {
     QueueHandle_t input; /**< queue to receive jolt_bg_signal_t signals */
     lv_obj_t *scr;       /**< optional screen (usually a loading/preloading screen) */
     TimerHandle_t timer; /**< timer used for re-queueing job */
+
+    /* stdin/out/err handles */
+    FILE *in;
+    FILE *out;
+    FILE *err;
 } jolt_bg_job_t;
 
 static void add_job_to_queue( jolt_bg_job_t *job )
@@ -38,8 +43,14 @@ static void bg_task( void *param )
     for( ;; ) {
         int t;
         jolt_bg_job_t job;
+        FILE *in  = stdin;
+        FILE *out = stdout;
+        FILE *err = stderr;
         ESP_LOGD( TAG, "Waiting on Job" );
         xQueueReceive( job_queue, &job, portMAX_DELAY );
+        stdin  = job.in;
+        stdout = job.out;
+        stderr = job.err;
 
         /* Call the task */
         ESP_LOGD( TAG, "Calling job func %p", job.task );
@@ -77,11 +88,17 @@ static void bg_task( void *param )
                 esp_restart();  // unrecoverable without memory leak
                 continue;
             }
+            stdin = in;
+            stdout = out;
+            stderr = err;
             continue;
         }
     job_end:
         /* Delete the Job's input Queue */
         vQueueDelete( job.input );
+        stdin = in;
+        stdout = out;
+        stderr = err;
         if( NULL != job.timer ) { xTimerDelete( job.timer, 0 ); }
     }
     vTaskDelete( NULL ); /* Should never reach here */
@@ -149,6 +166,9 @@ esp_err_t jolt_bg_create( jolt_bg_task_t task, void *param, lv_obj_t *scr )
     job.input = input_queue;
     job.scr   = scr;
     job.timer = NULL;
+    job.in    = stdin;
+    job.out   = stdout;
+    job.err   = stderr;
 
     /* Register the abort callback to the provided screen */
     if( NULL != scr ) {
