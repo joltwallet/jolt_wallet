@@ -525,6 +525,7 @@ void vault_set_unit_test( const char *str, const char *bip32_key )
 
     taskYIELD();
 
+    // TODO: Check if PIN screen was created
     /* Enter the PIN 0 0 0 0 0 0 0 0 */
     for(uint8_t i=0; i<CONFIG_JOLT_GUI_PIN_LEN; i++) {
         JOLT_ENTER;
