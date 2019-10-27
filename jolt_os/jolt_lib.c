@@ -608,6 +608,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( vault_refresh ),
     EXPORT_SYMBOL( vault_sem_give ),
     EXPORT_SYMBOL( vault_sem_take ),
+    EXPORT_SYMBOL( vault_str_to_purpose_type ),
 
 };
 
@@ -616,7 +617,7 @@ static const void *exports[] = {
 const jolt_version_t JOLT_JELF_VERSION = { 0 };
 
 /* Dummy place holder */
-static const void *exports[483] = { 0 };
+static const void *exports[484] = { 0 };
 
 #endif
 

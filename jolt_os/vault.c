@@ -453,8 +453,7 @@ void vault_clear()
  * If the vault is successfully set, the success callback will be executed.
  * On failure to set the vault, the failure callback will be executed.
  *
- * If passphrase is NULL, the preset passphrase from NVS will be used.
- *
+ * If passphrase is NULL, an empty passphrase will be used.
  */
 esp_err_t vault_set( uint32_t purpose, uint32_t coin_type, const char *bip32_key, const char *passphrase,
                      vault_cb_t failure_cb, vault_cb_t success_cb, void *param )
@@ -598,4 +597,43 @@ bool vault_get_valid()
     else {
         return false;
     }
+}
+
+/********
+ * Misc *
+ ********/
+
+uint8_t vault_str_to_purpose_type(const char *str, uint32_t *purpose, uint32_t *coin_type)
+{
+    if( NULL == str || NULL == purpose || NULL == coin_type) return 1;
+
+    uint32_t res;
+    const char *c = str;
+
+    res = atoi(c);
+    if( 0 == res && *c != '0' ) return 2;
+    while(*c != '\0' && *c != '\'' && *c != '/') c++;
+    if( *c == '\'' ) {
+        res |= BM_HARDENED;
+        c++;
+    }
+    if( *c == '/' ) {
+        c++;
+    }
+    else {
+        ESP_LOGE(TAG, "Expected '/' in derivation path.");
+        return 3;
+    }
+    *purpose = res;
+
+    res = atoi(c);
+    if( 0 == res && *c != '0' ) return 2;
+    while(*c != '\0' && *c != '\'' && *c != '/') c++;
+    if( *c == '\'' ) {
+        res |= BM_HARDENED;
+        c++;
+    }
+    *coin_type = res;
+
+    return 0;
 }
