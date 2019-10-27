@@ -34,8 +34,8 @@ EXTRA_COMPONENT_DIRS = \
 
 CFLAGS += \
         -Werror \
-		-DCONFIG_APP_COIN_PATH='$(COIN_PATH)' \
-		-DCONFIG_APP_BIP32_KEY='$(BIP32_KEY)' \
+		-DCONFIG_APP_COIN_PATH='"$(COIN_PATH)"' \
+		-DCONFIG_APP_BIP32_KEY='"$(BIP32_KEY)"' \
         -DJOLT_APP
 
 include $(IDF_PATH)/make/project.mk
