@@ -425,7 +425,7 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
                 new_st_shndx,
                 )
         del(begin, end)
-        if sym_name == "app_main":
+        if sym_name == "japp_main":
             jelf_entrypoint_sym_idx = i
 
     if fail:
@@ -649,7 +649,6 @@ def main():
     ##################################################
     jelf_contents, jelf_ehdr_shnum = write_jelf_sectionheadertable(jelf_contents,
             jelf_shdrs, Jelf_Ehdr.size_bytes())
-    log.info("Jelf Final Size: %d" % len(jelf_contents))
 
     ###########################
     # Parse Coin CLI Argument #
@@ -709,9 +708,6 @@ def main():
     #############################
     # Write JELF binary to file #
     #############################
-    # write the uncompressed unsigned jelf file for debugging purposes
-    with open(output_fn + '.uncompressed', 'wb') as f:
-        f.write(jelf_contents)
 
     # write the compressed unsigned jelf file
     compressed_jelf = compress_data(jelf_contents)

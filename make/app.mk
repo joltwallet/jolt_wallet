@@ -13,11 +13,6 @@ ifndef BIP32_KEY
 $(warning BIP32_KEY not set. Using default $(DEFAULT_BIP32_KEY))
 endif
 
-ifndef JAPP_SIGNING_KEY
-JAPP_SIGNING_KEY = 000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F
-$(warning Jolt App Signing Key not set, using default debugging signing key $(JAPP_SIGNING_KEY).)
-endif
-
 # Parse output binary paths
 ELF_BIN_NAME             = $(PROJECT_PATH)/$(PROJECT_NAME).elf
 JELF_BIN_NAME            = $(PROJECT_PATH)/$(PROJECT_NAME).jelf
@@ -39,6 +34,8 @@ EXTRA_COMPONENT_DIRS = \
 
 CFLAGS += \
         -Werror \
+		-DCONFIG_APP_COIN_PATH='$(COIN_PATH)' \
+		-DCONFIG_APP_BIP32_KEY='$(BIP32_KEY)' \
         -DJOLT_APP
 
 include $(IDF_PATH)/make/project.mk
@@ -78,6 +75,11 @@ $(ELF_BIN_NAME): sdkconfig.defaults $(APP_COMPONENTS_TARGETS)
 
 # Convert ELF file to JELF file
 $(JELF_BIN_NAME): $(ELF_BIN_NAME)
+ifndef JAPP_SIGNING_KEY
+	$(eval JAPP_SIGNING_KEY = 000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F)
+	$(warning Jolt App Signing Key not set, using default debugging signing key $(JAPP_SIGNING_KEY).)
+endif
+
 	$(PYTHONBIN) $(ELF2JELF)  $(ELF_BIN_NAME) \
     		--output $(JELF_BIN_NAME) \
     		--coin "$(COIN_PATH)" \
