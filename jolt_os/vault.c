@@ -492,7 +492,6 @@ esp_err_t vault_set( uint32_t purpose, uint32_t coin_type, const char *bip32_key
         0 == strcmp( vault->passphrase, passphrase ) && 0 == strcmp( vault->bip32_key, bip32_key ) ) {
         ESP_LOGI( TAG, "%s: identical vault parameters; no PIN required.", __func__ );
         vault_kick();
-        vault_sem_give();
         ps.state = PIN_STATE_SUCCESS_CB;
     }
     else{
