@@ -116,8 +116,8 @@ static inline uint32_t IRAM_ATTR send_byte( char c ) { return send_bytes( &c, 1 
  */
 static inline void IRAM_ATTR send_CA( void )
 {
-    send_byte( CA );
-    send_byte( CA );
+    char caca[] = { CA, CA };
+    send_bytes( caca, sizeof(caca));
 }
 
 /**
@@ -144,8 +144,8 @@ static inline void IRAM_ATTR send_CRC16( void ) { send_byte( CRC16 ); }
  */
 static inline void IRAM_ATTR send_ACKCRC16( void )
 {
-    send_ACK();
-    send_CRC16();
+    char ack_crc16[] = { ACK, CRC16 };
+    send_bytes(ack_crc16, sizeof(ack_crc16));
 }
 
 #endif
