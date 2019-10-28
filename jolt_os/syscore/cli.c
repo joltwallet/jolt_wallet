@@ -182,6 +182,16 @@ void jolt_cli_resume()
 
 void jolt_cli_return( int val )
 {
+    if( NULL == ret_val_queue ) {
+        portMUX_TYPE myMutex = portMUX_INITIALIZER_UNLOCKED;
+        portENTER_CRITICAL( &myMutex );
+        if( NULL == ret_val_queue ){
+            ret_val_queue = xQueueCreate( 1, sizeof( int ) );
+            if( NULL == ret_val_queue ) esp_restart();
+        }
+        portEXIT_CRITICAL( &myMutex );
+    }
+
     xQueueSend( ret_val_queue, &val, portMAX_DELAY );
     if( JOLT_CLI_NON_BLOCKING != val ) {
         if( 0 != val ) { printf( "Command returned non-zero error code: %d\n", val ); }
@@ -190,6 +200,26 @@ void jolt_cli_return( int val )
             app_call = false;
         }
     }
+}
+
+int jolt_cli_get_return()
+{
+    int ret_val;
+
+    if( NULL == ret_val_queue ) {
+        portMUX_TYPE myMutex = portMUX_INITIALIZER_UNLOCKED;
+        portENTER_CRITICAL( &myMutex );
+        if( NULL == ret_val_queue ){
+            ret_val_queue = xQueueCreate( 1, sizeof( int ) );
+            if( NULL == ret_val_queue ) esp_restart();
+        }
+        portEXIT_CRITICAL( &myMutex );
+    }
+
+    do {
+        xQueueReceive( ret_val_queue, &ret_val, portMAX_DELAY );
+    } while( JOLT_CLI_NON_BLOCKING == ret_val );
+    return ret_val;
 }
 
 /**
@@ -210,9 +240,7 @@ static void jolt_cli_dispatcher_task( void *param )
         jolt_bg_create( jolt_cli_process_task, &src, NULL );
 
         /* Block until job finished. */
-        do {
-            xQueueReceive( ret_val_queue, &ret_val, portMAX_DELAY );
-        } while( JOLT_CLI_NON_BLOCKING == ret_val );
+        ret_val = jolt_cli_get_return();
 
         /* Release source mutex */
         jolt_cli_give_src_lock();

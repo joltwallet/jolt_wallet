@@ -63,7 +63,7 @@ static void jolt_cli_sub_cmd_help( jolt_cli_sub_t *subconsole )
     }
 }
 
-int jolt_cli_sub_cmd_run( jolt_cli_sub_t *subconsole, uint8_t argc, char **argv )
+int jolt_cli_sub_cmd_run( jolt_cli_sub_t *subconsole, uint8_t argc, const char **argv )
 {
     jolt_cli_sub_t *current = subconsole;
     if( argc > 0 ) {
@@ -76,7 +76,7 @@ int jolt_cli_sub_cmd_run( jolt_cli_sub_t *subconsole, uint8_t argc, char **argv 
             if( 0 == strcmp( argv[0], current->cmd.command ) ) {
                 // todo: shuttle this to as a bg job
                 // jolt_bg_create( subconsole_execute, void *param, lv_obj_t *scr);
-                return ( current->cmd.func )( argc, argv );
+                return ( current->cmd.func )( argc, (char **)argv );
             }
             current = current->next;
         }

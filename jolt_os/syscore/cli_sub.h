@@ -42,7 +42,7 @@ int jolt_cli_sub_cmd_register( jolt_cli_sub_t *subconsole, esp_console_cmd_t *cm
  * @param argc
  * @return Command's return code. Returns -100 if command is not found.
  */
-int jolt_cli_sub_cmd_run( jolt_cli_sub_t *subconsole, uint8_t argc, char **argv );
+int jolt_cli_sub_cmd_run( jolt_cli_sub_t *subconsole, uint8_t argc, const char **argv );
 
 /**
  * @brief De allocate a subconsole.

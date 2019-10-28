@@ -78,4 +78,14 @@ void jolt_cli_resume();
  */
 void jolt_cli_return( int val );
 
+/**
+ * @brief Get the latest returned value.
+ *
+ * ONLY to be used in internally or in Unity unit testing.
+ *
+ * Blocks until a non_blocking return value is returned.
+ * @return return value.
+ */
+int jolt_cli_get_return();
+
 #endif
