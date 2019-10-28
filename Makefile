@@ -32,9 +32,7 @@ tests:
 		flash monitor;
 
 test-menu:
-	CFLAGS='-DJOLT_GUI_TEST_MENU=1' \
-		$(MAKE) \
-		flash monitor;
+	CFLAGS='-DJOLT_GUI_TEST_MENU=1' $(MAKE)
 
 lint:
 	find jolt_os/ \

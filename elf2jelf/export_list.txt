@@ -436,6 +436,7 @@ jolt_gui_scr_text_create
 jolt_gui_scr_yesno_create
 jolt_gui_sem_give
 jolt_gui_sem_take
+jolt_json_del_app
 jolt_json_read_app
 jolt_json_write_app
 jolt_network_post

@@ -562,6 +562,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_scr_yesno_create ),
     EXPORT_SYMBOL( jolt_gui_sem_give ),
     EXPORT_SYMBOL( jolt_gui_sem_take ),
+    EXPORT_SYMBOL( jolt_json_del_app ),
     EXPORT_SYMBOL( jolt_json_read_app ),
     EXPORT_SYMBOL( jolt_json_write_app ),
     EXPORT_SYMBOL( jolt_network_post ),
@@ -617,7 +618,7 @@ static const void *exports[] = {
 const jolt_version_t JOLT_JELF_VERSION = { 0 };
 
 /* Dummy place holder */
-static const void *exports[484] = { 0 };
+static const void *exports[485] = { 0 };
 
 #endif
 

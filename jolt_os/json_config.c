@@ -92,6 +92,22 @@ exit:
     return json;
 }
 
+bool jolt_json_del_app()
+{
+    bool res   = false;
+    char *name = NULL, *path = NULL;
+    if( NULL == ( name = launch_get_name() ) ) goto exit;
+    if( NULL == ( path = jolt_fs_parse( name, EXT ) ) ) goto exit;
+
+    if( jolt_fs_exists( path ) ) { remove( path ); }
+
+    res = true;
+
+exit:
+    SAFE_FREE( path );
+    return res;
+}
+
 int jolt_json_write( const char *fn, const cJSON *json )
 {
     FILE *f;

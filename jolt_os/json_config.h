@@ -8,6 +8,7 @@
 #define JOLT_JSON_CONFIG_H__
 
 #include "cJSON.h"
+#include "stdbool.h"
 
 /**
  * @brief read in and parse a compressed json file.
@@ -22,6 +23,12 @@ cJSON *jolt_json_read( const char *fn );
  * @return cJSON object representing the application's config json
  */
 cJSON *jolt_json_read_app();
+
+/**
+ * @brief Delete the config file for the currently running app.
+ * @return ``true`` if the config file existed, ``false`` otherwise.
+ */
+bool jolt_json_del_app();
 
 /**
  * @brief Writes json to a compressed file.
