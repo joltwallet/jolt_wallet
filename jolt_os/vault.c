@@ -26,10 +26,9 @@
 #include "syscore/filesystem.h"
 #include "vault.h"
 
-
 #if UNIT_TESTING
-#include "jolt_gui/jolt_gui_indev.h"
-#include "unity.h"
+    #include "jolt_gui/jolt_gui_indev.h"
+    #include "unity.h"
 #endif
 
 /* Overall vault steps
@@ -189,11 +188,10 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
             }
             /* bin: 8080808080808080808080808080808080808080808080808080808080808080
              * https://github.com/trezor/python-mnemonic/blob/master/vectors.json#L64 */
-            const char unit_testing_mnemonic[] = 
-                "letter advice cage absurd amount doctor acoustic "
-                "avoid letter advice cage absurd amount doctor acoustic avoid "
-                "letter advice cage absurd amount doctor acoustic bless";
-            strlcpy(mnemonic, unit_testing_mnemonic, sizeof(mnemonic));
+            const char unit_testing_mnemonic[] = "letter advice cage absurd amount doctor acoustic "
+                                                 "avoid letter advice cage absurd amount doctor acoustic avoid "
+                                                 "letter advice cage absurd amount doctor acoustic bless";
+            strlcpy( mnemonic, unit_testing_mnemonic, sizeof( mnemonic ) );
 #else
 
             /* Get the pin_hash from the pin screen */
@@ -494,7 +492,7 @@ esp_err_t vault_set( uint32_t purpose, uint32_t coin_type, const char *bip32_key
         vault_kick();
         ps.state = PIN_STATE_SUCCESS_CB;
     }
-    else{
+    else {
         /* Populate Vault with derivation parameters */
         sodium_mprotect_readwrite( vault );
         vault->valid     = false;
@@ -517,28 +515,28 @@ void vault_set_unit_test( const char *str, const char *bip32_key )
 #if UNIT_TESTING
     esp_err_t err;
     uint32_t purpose, coin_type;
-    if( 0 != vault_str_to_purpose_type(str, &purpose, &coin_type) )
-        TEST_FAIL_MESSAGE("Failed to parse derivation path string");
-    err = vault_set( purpose, coin_type, bip32_key, EMPTY_STR, NULL, NULL, NULL);
+    if( 0 != vault_str_to_purpose_type( str, &purpose, &coin_type ) )
+        TEST_FAIL_MESSAGE( "Failed to parse derivation path string" );
+    err = vault_set( purpose, coin_type, bip32_key, EMPTY_STR, NULL, NULL, NULL );
 
     taskYIELD();
 
     // If Vault is already valid, no need to auto-enter PIN
-    if(vault_get_valid()) return;
+    if( vault_get_valid() ) return;
 
     /* Enter the PIN 0 0 0 0 0 0 0 0 */
-    for(uint8_t i=0; i<CONFIG_JOLT_GUI_PIN_LEN; i++) {
+    for( uint8_t i = 0; i < CONFIG_JOLT_GUI_PIN_LEN; i++ ) {
         JOLT_ENTER;
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay( pdMS_TO_TICKS( 50 ) );
     }
 
-    for(uint8_t i=0; i < 40; i++) {
+    for( uint8_t i = 0; i < 40; i++ ) {
         /* Lame polling, but works fine for testing and makes the API easier */
-        vTaskDelay(pdMS_TO_TICKS(50));
-        if(vault_get_valid()) break;
+        vTaskDelay( pdMS_TO_TICKS( 50 ) );
+        if( vault_get_valid() ) break;
     }
 
-    if(!vault_get_valid()) TEST_FAIL_MESSAGE("Failed to set vault");
+    if( !vault_get_valid() ) TEST_FAIL_MESSAGE( "Failed to set vault" );
 #endif
 }
 
@@ -639,32 +637,30 @@ bool vault_get_valid()
  * Misc *
  ********/
 
-uint8_t vault_str_to_purpose_type(const char *str, uint32_t *purpose, uint32_t *coin_type)
+uint8_t vault_str_to_purpose_type( const char *str, uint32_t *purpose, uint32_t *coin_type )
 {
-    if( NULL == str || NULL == purpose || NULL == coin_type) return 1;
+    if( NULL == str || NULL == purpose || NULL == coin_type ) return 1;
 
     uint32_t res;
     const char *c = str;
 
-    res = atoi(c);
+    res = atoi( c );
     if( 0 == res && *c != '0' ) return 2;
-    while(*c != '\0' && *c != '\'' && *c != '/') c++;
+    while( *c != '\0' && *c != '\'' && *c != '/' ) c++;
     if( *c == '\'' ) {
         res |= BM_HARDENED;
         c++;
     }
-    if( *c == '/' ) {
-        c++;
-    }
+    if( *c == '/' ) { c++; }
     else {
-        ESP_LOGE(TAG, "Expected '/' in derivation path.");
+        ESP_LOGE( TAG, "Expected '/' in derivation path." );
         return 3;
     }
     *purpose = res;
 
-    res = atoi(c);
+    res = atoi( c );
     if( 0 == res && *c != '0' ) return 2;
-    while(*c != '\0' && *c != '\'' && *c != '/') c++;
+    while( *c != '\0' && *c != '\'' && *c != '/' ) c++;
     if( *c == '\'' ) {
         res |= BM_HARDENED;
         c++;

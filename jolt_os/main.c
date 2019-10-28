@@ -291,8 +291,10 @@ void app_main( void )
                              UNITY_FREERTOS_CPU );
 #else
     ESP_LOGI( TAG, "Setting up Vault" );
-    if( first_boot ) jolt_gui_menu_home_create();
-    else jolt_gui_first_boot_create();
+    if( first_boot )
+        jolt_gui_menu_home_create();
+    else
+        jolt_gui_first_boot_create();
 
     /* Initialize Console */
     {

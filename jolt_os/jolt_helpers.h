@@ -287,9 +287,9 @@ void jolt_consume_mem_free( void **consumed );
 void jolt_print_bytearray( const uint8_t *array, size_t len, bool split );
 
 #include "mp.h"
-#define JOLT_NO_LOGGING_CTX                                                     \
-    MPP_BEFORE( 1, jolt_suspend_logging() )                                     \
-    MPP_DO_WHILE( 2, false )                                                    \
+#define JOLT_NO_LOGGING_CTX                 \
+    MPP_BEFORE( 1, jolt_suspend_logging() ) \
+    MPP_DO_WHILE( 2, false )                \
     MPP_FINALLY( 3, jolt_resume_logging() )
 
 #include <driver/uart.h>

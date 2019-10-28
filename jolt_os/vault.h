@@ -168,12 +168,11 @@ bool vault_get_valid();
 /**
  * @brief Convert a NULL-terminated len-2 derivation path string to a purpose and coin_type.
  * @param[in] str Input path string like "44'/165'"
- * @param[out] purpose 
+ * @param[out] purpose
  * @param[out] coin_type
  * @return 0 on success.
  */
-uint8_t vault_str_to_purpose_type(const char *str, uint32_t *purpose, uint32_t *coin_type);
-
+uint8_t vault_str_to_purpose_type( const char *str, uint32_t *purpose, uint32_t *coin_type );
 
 /**
  * @brief Convenience function for app unit testing to set the vault according

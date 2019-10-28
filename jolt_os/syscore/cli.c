@@ -185,7 +185,7 @@ void jolt_cli_return( int val )
     if( NULL == ret_val_queue ) {
         portMUX_TYPE myMutex = portMUX_INITIALIZER_UNLOCKED;
         portENTER_CRITICAL( &myMutex );
-        if( NULL == ret_val_queue ){
+        if( NULL == ret_val_queue ) {
             ret_val_queue = xQueueCreate( 1, sizeof( int ) );
             if( NULL == ret_val_queue ) esp_restart();
         }
@@ -209,7 +209,7 @@ int jolt_cli_get_return()
     if( NULL == ret_val_queue ) {
         portMUX_TYPE myMutex = portMUX_INITIALIZER_UNLOCKED;
         portENTER_CRITICAL( &myMutex );
-        if( NULL == ret_val_queue ){
+        if( NULL == ret_val_queue ) {
             ret_val_queue = xQueueCreate( 1, sizeof( int ) );
             if( NULL == ret_val_queue ) esp_restart();
         }
