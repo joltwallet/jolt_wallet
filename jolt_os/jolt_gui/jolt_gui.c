@@ -404,6 +404,22 @@ const char *jolt_gui_scr_id_str( jolt_gui_scr_id_t val )
     return names[val];
 }
 
+static FILE *lvgl_in = NULL, *lvgl_out = NULL, *lvgl_err = NULL;
+
+void jolt_gui_set_stdstream( FILE *in, FILE *out, FILE *err )
+{
+    lvgl_in  = in;
+    lvgl_out = out;
+    lvgl_err = err;
+}
+
+void jolt_gui_apply_stdstream()
+{
+    if( NULL != lvgl_in ) stdin = lvgl_in;
+    if( NULL != lvgl_out ) stdout = lvgl_out;
+    if( NULL != lvgl_err ) stderr = lvgl_err;
+}
+
 /************
  * Wrappers *
  ************/

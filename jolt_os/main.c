@@ -73,15 +73,27 @@ static void unity_task( void *pvParameters )
 
 static void littlevgl_task()
 {
+    FILE *default_in, *default_out, *default_err;
+    default_in  = stdin;
+    default_out = stdout;
+    default_err = stderr;
+
     bool cancel_rollback = false;
     ESP_LOGI( TAG, "Starting draw loop" );
     TickType_t xLastWakeTime = xTaskGetTickCount();
     for( uint8_t counter = 0;; vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 10 ) ), counter++ ) {
         if( counter == 20 && cancel_rollback == false ) {
+            /* If the code has made it this far, chances are slim of an
+             * irrecoverable crash */
             ESP_LOGI( TAG, "Marking app as valid." );
             ESP_ERROR_CHECK( esp_ota_mark_app_valid_cancel_rollback() );
             cancel_rollback = true;
         }
+        stdin  = default_in;
+        stdout = default_out;
+        stderr = default_err;
+        jolt_gui_apply_stdstream();
+
         JOLT_GUI_CTX { lv_task_handler(); }
     }
     ESP_LOGE( TAG, "Draw Loop Exitted" );  // Should never reach here

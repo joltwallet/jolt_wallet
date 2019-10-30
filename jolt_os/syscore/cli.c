@@ -242,6 +242,9 @@ static void jolt_cli_dispatcher_task( void *param )
         /* Block until job finished. */
         ret_val = jolt_cli_get_return();
 
+        /* Revert LVGL task's standard streams */
+        jolt_gui_set_stdstream( NULL, NULL, NULL );
+
         /* Release source mutex */
         jolt_cli_give_src_lock();
 
@@ -268,9 +271,12 @@ static int32_t jolt_cli_process_task( jolt_bg_job_t *bg_job )
 
     if( NULL == src->line ) goto exit;
 
+    // TODO: Set LVGL std stream
     if( src->in ) stdin = src->in;
     if( src->out ) stdout = src->out;
     if( src->err ) stderr = src->err;
+
+    jolt_gui_set_stdstream( stdin, stdout, stderr );
 
     /* Try to run the command */
     err = esp_console_run( src->line, &ret );

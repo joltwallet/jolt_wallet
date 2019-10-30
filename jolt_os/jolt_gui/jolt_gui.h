@@ -293,6 +293,16 @@ const char *jolt_gui_scr_id_str( jolt_gui_scr_id_t val );
  ************/
 lv_obj_t *jolt_gui_obj_get_parent( const lv_obj_t *obj );
 
+/**
+ * @brief Set std streams for the lvgl handler task
+ */
+void jolt_gui_set_stdstream( FILE *in, FILE *out, FILE *err );
+
+/**
+ * @brief Apply the currently set std streams from `jolt_gui_set_stdstream` .
+ */
+void jolt_gui_apply_stdstream();
+
 /********************
  * Meta Programming *
  ********************/
