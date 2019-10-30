@@ -84,6 +84,9 @@ jolt_hash_status_t jolt_hash_init( jolt_hash_t *ctx )
     status = jolt_hash_registry[ctx->type].init( ctx );
 
     if( JOLT_HASH_STATUS_SUCCESS == status ) { ctx->initialized = true; }
+    else {
+        ESP_LOGE( TAG, "Failed to initialize (%d)", status );
+    };
 
     return status;
 }
@@ -106,6 +109,7 @@ jolt_hash_status_t jolt_hash_update( jolt_hash_t *ctx, const uint8_t *msg, size_
     }
 
     status = jolt_hash_registry[ctx->type].update( ctx, msg, msg_len );
+    if( JOLT_HASH_STATUS_SUCCESS != status ) { ESP_LOGE( TAG, "Failed to update (%d)", status ); };
 
     return status;
 }
@@ -128,6 +132,7 @@ jolt_hash_status_t jolt_hash_final( jolt_hash_t *ctx )
 
     status           = jolt_hash_registry[ctx->type].final( ctx );
     ctx->initialized = false;
+    if( JOLT_HASH_STATUS_SUCCESS != status ) { ESP_LOGE( TAG, "Failed to finalize (%d)", status ); };
 
     return status;
 }
