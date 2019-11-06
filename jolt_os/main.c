@@ -37,6 +37,7 @@
 #include "syscore/cli.h"
 #include "syscore/cli_ble.h"
 #include "syscore/cli_uart.h"
+#include "syscore/ext_storage.h"
 #include "syscore/filesystem.h"
 #include "syscore/noise.h"
 #include "syscore/partition.h"
@@ -220,6 +221,9 @@ void app_main( void )
         jolt_bluetooth_adv_all_start();
 #endif
     }
+
+    /* Initialize External Storage */
+    jolt_ext_storage_init();
 
     /* Start side-channel mitigation noise */
     jolt_noise_init();

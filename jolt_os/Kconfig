@@ -198,6 +198,58 @@ menu "JoltOS"
                 implementing and debugging new security features.
     endmenu
 
+    menu "External Storage"
+        config JOLT_EXT_STORAGE_EN
+            bool
+            prompt "Enable external storage"
+            default n
+            help
+                See https://github.com/espressif/esp-idf/tree/master/examples/storage/sd_card
+
+        config JOLT_EXT_STORAGE_DAT0_PIN
+            depends on JOLT_EXT_STORAGE_EN
+            int 
+            range 0 39
+            default 2
+            help
+                SD/eMMc DAT0 pin.
+        config JOLT_EXT_STORAGE_DAT1_PIN
+            depends on JOLT_EXT_STORAGE_EN
+            int 
+            range 0 39
+            default 4
+            help
+                SD/eMMc DAT1 pin.
+        config JOLT_EXT_STORAGE_DAT2_PIN
+            depends on JOLT_EXT_STORAGE_EN
+            int 
+            range 0 39
+            default 12
+            help
+                SD/eMMc DAT2 pin.
+        config JOLT_EXT_STORAGE_DAT3_PIN
+            depends on JOLT_EXT_STORAGE_EN
+            int 
+            range 0 39
+            default 13
+            help
+                SD/eMMc DAT3 pin.
+        config JOLT_EXT_STORAGE_CMD_PIN
+            depends on JOLT_EXT_STORAGE_EN
+            int 
+            range 0 39
+            default 15
+            help
+                SD/eMMc CMD pin.
+        config JOLT_EXT_STORAGE_CLK_PIN
+            depends on JOLT_EXT_STORAGE_EN
+            int 
+            range 0 39
+            default 14
+            help
+                SD/eMMc CLK pin.
+    endmenu
+
     menu "Console"
 
         config JOLT_CONSOLE_STARTUP_CLEAR
@@ -460,11 +512,11 @@ menu "JoltOS"
                 Enable profiling tools. Takes up additional memory and some CPU cycles.
 
         config JOLT_APP_SIG_CHECK_EN
-           bool
-           prompt "Require applications to have a valid signature prior to launching"
-           default y
-           help
-               help text here
+            bool
+            prompt "Require applications to have a valid signature prior to launching"
+            default y
+            help
+                help text here
 
         config JELFLOADER_INPUTBUF_LEN
             int

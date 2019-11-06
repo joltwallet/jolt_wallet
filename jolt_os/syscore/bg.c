@@ -88,7 +88,7 @@ static void bg_task( void *param )
                 esp_restart();  // unrecoverable without memory leak
                 continue;
             }
-            stdin = in;
+            stdin  = in;
             stdout = out;
             stderr = err;
             continue;
@@ -96,7 +96,7 @@ static void bg_task( void *param )
     job_end:
         /* Delete the Job's input Queue */
         vQueueDelete( job.input );
-        stdin = in;
+        stdin  = in;
         stdout = out;
         stderr = err;
         if( NULL != job.timer ) { xTimerDelete( job.timer, 0 ); }
