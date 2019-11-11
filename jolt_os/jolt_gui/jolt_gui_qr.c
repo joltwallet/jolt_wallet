@@ -33,7 +33,7 @@ jolt_gui_obj_t *jolt_gui_scr_scroll_add_qr( jolt_gui_obj_t *scr, const char *dat
         uint8_t qr_buf[JOLT_GUI_QR_BUF_SIZE];
         if( qrcode_initBytes( &( ext->qrcode ), qr_buf, JOLT_GUI_QR_VERSION, ECC_LOW, (uint8_t *)data, data_len ) ) {
             // error: too much data
-            lv_obj_del( page );
+            jolt_gui_obj_del( page );
             break;
         }
         jolt_gui_obj_id_set( img, JOLT_GUI_OBJ_ID_IMG_QR );

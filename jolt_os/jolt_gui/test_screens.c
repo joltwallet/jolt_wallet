@@ -98,7 +98,7 @@ static void test_loading_task( void *param )
             jolt_gui_scr_loadingbar_update( scr, NULL, "meow", i );
         }
     }
-    lv_obj_del( scr );
+    jolt_gui_obj_del( scr );
     vTaskDelete( NULL );
 }
 
@@ -163,7 +163,7 @@ void jolt_gui_test_battery_del( jolt_gui_obj_t *btn, jolt_gui_event_t event )
     if( jolt_gui_event.cancel == event ) {
         lv_task_del( test_battery_task_h );
         if( NULL != test_battery_scr ) {
-            lv_obj_del( test_battery_scr );
+            jolt_gui_obj_del( test_battery_scr );
             test_battery_scr = NULL;
         }
     }
@@ -171,7 +171,7 @@ void jolt_gui_test_battery_del( jolt_gui_obj_t *btn, jolt_gui_event_t event )
 void jolt_gui_test_battery_task( lv_task_t *task )
 {
     if( NULL != test_battery_scr ) {
-        lv_obj_del( test_battery_scr );
+        jolt_gui_obj_del( test_battery_scr );
         test_battery_scr = NULL;
     }
     int val = adc1_get_raw( JOLT_ADC1_VBATT );

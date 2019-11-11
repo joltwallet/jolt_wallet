@@ -6,8 +6,8 @@
 #include "jolt_gui.h"
 #include "jolt_gui_symbols.h"
 
-static const char TAG[] = "statusbar";
-static lv_style_t header_style;
+static const char TAG[]        = "statusbar";
+static lv_style_t header_style = {0};
 static jolt_gui_obj_t *statusbar_cont;
 static jolt_gui_obj_t *statusbar_label;
 static volatile uint32_t statusbar_icons_enabled = 0;

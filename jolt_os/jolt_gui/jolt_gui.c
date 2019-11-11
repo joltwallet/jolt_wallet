@@ -123,7 +123,7 @@ void jolt_gui_obj_id_set( lv_obj_t *obj, jolt_gui_obj_id_t id )
 {
 #if JOLT_GUI_USE_RESERVED
     obj->reserved = ( id & ID_MASK ) | ( obj->reserved & ~ID_MASK );
-    ESP_LOGD( TAG, "obj id: 0x%02X; reserved: 0x%02X", id, obj->reserved );
+    ESP_LOGV( TAG, "obj id: 0x%02X; reserved: 0x%02X", id, obj->reserved );
 #else
     lv_obj_get_user_data_ptr( obj )->id = id;
 #endif
@@ -182,6 +182,7 @@ lv_obj_t *jolt_gui_obj_parent_create()
     JOLT_GUI_CTX
     {
         parent = BREAK_IF_NULL( lv_obj_create( lv_scr_act(), NULL ) );
+        ESP_LOGD( TAG, "Creating screen %p", parent );
         lv_obj_set_size( parent, LV_HOR_RES, LV_VER_RES );
         lv_obj_set_pos( parent, 0, 0 );
         lv_obj_set_style( parent, &lv_style_transp );
@@ -244,6 +245,7 @@ void jolt_gui_obj_del( lv_obj_t *obj )
 {
     if( NULL == obj ) { return; }
 
+    ESP_LOGD( TAG, "Deleting obj %p", obj );
     JOLT_GUI_CTX { lv_obj_del( obj ); }
 }
 
@@ -381,10 +383,11 @@ lv_obj_t *jolt_gui_find( const lv_obj_t *parent, jolt_gui_obj_id_t id )
         while( NULL != ( child = lv_obj_get_child( parent, child ) ) ) {
             jolt_gui_obj_id_t child_id;
             child_id = jolt_gui_obj_id_get( child );
-            ESP_LOGD( TAG, "Child: %p %s", child, jolt_gui_obj_id_str( child_id ) );
+            ESP_LOGV( TAG, "Child: %p %s", child, jolt_gui_obj_id_str( child_id ) );
             if( child_id == id ) { break; }
         }
     }
+    if( NULL == child ) { ESP_LOGI( TAG, "Couldn't find a %s child.", jolt_gui_obj_id_str( id ) ); }
     return child;
 }
 

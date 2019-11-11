@@ -64,14 +64,14 @@ void jolt_gui_bluetooth_pair_gap_cb( esp_gap_ble_cb_event_t event, esp_ble_gap_c
             if( NULL != passkey_scr ) {
                 JOLT_GUI_CTX
                 {
-                    lv_obj_del( passkey_scr );
+                    jolt_gui_obj_del( passkey_scr );
                     passkey_scr = NULL;
                 }
             }
             if( NULL != scanning_scr ) {
                 JOLT_GUI_CTX
                 {
-                    lv_obj_del( scanning_scr );
+                    jolt_gui_obj_del( scanning_scr );
                     scanning_scr = NULL;
                 }
             }
@@ -87,14 +87,14 @@ void jolt_gui_bluetooth_pair_gap_cb( esp_gap_ble_cb_event_t event, esp_ble_gap_c
             if( NULL != passkey_scr ) {
                 JOLT_GUI_CTX
                 {
-                    lv_obj_del( passkey_scr );
+                    jolt_gui_obj_del( passkey_scr );
                     passkey_scr = NULL;
                 }
             }
             if( NULL != scanning_scr ) {
                 JOLT_GUI_CTX
                 {
-                    lv_obj_del( scanning_scr );
+                    jolt_gui_obj_del( scanning_scr );
                     scanning_scr = NULL;
                 }
             }
