@@ -42,22 +42,26 @@ void jolt_fs_init()
     esp_err_t ret;
 
 #if CONFIG_JOLT_FS_SPIFFS
+    ESP_LOGI( TAG, "Mounting internal SPIFFS filesystem." );
     const esp_vfs_spiffs_conf_t conf = {.base_path              = JOLT_FS_MOUNTPT,
                                         .partition_label        = JOLT_FS_PARTITION,
                                         .max_files              = MAX_FILES,
                                         .format_if_mount_failed = true};
     ret                              = esp_vfs_spiffs_register( &conf );
 #elif CONFIG_JOLT_FS_LITTLEFS
+    ESP_LOGI( TAG, "Mounting internal LittleFS filesystem." );
     const esp_vfs_littlefs_conf_t conf = {.base_path              = JOLT_FS_MOUNTPT,
                                           .partition_label        = JOLT_FS_PARTITION,
                                           .max_files              = MAX_FILES,
                                           .format_if_mount_failed = true};
     ret                                = esp_vfs_littlefs_register( &conf );
 #elif CONFIG_JOLT_FS_FAT
+    ESP_LOGI( TAG, "Mounting internal FAT filesystem." );
     const esp_vfs_fat_mount_config_t conf = {
             .max_files = MAX_FILES, .format_if_mount_failed = true, .allocation_unit_size = CONFIG_WL_SECTOR_SIZE};
     ret = esp_vfs_fat_spiflash_mount( JOLT_FS_MOUNTPT, JOLT_FS_PARTITION, &conf, &s_wl_handle );
 #else
+    ESP_LOGI( TAG, "JoltOS was not compiled with a valid internal filesystem." );
     ret = ESP_FAIL;
 #endif
 
