@@ -224,8 +224,8 @@ static void launch_app_from_store( void *dummy )
         if( NULL != app_cache.scr ) { jolt_gui_scr_set_event_cb( app_cache.scr, launch_app_cb ); }
     }
     else {
-        /* Application returns a return code */
-        assert( res != JOLT_CLI_NON_BLOCKING );
+        /* Application returns a JOLT_CLI_NON_BLOCKING return code, but may
+         * not if the command doesn't require user confirmation. */
         jolt_cli_return( res );
     }
 }
