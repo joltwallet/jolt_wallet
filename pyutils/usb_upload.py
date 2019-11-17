@@ -102,9 +102,11 @@ def main(args):
                 n = ser.inWaiting()
                 if n:
                     line = ser.read(n)
-                    print(line.strip().decode("utf-8") )
+                    print(line.strip().decode("utf-8", errors='replace') )
             except IOError:
                 raise IOError()
+            except:
+                pass
 
 if __name__ == '__main__':
     main(sys.argv)
