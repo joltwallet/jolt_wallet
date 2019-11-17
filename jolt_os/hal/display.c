@@ -79,30 +79,31 @@ void jolt_display_print( const jolt_display_t *disp )
     }
 
     /* Print the resulting buf_copy */
-    jolt_suspend_logging();
-    for( uint8_t y1 = 0; y1 < LV_VER_RES_MAX - 1; y1 += 2 ) {
-        memzero( print_buf, sizeof( print_buf ) );
-        uint8_t y2 = y1 + 1;
-        for( uint8_t x = 0; x < LV_HOR_RES_MAX; x++ ) {
-            bool val1, val2;
-            uint8_t *disp_buf_ptr;
-            disp_buf_ptr = (uint8_t *)buf_copy + LV_HOR_RES_MAX * ( y1 >> 3 ) + x;
-            val1         = (bool)( *disp_buf_ptr & ( 1 << ( y1 % 8 ) ) );
-            disp_buf_ptr = (uint8_t *)buf_copy + LV_HOR_RES_MAX * ( y2 >> 3 ) + x;
-            val2         = (bool)( *disp_buf_ptr & ( 1 << ( y2 % 8 ) ) );
-            if( val1 && val2 )
-                strlcat( print_buf, "█", sizeof( print_buf ) );
-            else if( val1 )
-                strlcat( print_buf, "▀", sizeof( print_buf ) );
-            else if( val2 )
-                strlcat( print_buf, "▄", sizeof( print_buf ) );
-            else
-                strlcat( print_buf, " ", sizeof( print_buf ) );
+    JOLT_NO_LOGGING_CTX
+    {
+        for( uint8_t y1 = 0; y1 < LV_VER_RES_MAX - 1; y1 += 2 ) {
+            memzero( print_buf, sizeof( print_buf ) );
+            uint8_t y2 = y1 + 1;
+            for( uint8_t x = 0; x < LV_HOR_RES_MAX; x++ ) {
+                bool val1, val2;
+                uint8_t *disp_buf_ptr;
+                disp_buf_ptr = (uint8_t *)buf_copy + LV_HOR_RES_MAX * ( y1 >> 3 ) + x;
+                val1         = (bool)( *disp_buf_ptr & ( 1 << ( y1 % 8 ) ) );
+                disp_buf_ptr = (uint8_t *)buf_copy + LV_HOR_RES_MAX * ( y2 >> 3 ) + x;
+                val2         = (bool)( *disp_buf_ptr & ( 1 << ( y2 % 8 ) ) );
+                if( val1 && val2 )
+                    strlcat( print_buf, "█", sizeof( print_buf ) );
+                else if( val1 )
+                    strlcat( print_buf, "▀", sizeof( print_buf ) );
+                else if( val2 )
+                    strlcat( print_buf, "▄", sizeof( print_buf ) );
+                else
+                    strlcat( print_buf, " ", sizeof( print_buf ) );
+            }
+            strlcat( print_buf, "\n", sizeof( print_buf ) );
+            printf( print_buf );
         }
-        strlcat( print_buf, "\n", sizeof( print_buf ) );
-        printf( print_buf );
     }
-    jolt_resume_logging();
 }
 
 bool jolt_display_copy( jolt_display_t *copy )

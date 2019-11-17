@@ -412,17 +412,15 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list, shdr_mapping):
                 if st_bind != STB_GLOBAL:
                     log.error("Only supports STB_GLOBAL (st_info)")
                     fail = True
-                if st_type == STT_NOTYPE:
-                    # Symbol wasn't exported, but it's also not used in the app.
-                    continue
-                elif st_type == STT_OBJECT:
-                    # Keep
+                if st_type == STT_OBJECT:
+                    # Internal App Object Reference; Keep
                     pass
                 elif st_type == STT_FUNC:
-                    # Keep
+                    # Internal App Function Reference; Keep
                     pass
                 else:
-                    log.error("Unsupported st_type (0x%02X)" % st_type)
+                    # Unresolved symbol
+                    log.error("Unsupported st_type (0x%02X) with name %s" % (st_type, sym_name))
                     fail = True
                     continue
 

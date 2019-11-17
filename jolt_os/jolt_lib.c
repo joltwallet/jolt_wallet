@@ -494,9 +494,6 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_crypto_verify ),
     EXPORT_SYMBOL( jolt_display_get_brightness ),
     EXPORT_SYMBOL( jolt_display_set_brightness ),
-    EXPORT_SYMBOL( jolt_hash_final ),
-    EXPORT_SYMBOL( jolt_hash_init ),
-    EXPORT_SYMBOL( jolt_hash_update ),
     EXPORT_SYMBOL( jolt_gui_err_to_str ),
     EXPORT_SYMBOL( jolt_gui_event ),
     EXPORT_SYMBOL( jolt_gui_event_del ),
@@ -562,13 +559,18 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_gui_scr_yesno_create ),
     EXPORT_SYMBOL( jolt_gui_sem_give ),
     EXPORT_SYMBOL( jolt_gui_sem_take ),
+    EXPORT_SYMBOL( jolt_hash_final ),
+    EXPORT_SYMBOL( jolt_hash_init ),
+    EXPORT_SYMBOL( jolt_hash_update ),
     EXPORT_SYMBOL( jolt_json_del_app ),
     EXPORT_SYMBOL( jolt_json_read_app ),
     EXPORT_SYMBOL( jolt_json_write_app ),
     EXPORT_SYMBOL( jolt_network_post ),
     EXPORT_SYMBOL( jolt_random ),
     EXPORT_SYMBOL( jolt_random_range ),
+    EXPORT_SYMBOL( jolt_resume_logging ),
     EXPORT_SYMBOL( jolt_shuffle_arr ),
+    EXPORT_SYMBOL( jolt_suspend_logging ),
     EXPORT_SYMBOL( malloc ),
     EXPORT_SYMBOL( mbedtls_mpi_add_abs ),
     EXPORT_SYMBOL( mbedtls_mpi_add_mpi ),
@@ -618,7 +620,7 @@ static const void *exports[] = {
 const jolt_version_t JOLT_JELF_VERSION = { 0 };
 
 /* Dummy place holder */
-static const void *exports[485] = { 0 };
+static const void *exports[487] = { 0 };
 
 #endif
 

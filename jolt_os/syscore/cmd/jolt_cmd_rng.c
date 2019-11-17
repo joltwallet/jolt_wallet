@@ -25,23 +25,24 @@ int jolt_cmd_rng( int argc, char** argv )
         }
     }
 
-    jolt_suspend_logging();
-    for( uint64_t i = 0; i < n_bytes; i += sizeof( bin_buf ) ) {
-        uint8_t gen_bytes = sizeof( bin_buf );
-        if( n_bytes - i < sizeof( bin_buf ) ) { gen_bytes = n_bytes - i; }
-        jolt_random( bin_buf, gen_bytes );
-        if( output_hex ) {
-            char hex_buf[2 * sizeof( bin_buf ) + 1];
-            sodium_bin2hex( hex_buf, sizeof( hex_buf ), bin_buf, gen_bytes );
+    JOLT_NO_LOGGING_CTX
+    {
+        for( uint64_t i = 0; i < n_bytes; i += sizeof( bin_buf ) ) {
+            uint8_t gen_bytes = sizeof( bin_buf );
+            if( n_bytes - i < sizeof( bin_buf ) ) { gen_bytes = n_bytes - i; }
+            jolt_random( bin_buf, gen_bytes );
+            if( output_hex ) {
+                char hex_buf[2 * sizeof( bin_buf ) + 1];
+                sodium_bin2hex( hex_buf, sizeof( hex_buf ), bin_buf, gen_bytes );
 
-            fwrite( hex_buf, 1, 2 * gen_bytes, stdout );
+                fwrite( hex_buf, 1, 2 * gen_bytes, stdout );
+            }
+            else {
+                fwrite( bin_buf, 1, gen_bytes, stdout );
+            }
         }
-        else {
-            fwrite( bin_buf, 1, gen_bytes, stdout );
-        }
+        printf( "\n" );
     }
-    printf( "\n" );
-    jolt_resume_logging();
 
     return_code = 0;
 
