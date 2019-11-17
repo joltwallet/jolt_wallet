@@ -18,7 +18,7 @@ include $(IDF_PATH)/make/project.mk
 
 print-%  : ; @echo $* = $($*)
 
-.PHONY: install tests test-menu lint compilation_db cppcheck
+.PHONY: install tests test-menu lint compilation_db cppcheck decode
 
 install:
 	mkdir -p $(IDF_TOOLS_PATH)
@@ -74,5 +74,13 @@ cppcheck: compile_commands.json
 clean-jolt:
 	rm -rf build/jolt_os
 	rm -rf build/jolt_wallet
+
+decode:
+	# usage: make decode 0x40...:\0x3ff 0x40...
+	echo "\n"
+	xtensa-esp32-elf-addr2line -pfiaC -e build/$(PROJECT_NAME).elf $(filter-out $@,$(MAKECMDGOALS))
+
+%:
+	@:
 
 print-%  : ; @echo $* = $($*)
