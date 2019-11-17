@@ -49,7 +49,8 @@ from elf32_structs import \
         Elf32_SHT_RELA, Elf32_SHT_NOBITS, \
         Elf32_SHF_ALLOC, Elf32_SHF_EXECINSTR, \
         Elf32_R_XTENSA_NONE, Elf32_R_XTENSA_32, \
-        Elf32_R_XTENSA_ASM_EXPAND, Elf32_R_XTENSA_SLOT0_OP
+        Elf32_R_XTENSA_ASM_EXPAND, Elf32_R_XTENSA_SLOT0_OP, \
+        STB_GLOBAL, STT_NOTYPE, STT_OBJECT, STT_FUNC
 from jelf_structs import \
         Jelf_Ehdr, Jelf_Shdr, Jelf_Sym, Jelf_Rela, \
         Jelf_SHT_OTHER, Jelf_SHT_RELA, Jelf_SHT_NOBITS, Jelf_SHT_SYMTAB, \
@@ -348,7 +349,7 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
 
     mapping = [jelf_shdrs_index[null_index]] \
             + [jelf_shdrs_index[symtab_index]] \
-            + list(reversed(other_alloc_index + text_alloc_index+ literal_alloc_index)) \
+            + list(reversed(other_alloc_index + text_alloc_index + literal_alloc_index)) \
             + other_rela_index \
             + text_rela_index \
             + literal_rela_index
@@ -374,7 +375,7 @@ def convert_shdrs( elf32_shdrs, elf32_shdr_names ):
 
     return jelf_shdrs, mapping
 
-def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
+def convert_symtab(elf32_symtab, elf32_strtab, export_list, shdr_mapping):
     elf32_sym_size = Elf32_Sym.size_bytes()
     jelf_sym_size  = Jelf_Sym.size_bytes()
 
@@ -382,6 +383,9 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
     jelf_symtab = bytearray( symtab_nent * jelf_sym_size )
 
     fail = False;
+    jelf_entrypoint_sym_idx = None
+    j = 0
+    elf2jelf_symtab_mapping = {}
     for i in range(symtab_nent):
         begin = i * elf32_sym_size
         end = begin + elf32_sym_size
@@ -394,8 +398,7 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
         # Convert the SymbolName to a 1-indexed Exported Function
         jelf_name_index = 0 # 0 means no name
         if sym_name == '':
-            log.debug( "Symbol index %d has no name %d." % \
-                    (i, elf32_symbol.st_name) )
+            log.debug( "Symbol index %d has no name %d." % (i, elf32_symbol.st_name) )
         else:
             try:
                 # Plus one because 0 means no name
@@ -404,9 +407,24 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
                     "and matched to exported function index %d.") % \
                         (i, sym_name, jelf_name_index) )
             except ValueError:
-                if elf32_symbol.st_value != 0:
-                    log.error( "Unlinked symbol: %s; st_value 0x%08X" % (sym_name,elf32_symbol.st_value) )
+                st_info = int.from_bytes(elf32_symbol.st_info, "little", signed=False)
+                st_bind, st_type = st_info >> 4, st_info & 0x0F
+                if st_bind != STB_GLOBAL:
+                    log.error("Only supports STB_GLOBAL (st_info)")
                     fail = True
+                if st_type == STT_NOTYPE:
+                    # Symbol wasn't exported, but it's also not used in the app.
+                    continue
+                elif st_type == STT_OBJECT:
+                    # Keep
+                    pass
+                elif st_type == STT_FUNC:
+                    # Keep
+                    pass
+                else:
+                    log.error("Unsupported st_type (0x%02X)" % st_type)
+                    fail = True
+                    continue
 
         if elf32_symbol.st_shndx > 2**16:
             raise("Overflow Detected")
@@ -416,8 +434,8 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
             # we don't care about special values
             new_st_shndx = 0
         else:
-            new_st_shndx = mapping.index(elf32_symbol.st_shndx)
-        begin = i * jelf_sym_size
+            new_st_shndx = shdr_mapping.index(elf32_symbol.st_shndx)
+        begin = j * jelf_sym_size
         end = begin + jelf_sym_size
 
         jelf_symtab[begin:end] = Jelf_Sym.pack(
@@ -426,14 +444,25 @@ def convert_symtab(elf32_symtab, elf32_strtab, export_list, mapping):
                 )
         del(begin, end)
         if sym_name == "japp_main":
-            jelf_entrypoint_sym_idx = i
+            jelf_entrypoint_sym_idx = j
+
+        elf2jelf_symtab_mapping[i] = j
+
+        j += 1
+
+    if jelf_entrypoint_sym_idx is None:
+        log.error("Entrypoint \"japp_main\" not defined.")
+        fail = True
 
     if fail:
         exit(1);
 
-    return jelf_symtab, jelf_entrypoint_sym_idx
+    # Trim the jelf symtab
+    jelf_symtab = jelf_symtab[0:j * jelf_sym_size]
 
-def convert_relas(elf_contents, elf32_shdrs, jelf_shdrs, mapping):
+    return jelf_symtab, elf2jelf_symtab_mapping, jelf_entrypoint_sym_idx
+
+def convert_relas(elf_contents, elf32_shdrs, jelf_shdrs, shdr_mapping, elf2jelf_symtab_mapping):
     """
     Returns dict jelf_relas where:
         keys: index into jelf_shdrs.
@@ -451,7 +480,7 @@ def convert_relas(elf_contents, elf32_shdrs, jelf_shdrs, mapping):
             continue
 
         # Get number of relocations in this section
-        elf32_idx = mapping[i]
+        elf32_idx = shdr_mapping[i]
         n_relas = int(elf32_shdrs[elf32_idx].sh_size / Elf32_Rela.size_bytes())
         # 'sh_size' is currently as if we were using ELF32_SYM
         jelf_shdrs[i]['sh_size'] = n_relas * Jelf_Rela.size_bytes()
@@ -469,7 +498,11 @@ def convert_relas(elf_contents, elf32_shdrs, jelf_shdrs, mapping):
             elf32_r_type = rela.r_info & 0xFF
 
             # Convert r_info; 2 bit left shift for jelf_r_type
-            jelf_r_info = ((rela.r_info & ~0xFF) >> 8) << 2
+            jelf_r_info = ((rela.r_info & ~0xFF) >> 8)
+            if jelf_r_info not in elf2jelf_symtab_mapping:
+                continue
+            jelf_r_info = elf2jelf_symtab_mapping[jelf_r_info]
+            jelf_r_info = jelf_r_info << 2
             if rela.r_offset > 2**16:
                 raise("Overflow Detected")
             if jelf_r_info > 2**16:
@@ -500,7 +533,7 @@ def convert_relas(elf_contents, elf32_shdrs, jelf_shdrs, mapping):
 def write_jelf_sections(elf_contents,
         elf32_shdrs, elf32_shdr_names,
         jelf_contents, jelf_ptr,
-        jelf_shdrs, jelf_relas, jelf_symtab, mapping):
+        jelf_shdrs, jelf_relas, jelf_symtab, shdr_mapping):
     """
     Writes all sections to binary.
     Updates the SectionHeaders with the correct size, type, and offset
@@ -509,7 +542,7 @@ def write_jelf_sections(elf_contents,
     assert( len(elf32_shdrs) == len(elf32_shdr_names) )
 
     for i in range(len(jelf_shdrs)):
-        elf32_idx = mapping[i]
+        elf32_idx = shdr_mapping[i]
         name = elf32_shdr_names[elf32_idx]
         if name == b'.symtab':
             # Copy over our updated Jelf symtab
@@ -612,19 +645,19 @@ def main():
     elf32_shdrs, elf32_shdr_names, elf32_symtab, elf32_strtab = \
             read_section_headers( elf_contents, ehdr, shstrtab )
 
-    jelf_shdrs, mapping = convert_shdrs( elf32_shdrs, elf32_shdr_names )
+    jelf_shdrs, shdr_mapping = convert_shdrs( elf32_shdrs, elf32_shdr_names )
 
     ###########################################
     # Convert the ELF32 symtab to JELF Format #
     ###########################################
-    jelf_symtab, jelf_entrypoint_sym_idx = convert_symtab(elf32_symtab,
-            elf32_strtab, export_list, mapping)
+    jelf_symtab, elf2jelf_symtab_mapping, jelf_entrypoint_sym_idx = convert_symtab(elf32_symtab,
+            elf32_strtab, export_list, shdr_mapping)
 
     #########################################
     # Convert the ELF32 RELA to JELF Format #
     #########################################
     jelf_relas, jelf_shdrs = convert_relas(elf_contents,
-            elf32_shdrs, jelf_shdrs, mapping)
+            elf32_shdrs, jelf_shdrs, shdr_mapping, elf2jelf_symtab_mapping)
 
     ######################################
     # Allocate space for the JELF Binary #
@@ -640,7 +673,7 @@ def main():
     jelf_contents, jelf_ptr, jelf_shdrs = write_jelf_sections(elf_contents,
             elf32_shdrs, elf32_shdr_names,
             jelf_contents, jelf_ptr,
-            jelf_shdrs, jelf_relas, jelf_symtab, mapping)
+            jelf_shdrs, jelf_relas, jelf_symtab, shdr_mapping)
     # trim jelf_contents to final length
     jelf_contents = jelf_contents[:jelf_ptr]
 

@@ -73,3 +73,25 @@ Elf32_R_XTENSA_NONE       = 0
 Elf32_R_XTENSA_32         = 1
 Elf32_R_XTENSA_ASM_EXPAND = 11
 Elf32_R_XTENSA_SLOT0_OP   = 20
+
+# bind from st_info
+STB_LOCAL  = 0
+STB_GLOBAL = 1
+STB_WEAK   = 2
+STB_LOOS   = 10
+STB_HIOS   = 12
+STB_LOPROC = 13
+STB_HIPROC = 15
+
+# type from st_info
+STT_NOTYPE         = 0
+STT_OBJECT         = 1
+STT_FUNC           = 2
+STT_SECTION        = 3
+STT_FILE           = 4
+STT_COMMON         = 5
+STT_LOOS           = 10
+STT_HIOS           = 12
+STT_LOPROC         = 13
+STT_SPARC_REGISTER = 13
+STT_HIPROC         = 15

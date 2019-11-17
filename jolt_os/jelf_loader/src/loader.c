@@ -766,19 +766,19 @@ static int relocateSection( jelfLoaderContext_t *ctx, jelfLoaderSection_t *s )
         if( relType == R_XTENSA_NONE || relType == R_XTENSA_ASM_EXPAND ) {}
         else if( ( symAddr == 0xffffffff ) ) {
             ERR( "Relocation - undefined symAddr" );
-            MSG( "  %04X %04X %-20s %08zX %08zX"
-                 "                     + %X",
-                 symEntry, relType, type2String( relType ), relAddr, symAddr, rel.r_addend );
+            ERR( "  %04X %04X %-20s %08X %08X %08X"
+                 "             + %X",
+                 symEntry, relType, type2String( relType ), relAddr, symAddr, sym.st_name, rel.r_addend );
             r |= -1;
         }
         else if( relocateSymbol( relAddr, relType, symAddr, &from, &to ) != 0 ) {
             ERR( "relocateSymbol fail" );
-            ERR( "  %04X %04X %-20s %08zX %08zX %08X->%08X  + %X", symEntry, relType, type2String( relType ), relAddr,
+            ERR( "  %04X %04X %-20s %08X %08X %08X->%08X  + %X", symEntry, relType, type2String( relType ), relAddr,
                  symAddr, from, to, rel.r_addend );
             r |= -1;
         }
         else {
-            MSG( "  %04X %04X %-20s %08zX %08zX %08X->%08X  + %X", symEntry, relType, type2String( relType ), relAddr,
+            MSG( "  %04X %04X %-20s %08X %08X %08X->%08X  + %X", symEntry, relType, type2String( relType ), relAddr,
                  symAddr, from, to, rel.r_addend );
         }
     }
