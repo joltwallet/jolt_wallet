@@ -47,6 +47,7 @@
 enum {
     PIN_STATE_FAIL  = -1,
     PIN_STATE_EMPTY = 0,
+    PIN_STATE_INIT,
     PIN_STATE_CREATE,
     PIN_STATE_STRETCH,
     PIN_STATE_SUCCESS_CB,
@@ -116,6 +117,9 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
 {
     /* This always gets executed in the BG Task */
     switch( ps.state ) {
+        case PIN_STATE_INIT:
+            vault_sem_take();
+            /* falls through */
         case PIN_STATE_CREATE: {
             /* Create the PIN Screen */
             char title[JOLT_FS_MAX_FILENAME_BUF_LEN + 10 + 10 + 5];
@@ -150,6 +154,7 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
 
             /* Create GUI Objects */
             ESP_LOGD( TAG, "Creating PIN screen" );
+            ps.state = PIN_STATE_FAIL;  // Set incase gui creation fails.
             JOLT_GUI_CTX
             {
                 ps.scr = BREAK_IF_NULL( jolt_gui_scr_digit_entry_create( title, CONFIG_JOLT_GUI_PIN_LEN,
@@ -172,6 +177,7 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
             /* Set a constant mnemonic for easier debugging.
              * Doesn't access any storage.
              * Correct PIN is 0 0 0 0 0 0 0 0 */
+            jolt_gui_sem_take();
             if( 0 != jolt_gui_scr_digit_entry_get_int( ps.scr ) ) {
                 /* Wrong PIN */
                 ESP_LOGE( TAG, "Incorrect PIN" );
@@ -186,6 +192,9 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
 
                 break;
             }
+            else {
+                jolt_gui_sem_give();
+            }
             /* bin: 8080808080808080808080808080808080808080808080808080808080808080
              * https://github.com/trezor/python-mnemonic/blob/master/vectors.json#L64 */
             const char unit_testing_mnemonic[] = "letter advice cage absurd amount doctor acoustic "
@@ -197,19 +206,20 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
             /* Get the pin_hash from the pin screen */
             if( 0 != jolt_gui_scr_digit_entry_get_hash( ps.scr, ps.pin_hash ) ) {
                 ESP_LOGE( TAG, "Failed to get PIN hash" );
-                esp_restart();  // irrecoverable error
+                assert( 0 );  // irrecoverable error
             }
 
             /* Delete the Pin Entry Screen */
-            jolt_gui_sem_take();  // Prevents flashing screen
-            jolt_gui_obj_del( ps.scr );
-            ps.scr = NULL;
+            JOLT_GUI_CTX
+            {  // Prevents flashing screen
+                jolt_gui_obj_del( ps.scr );
+                ps.scr = NULL;
 
-            /* Create Loading Bar */
-            loading_scr = jolt_gui_scr_loadingbar_create( NULL );
-            jolt_gui_scr_loadingbar_update( loading_scr, gettext( JOLT_TEXT_PIN ), gettext( JOLT_TEXT_CHECKING_PIN ),
-                                            0 );
-            jolt_gui_sem_give();
+                /* Create Loading Bar */
+                loading_scr = jolt_gui_scr_loadingbar_create( NULL );
+                jolt_gui_scr_loadingbar_update( loading_scr, gettext( JOLT_TEXT_PIN ),
+                                                gettext( JOLT_TEXT_CHECKING_PIN ), 0 );
+            }
             ESP_LOGD( TAG, "Creating stretch autoupdate lv_task" );
             progress = jolt_gui_scr_loadingbar_autoupdate( loading_scr );
 
@@ -291,15 +301,22 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
             void *param   = ps.param;
             ps_state_cleanup();
             if( NULL != cb ) { cb( param ); }
+            else {
+                ESP_LOGE( TAG, "No Success Callback" );
+            }
             break;
         }
-        case PIN_STATE_FAIL:
-            if( NULL != ps.failure_cb ) { ps.failure_cb( ps.param ); }
-            else {
-                ESP_LOGE( TAG, "No Back Callback" );
-            }
+        case PIN_STATE_FAIL: {
+            vault_cb_t cb = ps.failure_cb;
+            void *param   = ps.param;
             ps_state_cleanup();
+
+            if( NULL != cb ) { cb( param ); }
+            else {
+                ESP_LOGE( TAG, "No Failure Callback" );
+            }
             break;
+        }
         case PIN_STATE_EMPTY: ps_state_cleanup(); break;
         default: ps_state_cleanup(); break;
     }
@@ -357,25 +374,36 @@ void vault_sem_take()
 {
     /* Takes Vault semaphore; restarts device if timesout during take. */
 #if LOG_LOCAL_LEVEL >= 3 /* info */
-    vault_sem_ctr--;
-    ESP_LOGI( TAG, "%s %d", __func__, vault_sem_ctr );
+    {
+        vault_sem_ctr--;
+        ESP_LOGI( TAG, "[%s] %s %d", pcTaskGetTaskName( NULL ), __func__, vault_sem_ctr );
+    }
+
 #endif
 
     if( !xSemaphoreTakeRecursive( vault_sem, pdMS_TO_TICKS( CONFIG_JOLT_VAULT_TIMEOUT_TIMEOUT_MS ) ) ) {
         // Timed out trying to take the semaphore; reset the device
         // And let the bootloader wipe the RAM
-        ESP_LOGE( TAG, "Failed taking vault semaphore." );
-        esp_restart();
+        ESP_LOGE( TAG, "Failed taking vault semaphore. %d", vault_sem_ctr );
+        assert( 0 );
     }
 }
 
 void vault_sem_give()
 {
 #if LOG_LOCAL_LEVEL >= 3 /* info */
-    vault_sem_ctr++;
-    ESP_LOGI( TAG, "%s %d", __func__, vault_sem_ctr );
+    {
+        vault_sem_ctr++;
+        ESP_LOGI( TAG, "[%s] %s %d", pcTaskGetTaskName( NULL ), __func__, vault_sem_ctr );
+    }
 #endif
-    xSemaphoreGiveRecursive( vault_sem );
+    if( pdTRUE != xSemaphoreGiveRecursive( vault_sem ) ) {
+        ESP_LOGE( TAG,
+                  "Failed to give Vault semaphore. Semaphore may either not have been previously taken, or taken from "
+                  "a different task than this one (%s).",
+                  pcTaskGetTaskName( NULL ) );
+        assert( 0 );
+    }
 }
 
 static void vault_watchdog_task()
@@ -476,13 +504,18 @@ esp_err_t vault_set( uint32_t purpose, uint32_t coin_type, const char *bip32_key
     }
 
     vault_sem_take();
+    if( PIN_STATE_EMPTY != ps.state ) {
+        ESP_LOGE( TAG, "PIN Entry in progress; cannot set vault." );
+        return ESP_FAIL;
+    }
+    vault_sem_give();
 
     /* Zero out the pin state */
     memzero( &ps, sizeof( ps ) );
     ps.failure_cb = failure_cb;
     ps.success_cb = success_cb;
     ps.param      = param;
-    ps.state      = PIN_STATE_CREATE;
+    ps.state      = PIN_STATE_INIT;
 
     /* Don't require pin if logging into app with identical vault parameters.
      * Directly call the success callback */
@@ -502,9 +535,6 @@ esp_err_t vault_set( uint32_t purpose, uint32_t coin_type, const char *bip32_key
         strlcpy( vault->passphrase, passphrase, sizeof( vault->passphrase ) );
         sodium_mprotect_readonly( vault );
     }
-
-    /* Note: don't give up vault semaphore here; give it up after
-     * pin entry and derivation */
 
     /* Execute the State Machine */
     return ps_state_exec();
