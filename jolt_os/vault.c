@@ -384,7 +384,7 @@ void vault_sem_take()
     if( !xSemaphoreTakeRecursive( vault_sem, pdMS_TO_TICKS( CONFIG_JOLT_VAULT_TIMEOUT_TIMEOUT_MS ) ) ) {
         // Timed out trying to take the semaphore; reset the device
         // And let the bootloader wipe the RAM
-        ESP_LOGE( TAG, "Failed taking vault semaphore.");
+        ESP_LOGE( TAG, "Failed taking vault semaphore." );
         assert( 0 );
     }
 }

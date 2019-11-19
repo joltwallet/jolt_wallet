@@ -32,26 +32,26 @@ typedef size_t Jelf_Addr;
 #define JELF_BIP32KEY_LEN 32
 
 /**
- * @brief Signature length that is paired with the provided public key
- */
-#define JELF_SIGNATURE_LEN 64
-
-/**
  * @brief JELF header data structure
  */
 typedef struct {
     unsigned char e_ident[JELF_EI_NIDENT];     /**< Magic number header */
     uint8_t e_public_key[JELF_PUBLIC_KEY_LEN]; /**< Public Key */
+    uint8_t e_signature[64];                   /**< App Signature */
     uint8_t e_version_major;                   /**< Environment/Loader Major Version */
     uint8_t e_version_minor;                   /**< Environment/Loader Minor Version */
     uint8_t e_version_patch;                   /**< Environment/Loader Patch Version */
+    uint8_t e_app_major;                       /**< App */
+    uint8_t e_app_minor;                       /**< App */
+    uint8_t e_app_patch;                       /**< App */
     uint16_t e_entry_index;                    /**< Entry point function offset */
     uint16_t e_shnum;                          /**< Section header table entry count */
     uint32_t e_coin_purpose;                   /**< BIP32 Coin Purpose */
     uint32_t e_coin_path;                      /**< BIP32 Coin Type */
     char e_bip32key[JELF_BIP32KEY_LEN];        /**< BIP32 Seed phrase */
 } Jelf_Ehdr;
-#define JELF_EHDR_SIZE 85
+#define JELF_EHDR_SIZE_V0   152
+#define JELF_EHDR_MANDATORY 9  // First 9 bytes of a JELF header will ALWAYS have fixed meaning.
 
 /**
  * @brief JELF Symbol Entry

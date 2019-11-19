@@ -729,7 +729,7 @@ def main():
     jelf_ehdr_d['e_app_minor']         = args.app_minor
     jelf_ehdr_d['e_app_patch']         = args.app_patch
     jelf_ehdr_d['e_public_key']        = pk
-    jelf_ehdr_d['e_signature']         = bytes(128)  # Placeholder
+    jelf_ehdr_d['e_signature']         = bytes(64)  # Placeholder
     jelf_ehdr_d['e_entry_index']       = jelf_entrypoint_sym_idx
     jelf_ehdr_d['e_shnum']             = len(jelf_shdrs)
     jelf_ehdr_d['e_coin_purpose']      = purpose

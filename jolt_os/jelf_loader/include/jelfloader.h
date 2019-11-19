@@ -116,6 +116,8 @@ typedef struct jelfLoaderContext_t {
     /* Inflator */
     inf_stream_t inf_stream; /**< Inflator/Decompressor object */
 
+    // TODO: place Jelf_Ehdr here
+
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
     /* Data Structs For Checking App Signature.
      * The signature procedure is as follows:
