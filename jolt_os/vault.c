@@ -378,13 +378,12 @@ void vault_sem_take()
         vault_sem_ctr--;
         ESP_LOGI( TAG, "[%s] %s %d", pcTaskGetTaskName( NULL ), __func__, vault_sem_ctr );
     }
-
 #endif
 
     if( !xSemaphoreTakeRecursive( vault_sem, pdMS_TO_TICKS( CONFIG_JOLT_VAULT_TIMEOUT_TIMEOUT_MS ) ) ) {
         // Timed out trying to take the semaphore; reset the device
         // And let the bootloader wipe the RAM
-        ESP_LOGE( TAG, "Failed taking vault semaphore.");
+        ESP_LOGE( TAG, "Failed taking vault semaphore." );
         assert( 0 );
     }
 }
@@ -397,6 +396,7 @@ void vault_sem_give()
         ESP_LOGI( TAG, "[%s] %s %d", pcTaskGetTaskName( NULL ), __func__, vault_sem_ctr );
     }
 #endif
+
     if( pdTRUE != xSemaphoreGiveRecursive( vault_sem ) ) {
         ESP_LOGE( TAG,
                   "Failed to give Vault semaphore. Semaphore may either not have been previously taken, or taken from "

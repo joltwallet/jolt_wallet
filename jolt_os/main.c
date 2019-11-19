@@ -101,6 +101,16 @@ static void littlevgl_task()
     abort();
 }
 
+static int log_to_uart( const char *format, va_list arg )
+{
+    char *buf;
+    int n;
+    n = vasprintf( &buf, format, arg );
+    if( -1 == n ) return -1;
+    uart_write_bytes( CONFIG_ESP_CONSOLE_UART_NUM, buf, n );
+    return n;
+}
+
 void app_main( void )
 {
 /* Setup Heap Logging */
@@ -164,10 +174,43 @@ void app_main( void )
     ESP_LOGW( TAG, "WARNING: UART \\n replaced with \\r" );
 #endif
 
-/* Ensure High Quality RNG */
+    /* Ensure High Quality RNG */
 #if CONFIG_NO_BLOBS
     bootloader_random_enable();
 #endif
+
+    /* Setup UART */
+    {
+        /* Disable buffering on stdin and stdout */
+        setvbuf( stdin, NULL, _IONBF, 0 );
+        setvbuf( stdout, NULL, _IONBF, 0 );
+
+        /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
+        esp_vfs_dev_uart_set_rx_line_endings( ESP_LINE_ENDINGS_CR );
+        /* Move the caret to the beginning of the next line on '\n' */
+        esp_vfs_dev_uart_set_tx_line_endings( ESP_LINE_ENDINGS_CRLF );  // !!!
+
+        uart_config_t uart_config = {
+                .baud_rate    = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
+                .data_bits    = UART_DATA_8_BITS,
+                .parity       = UART_PARITY_DISABLE,
+                .stop_bits    = UART_STOP_BITS_1,
+                .flow_ctrl    = UART_HW_FLOWCTRL_DISABLE,
+                .use_ref_tick = true,
+        };
+        /* Configure UART parameters */
+        ESP_ERROR_CHECK( uart_param_config( CONFIG_ESP_CONSOLE_UART_NUM, &uart_config ) );
+
+        /* Install UART driver for interrupt-driven reads and writes */
+        ESP_ERROR_CHECK( uart_driver_install( CONFIG_ESP_CONSOLE_UART_NUM, CONFIG_JOLT_CONSOLE_UART_RX_BUF_LEN,
+                                              CONFIG_JOLT_CONSOLE_UART_TX_BUF_LEN, 0, NULL, 0 ) );
+
+        /* Tell VFS to use UART driver */
+        esp_vfs_dev_uart_use_driver( CONFIG_ESP_CONSOLE_UART_NUM );
+
+        /* Force logging to always goto UART */
+        esp_log_set_vprintf( log_to_uart );
+    }
 
     /* Setup and Install I2C Driver */
     {
