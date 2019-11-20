@@ -3,6 +3,7 @@
 #include "cJSON.h"
 #include "esp_log.h"
 #include "esp_vfs_dev.h"
+#include "jelfloader.h"
 #include "jolt_helpers.h"
 #include "stdio.h"
 #include "syscore/filesystem.h"
@@ -12,6 +13,7 @@ static const char TAG[] = "jolt_cmd_ls";
 int jolt_cmd_ls( int argc, char **argv )
 {
     int return_code = -1;
+    FILE *fd        = NULL;
     DIR *dir        = NULL;
     struct dirent *ent;
     struct stat sb;
@@ -26,6 +28,7 @@ int jolt_cmd_ls( int argc, char **argv )
 
     /* Read directory entries */
     while( ( ent = readdir( dir ) ) != NULL ) {
+        const char *ext;
         char tpath[JOLT_FS_MAX_ABS_PATH_BUF_LEN] = JOLT_FS_MOUNTPT;
 
         nfiles++;
@@ -46,6 +49,21 @@ int jolt_cmd_ls( int argc, char **argv )
         else {
             if( NULL == cJSON_AddNumberToObject( entry, "size", sb.st_size ) ) EXIT( -3 );
         }
+
+        /* Perform extension-specific actions */
+        ext = jolt_fs_get_ext( tpath );
+        if( 0 == strcmp( "jelf", ext ) ) {
+            Jelf_Ehdr header;
+
+            fd = fopen( tpath, "r" );
+            if( NULL != fd && ( 0 == jelfLoaderReadHeader( fd, NULL, &header ) ) ) {
+                char buf[12] = {0};
+                snprintf( buf, sizeof( buf ), "%d.%d.%d", header.e_app_major, header.e_app_minor, header.e_app_patch );
+                if( NULL == cJSON_AddStringToObject( entry, "version", buf ) ) EXIT( -3 );
+                fclose( fd );
+            }
+        }
+
         cJSON_AddItemToArray( json_files, entry );
         entry = NULL;
     }
@@ -65,6 +83,7 @@ int jolt_cmd_ls( int argc, char **argv )
     EXIT( 0 );
 
 exit:
+    if( NULL != fd ) fclose( fd );
     if( NULL != dir ) closedir( dir );
     if( NULL != json ) cJSON_Delete( json );
     if( NULL != entry ) cJSON_Delete( entry );

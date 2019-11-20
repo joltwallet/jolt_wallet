@@ -145,6 +145,14 @@ typedef enum jelfLoaderStatus_t {
 } jelfLoaderStatus_t;
 
 /**
+ * @brief Reads in the a JELF header uncompressed
+ * @param[in] fd File descriptor at start of JELF file.
+ * @param[in,out] hs Hash state for signature verification. May be NULL.
+ * @param[out] h Returned JELF_Ehdr
+ */
+int jelfLoaderReadHeader( FILE *fd, crypto_hash_sha512_state *hs, Jelf_Ehdr *h );
+
+/**
  * @brief Runs the EntryPoint of the program loaded in the give context.
  * @param[in,out] ctx Context the application was loaded into
  * @param[in] argc Argument Count

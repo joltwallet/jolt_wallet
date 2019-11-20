@@ -173,6 +173,8 @@ void jolt_fs_strip_ext( char *fname );
 /**
  * @brief Get the inplace extension of a file.
  *
+ * Does not contain the '.' in the returned string.
+ *
  *     char *ext;
  *     ext = jolt_fs_get_ext("jolt/file.png");
  *     assert( 0 == strcmp(ext, "png") );

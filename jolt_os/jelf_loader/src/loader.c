@@ -220,13 +220,7 @@ void jelfLoaderProfilerPrint()
 /******************************************************
  * More specific readers to handle proper bitshifting *
  ******************************************************/
-/**
- * Reads in the header uncompressed
- * @param[in] fd File descriptor of JELF file.
- * @param[in,out] hs Hash state for signature verification. May be NULL.
- * @param[out] h Returned JELF_Ehdr
- */
-static int loader_ehdr( FILE *fd, crypto_hash_sha512_state *hs, Jelf_Ehdr *h )
+int jelfLoaderReadHeader( FILE *fd, crypto_hash_sha512_state *hs, Jelf_Ehdr *h )
 {
     {
         /* Read Identifier */
@@ -498,7 +492,7 @@ static bool app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const ch
     /* Hash the app name */
     app_hash_update( ctx->hs, (uint8_t *)name, strlen( name ) );
 
-    assert( 0 == loader_ehdr( ctx->fd, ctx->hs, header ) );
+    assert( 0 == jelfLoaderReadHeader( ctx->fd, ctx->hs, header ) );
 
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
     {

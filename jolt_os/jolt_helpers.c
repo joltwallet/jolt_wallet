@@ -203,11 +203,13 @@ void jolt_apply_patch( const char *filename )
         esp_restart();
     }
     else {
-        /* File Update */
+        /* App Update */
         esp_err_t err;
 
         jolt_fs_strip_ext( path_diff );
         strcat( path_diff, ".jelf" );  // NOTE: only works because "jelf" is shorter than "patch"
+
+        // TODO apply JELF updates in the uncompressed space.
 
         f_jelf = fopen( path_diff, "rb" );
         if( f_jelf == NULL ) goto exit;

@@ -238,6 +238,7 @@ void jolt_fs_strip_ext( char *fname )
 
 const char *jolt_fs_get_ext( const char *fname )
 {
+    // TODO: write unit tests to test all corner cases
     const char *end = fname + strlen( fname );
 
     while( end > fname && *end != '.' && *end != '\\' && *end != '/' ) { --end; }
