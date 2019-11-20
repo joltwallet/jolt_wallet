@@ -51,6 +51,7 @@ enum {
     PIN_STATE_CREATE,
     PIN_STATE_STRETCH,
     PIN_STATE_SUCCESS_CB,
+    PIN_STATE_SUCCESS_CB_TAKE_SEM,
     PIN_STATE_NUM_STATES, /* Not an actual state */
 };
 typedef int8_t pin_state_t;
@@ -116,6 +117,13 @@ static esp_err_t ps_state_exec()
 static int ps_state_exec_task( jolt_bg_job_t *job )
 {
     /* This always gets executed in the BG Task */
+
+    if( PIN_STATE_SUCCESS_CB_TAKE_SEM == ps.state ) {
+        /* Only used for cached vault */
+        vault_sem_take();
+        ps.state = PIN_STATE_SUCCESS_CB;
+    }
+
     switch( ps.state ) {
         case PIN_STATE_INIT:
             vault_sem_take();
@@ -523,7 +531,7 @@ esp_err_t vault_set( uint32_t purpose, uint32_t coin_type, const char *bip32_key
         0 == strcmp( vault->passphrase, passphrase ) && 0 == strcmp( vault->bip32_key, bip32_key ) ) {
         ESP_LOGI( TAG, "%s: identical vault parameters; no PIN required.", __func__ );
         vault_kick();
-        ps.state = PIN_STATE_SUCCESS_CB;
+        ps.state = PIN_STATE_SUCCESS_CB_TAKE_SEM;
     }
     else {
         /* Populate Vault with derivation parameters */

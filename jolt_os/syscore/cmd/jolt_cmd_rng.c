@@ -27,6 +27,7 @@ int jolt_cmd_rng( int argc, char** argv )
 
     JOLT_NO_LOGGING_CTX
     {
+        esp_vfs_dev_uart_set_tx_line_endings( -1 );
         for( uint64_t i = 0; i < n_bytes; i += sizeof( bin_buf ) ) {
             uint8_t gen_bytes = sizeof( bin_buf );
             if( n_bytes - i < sizeof( bin_buf ) ) { gen_bytes = n_bytes - i; }
@@ -41,6 +42,7 @@ int jolt_cmd_rng( int argc, char** argv )
                 fwrite( bin_buf, 1, gen_bytes, stdout );
             }
         }
+        esp_vfs_dev_uart_set_tx_line_endings( ESP_LINE_ENDINGS_CRLF );
         printf( "\n" );
     }
 
