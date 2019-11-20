@@ -97,9 +97,7 @@ typedef struct jelfLoaderContext_t {
     /* state - moved below for packing reasons */
 
     /* SectionHeaderTable */
-    uint8_t *sht_cache;   /**< Cached copy of application's SectionHeaderTable */
-    uint16_t entry_index; /**< Entrypoint index into the SymbolTable */
-    uint16_t e_shnum;     /**< Number of entries into the SectionHeaderTable */
+    uint8_t *sht_cache; /**< Cached copy of application's SectionHeaderTable */
 
     jelfLoaderSection_t *section; /**< First element cached alloc sections */
 
@@ -108,8 +106,6 @@ typedef struct jelfLoaderContext_t {
     size_t symtab_count;   /**< Number of Symbols in the SymTab */
 
     /* Coin Derivation Data */
-    uint32_t coin_purpose;                 /**< BIP32 Purpose; typically 44' */
-    uint32_t coin_path;                    /**< BIP32 Coin Type */
     char bip32_key[JELF_BIP32KEY_LEN + 1]; /**< BIP32 Seed String; e.g. "bitcoin_seed" */
     jelfLoaderContext_state_t state;       /**< Current State of the launching procedure */
 
@@ -117,8 +113,8 @@ typedef struct jelfLoaderContext_t {
     inf_stream_t inf_stream; /**< Inflator/Decompressor object */
 
     // TODO: place Jelf_Ehdr here
+    Jelf_Ehdr header;
 
-#if CONFIG_JOLT_APP_SIG_CHECK_EN
     /* Data Structs For Checking App Signature.
      * The signature procedure is as follows:
      *     1. Hash the application name.
@@ -126,11 +122,8 @@ typedef struct jelfLoaderContext_t {
      *     3. Upon loading completion; verify the signature from the loading hash.
      * We hash as we load to prevent malicious data being swapped after a signature check.
      */
-    crypto_hash_sha512_state *hs;    /**< Hash State */
-    uint8_t hash[BIN_512];           /**< Final Hash */
-    uint8_t app_public_key[BIN_256]; /**< Application's Public Key */
-    uint8_t app_signature[BIN_512];  /**< Application's Signature */
-#endif
+    crypto_hash_sha512_state *hs; /**< Hash State */
+    uint8_t hash[BIN_512];        /**< Final Hash */
 } jelfLoaderContext_t;
 
 /**

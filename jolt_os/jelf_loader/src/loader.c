@@ -325,7 +325,7 @@ err:
 static int loader_shdr( jelfLoaderContext_t *ctx, uint16_t n, Jelf_Shdr *h )
 {
     uint8_t *buf = (uint8_t *)ctx->sht_cache + n * JELF_SHDR_SIZE;
-    if( n > ctx->e_shnum ) {
+    if( n > ctx->header.e_shnum ) {
         ERR( "Attempt to index past SectionHeaderTable" );
         return -1;
     }
@@ -499,7 +499,6 @@ static bool app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const ch
     app_hash_update( ctx->hs, (uint8_t *)name, strlen( name ) );
 
     assert( 0 == loader_ehdr( ctx->fd, ctx->hs, header ) );
-    memcpy( ctx->app_signature, header->e_signature, 64 );  // TODO: remove once header is in context
 
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
     {
@@ -524,7 +523,7 @@ static bool app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const ch
         }
     #endif
 
-        memcpy( ctx->app_public_key, approved_pub_key, sizeof( uint256_t ) );
+        memcpy( ctx->header.e_public_key, approved_pub_key, sizeof( uint256_t ) );
     }
 
 #endif
@@ -846,7 +845,8 @@ bool jelfLoaderSigCheck( const jelfLoaderContext_t *ctx )
         return false;
     }
 
-    if( 0 == crypto_sign_verify_detached( ctx->app_signature, ctx->hash, sizeof( ctx->hash ), ctx->app_public_key ) ) {
+    if( 0 == crypto_sign_verify_detached( ctx->header.e_signature, ctx->hash, sizeof( ctx->hash ),
+                                          ctx->header.e_public_key ) ) {
         return true;
     }
     else {
@@ -922,7 +922,6 @@ int jelfLoaderRun( jelfLoaderContext_t *ctx, int argc, char **argv )
 jelfLoaderStatus_t jelfLoaderInit( jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd, const char *name,
                                    const jelfLoaderEnv_t *env )
 {
-    Jelf_Ehdr header;
     jelfLoaderStatus_t response = JELF_LOADER_ERROR;
     jelfLoaderContext_t *ctx    = NULL;
 
@@ -982,14 +981,14 @@ jelfLoaderStatus_t jelfLoaderInit( jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd
      **********************************/
     /* Will populate the main JELF header */
     MSG( "Initializing Signature Checker" );
-    if( !app_hash_init( ctx, &header, name ) ) {
+    if( !app_hash_init( ctx, &ctx->header, name ) ) {
         response = JELF_LOADER_INVALID_KEY;
         goto err;
     }
 
     /* Version Compatability Check */
     MSG( "Checking Version Compatability" );
-    switch( check_version_compatability( &header ) ) {
+    switch( check_version_compatability( &ctx->header ) ) {
         case 0:
             /* success */
             break;
@@ -999,16 +998,16 @@ jelfLoaderStatus_t jelfLoaderInit( jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd
     }
 
     /* Debug Sanity Checks */
-    MSG( "SectionHeaderTableEntries: %d", header.e_shnum );
-    MSG( "Derivation Purpose: 0x%08X", header.e_coin_purpose );
-    MSG( "Derivation Path: 0x%08X", header.e_coin_path );
-    MSG( "bip32key: %s", header.e_bip32key );
+    MSG( "SectionHeaderTableEntries: %d", ctx->header.e_shnum );
+    MSG( "Derivation Purpose: 0x%08X", ctx->header.e_coin_purpose );
+    MSG( "Derivation Path: 0x%08X", ctx->header.e_coin_path );
+    MSG( "bip32key: %s", ctx->header.e_bip32key );
 
     {
         /**************************************
          * Cache sectionheadertable to memory *
          **************************************/
-        size_t sht_size = header.e_shnum * JELF_SHDR_SIZE;
+        size_t sht_size = ctx->header.e_shnum * JELF_SHDR_SIZE;
         ctx->sht_cache  = LOADER_ALLOC_DATA( sht_size );
         if( NULL == ctx->sht_cache ) {
             ERR( "Insufficient memory for section header table cache" );
@@ -1018,18 +1017,6 @@ jelfLoaderStatus_t jelfLoaderInit( jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd
         /* Populate the cache */
         LOADER_GETDATA( ctx, (char *)( ctx->sht_cache ), sht_size );
     }
-
-    /* Populate context with ELF Header information*/
-    ctx->e_shnum      = header.e_shnum;  // Number of Sections
-    ctx->entry_index  = header.e_entry_index;
-    ctx->coin_purpose = header.e_coin_purpose;
-    ctx->coin_path    = header.e_coin_path;
-    if( strlen( header.e_bip32key ) >= sizeof( ctx->bip32_key ) ) {
-        ERR( "Malformed JELF header." );
-        response = JELF_LOADER_MALFORMED;
-        goto err;
-    }
-    strlcpy( ctx->bip32_key, header.e_bip32key, sizeof( ctx->bip32_key ) );
 
     ctx->state = JELF_CTX_INITIALIZED;
 
@@ -1058,7 +1045,7 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
 
     MSG( "Scanning ELF sections         relAddr      size" );
     // Iterate through all section_headers in the section header table
-    for( int n = 1; n < ctx->e_shnum; n++ ) {
+    for( int n = 1; n < ctx->header.e_shnum; n++ ) {
         MSG( "Loading section %d", n );
         Jelf_Shdr sectHdr = {0};
 
@@ -1188,7 +1175,7 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
     MSG( "successfully loaded sections" );
 
     Jelf_Sym sym;
-    if( 0 != loader_sym( ctx, ctx->entry_index, &sym ) ) { goto err; }
+    if( 0 != loader_sym( ctx, ctx->header.e_entry_index, &sym ) ) { goto err; }
 
     jelfLoaderSection_t *symbol_section = findSection( ctx, sym.st_shndx );
     if( NULL == symbol_section ) {
