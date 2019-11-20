@@ -178,13 +178,13 @@ exec:
     app_cache.argc = app_argc;
     app_cache.argv = app_argv;
 
-    ESP_LOGI( TAG, "Derivation Purpose: 0x%x. Coin Type: 0x%x", app_cache.ctx->coin_purpose,
-              app_cache.ctx->coin_path );
+    ESP_LOGI( TAG, "Derivation Purpose: 0x%x. Coin Type: 0x%x", app_cache.ctx->header.e_coin_purpose,
+              app_cache.ctx->header.e_coin_path );
     ESP_LOGI( TAG, "The following BIP32 Key is %d char long:%s.", strlen( app_cache.ctx->bip32_key ),
-              app_cache.ctx->bip32_key );
+              app_cache.ctx->header.e_bip32key );
     launch_inc_ref_ctr();
-    vault_set( app_cache.ctx->coin_purpose, app_cache.ctx->coin_path, app_cache.ctx->bip32_key, passphrase,
-               launch_vault_fail_cb, launch_app_from_store, NULL );
+    vault_set( app_cache.ctx->header.e_coin_purpose, app_cache.ctx->header.e_coin_path,
+               app_cache.ctx->header.e_bip32key, passphrase, launch_vault_fail_cb, launch_app_from_store, NULL );
 
     app_cache.loading = false;
     return JOLT_LAUNCHER_ERR_OK;

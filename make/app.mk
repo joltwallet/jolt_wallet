@@ -12,6 +12,16 @@ endif
 ifndef BIP32_KEY
 $(warning BIP32_KEY not set. Using default $(DEFAULT_BIP32_KEY))
 endif
+ifndef APP_VERSION_MAJOR
+$(error APP_VERSION_MAJOR is not set)
+endif
+ifndef APP_VERSION_MINOR
+$(error APP_VERSION_MINOR is not set)
+endif
+ifndef APP_VERSION_PATCH
+$(error APP_VERSION_PATCH is not set)
+endif
+
 
 # Parse output binary paths
 ELF_BIN_NAME             = $(PROJECT_PATH)/$(PROJECT_NAME).elf
@@ -36,6 +46,9 @@ CFLAGS += \
         -Werror \
 		-DCONFIG_APP_COIN_PATH="\"$(COIN_PATH)\"" \
 		-DCONFIG_APP_BIP32_KEY="\"$(BIP32_KEY)\"" \
+		-DCONFIG_APP_VERSION_MAJOR=$(APP_VERSION_MAJOR) \
+		-DCONFIG_APP_VERSION_MINOR=$(APP_VERSION_MINOR) \
+		-DCONFIG_APP_VERSION_PATCH=$(APP_VERSION_PATCH) \
         -DJOLT_APP
 
 include $(IDF_PATH)/make/project.mk
@@ -81,6 +94,9 @@ ifndef JAPP_SIGNING_KEY
 endif
 
 	$(PYTHONBIN) $(ELF2JELF)  $(ELF_BIN_NAME) \
+		    --app_major $(APP_VERSION_MAJOR) \
+		    --app_minor $(APP_VERSION_MINOR) \
+		    --app_patch $(APP_VERSION_PATCH) \
     		--output $(JELF_BIN_NAME) \
     		--coin "$(COIN_PATH)" \
     		--bip32key "$(BIP32_KEY)" \

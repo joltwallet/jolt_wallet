@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "jelf.h"
 #include "jelfloader.h"
+#include "jolt_lib.h"
 #include "sdkconfig.h"
 #include "sodium.h"
 #include "unaligned.h"
@@ -49,7 +50,7 @@ static const char *TAG = "JelfLoader";
  * STATIC FUNCTIONS DECLARATION *
  ********************************/
 static int decompress_get( jelfLoaderContext_t *ctx, uint8_t *data, size_t len );
-static void app_hash_update( jelfLoaderContext_t *ctx, const uint8_t *data, size_t len );
+static inline void app_hash_update( crypto_hash_sha512_state *hs, const uint8_t *data, size_t len );
 static const char *type2String( int symt );
 static jelfLoaderSection_t *findSection( jelfLoaderContext_t *ctx, int index );
 static bool app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const char *name );
@@ -213,52 +214,108 @@ void jelfLoaderProfilerPrint()
 
 #endif /* CONFIG_JELFLOADER_PROFILER_EN */
 
-#define LOADER_GETDATA_RAW( ctx, buffer, size ) fread( buffer, 1, size, ctx->fd )
-
 #define LOADER_GETDATA( ctx, buffer, size ) \
     if( decompress_get( ctx, (uint8_t *)buffer, size ) != (int)size ) { goto err; };
 
 /******************************************************
  * More specific readers to handle proper bitshifting *
  ******************************************************/
-static int loader_ehdr( jelfLoaderContext_t *ctx, Jelf_Ehdr *h )
+/**
+ * Reads in the header uncompressed
+ * @param[in] fd File descriptor of JELF file.
+ * @param[in,out] hs Hash state for signature verification. May be NULL.
+ * @param[out] h Returned JELF_Ehdr
+ */
+static int loader_ehdr( FILE *fd, crypto_hash_sha512_state *hs, Jelf_Ehdr *h )
 {
-    uint8_t buffer[JELF_EHDR_SIZE];
-    uint8_t *buf = buffer;
-    LOADER_GETDATA( ctx, buf, JELF_EHDR_SIZE );
+    {
+        /* Read Identifier */
+        int n = fread( h->e_ident, 1, JELF_EI_NIDENT, fd );
+        if( JELF_EI_NIDENT != n ) {
+            ERR( "Failed to fetch file identifier" );
+            goto err;
+        }
 
-    memcpy( h->e_ident, buf, JELF_EI_NIDENT );
-    buf += JELF_EI_NIDENT;
+        /* Make sure that we have a correct and compatible ELF header. */
+        char JelfMagic[] = {0x7f, 'J', 'E', 'L', 'F', '\0'};
+        if( 0 != memcmp( h->e_ident, JelfMagic, strlen( JelfMagic ) ) ) {
+            ERR( "Bad JELF Identification" );
+            goto err;
+        }
+    }
 
-    memcpy( h->e_public_key, buf, JELF_PUBLIC_KEY_LEN );
-    buf += JELF_PUBLIC_KEY_LEN;
+    {
+        /* Read JELF Version */
+        uint8_t buf[3];
+        int n = fread( buf, 1, 3 * sizeof( uint8_t ), fd );
+        if( 3 != n ) {
+            ERR( "Failed to fetch JELF Version" );
+            goto err;
+        }
+        h->e_version_major = buf[0];
+        h->e_version_minor = buf[1];
+        h->e_version_patch = buf[2];
+    }
 
-    memcpy( &( h->e_version_major ), buf, sizeof( uint8_t ) );
-    buf += sizeof( uint8_t );
+    /* Broad initial check on JELF version */
+    if( h->e_version_major > JOLT_JELF_VERSION.major ) { goto unsupported_jelf_version; }
+    if( h->e_version_minor > JOLT_JELF_VERSION.minor ) { goto unsupported_jelf_version; }
 
-    memcpy( &h->e_version_minor, buf, sizeof( uint8_t ) );
-    buf += sizeof( uint8_t );
+/* VERSION DEPENDENT READING */
+#define POPULATE_P( dst )              \
+    memcpy( dst, buf, sizeof( dst ) ); \
+    buf += sizeof( dst );              \
+    app_hash_update( hs, (uint8_t *)dst, sizeof( dst ) );
+#define POPULATE_O( dst )               \
+    memcpy( &dst, buf, sizeof( dst ) ); \
+    buf += sizeof( dst );               \
+    app_hash_update( hs, (uint8_t *)&dst, sizeof( dst ) );
+    if( h->e_version_major == 0 ) {
+        uint8_t buffer[JELF_EHDR_SIZE_V0 - JELF_EHDR_MANDATORY];
+        uint8_t *buf = buffer;
+        if( h->e_version_minor <= 1 ) {
+            /* 0.0.x */
 
-    memcpy( &h->e_version_patch, buf, sizeof( uint8_t ) );
-    buf += sizeof( uint8_t );
+            int n = fread( buffer, 1, sizeof( buffer ), fd );
+            if( sizeof( buffer ) != n ) {
+                ERR( "Failed to read remaining of JELF Header" );
+                goto err;
+            }
 
-    MSG( "Version %d.%d.%d", h->e_version_major, h->e_version_minor, h->e_version_patch );
+            /* Update the app hash with Magic and JELF version */
+            app_hash_update( hs, (uint8_t *)h->e_ident, sizeof( h->e_ident ) );
+            app_hash_update( hs, (uint8_t *)&h->e_version_major, sizeof( h->e_version_major ) );
+            app_hash_update( hs, (uint8_t *)&h->e_version_minor, sizeof( h->e_version_minor ) );
+            app_hash_update( hs, (uint8_t *)&h->e_version_patch, sizeof( h->e_version_patch ) );
 
-    memcpy( &h->e_entry_index, buf, sizeof( uint16_t ) );
-    buf += sizeof( uint16_t );
+            /* Parse rest of header */
+            POPULATE_O( h->e_app_major );
+            POPULATE_O( h->e_app_minor );
+            POPULATE_O( h->e_app_patch );
+            POPULATE_P( h->e_public_key );
 
-    memcpy( &h->e_shnum, buf, sizeof( uint16_t ) );
-    h->e_shnum = *(uint16_t *)buf;
-    buf += sizeof( uint16_t );
+            /* Don't use macros so it doesn't get hashed */
+            memcpy( h->e_signature, buf, sizeof( h->e_signature ) );
+            buf += sizeof( h->e_signature );
 
-    memcpy( &h->e_coin_purpose, buf, sizeof( uint32_t ) );
-    buf += sizeof( uint32_t );
-
-    memcpy( &h->e_coin_path, buf, sizeof( uint32_t ) );
-    buf += sizeof( uint32_t );
-
-    memcpy( h->e_bip32key, buf, JELF_BIP32KEY_LEN );
-    buf += JELF_BIP32KEY_LEN;
+            POPULATE_O( h->e_entry_index );
+            POPULATE_O( h->e_shnum );
+            POPULATE_O( h->e_coin_purpose );
+            POPULATE_O( h->e_coin_path );
+            POPULATE_P( h->e_bip32key );
+        }
+        else {
+            goto unsupported_jelf_version;
+        }
+        assert( sizeof( buffer ) == ( buf - buffer ) );
+    }
+    else {
+    unsupported_jelf_version:
+        ERR( "Unsupported JELF version %d.%d.%d", h->e_version_major, h->e_version_minor, h->e_version_patch )
+        goto err;
+    }
+#undef POPULATE_P
+#undef POPULATE_O
 
     return 0;
 err:
@@ -268,7 +325,7 @@ err:
 static int loader_shdr( jelfLoaderContext_t *ctx, uint16_t n, Jelf_Shdr *h )
 {
     uint8_t *buf = (uint8_t *)ctx->sht_cache + n * JELF_SHDR_SIZE;
-    if( n > ctx->e_shnum ) {
+    if( n > ctx->header.e_shnum ) {
         ERR( "Attempt to index past SectionHeaderTable" );
         return -1;
     }
@@ -341,8 +398,8 @@ static int decompress_get( jelfLoaderContext_t *ctx, uint8_t *inf_data, size_t i
     while( inf_len > amount_written ) {
         if( 0 == s->in_avail ) {
             /* Fetch more compressed data from disk */
-            size_t n = LOADER_GETDATA_RAW( ctx, s->in_buf, s->in_buf_len );
-            app_hash_update( ctx, s->in_buf, n );
+            size_t n = fread( s->in_buf, 1, s->in_buf_len, ctx->fd );
+            app_hash_update( ctx->hs, s->in_buf, n );
             s->in_avail = n;
             s->in_next  = s->in_buf;
         }
@@ -439,28 +496,9 @@ static bool app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const ch
     }
     crypto_hash_sha512_init( ctx->hs );
     /* Hash the app name */
-    app_hash_update( ctx, (uint8_t *)name, strlen( name ) );
+    app_hash_update( ctx->hs, (uint8_t *)name, strlen( name ) );
 
-    /* Copy over the app signature into the context.
-     * The Signature is always the first raw 64 bytes.
-     * No compression is performed on the signature. */
-    {
-        int n = LOADER_GETDATA_RAW( ctx, ctx->app_signature, JELF_SIGNATURE_LEN );
-        if( JELF_SIGNATURE_LEN != n ) {
-            ERR( "Failed to fetch signature" );
-            goto err;
-        }
-    }
-
-#if LOG_LOCAL_LEVEL >= 4 /* debug */
-    {
-        char sig_hex[129] = {0};
-        sodium_bin2hex( sig_hex, sizeof( sig_hex ), ctx->app_signature, JELF_SIGNATURE_LEN );
-        INFO( "App Signature: %s", sig_hex );
-    }
-#endif
-
-    loader_ehdr( ctx, header );
+    assert( 0 == loader_ehdr( ctx->fd, ctx->hs, header ) );
 
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
     {
@@ -485,7 +523,7 @@ static bool app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const ch
         }
     #endif
 
-        memcpy( ctx->app_public_key, approved_pub_key, sizeof( uint256_t ) );
+        memcpy( ctx->header.e_public_key, approved_pub_key, sizeof( uint256_t ) );
     }
 
 #endif
@@ -494,10 +532,15 @@ err:
     return false;
 }
 
-static inline void app_hash_update( jelfLoaderContext_t *ctx, const uint8_t *data, size_t len )
+/**
+ * @brief Update signature verifying hash state
+ * @brief[in] hs Hash state. May be NULL.
+ */
+static inline void app_hash_update( crypto_hash_sha512_state *hs, const uint8_t *data, size_t len )
 {
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
-    crypto_hash_sha512_update( ctx->hs, data, len );
+    if( NULL == hs ) return;
+    crypto_hash_sha512_update( hs, data, len );
 #endif
 }
 
@@ -802,7 +845,8 @@ bool jelfLoaderSigCheck( const jelfLoaderContext_t *ctx )
         return false;
     }
 
-    if( 0 == crypto_sign_verify_detached( ctx->app_signature, ctx->hash, sizeof( ctx->hash ), ctx->app_public_key ) ) {
+    if( 0 == crypto_sign_verify_detached( ctx->header.e_signature, ctx->hash, sizeof( ctx->hash ),
+                                          ctx->header.e_public_key ) ) {
         return true;
     }
     else {
@@ -878,7 +922,6 @@ int jelfLoaderRun( jelfLoaderContext_t *ctx, int argc, char **argv )
 jelfLoaderStatus_t jelfLoaderInit( jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd, const char *name,
                                    const jelfLoaderEnv_t *env )
 {
-    Jelf_Ehdr header;
     jelfLoaderStatus_t response = JELF_LOADER_ERROR;
     jelfLoaderContext_t *ctx    = NULL;
 
@@ -929,27 +972,23 @@ jelfLoaderStatus_t jelfLoaderInit( jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd
     ctx->inf_stream.out_read  = ctx->inf_stream.out_buf;
     ctx->inf_stream.out_avail = 0;
 
+    /********************
+     * Read Jelf Header *
+     ********************/
+
     /**********************************
      * Initialize App Signature Check *
      **********************************/
     /* Will populate the main JELF header */
     MSG( "Initializing Signature Checker" );
-    if( !app_hash_init( ctx, &header, name ) ) {
+    if( !app_hash_init( ctx, &ctx->header, name ) ) {
         response = JELF_LOADER_INVALID_KEY;
-        goto err;
-    }
-
-    /* Make sure that we have a correct and compatible ELF header. */
-    char JelfMagic[] = {0x7f, 'J', 'E', 'L', 'F', '\0'};
-    if( 0 != memcmp( header.e_ident, JelfMagic, strlen( JelfMagic ) ) ) {
-        ERR( "Bad JELF Identification" );
-        ERR( "File Magic Identifier: %s", header.e_ident );
         goto err;
     }
 
     /* Version Compatability Check */
     MSG( "Checking Version Compatability" );
-    switch( check_version_compatability( &header ) ) {
+    switch( check_version_compatability( &ctx->header ) ) {
         case 0:
             /* success */
             break;
@@ -959,16 +998,16 @@ jelfLoaderStatus_t jelfLoaderInit( jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd
     }
 
     /* Debug Sanity Checks */
-    MSG( "SectionHeaderTableEntries: %d", header.e_shnum );
-    MSG( "Derivation Purpose: 0x%08X", header.e_coin_purpose );
-    MSG( "Derivation Path: 0x%08X", header.e_coin_path );
-    MSG( "bip32key: %s", header.e_bip32key );
+    MSG( "SectionHeaderTableEntries: %d", ctx->header.e_shnum );
+    MSG( "Derivation Purpose: 0x%08X", ctx->header.e_coin_purpose );
+    MSG( "Derivation Path: 0x%08X", ctx->header.e_coin_path );
+    MSG( "bip32key: %s", ctx->header.e_bip32key );
 
     {
         /**************************************
          * Cache sectionheadertable to memory *
          **************************************/
-        size_t sht_size = header.e_shnum * JELF_SHDR_SIZE;
+        size_t sht_size = ctx->header.e_shnum * JELF_SHDR_SIZE;
         ctx->sht_cache  = LOADER_ALLOC_DATA( sht_size );
         if( NULL == ctx->sht_cache ) {
             ERR( "Insufficient memory for section header table cache" );
@@ -978,18 +1017,6 @@ jelfLoaderStatus_t jelfLoaderInit( jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd
         /* Populate the cache */
         LOADER_GETDATA( ctx, (char *)( ctx->sht_cache ), sht_size );
     }
-
-    /* Populate context with ELF Header information*/
-    ctx->e_shnum      = header.e_shnum;  // Number of Sections
-    ctx->entry_index  = header.e_entry_index;
-    ctx->coin_purpose = header.e_coin_purpose;
-    ctx->coin_path    = header.e_coin_path;
-    if( strlen( header.e_bip32key ) >= sizeof( ctx->bip32_key ) ) {
-        ERR( "Malformed JELF header." );
-        response = JELF_LOADER_MALFORMED;
-        goto err;
-    }
-    strlcpy( ctx->bip32_key, header.e_bip32key, sizeof( ctx->bip32_key ) );
 
     ctx->state = JELF_CTX_INITIALIZED;
 
@@ -1018,7 +1045,7 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
 
     MSG( "Scanning ELF sections         relAddr      size" );
     // Iterate through all section_headers in the section header table
-    for( int n = 1; n < ctx->e_shnum; n++ ) {
+    for( int n = 1; n < ctx->header.e_shnum; n++ ) {
         MSG( "Loading section %d", n );
         Jelf_Shdr sectHdr = {0};
 
@@ -1148,7 +1175,7 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
     MSG( "successfully loaded sections" );
 
     Jelf_Sym sym;
-    if( 0 != loader_sym( ctx, ctx->entry_index, &sym ) ) { goto err; }
+    if( 0 != loader_sym( ctx, ctx->header.e_entry_index, &sym ) ) { goto err; }
 
     jelfLoaderSection_t *symbol_section = findSection( ctx, sym.st_shndx );
     if( NULL == symbol_section ) {

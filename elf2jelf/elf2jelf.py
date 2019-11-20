@@ -109,6 +109,13 @@ def parse_args():
     parser.add_argument('--release', action='store_true',
             help='''Set versioning to RELEASE''')
 
+    parser.add_argument('--app_major', type=int, default=0,
+            help="App Version Major")
+    parser.add_argument('--app_minor', type=int, default=0,
+            help="App Version Minor")
+    parser.add_argument('--app_patch', type=int, default=0,
+            help="App Version Patch")
+
     args = parser.parse_args()
     dargs = vars(args)
     return (args, dargs)
@@ -714,19 +721,22 @@ def main():
     assert(len(sk)==32)
 
     jelf_ehdr_d = OrderedDict()
-    jelf_ehdr_d['e_ident']          = '\x7fJELF\x00'
-    jelf_ehdr_d['e_public_key']     = pk
-    jelf_ehdr_d['e_version_major']  = _JELF_VERSION_MAJOR
-    jelf_ehdr_d['e_version_minor']  = _JELF_VERSION_MINOR
-    jelf_ehdr_d['e_version_patch']  = _JELF_VERSION_PATCH
-    jelf_ehdr_d['e_entry_index']    = jelf_entrypoint_sym_idx
-    jelf_ehdr_d['e_shnum']          = len(jelf_shdrs)
-    jelf_ehdr_d['e_coin_purpose']   = purpose
-    jelf_ehdr_d['e_coin_path']      = coin
-    jelf_ehdr_d['e_bip32key']       = args.bip32key
+    jelf_ehdr_d['e_ident']             = '\x7fJELF\x00'
+    jelf_ehdr_d['e_version_major']     = _JELF_VERSION_MAJOR
+    jelf_ehdr_d['e_version_minor']     = _JELF_VERSION_MINOR
+    jelf_ehdr_d['e_version_patch']     = _JELF_VERSION_PATCH
+    jelf_ehdr_d['e_app_major']         = args.app_major
+    jelf_ehdr_d['e_app_minor']         = args.app_minor
+    jelf_ehdr_d['e_app_patch']         = args.app_patch
+    jelf_ehdr_d['e_public_key']        = pk
+    jelf_ehdr_d['e_signature']         = bytes(64)  # Placeholder
+    jelf_ehdr_d['e_entry_index']       = jelf_entrypoint_sym_idx
+    jelf_ehdr_d['e_shnum']             = len(jelf_shdrs)
+    jelf_ehdr_d['e_coin_purpose']      = purpose
+    jelf_ehdr_d['e_coin_path']         = coin
+    jelf_ehdr_d['e_bip32key']          = args.bip32key
 
-    jelf_contents[:Jelf_Ehdr.size_bytes()] = Jelf_Ehdr.pack(
-            *jelf_ehdr_d.values() )
+    jelf_ehdr_contents = Jelf_Ehdr.pack( *jelf_ehdr_d.values() )
 
     # Parse Output Filename
     if args.output is None:
@@ -741,13 +751,17 @@ def main():
     #############################
 
     # write the compressed unsigned jelf file
-    compressed_jelf = compress_data(jelf_contents)
-    with open(output_fn, 'wb') as f:
-        f.write(bytes(64) + compressed_jelf)
+    compressed_jelf_contents = compress_data(jelf_contents[Jelf_Ehdr.size_bytes():])
 
     # Get the transversal hash
     name_to_sign = os.path.basename(output_fn[:-5]).encode('utf-8')
-    t_hash = sha512(name_to_sign + compressed_jelf)
+
+    # TODO: not make the 44 not hardprogrammed
+    # Exclude the signature bbytes of the header
+    t_hash = sha512(name_to_sign + \
+            jelf_ehdr_contents[:44] + \
+            jelf_ehdr_contents[(44+64):] + \
+            compressed_jelf_contents)
 
     log.debug("Secret Key: %s", hexlify(sk).decode('utf-8'))
     log.info("Public Key: %s", hexlify(pk).decode('utf-8'))
@@ -757,11 +771,13 @@ def main():
     assert(len(signature) == 64)
     log.info("C Signature: %s", hexlify(signature).decode('utf-8'))
 
-    ########################################
+    ###############################################
     # Write Signed Compressed JELF binary to file #
-    ########################################
+    ###############################################
+    jelf_ehdr_d['e_signature'] = signature
+    jelf_ehdr_contents = Jelf_Ehdr.pack( *jelf_ehdr_d.values() )
     with open(output_fn, 'wb') as f:
-        f.write(signature + compressed_jelf)
+        f.write(jelf_ehdr_contents + compressed_jelf_contents)
 
     log.info("Complete!")
 

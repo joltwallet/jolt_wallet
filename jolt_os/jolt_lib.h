@@ -88,15 +88,9 @@ enum {
 typedef uint8_t jolt_hw_type_t;
 
 typedef struct jolt_version_t {
-    union {
-        struct {
-            uint8_t major;
-            uint8_t minor;
-            uint8_t patch;
-            uint8_t padding; /**< explicit 0-padding */
-        };
-        uint32_t version;  // For easy comparison
-    };
+    uint8_t major;
+    uint8_t minor;
+    uint8_t patch;
     jolt_release_type_t release;
 } jolt_version_t;
 
