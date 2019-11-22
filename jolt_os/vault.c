@@ -310,7 +310,7 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
             ps_state_cleanup();
             if( NULL != cb ) { cb( param ); }
             else {
-                ESP_LOGE( TAG, "No Success Callback" );
+                ESP_LOGI( TAG, "No Success Callback" );
             }
             break;
         }
@@ -321,7 +321,7 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
 
             if( NULL != cb ) { cb( param ); }
             else {
-                ESP_LOGE( TAG, "No Failure Callback" );
+                ESP_LOGI( TAG, "No Failure Callback" );
             }
             break;
         }
@@ -426,7 +426,25 @@ static void vault_watchdog_task()
         }
         else {
             // WatchDog timeout; wipe the private node
-            vault_clear();
+            
+            vault_sem_take();
+
+            /* Possible race condition where watchdog was waiting to take 
+             * the vault semaphore while watchdog was being reset */
+            if( xSemaphoreTake( vault_watchdog_sem, 0 ) ) {
+                // dog was kicked at that moment, don't clear
+                return;
+            }
+
+            if( vault->valid ) {
+                ESP_LOGI( TAG, "Clearing Vault." );
+                sodium_mprotect_readwrite( vault );
+                vault->valid = false;
+                sodium_memzero( &( vault->node ), sizeof( hd_node_t ) );
+                sodium_mprotect_readonly( vault );
+                ESP_LOGI( TAG, "Clearing Vault Complete." );
+            }
+            vault_sem_give();
         }
     }
 }
@@ -465,20 +483,6 @@ bool vault_setup()
 
     // Checks if stored secret exists
     return storage_exists_mnemonic();
-}
-
-void vault_clear()
-{
-    vault_sem_take();
-    if( vault->valid ) {
-        ESP_LOGI( TAG, "Clearing Vault." );
-        sodium_mprotect_readwrite( vault );
-        vault->valid = false;
-        sodium_memzero( &( vault->node ), sizeof( hd_node_t ) );
-        sodium_mprotect_readonly( vault );
-        ESP_LOGI( TAG, "Clearing Vault Complete." );
-    }
-    vault_sem_give();
 }
 
 /********************

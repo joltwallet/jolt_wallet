@@ -95,6 +95,15 @@ int jolt_cmd_lv_obj( int argc, char** argv );
  */
 int jolt_cmd_jolt_cast_update( int argc, char** argv );
 
+#if JOLT_GUI_TEST_MENU
+/**
+ * @brief
+ *
+ * Takes 1 argument: Number of bytes to output.
+ */
+int jolt_cmd_long( int argc, char** argv );
+#endif
+
 /**
  * @brief List all files in filesystem
  *

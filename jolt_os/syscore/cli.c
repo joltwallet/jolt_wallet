@@ -451,6 +451,16 @@ static void jolt_cli_cmds_register()
     };
     ESP_ERROR_CHECK( esp_console_cmd_register( &cmd ) );
 
+#if JOLT_GUI_TEST_MENU
+    cmd = ( esp_console_cmd_t ) {
+            .command = "long",
+            .help    = "Print N characters",
+            .hint    = NULL,
+            .func    = &jolt_cmd_long,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register( &cmd ) );
+#endif
+
     cmd = ( esp_console_cmd_t ) {
             .command = "ls",
             .help    = "List all files in filesystem",
