@@ -165,10 +165,14 @@ void jolt_gui_statusbar_create()
 
     /* Periodically update the statusbar symbols */
     ESP_LOGD( TAG, "Creating Statusbar Update lv_task" );
-    statusbar_task =
-            lv_task_create( &statusbar_update, CONFIG_JOLT_GUI_STATUSBAR_UPDATE_PERIOD_MS, LV_TASK_PRIO_LOW, NULL );
-    RESTART_IF_NULL( statusbar_task );
-    lv_task_ready( statusbar_task );
+    JOLT_GUI_CTX
+    {
+        statusbar_task = lv_task_create( &statusbar_update, CONFIG_JOLT_GUI_STATUSBAR_UPDATE_PERIOD_MS,
+                                         LV_TASK_PRIO_LOW, NULL );
+        RESTART_IF_NULL( statusbar_task );
+        lv_task_ready( statusbar_task );
+        lv_task_handler();
+    }
 }
 
 jolt_gui_obj_t *jolt_gui_statusbar_get_label() { return statusbar_label; }

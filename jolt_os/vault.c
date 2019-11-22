@@ -426,10 +426,10 @@ static void vault_watchdog_task()
         }
         else {
             // WatchDog timeout; wipe the private node
-            
+
             vault_sem_take();
 
-            /* Possible race condition where watchdog was waiting to take 
+            /* Possible race condition where watchdog was waiting to take
              * the vault semaphore while watchdog was being reset */
             if( xSemaphoreTake( vault_watchdog_sem, 0 ) ) {
                 // dog was kicked at that moment, don't clear

@@ -68,23 +68,26 @@ static bool easy_input_read( lv_indev_drv_t *indev_drv, lv_indev_data_t *data )
 void jolt_gui_indev_init()
 {
     /* Setup Input Button Debouncing Code */
-    lv_group_t *group;
+    JOLT_GUI_CTX
+    {
+        lv_group_t *group;
 
-    easy_input_run( NULL );
+        easy_input_run( NULL );
 
-    jolt_gui_group_create();
+        jolt_gui_group_create();
 
-    lv_indev_t *indev;
-    lv_indev_drv_t indev_drv;
+        lv_indev_t *indev;
+        lv_indev_drv_t indev_drv;
 
-    lv_indev_drv_init( &indev_drv );
-    indev_drv.type    = LV_INDEV_TYPE_KEYPAD;
-    indev_drv.read_cb = easy_input_read;
+        lv_indev_drv_init( &indev_drv );
+        indev_drv.type    = LV_INDEV_TYPE_KEYPAD;
+        indev_drv.read_cb = easy_input_read;
 
-    group = jolt_gui_group_get();
+        group = jolt_gui_group_get();
 
-    indev = lv_indev_drv_register( &indev_drv );
-    lv_indev_set_group( indev, group );
+        indev = lv_indev_drv_register( &indev_drv );
+        lv_indev_set_group( indev, group );
+    }
 }
 
 #if UNIT_TESTING

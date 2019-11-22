@@ -308,6 +308,20 @@ void app_main( void )
         jolt_hw_monitor_init();
     }
 
+    /* Capacitive Touch LED Setup */
+    {
+        jolt_led_setup();
+    }
+
+    /* Create GUI StatusBar */
+    {
+        ESP_LOGI( TAG, "Creating Statusbar" );
+        jolt_gui_statusbar_create();
+        jolt_gui_statusbar_set_icons( JOLT_GUI_STATUSBAR_ICON_BATTERY | JOLT_GUI_STATUSBAR_ICON_CHIP |
+                                      JOLT_GUI_STATUSBAR_ICON_BLUETOOTH | JOLT_GUI_STATUSBAR_ICON_WIFI |
+                                      JOLT_GUI_STATUSBAR_ICON_LOCK );
+    }
+
     /* Create GUI Drawing Loop */
     {
         BaseType_t ret;
@@ -322,20 +336,6 @@ void app_main( void )
                 ESP_LOGE( TAG, "%s Failed to start drawing task, error_code=%d", __func__, ret );
             }
         }
-    }
-
-    /* Capacitive Touch LED Setup */
-    {
-        jolt_led_setup();
-    }
-
-    /* Create GUI StatusBar */
-    {
-        ESP_LOGI( TAG, "Creating Statusbar" );
-        jolt_gui_statusbar_create();
-        jolt_gui_statusbar_set_icons( JOLT_GUI_STATUSBAR_ICON_BATTERY | JOLT_GUI_STATUSBAR_ICON_CHIP |
-                                      JOLT_GUI_STATUSBAR_ICON_BLUETOOTH | JOLT_GUI_STATUSBAR_ICON_WIFI |
-                                      JOLT_GUI_STATUSBAR_ICON_LOCK );
     }
 
     bool first_boot;
