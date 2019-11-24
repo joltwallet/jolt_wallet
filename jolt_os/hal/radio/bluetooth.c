@@ -112,9 +112,10 @@ static ssize_t ble_write( int fd, const void *data, size_t size )
 {
     size_t remaining   = size;
     const char *data_c = (const char *)data;
-    _lock_acquire_recursive( &s_ble_write_lock );
 
-    BLE_UART_LOGD( "%s write %d bytes\n", __func__, size );
+    ESP_LOGD(TAG, "%s write %d bytes\n", __func__, size );
+
+    _lock_acquire_recursive( &s_ble_write_lock );
 
     int idx = 0;
     do {
@@ -122,9 +123,7 @@ static ssize_t ble_write( int fd, const void *data, size_t size )
         size_t print_len = remaining;
         if( print_len > 512 ) { print_len = 512; }
 
-        BLE_UART_LOGD( "Sending %d bytes: ", print_len );
-        BLE_UART_LOGD_BUF( &data_c[idx], print_len );
-        BLE_UART_LOGD_STR( "\n" );
+        ESP_LOGD(TAG, "Sending %d bytes: %.*s", print_len, print_len, &data_c[idx] );
 
         res = esp_ble_gatts_send_indicate( spp_profile_tab[SPP_PROFILE_A_APP_ID].gatts_if,
                                            spp_profile_tab[SPP_PROFILE_A_APP_ID].conn_id,
@@ -164,8 +163,8 @@ int ble_read_char( int fd, TickType_t timeout )
     c = packet.data[line_off];
     line_off++;
 
-    BLE_UART_LOGD( "line_off: %d\n", line_off );
-    BLE_UART_LOGD( "packet.len: %d\n\n", packet.len );
+    ESP_LOGD(TAG, "line_off: %d", line_off );
+    ESP_LOGD(TAG, "packet.len: %d\n", packet.len );
 
     if( line_off >= packet.len ) {
         line_off = LINE_OFF_INVALID;
@@ -192,10 +191,10 @@ ssize_t ble_read_timeout( int fd, void *data, size_t size, TickType_t timeout )
 {
     char *data_c = (char *)data;
 
-    _lock_acquire_recursive( &s_ble_read_lock );
-    BLE_UART_LOGD_STR( "ble_read_lock acquired\n" );
-
+    ESP_LOGD(TAG, "ble_read_lock acquired" );
     ESP_LOGD( TAG, "Attempting to receive %d bytes with timeout %d.", size, timeout );
+
+    _lock_acquire_recursive( &s_ble_read_lock );
 
     size_t received;
     for( received = 0; received < size; received++ ) {
