@@ -108,6 +108,7 @@ static int log_to_uart( const char *format, va_list arg )
     n = vasprintf( &buf, format, arg );
     if( -1 == n ) return -1;
     uart_write_bytes( CONFIG_ESP_CONSOLE_UART_NUM, buf, n );
+    free( buf );
     return n;
 }
 
