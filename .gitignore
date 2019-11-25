@@ -8,6 +8,7 @@ xtensa-esp32-elf/
 *.DS_Store
 .*project
 .settings
+.mainframer
 
 # Jolt Specific
 jolt_os/jolt_commit.c

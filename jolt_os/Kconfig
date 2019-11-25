@@ -334,7 +334,7 @@ menu "JoltOS"
         config JOLT_TASK_STACK_SIZE_BLE_CONSOLE
             int
             prompt "BLE Linenoise Console Task Stack Size"
-            default 3072
+            default 3520
             help
                 Task that receives BLE CLI commands and sends them to BG as a job.
 
