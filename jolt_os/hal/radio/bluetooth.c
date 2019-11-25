@@ -15,6 +15,7 @@
     #include <sys/lock.h>
     #include <sys/param.h>
     #include "bluetooth.h"
+    #include "bluetooth_cfg.h"
     #include "bluetooth_state.h"
     #include "driver/uart.h"
     #include "esp_bt.h"
@@ -121,7 +122,7 @@ static ssize_t ble_write( int fd, const void *data, size_t size )
     do {
         esp_err_t res;
         size_t print_len = remaining;
-        if( print_len > 512 ) { print_len = 512; }
+        if( print_len > (spp_mtu_size-3) ) { print_len = (spp_mtu_size-3); }
 
         ESP_LOGD(TAG, "Sending %d bytes: %.*s", print_len, print_len, &data_c[idx] );
 
