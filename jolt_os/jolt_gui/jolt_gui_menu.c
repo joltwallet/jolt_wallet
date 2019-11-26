@@ -15,8 +15,9 @@
 #define LABEL_LONG_MODE_SELECTED LV_LABEL_LONG_SROLL
 static const char TAG[] = "scr_menu";
 
-#define CHECK_SCR(x) if( JOLT_GUI_SCR_ID_MENU != jolt_gui_scr_id_get(x) ) abort();
-    
+#define CHECK_SCR( x ) \
+    if( JOLT_GUI_SCR_ID_MENU != jolt_gui_scr_id_get( x ) ) abort();
+
 static lv_signal_cb_t old_list_signal = NULL; /*Store the old signal function*/
 
 static void set_selected_label_long_mode( jolt_gui_obj_t *list, lv_label_long_mode_t mode )
@@ -93,7 +94,7 @@ jolt_gui_obj_t *jolt_gui_scr_menu_get_list( const jolt_gui_obj_t *par )
     {
         /* Make sure that the par is a screen */
         par = jolt_gui_scr_get( par );
-        CHECK_SCR(par);
+        CHECK_SCR( par );
 
         jolt_gui_obj_t *cont_body = NULL;
         cont_body                 = JOLT_GUI_FIND_AND_CHECK( par, JOLT_GUI_OBJ_ID_CONT_BODY );
@@ -122,7 +123,7 @@ jolt_gui_obj_t *jolt_gui_scr_menu_add( jolt_gui_obj_t *par, const void *img_src,
     {
         /* Make sure that the par is a screen */
         par = jolt_gui_scr_get( par );
-        CHECK_SCR(par);
+        CHECK_SCR( par );
 
         jolt_gui_obj_t *list = BREAK_IF_NULL( jolt_gui_scr_menu_get_list( par ) );
         btn                  = BREAK_IF_NULL( lv_list_add_btn( list, img_src, txt ) );
@@ -198,7 +199,7 @@ void jolt_gui_scr_menu_set_btn_selected( jolt_gui_obj_t *par, jolt_gui_obj_t *bt
     {
         /* Make sure that the par is a screen */
         par = jolt_gui_scr_get( par );
-        CHECK_SCR(par);
+        CHECK_SCR( par );
 
         jolt_gui_obj_t *list = BREAK_IF_NULL( jolt_gui_scr_menu_get_list( par ) );
         set_selected_label_long_mode( list, LABEL_LONG_MODE_DEFAULT );
@@ -216,7 +217,7 @@ void jolt_gui_scr_menu_remove( lv_obj_t *par, lv_obj_t *btn )
     {
         /* Make sure that the par is a screen */
         par = jolt_gui_scr_get( par );
-        CHECK_SCR(par);
+        CHECK_SCR( par );
 
         jolt_gui_obj_t *list = BREAK_IF_NULL( jolt_gui_scr_menu_get_list( par ) );
         int32_t index        = lv_list_get_btn_index( list, btn );
@@ -235,7 +236,7 @@ void jolt_gui_scr_menu_remove_indices( jolt_gui_obj_t *par, uint16_t start, uint
     {
         /* Make sure that the par is a screen */
         par = jolt_gui_scr_get( par );
-        CHECK_SCR(par);
+        CHECK_SCR( par );
 
         jolt_gui_obj_t *list = BREAK_IF_NULL( jolt_gui_scr_menu_get_list( par ) );
         for( uint16_t i = start; i < end; i++ ) {
@@ -252,7 +253,7 @@ bool jolt_gui_scr_menu_set_param( jolt_gui_obj_t *par, void *param )
     {
         /* Make sure that the par is a screen */
         par = jolt_gui_scr_get( par );
-        CHECK_SCR(par);
+        CHECK_SCR( par );
 
         jolt_gui_obj_t *list, *btn;
         list = BREAK_IF_NULL( jolt_gui_scr_menu_get_list( par ) );
@@ -278,7 +279,7 @@ uint16_t jolt_gui_scr_menu_len( const lv_obj_t *par )
     {
         /* Make sure that the par is a screen */
         par = jolt_gui_scr_get( par );
-        CHECK_SCR(par);
+        CHECK_SCR( par );
 
         jolt_gui_obj_t *list = BREAK_IF_NULL( jolt_gui_scr_menu_get_list( par ) );
         len                  = lv_list_get_size( list );

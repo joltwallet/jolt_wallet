@@ -192,7 +192,7 @@ void jolt_cli_return( int val )
         portEXIT_CRITICAL( &myMutex );
     }
 
-    fflush(stdout);
+    fflush( stdout );
 
     xQueueSend( ret_val_queue, &val, portMAX_DELAY );
     if( JOLT_CLI_NON_BLOCKING != val ) {

@@ -13,7 +13,8 @@ static const char TAG[] = "jolt_gui_scroll";
 static lv_style_t monospace_style_obj;
 static lv_style_t *monospace_style = NULL;
 
-#define CHECK_SCR(x) if( JOLT_GUI_SCR_ID_SCROLL != jolt_gui_scr_id_get(x) ) abort();
+#define CHECK_SCR( x ) \
+    if( JOLT_GUI_SCR_ID_SCROLL != jolt_gui_scr_id_get( x ) ) abort();
 
 jolt_gui_obj_t *jolt_gui_scr_scroll_get_page( jolt_gui_obj_t *scr )
 {
@@ -22,7 +23,7 @@ jolt_gui_obj_t *jolt_gui_scr_scroll_get_page( jolt_gui_obj_t *scr )
     {
         /* Make sure that the scr is a screen */
         scr = jolt_gui_scr_get( scr );
-        CHECK_SCR(scr);
+        CHECK_SCR( scr );
 
         jolt_gui_obj_t *cont_body = JOLT_GUI_FIND_AND_CHECK( scr, JOLT_GUI_OBJ_ID_CONT_BODY );
         page                      = JOLT_GUI_FIND_AND_CHECK( cont_body, JOLT_GUI_OBJ_ID_PAGE );
@@ -60,7 +61,7 @@ jolt_gui_obj_t *jolt_gui_scr_scroll_add_text( jolt_gui_obj_t *scr, const char *t
     {
         /* Make sure that the scr is a screen */
         scr = jolt_gui_scr_get( scr );
-        CHECK_SCR(scr);
+        CHECK_SCR( scr );
 
         jolt_gui_obj_t *page = BREAK_IF_NULL( jolt_gui_scr_scroll_get_page( scr ) );
         /* Create Text Label on Page */
@@ -81,7 +82,7 @@ jolt_gui_obj_t *jolt_gui_scr_scroll_add_monospace_text( jolt_gui_obj_t *scr, con
     {
         /* Make sure that the scr is a screen */
         scr = jolt_gui_scr_get( scr );
-        CHECK_SCR(scr);
+        CHECK_SCR( scr );
 
         jolt_gui_obj_t *page = BREAK_IF_NULL( jolt_gui_scr_scroll_get_page( scr ) );
         /* Create Text Label on Page */
