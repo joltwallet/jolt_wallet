@@ -64,9 +64,9 @@ static const char TAG[] = "jolt_gui";
  * Screen Management *
  *********************/
 
-jolt_gui_obj_t *jolt_gui_scr_get( jolt_gui_obj_t *obj )
+jolt_gui_obj_t *jolt_gui_scr_get( const jolt_gui_obj_t *obj )
 {
-    jolt_gui_obj_t *scr = obj;
+    const jolt_gui_obj_t *scr = obj;
     ESP_LOGD( TAG, "(%d) Getting screen of %p", __LINE__, obj );
     JOLT_GUI_CTX
     {
@@ -74,13 +74,13 @@ jolt_gui_obj_t *jolt_gui_scr_get( jolt_gui_obj_t *obj )
             obj = BREAK_IF_NULL( lv_group_get_focused( group ) );
             ESP_LOGD( TAG, "(%d) Inferring currently focused object: %p", __LINE__, obj );
         }
-        lv_obj_t *tmp = obj;
+        const lv_obj_t *tmp = obj;
         while( ( tmp = lv_obj_get_parent( tmp ) ) ) {
             if( tmp != lv_scr_act() ) { scr = tmp; }
         }
     }
     ESP_LOGD( TAG, "(%d) Screen of %p is %p", __LINE__, obj, scr );
-    return scr;
+    return (jolt_gui_obj_t *)scr;
 }
 
 lv_res_t jolt_gui_scr_del( jolt_gui_obj_t *obj )
@@ -97,6 +97,11 @@ lv_res_t jolt_gui_scr_del( jolt_gui_obj_t *obj )
     return res;
 }
 
+/**
+ * @brief Set the `is_scr` flag of a jolt gui object.
+ * @param[in] obj
+ * @param[in] val Value to set the flag to. true==is a screen, false==not a screen.
+ */
 static void jolt_gui_obj_id_is_scr_set( lv_obj_t *obj, bool val )
 {
 #if JOLT_GUI_USE_RESERVED
@@ -284,7 +289,7 @@ lv_group_t *jolt_gui_group_get() { return group; }
  * Action *
  **********/
 
-lv_obj_t *jolt_gui_scr_get_active( lv_obj_t *parent )
+lv_obj_t *jolt_gui_scr_get_active( const lv_obj_t *parent )
 {
     lv_obj_t *obj = NULL;
     JOLT_GUI_CTX
@@ -329,7 +334,7 @@ void jolt_gui_scr_set_active_param( lv_obj_t *parent, void *param )
     }
 }
 
-void *jolt_gui_scr_get_active_param( lv_obj_t *parent )
+void *jolt_gui_scr_get_active_param( const lv_obj_t *parent )
 {
     void *param = NULL;
     JOLT_GUI_CTX
@@ -430,7 +435,7 @@ lv_obj_t *jolt_gui_obj_get_parent( const lv_obj_t *obj ) { return lv_obj_get_par
 
 void jolt_gui_obj_set_event_cb( lv_obj_t *obj, lv_event_cb_t event_cb ) { lv_obj_set_event_cb( obj, event_cb ); }
 
-void *jolt_gui_obj_get_param( lv_obj_t *obj ) { return lv_obj_get_user_data_ptr( obj )->param; }
+void *jolt_gui_obj_get_param( const lv_obj_t *obj ) { return lv_obj_get_user_data_ptr( obj )->param; }
 
 void jolt_gui_obj_set_param( lv_obj_t *obj, void *param ) { lv_obj_get_user_data_ptr( obj )->param = param; }
 

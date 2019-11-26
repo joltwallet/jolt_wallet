@@ -126,6 +126,15 @@ tests: sdkconfig.defaults
 		TEST_COMPONENTS='main' \
 		flash monitor;
 
+decode:
+	# Only works on the tests target
+	# usage: make decode 0x40...:\0x3ff 0x40...
+	echo "\n"
+	xtensa-esp32-elf-addr2line -pfiaC -e build/$(PROJECT_NAME).elf $(filter-out $@,$(MAKECMDGOALS))
+
+%:
+	@:
+
 clean-jolt:
 	rm -rf build/jolt_os
 	rm -rf build/jolt_wallet

@@ -84,7 +84,7 @@ typedef void ( *jolt_gui_event_cb_t )( jolt_gui_obj_t *obj, jolt_gui_event_t eve
  * @param obj object to get screen object of.
  * @return the parent screen object.
  */
-jolt_gui_obj_t *jolt_gui_scr_get( jolt_gui_obj_t *obj );
+jolt_gui_obj_t *jolt_gui_scr_get( const jolt_gui_obj_t *obj );
 
 /**
  * @brief Deletes the parenting screen of obj or currently focused screen.
@@ -203,7 +203,7 @@ lv_group_t *jolt_gui_group_get();
  *
  * @return Active object. Returns NULL if not found.
  */
-lv_obj_t *jolt_gui_scr_get_active( lv_obj_t *parent );
+lv_obj_t *jolt_gui_scr_get_active( const lv_obj_t *parent );
 
 /**
  * @brief Set the event callback for the active element of the screen
@@ -218,7 +218,7 @@ void jolt_gui_obj_set_event_cb( lv_obj_t *obj, lv_event_cb_t event_cb );
 /**
  * @brief Get the event param pointer in user_data
  */
-void *jolt_gui_obj_get_param( lv_obj_t *obj );
+void *jolt_gui_obj_get_param( const lv_obj_t *obj );
 
 /**
  * @brief set the event param pointer in user_data
@@ -233,7 +233,7 @@ void jolt_gui_scr_set_active_param( lv_obj_t *parent, void *param );
 /**
  * @brief get the event param pointer in the active element of the screen
  */
-void *jolt_gui_scr_get_active_param( lv_obj_t *parent );
+void *jolt_gui_scr_get_active_param( const lv_obj_t *parent );
 
 /**
  * @brief Event handler that deletes the current screen

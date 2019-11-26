@@ -93,8 +93,9 @@ void jolt_gui_scr_menu_remove_indices( lv_obj_t *par, uint16_t start, uint16_t e
  * @brief Set the active object param and all of the buttons
  * @param[in] par Menu screen
  * @param[in] param param to set.
+ * @return True on success, false otherwise.
  */
-void jolt_gui_scr_menu_set_param( lv_obj_t *par, void *param );
+bool jolt_gui_scr_menu_set_param( lv_obj_t *par, void *param );
 
 /**
  * @brief Get the index of a button

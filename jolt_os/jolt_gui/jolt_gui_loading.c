@@ -14,6 +14,9 @@
 
 static const char TAG[] = "scr_loading";
 
+#define CHECK_SCR_LOADINGBAR(x) if( JOLT_GUI_SCR_ID_LOADINGBAR != jolt_gui_scr_id_get(x) ) abort();
+#define CHECK_SCR_PRELOADING(x) if( JOLT_GUI_SCR_ID_PRELOADING != jolt_gui_scr_id_get(x) ) abort();
+
 static lv_signal_cb_t old_bar_signal = NULL; /*Store the old signal function*/
 
 typedef struct autoupdate_param_t {
@@ -54,6 +57,7 @@ void jolt_gui_scr_loadingbar_update( jolt_gui_obj_t *parent, const char *title, 
     {
         /* Make sure that the parent is a screen */
         parent = jolt_gui_scr_get( parent );
+        CHECK_SCR_LOADINGBAR( parent );
 
         /* Find Objects */
         jolt_gui_obj_t *label_title = NULL;
@@ -115,6 +119,7 @@ int8_t *jolt_gui_scr_loadingbar_autoupdate( jolt_gui_obj_t *parent )
     {
         /* Make sure that the parent is a screen */
         parent = jolt_gui_scr_get( parent );
+        CHECK_SCR_LOADINGBAR( parent );
 
         jolt_gui_obj_t *bar   = BREAK_IF_NULL( jolt_gui_scr_get_active( parent ) );
         loadingbar_ext_t *ext = lv_obj_get_ext_attr( bar );
@@ -181,6 +186,7 @@ int8_t *jolt_gui_scr_loadingbar_progress_get( lv_obj_t *obj )
     JOLT_GUI_CTX
     {
         jolt_gui_obj_t *scr   = jolt_gui_scr_get( obj );
+        CHECK_SCR_LOADINGBAR( scr );
         jolt_gui_obj_t *bar   = BREAK_IF_NULL( jolt_gui_scr_get_active( scr ) );
         loadingbar_ext_t *ext = lv_obj_get_ext_attr( bar );
         if( NULL == ext->autoupdate ) break;
@@ -233,6 +239,7 @@ void jolt_gui_scr_preloading_update( jolt_gui_obj_t *parent, const char *title, 
     {
         /* Make sure that the parent is a screen */
         parent = jolt_gui_scr_get( parent );
+        CHECK_SCR_PRELOADING( parent );
 
         /* Find Objects */
         jolt_gui_obj_t *label_title = NULL;

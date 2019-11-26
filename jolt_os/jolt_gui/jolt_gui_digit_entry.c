@@ -55,6 +55,8 @@ static jolt_gui_obj_t *digit_create( jolt_gui_obj_t *parent );
 static unsigned concat_int( unsigned x, unsigned y );
 static jolt_gui_obj_t *create_dp( jolt_gui_obj_t *parent );
 
+#define CHECK_SCR(x) if( JOLT_GUI_SCR_ID_DIGIT_ENTRY != jolt_gui_scr_id_get(x) ) abort();
+
 static lv_res_t digit_entry_signal( jolt_gui_obj_t *digit_entry, lv_signal_t sign, void *param )
 {
     ESP_LOGD( TAG, "%s signal %d", __func__, sign );
@@ -273,6 +275,10 @@ int8_t jolt_gui_scr_digit_entry_get_arr( jolt_gui_obj_t *scr, uint8_t *arr, uint
     int8_t n_entries = -1;
     JOLT_GUI_CTX
     {
+        /* Make sure that the scr is a screen */
+        scr = jolt_gui_scr_get( scr );
+        CHECK_SCR(scr);
+
         jolt_gui_obj_t *cont_body, *digit_entry;
         cont_body   = JOLT_GUI_FIND_AND_CHECK( scr, JOLT_GUI_OBJ_ID_CONT_BODY );
         digit_entry = JOLT_GUI_FIND_AND_CHECK( cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY );
@@ -317,6 +323,7 @@ uint8_t jolt_gui_scr_digit_entry_get_hash( jolt_gui_obj_t *scr, uint8_t *hash )
     {
         /* Make sure that the scr is a screen */
         scr = jolt_gui_scr_get( scr );
+        CHECK_SCR(scr);
 
         jolt_gui_obj_t *cont_body, *digit_entry;
         cont_body   = JOLT_GUI_FIND_AND_CHECK( scr, JOLT_GUI_OBJ_ID_CONT_BODY );
@@ -365,6 +372,10 @@ double jolt_gui_scr_digit_entry_get_double( jolt_gui_obj_t *scr )
     double res = -1;
     JOLT_GUI_CTX
     {
+        /* Make sure that the scr is a screen */
+        scr = jolt_gui_scr_get( scr );
+        CHECK_SCR(scr);
+
         jolt_gui_obj_t *cont_body, *digit_entry;
         cont_body   = JOLT_GUI_FIND_AND_CHECK( scr, JOLT_GUI_OBJ_ID_CONT_BODY );
         digit_entry = JOLT_GUI_FIND_AND_CHECK( cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY );
@@ -394,6 +405,10 @@ int32_t jolt_gui_scr_digit_entry_get_int( jolt_gui_obj_t *scr )
     int32_t res = -1;
     JOLT_GUI_CTX
     {
+        /* Make sure that the scr is a screen */
+        scr = jolt_gui_scr_get( scr );
+        CHECK_SCR(scr);
+
         jolt_gui_obj_t *cont_body, *digit_entry;
         cont_body   = JOLT_GUI_FIND_AND_CHECK( scr, JOLT_GUI_OBJ_ID_CONT_BODY );
         digit_entry = JOLT_GUI_FIND_AND_CHECK( cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY );
@@ -428,6 +443,10 @@ void jolt_gui_scr_digit_entry_set_pos( jolt_gui_obj_t *scr, int8_t pos )
 {
     JOLT_GUI_CTX
     {
+        /* Make sure that the scr is a screen */
+        scr = jolt_gui_scr_get( scr );
+        CHECK_SCR(scr);
+
         jolt_gui_obj_t *cont_body, *digit_entry;
         cont_body                   = JOLT_GUI_FIND_AND_CHECK( scr, JOLT_GUI_OBJ_ID_CONT_BODY );
         digit_entry                 = JOLT_GUI_FIND_AND_CHECK( cont_body, JOLT_GUI_OBJ_ID_DIGIT_ENTRY );

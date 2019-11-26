@@ -15,6 +15,8 @@
 
 static const char TAG[] = "scr_slider";
 
+#define CHECK_SCR(x) if( JOLT_GUI_SCR_ID_SLIDER != jolt_gui_scr_id_get(x) ) abort();
+
 jolt_gui_obj_t *jolt_gui_scr_slider_get_slider( jolt_gui_obj_t *parent )
 {
     jolt_gui_obj_t *slider = NULL;
@@ -32,6 +34,10 @@ int16_t jolt_gui_scr_slider_get_value( jolt_gui_obj_t *scr )
     uint16_t val = 0;
     JOLT_GUI_CTX
     {
+        /* Make sure that the scr is a screen */
+        scr = jolt_gui_scr_get( scr );
+        CHECK_SCR(scr);
+
         jolt_gui_obj_t *slider = BREAK_IF_NULL( jolt_gui_scr_slider_get_slider( scr ) );
         val                    = lv_slider_get_value( slider );
     }
@@ -42,6 +48,10 @@ void jolt_gui_scr_slider_set_value( jolt_gui_obj_t *scr, int16_t value )
 {
     JOLT_GUI_CTX
     {
+        /* Make sure that the scr is a screen */
+        scr = jolt_gui_scr_get( scr );
+        CHECK_SCR(scr);
+
         jolt_gui_obj_t *slider = BREAK_IF_NULL( jolt_gui_scr_slider_get_slider( scr ) );
         lv_slider_set_value( slider, value, false );
     }
@@ -51,6 +61,10 @@ void jolt_gui_scr_slider_set_range( jolt_gui_obj_t *scr, int16_t min, int16_t ma
 {
     JOLT_GUI_CTX
     {
+        /* Make sure that the scr is a screen */
+        scr = jolt_gui_scr_get( scr );
+        CHECK_SCR(scr);
+
         jolt_gui_obj_t *slider = BREAK_IF_NULL( jolt_gui_scr_slider_get_slider( scr ) );
         lv_slider_set_range( slider, min, max );
     }
@@ -60,6 +74,10 @@ void jolt_gui_scr_slider_set_label( jolt_gui_obj_t *scr, const char *text )
 {
     JOLT_GUI_CTX
     {
+        /* Make sure that the scr is a screen */
+        scr = jolt_gui_scr_get( scr );
+        CHECK_SCR(scr);
+
         jolt_gui_obj_t *slider = BREAK_IF_NULL( jolt_gui_scr_slider_get_slider( scr ) );
         jolt_gui_obj_t *label  = NULL;
         label                  = JOLT_GUI_FIND_AND_CHECK( slider, JOLT_GUI_OBJ_ID_LABEL_0 );

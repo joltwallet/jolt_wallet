@@ -11,6 +11,8 @@
 
 static const char TAG[] = "scr_qr";
 
+#define CHECK_SCR(x) if( JOLT_GUI_SCR_ID_SCROLL != jolt_gui_scr_id_get(x) ) abort();
+
 typedef struct {
     lv_img_ext_t img; /*The ancestor container structure*/
     QRCode qrcode;
@@ -23,6 +25,10 @@ jolt_gui_obj_t *jolt_gui_scr_scroll_add_qr( jolt_gui_obj_t *scr, const char *dat
     jolt_gui_obj_t *img = NULL;
     JOLT_GUI_CTX
     {
+        /* Make sure that the scr is a screen */
+        scr = jolt_gui_scr_get( scr );
+        CHECK_SCR(scr);
+
         jolt_gui_obj_t *page = BREAK_IF_NULL( jolt_gui_scr_scroll_get_page( scr ) );
         img                  = BREAK_IF_NULL( lv_img_create( page, NULL ) );
 
