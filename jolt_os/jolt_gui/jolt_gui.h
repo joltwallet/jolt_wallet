@@ -227,6 +227,11 @@ void jolt_gui_obj_set_param( lv_obj_t *obj, void *param );
 
 /**
  * @brief set the event param pointer in the active element of the screen
+ *
+ * If you want to pass a parameter from a function that creates a screen
+ * to the screen's callback, you probably want to use this function.
+ *
+ * In the screen's callback, retrieve it via jolt_gui_obj_get_param
  */
 void jolt_gui_scr_set_active_param( lv_obj_t *parent, void *param );
 

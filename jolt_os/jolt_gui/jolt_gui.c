@@ -94,6 +94,7 @@ lv_res_t jolt_gui_scr_del( jolt_gui_obj_t *obj )
         jolt_gui_obj_del( parent );
         res = LV_RES_INV;
     }
+    if( res == LV_RES_OK ) { ESP_LOGE( TAG, "Failed to delete screen." ); }
     return res;
 }
 
@@ -248,7 +249,10 @@ lv_obj_t *jolt_gui_obj_cont_body_create( lv_obj_t *parent )
 
 void jolt_gui_obj_del( lv_obj_t *obj )
 {
-    if( NULL == obj ) { return; }
+    if( NULL == obj ) {
+        ESP_LOGE( TAG, "Attempted to delete a NULL object." );
+        return;
+    }
 
     ESP_LOGD( TAG, "Deleting obj %p", obj );
     JOLT_GUI_CTX { lv_obj_del( obj ); }
@@ -437,6 +441,7 @@ void jolt_gui_obj_set_event_cb( lv_obj_t *obj, lv_event_cb_t event_cb ) { lv_obj
 
 void *jolt_gui_obj_get_param( const lv_obj_t *obj ) { return lv_obj_get_user_data_ptr( obj )->param; }
 
+// TODO: Maybe make this function general purpose, like passing menu screens to jolt_gui_scr_menu_set_param
 void jolt_gui_obj_set_param( lv_obj_t *obj, void *param ) { lv_obj_get_user_data_ptr( obj )->param = param; }
 
 /*****************
