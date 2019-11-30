@@ -367,7 +367,7 @@ void app_main( void )
 #endif
 
 /* Setup Power Management */
-#if CONFIG_PM_ENABLE
+#if CONFIG_PM_ENABLE && CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ > 80
     {
         esp_err_t err;
         ESP_LOGI( TAG, "Initializing power management" );

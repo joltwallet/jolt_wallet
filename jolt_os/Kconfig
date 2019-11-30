@@ -132,7 +132,7 @@ menu "JoltOS"
             prompt "Output Decompression Buffer Size. Must be at least as big as dictionary"
             default 4096
             help
-                Default zlib requires 32KB of decompression buffer. Reducing the dictionary window to 4KB reduces compression efficiency by a percent or two, but erquires 8x less RAM.
+                Default zlib requires 32KB of decompression buffer. Reducing the dictionary window to 4KB reduces compression efficiency by a percent or two, but requires 8x less RAM.
 
         config JOLT_COMPRESSION_AUTO
             bool

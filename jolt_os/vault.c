@@ -392,7 +392,7 @@ void vault_sem_take()
         // Timed out trying to take the semaphore; reset the device
         // And let the bootloader wipe the RAM
         ESP_LOGE( TAG, "Failed taking vault semaphore." );
-        assert( 0 );
+        abort();
     }
 }
 
@@ -410,7 +410,7 @@ void vault_sem_give()
                   "Failed to give Vault semaphore. Semaphore may either not have been previously taken, or taken from "
                   "a different task than this one (%s).",
                   pcTaskGetTaskName( NULL ) );
-        assert( 0 );
+        abort();
     }
 }
 
@@ -429,8 +429,8 @@ static void vault_watchdog_task()
 
             vault_sem_take();
 
-            /* Possible race condition where watchdog was waiting to take
-             * the vault semaphore while watchdog was being reset */
+            /* Fixes possible race condition where watchdog was waiting to take
+             * the vault semaphore while watchdog was being kicked/reset */
             if( xSemaphoreTake( vault_watchdog_sem, 0 ) ) {
                 // dog was kicked at that moment, don't clear
                 return;
@@ -447,6 +447,20 @@ static void vault_watchdog_task()
             vault_sem_give();
         }
     }
+}
+
+void vault_clear()
+{
+    vault_sem_take();
+    if( vault->valid ) {
+        ESP_LOGI( TAG, "Clearing Vault." );
+        sodium_mprotect_readwrite( vault );
+        vault->valid = false;
+        sodium_memzero( &( vault->node ), sizeof( hd_node_t ) );
+        sodium_mprotect_readonly( vault );
+        ESP_LOGI( TAG, "Clearing Vault Complete." );
+    }
+    vault_sem_give();
 }
 
 bool vault_setup()
