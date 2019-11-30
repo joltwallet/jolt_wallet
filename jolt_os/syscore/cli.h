@@ -110,4 +110,13 @@ int jolt_cli_get_return();
                 jolt_gui_set_stdstream( stdin, stdout, stderr ) )                        \
     MPP_AFTER( 7, stdout = old_stdout; jolt_gui_set_stdstream( NULL, NULL, NULL ) )
 
+/**
+ * @brief Dummy context to aid debugging with JOLT_CLI_UNIT_TEST_CTX.
+ *     * Doesn't have logging disabled.
+ *     * Doesn't redirect stdout.
+ *
+ * Used for faster debugging during the creation or regression of a unit test.
+ */
+#define JOLT_CLI_UNIT_TEST_DBG_CTX( buf_size ) MPP_DECLARE( 1, char buf[buf_size] = {0} )
+
 #endif
