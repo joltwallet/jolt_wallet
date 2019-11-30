@@ -60,14 +60,11 @@ void storage_internal_stretch_init()
 /* Blocking */
 void storage_internal_stretch( uint256_t hash, int8_t *progress )
 {
-    CONFIDENTIAL uint512_t buf;
-    pbkdf2_hmac_sha512_progress( (uint8_t *)"joltstretch", 11, hash, 32, buf, sizeof( buf ), 2048, progress );
-    // fold buf in half via xor to make it 256 bit
-    for( uint8_t i = 0; i < 32; i++ ) { buf[i] ^= buf[i + 32]; }
-    memcpy( hash, buf, 32 );
-
-    /* Cleanup stretching activities */
-    sodium_memzero( buf, sizeof( buf ) );
+    /* Internal stretching doesn't really add security, so we just use a
+     * delay to simulate an external device */
+    int8_t proxy_progress;
+    if( NULL == progress ) progress = &proxy_progress;
+    for( *progress = 0; *progress < 100; ( *progress )++ ) vTaskDelay( pdMS_TO_TICKS( 10 ) );
 }
 
 bool storage_internal_exists_mnemonic()
