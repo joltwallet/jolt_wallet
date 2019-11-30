@@ -78,6 +78,8 @@ void jolt_cli_resume();
  */
 void jolt_cli_return( int val );
 
+#if UNIT_TESTING
+
 /**
  * @brief Get the latest returned value.
  *
@@ -88,35 +90,38 @@ void jolt_cli_return( int val );
  */
 int jolt_cli_get_return();
 
-#include "jolt_helpers.h"
-#include "mp.h"
+    #include "jolt_helpers.h"
+    #include "mp.h"
+    #include "unity.h"
 
-/**
- * @brief Context for unit testing command line commands.
- *
- * Creates a scope where `stdout` is redirected to static buffer `buf`.
- * Logging is also disabled within the context.
- * `stdout` is restored upon exit.
- *
- * @param[in] buf_size Size of static buffer to allocate.
- */
-#define JOLT_CLI_UNIT_TEST_CTX( buf_size )                                               \
-    MPP_DECLARE( 1, char buf[buf_size] = {0} )                                           \
-    MPP_DECLARE( 2, FILE *old_stdout = stdout )                                          \
-    MPP_BEFORE( 3, jolt_suspend_logging() )                                              \
-    MPP_AFTER( 4, jolt_resume_logging() )                                                \
-    MPP_DO_WHILE( 5, false )                                                             \
-    MPP_BEFORE( 6, stdout = fmemopen( buf, sizeof( buf ), "w" ); setbuf( stdout, NULL ); \
-                jolt_gui_set_stdstream( stdin, stdout, stderr ) )                        \
-    MPP_AFTER( 7, stdout = old_stdout; jolt_gui_set_stdstream( NULL, NULL, NULL ) )
+    /**
+     * @brief Context for unit testing command line commands.
+     *
+     * Creates a scope where `stdout` is redirected to static buffer `buf`.
+     * Logging is also disabled within the context.
+     * `stdout` is restored upon exit.
+     *
+     * @param[in] buf_size Size of static buffer to allocate.
+     */
+    #define JOLT_CLI_UNIT_TEST_CTX( buf_size )                                               \
+        MPP_DECLARE( 1, char buf[buf_size] = {0} )                                           \
+        MPP_DECLARE( 2, FILE *old_stdout = stdout )                                          \
+        MPP_BEFORE( 3, jolt_suspend_logging() )                                              \
+        MPP_AFTER( 4, jolt_resume_logging() )                                                \
+        MPP_DO_WHILE( 5, false )                                                             \
+        MPP_BEFORE( 6, stdout = fmemopen( buf, sizeof( buf ), "w" ); setbuf( stdout, NULL ); \
+                    jolt_gui_set_stdstream( stdin, stdout, stderr ) )                        \
+        MPP_AFTER( 7, stdout = old_stdout; jolt_gui_set_stdstream( NULL, NULL, NULL ) )
 
-/**
- * @brief Dummy context to aid debugging with JOLT_CLI_UNIT_TEST_CTX.
- *     * Doesn't have logging disabled.
- *     * Doesn't redirect stdout.
- *
- * Used for faster debugging during the creation or regression of a unit test.
- */
-#define JOLT_CLI_UNIT_TEST_DBG_CTX( buf_size ) MPP_DECLARE( 1, char buf[buf_size] = {0} )
+    /**
+     * @brief Dummy context to aid debugging with JOLT_CLI_UNIT_TEST_CTX.
+     *     * Doesn't have logging disabled.
+     *     * Doesn't redirect stdout.
+     *
+     * Used for faster debugging during the creation or regression of a unit test.
+     */
+    #define JOLT_CLI_UNIT_TEST_DBG_CTX( buf_size ) MPP_DECLARE( 1, char buf[buf_size] = {0} )
+
+#endif
 
 #endif

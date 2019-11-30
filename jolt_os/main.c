@@ -345,6 +345,7 @@ void app_main( void )
 
 #if UNIT_TESTING
     /* Unit Testing Console Interface */
+    (void)first_boot;
     jolt_gui_statusbar_set_icons( 0 );
     ESP_LOGI( TAG, "Running Unit Tester" );
     xTaskCreatePinnedToCore( unity_task, "unityTask", UNITY_FREERTOS_STACK_SIZE, NULL, UNITY_FREERTOS_PRIORITY, NULL,

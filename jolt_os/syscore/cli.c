@@ -204,7 +204,11 @@ void jolt_cli_return( int val )
     }
 }
 
-int jolt_cli_get_return()
+#if !UNIT_TESTING
+static
+#endif
+        int
+        jolt_cli_get_return()
 {
     int ret_val;
 
@@ -231,7 +235,6 @@ int jolt_cli_get_return()
 static void jolt_cli_dispatcher_task( void *param )
 {
     for( ;; ) {
-        int ret_val;
         jolt_cli_src_t src = {0};
 
         /* Get CLI info off of queue */
@@ -239,10 +242,10 @@ static void jolt_cli_dispatcher_task( void *param )
 
         /* Dispatch job to bg */
         ESP_LOGD( TAG, "Dispatching \"%s\" to bg", src.line );
-        jolt_bg_create( jolt_cli_process_task, &src, NULL );
+        ESP_ERROR_CHECK( jolt_bg_create( jolt_cli_process_task, &src, NULL ) );
 
         /* Block until job finished. */
-        ret_val = jolt_cli_get_return();
+        jolt_cli_get_return();
 
         /* Revert LVGL task's standard streams */
         jolt_gui_set_stdstream( NULL, NULL, NULL );
