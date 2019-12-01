@@ -148,6 +148,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( __divsi3 ),
     EXPORT_SYMBOL( __eqdf2 ),
     EXPORT_SYMBOL( __eqsf2 ),
+    EXPORT_SYMBOL( __errno ),
     EXPORT_SYMBOL( __extendsfdf2 ),
     EXPORT_SYMBOL( __ffsdi2 ),
     EXPORT_SYMBOL( __ffssi2 ),
@@ -620,7 +621,7 @@ static const void *exports[] = {
 const jolt_version_t JOLT_JELF_VERSION = { 0 };
 
 /* Dummy place holder */
-static const void *exports[487] = { 0 };
+static const void *exports[488] = { 0 };
 
 #endif
 

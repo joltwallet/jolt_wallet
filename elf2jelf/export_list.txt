@@ -22,6 +22,7 @@ __divdi3
 __divsi3
 __eqdf2
 __eqsf2
+__errno
 __extendsfdf2
 __ffsdi2
 __ffssi2
