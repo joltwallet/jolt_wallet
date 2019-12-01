@@ -78,6 +78,11 @@ void jolt_cli_resume();
  */
 void jolt_cli_return( int val );
 
+/**
+ * @brief Checks if a CLI command is in progress.
+ */
+bool jolt_cli_in_progress();
+
 #if UNIT_TESTING
 
 /**

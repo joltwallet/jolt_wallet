@@ -228,6 +228,7 @@ static
     return ret_val;
 }
 
+static bool in_progress = false;
 /**
  * @brief FreeRTOS task function that dequeues CLI lines and dispatches them
  * to the BG task for execution
@@ -242,10 +243,13 @@ static void jolt_cli_dispatcher_task( void *param )
 
         /* Dispatch job to bg */
         ESP_LOGD( TAG, "Dispatching \"%s\" to bg", src.line );
+        in_progress = true;
         ESP_ERROR_CHECK( jolt_bg_create( jolt_cli_process_task, &src, NULL ) );
 
         /* Block until job finished. */
         jolt_cli_get_return();
+
+        in_progress = false;
 
         /* Revert LVGL task's standard streams */
         jolt_gui_set_stdstream( NULL, NULL, NULL );
@@ -262,6 +266,11 @@ static void jolt_cli_dispatcher_task( void *param )
         ESP_LOGD( TAG, "Freeing src.line" );
         free( src.line );
     }
+}
+
+bool jolt_cli_in_progress()
+{
+    return in_progress;
 }
 
 /**
