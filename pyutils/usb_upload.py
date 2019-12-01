@@ -94,7 +94,7 @@ def main(args):
     consume(ser)
 
     log.info("Sending File")
-    ymodem.send([args.input,])
+    ymodem.send([args.input,], retry=60)
 
     if args.monitor:
         while(True):
