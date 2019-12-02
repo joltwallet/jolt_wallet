@@ -66,6 +66,7 @@
     #include "syscore/cli_sub.h"
     #include "syscore/filesystem.h"
     #include "syscore/https.h"
+    #include "syscore/launcher.h"
     #include "tgmath.h"
     #include "time.h"
     #include "vault.h"

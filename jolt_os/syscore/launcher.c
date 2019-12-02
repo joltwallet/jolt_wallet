@@ -60,7 +60,7 @@ static void launch_app_cache_clear()
  * use the last cached instance (unless vault has been invalidated and
  * matches derivation path)
  */
-int launch_file( const char *fn_basename, int app_argc, char **app_argv, const char *passphrase )
+int jolt_launch_file( const char *fn_basename, int app_argc, char **app_argv, const char *passphrase )
 {
     int return_code          = JOLT_LAUNCHER_ERR_UNKNOWN_FAIL;
     lv_obj_t *preloading_scr = NULL;
@@ -93,7 +93,7 @@ int launch_file( const char *fn_basename, int app_argc, char **app_argv, const c
                 /* CLI command; Skip all the loading, goto execution */
                 goto exec;
             }
-            else if( launch_in_app() ) {
+            else if( jolt_launch_in_app() ) {
                 ESP_LOGW( TAG, "App is already launched" );
                 EXIT( JOLT_LAUNCHER_ERR_ALREADY_LAUNCHED );
             }
@@ -102,7 +102,7 @@ int launch_file( const char *fn_basename, int app_argc, char **app_argv, const c
                 goto exec;
             }
         }
-        else if( launch_in_app() ) {
+        else if( jolt_launch_in_app() ) {
             ESP_LOGW( TAG, "Cannot launch a different app while in app" );
             EXIT( JOLT_LAUNCHER_ERR_IN_APP );
         }
@@ -182,7 +182,7 @@ exec:
               app_cache.ctx->header.e_coin_path );
     ESP_LOGI( TAG, "The following BIP32 Key is %d char long:%s.", strlen( app_cache.ctx->bip32_key ),
               app_cache.ctx->header.e_bip32key );
-    launch_inc_ref_ctr();
+    jolt_launch_inc_ref_ctr();
     vault_set( app_cache.ctx->header.e_coin_purpose, app_cache.ctx->header.e_coin_path,
                app_cache.ctx->header.e_bip32key, passphrase, launch_vault_fail_cb, launch_app_from_store, NULL );
 
@@ -206,7 +206,7 @@ static void launch_vault_fail_cb( void *dummy )
     ESP_LOGE( TAG, "Launching app aborted" );
     if( app_cache.argc > 0 ) { jolt_cli_return( -1 ); }
     else {
-        launch_dec_ref_ctr();
+        jolt_launch_dec_ref_ctr();
     }
 }
 
@@ -242,15 +242,15 @@ static void launch_app_cb( lv_obj_t *btn, lv_event_t event )
             app_cache.scr = NULL;
         }
         ESP_LOGD( TAG, "%s decrementing counter.", __func__ );
-        launch_dec_ref_ctr();
+        jolt_launch_dec_ref_ctr();
     }
 }
 
-bool launch_in_app() { return app_cache.ref_ctr > 0; }
+bool jolt_launch_in_app() { return app_cache.ref_ctr > 0; }
 
-char *launch_get_name() { return app_cache.name; }
+char *jolt_launch_get_name() { return app_cache.name; }
 
-void launch_inc_ref_ctr()
+void jolt_launch_inc_ref_ctr()
 {
     if( app_cache.ref_ctr == UINT8_MAX ) { ESP_LOGE( TAG, "Cannot increment reference counter." ); }
     else {
@@ -259,7 +259,7 @@ void launch_inc_ref_ctr()
     }
 }
 
-void launch_dec_ref_ctr()
+void jolt_launch_dec_ref_ctr()
 {
     if( app_cache.ref_ctr > 0 ) {
         app_cache.ref_ctr--;
@@ -272,6 +272,9 @@ void launch_dec_ref_ctr()
 
 #if UNIT_TESTING
 
-size_t launch_set_name( const char *name ) { return strlcpy( app_cache.name, name, JOLT_FS_MAX_FILENAME_BUF_LEN ); }
+size_t jolt_launch_set_name( const char *name )
+{
+    return strlcpy( app_cache.name, name, JOLT_FS_MAX_FILENAME_BUF_LEN );
+}
 
 #endif

@@ -352,3 +352,19 @@ void jolt_print_bytearray( const uint8_t *array, size_t len, bool split )
     }
     printf( "\n" );
 }
+
+int uart_printf( const char *fmt, ... )
+{
+    va_list args;
+    char *buf;
+    int n;
+
+    va_start( args, fmt );
+    n = vasprintf( &buf, fmt, args );
+    va_end( args );
+
+    if( -1 == n ) return -1;
+    uart_write_bytes( CONFIG_ESP_CONSOLE_UART_NUM, buf, n );
+    free( buf );
+    return n;
+}

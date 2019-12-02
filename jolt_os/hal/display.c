@@ -57,7 +57,7 @@ void jolt_display_print( const jolt_display_t *disp )
 
     assert( LV_VER_RES == 64 );
     assert( LV_HOR_RES_MAX == 128 );
-    printf( "\n" );
+    uart_printf( "\n" );
     char print_buf[LV_HOR_RES_MAX * 4 + 2] = {0};  // newline + null-terminator
 
     /* Fill buf_copy with non-encoded data */
@@ -101,7 +101,7 @@ void jolt_display_print( const jolt_display_t *disp )
                     strlcat( print_buf, " ", sizeof( print_buf ) );
             }
             strlcat( print_buf, "\n", sizeof( print_buf ) );
-            printf( print_buf );
+            uart_printf( print_buf );
         }
     }
 }
@@ -166,17 +166,17 @@ void jolt_display_dump( const jolt_display_t *disp )
     assert( disp->type == JOLT_DISPLAY_TYPE_SSD1306 );
 
     /* Dump to stdout */
-    printf( "\nDisplayDump (%s encoding, %d long):\n{\n", jolt_encoding_get_str( disp->encoding ), disp->len );
+    uart_printf( "\nDisplayDump (%s encoding, %d long):\n{\n", jolt_encoding_get_str( disp->encoding ), disp->len );
     for( int i = 0; i < disp->len; i++ ) {
-        printf( "0x%02X", disp->data[i] );
+        uart_printf( "0x%02X", disp->data[i] );
         if( i == disp->len - 1 )
-            printf( "\n" );
+            uart_printf( "\n" );
         else if( 0 == ( i + 1 ) % 16 )
-            printf( ",\n" );
+            uart_printf( ",\n" );
         else
-            printf( ", " );
+            uart_printf( ", " );
     }
-    printf( "\n}\n" );
+    uart_printf( "\n}\n" );
 }
 
 void jolt_display_free( jolt_display_t *disp )

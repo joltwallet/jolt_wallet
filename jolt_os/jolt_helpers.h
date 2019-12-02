@@ -286,6 +286,11 @@ void jolt_consume_mem_free( void **consumed );
  */
 void jolt_print_bytearray( const uint8_t *array, size_t len, bool split );
 
+/**
+ * @brief printf that always goes to UART out no matter what.
+ */
+int uart_printf( const char *fmt, ... );
+
 #include "mp.h"
 #define JOLT_NO_LOGGING_CTX                 \
     MPP_BEFORE( 1, jolt_suspend_logging() ) \

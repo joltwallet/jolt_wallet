@@ -461,7 +461,7 @@ void TEST_ASSERT_EQUAL_DISPLAY_MESSAGE( const jolt_display_t *expected, const jo
     jolt_display_t actual_proxy;
 
     if( NULL == expected ) {
-        printf( "\nNo Expected data provided.\n" );
+        uart_printf( "\nNo Expected data provided.\n" );
         goto dump;
     }
     else if( NULL == actual ) {
@@ -474,7 +474,7 @@ void TEST_ASSERT_EQUAL_DISPLAY_MESSAGE( const jolt_display_t *expected, const jo
     }
 
     if( expected->type != actual->type ) {
-        printf( "\nDisplay type mismatch.\n" );
+        uart_printf( "\nDisplay type mismatch.\n" );
         goto dump;
     }
 
@@ -486,41 +486,41 @@ void TEST_ASSERT_EQUAL_DISPLAY_MESSAGE( const jolt_display_t *expected, const jo
     decoder2   = jolt_encoding_get_decoder( actual->encoding );
     decode_len = decoder1( buf1, sizeof( buf1 ), expected->data, expected->len );
     if( JOLT_DISPLAY_BUF_SIZE != decode_len ) {
-        printf( "\nExpected Data didn't decode to correct length ( %d expected vs %d actual ).\n",
-                JOLT_DISPLAY_BUF_SIZE, decode_len );
+        uart_printf( "\nExpected Data didn't decode to correct length ( %d expected vs %d actual ).\n",
+                     JOLT_DISPLAY_BUF_SIZE, decode_len );
         goto dump;
     }
     decode_len = decoder2( buf2, sizeof( buf2 ), actual->data, actual->len );
     if( JOLT_DISPLAY_BUF_SIZE != decode_len ) {
-        printf( "\nActual Data didn't decode to correct length ( %d expected vs %d actual ).\n", JOLT_DISPLAY_BUF_SIZE,
-                decode_len );
+        uart_printf( "\nActual Data didn't decode to correct length ( %d expected vs %d actual ).\n",
+                     JOLT_DISPLAY_BUF_SIZE, decode_len );
         goto dump;
     }
 
     if( 0 != memcmp( buf1, buf2, JOLT_DISPLAY_BUF_SIZE ) ) {
-        printf( "\nDisplay buffer mismatch.\n" );
+        uart_printf( "\nDisplay buffer mismatch.\n" );
         goto dump;
     }
 
     return;
 
 dump:
-    printf( "\nExpected:\n" );
+    uart_printf( "\nExpected:\n" );
     if( expected )
         jolt_display_print( expected );
     else
-        printf( "NULL\n" );
-    printf( "\nActual:\n" );
+        uart_printf( "NULL\n" );
+    uart_printf( "\nActual:\n" );
     if( actual )
         jolt_display_print( actual );
     else
-        printf( "NULL\n" );
-    printf( "\nDump actual:\n" );
+        uart_printf( "NULL\n" );
+    uart_printf( "\nDump actual:\n" );
     if( actual )
         jolt_display_dump( actual );
     else
-        printf( "NULL\n" );
-    printf( "\n" );
+        uart_printf( "NULL\n" );
+    uart_printf( "\n" );
 
     if( needs_free ) jolt_display_free( &actual_proxy );
     if( msg )

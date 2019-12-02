@@ -79,7 +79,7 @@ int jolt_cmd_app_key( int argc, char **argv )
     ESP_ERROR_CHECK( sodium_hex2bin( app_key, sizeof( app_key ), argv[1], 64, NULL, NULL, NULL ) );
 
     /* Make sure we are not in an app */
-    if( launch_in_app() ) {
+    if( jolt_launch_in_app() ) {
         printf( "Cannot set app key while an app is running.\n" );
         return_code = 3;
         goto exit;

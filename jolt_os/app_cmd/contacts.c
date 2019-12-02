@@ -1,10 +1,13 @@
 #include "contacts.h"
 #include "jolt_gui/jolt_gui.h"
 #include "json_config.h"
+#include "syscore/cli.h"
 #include "syscore/cli_helpers.h"
+#include "syscore/launcher.h"
 
-#define CONFIG_JOLT_CONTACT_MAX      10
-#define CONFIG_JOLT_CONTACT_NAME_LEN 128
+#define CONFIG_JOLT_CONTACT_MAX         10
+#define CONFIG_JOLT_CONTACT_NAME_LEN    128
+#define CONFIG_JOLT_CONTACT_ADDRESS_LEN 192
 
 #define CJSON_ERROR_CHECK( x )         \
     if( NULL == ( x ) ) {              \
@@ -18,7 +21,31 @@ enum {
     JOLT_APP_CMD_CONTACT_NOT_IMPLEMENTED,
     JOLT_APP_CMD_CONTACT_INVALID_ARGS,
     JOLT_APP_CMD_CONTACT_OOM,
+    JOLT_APP_CMD_CONTACT_DECLINED,
 };
+
+// TODO: use get_str
+static const char TITLE[]                = "%s Contacts";
+static const char confirmation_add_str[] = "Add contact:\nName: %s\nAddress:";
+// static const char confirmation_update_str[] = "Update contact %d to:\nName: %s\nAddress:";
+
+static void confirmation_cb( jolt_gui_obj_t *obj, jolt_gui_event_t event )
+{
+    if( jolt_gui_event.short_clicked == event ) {
+        int rc;
+        cJSON *json = jolt_gui_scr_get_active_param( obj );
+        rc          = jolt_json_write_app( json );
+        cJSON_Delete( json );
+        jolt_gui_scr_del( obj );
+        jolt_cli_return( rc );
+    }
+    else if( jolt_gui_event.cancel == event ) {
+        cJSON *json = jolt_gui_scr_get_active_param( obj );
+        cJSON_Delete( json );
+        jolt_gui_scr_del( obj );
+        jolt_cli_return( JOLT_APP_CMD_CONTACT_DECLINED );
+    }
+}
 
 /**
  * @brief Read in json or create one if it doesn't exist.
@@ -149,8 +176,20 @@ static int contact_add( int argc, const char **argv )
     CJSON_ERROR_CHECK( cJSON_AddStringToObject( contact, "name", name ) );
     CJSON_ERROR_CHECK( cJSON_AddStringToObject( contact, "address", address ) );
 
-    /* Save */
-    rc = jolt_json_write_app( json );
+    {
+        /* Create Confirmation Screen */
+        char body_buf[128 + CONFIG_JOLT_CONTACT_NAME_LEN];
+        char title_buf[140];
+        snprintf( title_buf, sizeof( title_buf ), TITLE, jolt_launch_get_name() );
+        snprintf( body_buf, sizeof( body_buf ), confirmation_add_str, name );
+        jolt_gui_obj_t *scr = NULL;
+        scr                 = jolt_gui_scr_text_create( title_buf, body_buf );
+        jolt_gui_scr_scroll_add_monospace_text( scr, address );
+        jolt_gui_scr_set_event_cb( scr, confirmation_cb );
+        jolt_gui_scr_set_active_param( scr, json );
+    }
+
+    return JOLT_CLI_NON_BLOCKING;
 
 exit:
     if( NULL != json ) cJSON_Delete( json );

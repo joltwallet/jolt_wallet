@@ -566,6 +566,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( jolt_json_del_app ),
     EXPORT_SYMBOL( jolt_json_read_app ),
     EXPORT_SYMBOL( jolt_json_write_app ),
+    EXPORT_SYMBOL( jolt_launch_get_name ),
     EXPORT_SYMBOL( jolt_network_post ),
     EXPORT_SYMBOL( jolt_random ),
     EXPORT_SYMBOL( jolt_random_range ),
@@ -621,7 +622,7 @@ static const void *exports[] = {
 const jolt_version_t JOLT_JELF_VERSION = { 0 };
 
 /* Dummy place holder */
-static const void *exports[488] = { 0 };
+static const void *exports[489] = { 0 };
 
 #endif
 

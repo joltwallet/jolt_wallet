@@ -198,7 +198,7 @@ void jolt_cli_return( int val )
     if( JOLT_CLI_NON_BLOCKING != val ) {
         if( 0 != val ) { printf( "{\"error\":%d}\n", val ); }
         if( app_call ) {
-            launch_dec_ref_ctr();
+            jolt_launch_dec_ref_ctr();
             app_call = false;
         }
     }
@@ -339,7 +339,7 @@ static int32_t jolt_cli_process_task( jolt_bg_job_t *bg_job )
             }
 
             /* Launch application, only passing the non-launching arguments */
-            if( launch_file( argv[0], argc - i, &argv[i], passphrase ) ) {
+            if( jolt_launch_file( argv[0], argc - i, &argv[i], passphrase ) ) {
                 printf( "App failed to launch\n" );
                 goto exit;
             }

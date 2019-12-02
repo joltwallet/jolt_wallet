@@ -83,7 +83,7 @@ cJSON *jolt_json_read_app()
 {
     char *name = NULL, *path = NULL;
     cJSON *json = NULL;
-    if( NULL == ( name = launch_get_name() ) ) goto exit;
+    if( NULL == ( name = jolt_launch_get_name() ) ) goto exit;
     if( NULL == ( path = jolt_fs_parse( name, EXT ) ) ) goto exit;
     json = jolt_json_read( path );
 
@@ -96,7 +96,7 @@ bool jolt_json_del_app()
 {
     bool res   = false;
     char *name = NULL, *path = NULL;
-    if( NULL == ( name = launch_get_name() ) ) goto exit;
+    if( NULL == ( name = jolt_launch_get_name() ) ) goto exit;
     if( NULL == ( path = jolt_fs_parse( name, EXT ) ) ) goto exit;
 
     if( jolt_fs_exists( path ) ) { remove( path ); }
@@ -155,7 +155,7 @@ int jolt_json_write_app( const cJSON *json )
 {
     char *name = NULL, *path = NULL;
     int return_code;
-    if( NULL == ( name = launch_get_name() ) ) EXIT( -1 );
+    if( NULL == ( name = jolt_launch_get_name() ) ) EXIT( -1 );
     if( NULL == ( path = jolt_fs_parse( name, EXT ) ) ) EXIT( -2 );
     return_code = jolt_json_write( path, json );
 
