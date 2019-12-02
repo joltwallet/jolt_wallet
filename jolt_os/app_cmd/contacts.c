@@ -25,10 +25,19 @@ enum {
 };
 
 // TODO: use get_str
-static const char TITLE[]                = "%s Contacts";
-static const char confirmation_add_str[] = "Add contact:\nName: %s\nAddress:";
+static const char TITLE[]                   = "%s Contacts";
+static const char confirmation_add_str[]    = "Add contact:\nName: %s\nAddress:";
+static const char confirmation_delete_str[] = "Delete contact:\nName: %s\nAddress:";
 // static const char confirmation_update_str[] = "Update contact %d to:\nName: %s\nAddress:";
 
+/**
+ * @brief callback for the confirmation screens.
+ *
+ * Saves the json stored in the gui active_parameter on ENTER
+ * Doesn't save on BACK
+ *
+ * In either case, free the cJSON object and delete the screen
+ */
 static void confirmation_cb( jolt_gui_obj_t *obj, jolt_gui_event_t event )
 {
     if( jolt_gui_event.short_clicked == event ) {
@@ -137,16 +146,32 @@ static int contact_delete( int argc, const char **argv )
 
     /* Read in config */
     CJSON_ERROR_CHECK( json = read_config() );
-    CJSON_ERROR_CHECK( contacts = cJSON_DetachItemFromObject( json, "contacts" ) );
+    CJSON_ERROR_CHECK( contacts = cJSON_GetObjectItemCaseSensitive( json, "contacts" ) );
 
     {
-        cJSON *e;
-        CJSON_ERROR_CHECK( e = cJSON_GetArrayItem( contacts, index ) );
+        char *name, *address;
+        cJSON *e, *name_obj, *address_obj;
+        CJSON_ERROR_CHECK( e = cJSON_DetachItemFromArray( contacts, index ) );
+        CJSON_ERROR_CHECK( name_obj = cJSON_GetObjectItemCaseSensitive( e, "name" ) );
+        CJSON_ERROR_CHECK( address_obj = cJSON_GetObjectItemCaseSensitive( e, "address" ) );
+        name    = cJSON_GetStringValue( name_obj );
+        address = cJSON_GetStringValue( address_obj );
+
+        /* Create Confirmation Screen */
+        char body_buf[128 + CONFIG_JOLT_CONTACT_NAME_LEN];
+        char title_buf[140];
+        snprintf( title_buf, sizeof( title_buf ), TITLE, jolt_launch_get_name() );
+        snprintf( body_buf, sizeof( body_buf ), confirmation_delete_str, name );
+        jolt_gui_obj_t *scr = NULL;
+        scr                 = jolt_gui_scr_text_create( title_buf, body_buf );
+        jolt_gui_scr_scroll_add_monospace_text( scr, address );
+        jolt_gui_scr_set_event_cb( scr, confirmation_cb );
+        jolt_gui_scr_set_active_param( scr, json );
+
         cJSON_Delete( e );
     }
 
-    /* Save */
-    rc = jolt_json_write_app( json );
+    return JOLT_CLI_NON_BLOCKING;
 
 exit:
     if( NULL != json ) cJSON_Delete( json );
