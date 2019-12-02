@@ -268,10 +268,7 @@ static void jolt_cli_dispatcher_task( void *param )
     }
 }
 
-bool jolt_cli_in_progress()
-{
-    return in_progress;
-}
+bool jolt_cli_in_progress() { return in_progress; }
 
 /**
  * @brief Executes the command string in the bg task.

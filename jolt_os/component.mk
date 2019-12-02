@@ -5,6 +5,7 @@
 COMPONENT_NAME := jolt_os
 
 COMPONENT_SRCDIRS := . \
+	app_cmd/ \
 	crypto/ \
 	crypto/algorithms \
     hal \

@@ -269,3 +269,9 @@ void launch_dec_ref_ctr()
         ESP_LOGE( TAG, "Reference Counter is 0; cannot decrement" );
     }
 }
+
+#if UNIT_TESTING
+
+size_t launch_set_name( const char *name ) { return strlcpy( app_cache.name, name, JOLT_FS_MAX_FILENAME_BUF_LEN ); }
+
+#endif

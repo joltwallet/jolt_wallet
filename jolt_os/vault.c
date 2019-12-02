@@ -569,11 +569,10 @@ esp_err_t vault_set( uint32_t purpose, uint32_t coin_type, const char *bip32_key
 void vault_set_unit_test( const char *str, const char *bip32_key )
 {
 #if UNIT_TESTING
-    esp_err_t err;
     uint32_t purpose, coin_type;
     if( 0 != vault_str_to_purpose_type( str, &purpose, &coin_type ) )
         TEST_FAIL_MESSAGE( "Failed to parse derivation path string" );
-    err = vault_set( purpose, coin_type, bip32_key, EMPTY_STR, NULL, NULL, NULL );
+    vault_set( purpose, coin_type, bip32_key, EMPTY_STR, NULL, NULL, NULL );
 
     taskYIELD();
 

@@ -12,7 +12,9 @@
 #ifndef __JOLT_SYSCORE_LAUNCHER_H__
 #define __JOLT_SYSCORE_LAUNCHER_H__
 
+#include "sdkconfig.h"
 #include "stdbool.h"
+#include "stddef.h"
 
 enum {
     JOLT_LAUNCHER_ERR_OK               = 0,
@@ -67,5 +69,15 @@ void launch_inc_ref_ctr();
  * @brief Decrement the application reference counter.
  */
 void launch_dec_ref_ctr();
+
+#if UNIT_TESTING
+
+/**
+ * @brief Set the name in the cache.
+ * @param[in] name Name to set.
+ */
+size_t launch_set_name( const char *name );
+
+#endif
 
 #endif

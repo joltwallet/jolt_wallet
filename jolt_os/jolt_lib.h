@@ -16,6 +16,7 @@
 
 #if ESP_PLATFORM
 
+    #include "app_cmd/contacts.h"
     #include "assert.h"
     #include "bipmnemonic.h"
     #include "cJSON.h"
