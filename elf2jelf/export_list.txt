@@ -356,6 +356,7 @@ hd_node_copy
 hd_node_iterate
 heap_caps_calloc
 heap_caps_check_integrity_all
+jolt_app_cmd_contact
 jolt_cli_get_line
 jolt_cli_return
 jolt_cli_sub_cmd_free

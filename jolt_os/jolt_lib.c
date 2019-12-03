@@ -482,6 +482,7 @@ static const void *exports[] = {
     EXPORT_SYMBOL( hd_node_iterate ),
     EXPORT_SYMBOL( heap_caps_calloc ),
     EXPORT_SYMBOL( heap_caps_check_integrity_all ),
+    EXPORT_SYMBOL( jolt_app_cmd_contact ),
     EXPORT_SYMBOL( jolt_cli_get_line ),
     EXPORT_SYMBOL( jolt_cli_return ),
     EXPORT_SYMBOL( jolt_cli_sub_cmd_free ),
@@ -622,7 +623,7 @@ static const void *exports[] = {
 const jolt_version_t JOLT_JELF_VERSION = { 0 };
 
 /* Dummy place holder */
-static const void *exports[489] = { 0 };
+static const void *exports[490] = { 0 };
 
 #endif
 
