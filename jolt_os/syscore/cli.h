@@ -111,12 +111,10 @@ int jolt_cli_get_return();
     #define JOLT_CLI_UNIT_TEST_CTX( buf_size )                                               \
         MPP_DECLARE( 1, char buf[buf_size] = {0} )                                           \
         MPP_DECLARE( 2, FILE *old_stdout = stdout )                                          \
-        MPP_BEFORE( 3, jolt_suspend_logging() )                                              \
-        MPP_AFTER( 4, jolt_resume_logging() )                                                \
-        MPP_DO_WHILE( 5, false )                                                             \
-        MPP_BEFORE( 6, stdout = fmemopen( buf, sizeof( buf ), "w" ); setbuf( stdout, NULL ); \
+        MPP_DO_WHILE( 3, false )                                                             \
+        MPP_BEFORE( 4, stdout = fmemopen( buf, sizeof( buf ), "w" ); setbuf( stdout, NULL ); \
                     jolt_gui_set_stdstream( stdin, stdout, stderr ) )                        \
-        MPP_AFTER( 7, stdout = old_stdout; jolt_gui_set_stdstream( NULL, NULL, NULL ) )
+        MPP_AFTER( 5, stdout = old_stdout; jolt_gui_set_stdstream( NULL, NULL, NULL ) )
 
     /**
      * @brief Dummy context to aid debugging with JOLT_CLI_UNIT_TEST_CTX.

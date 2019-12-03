@@ -15,14 +15,6 @@
         goto exit;                     \
     }
 
-enum {
-    JOLT_APP_CMD_CONTACT_ERROR = -1,
-    JOLT_APP_CMD_CONTACT_OK    = 0,
-    JOLT_APP_CMD_CONTACT_NOT_IMPLEMENTED,
-    JOLT_APP_CMD_CONTACT_INVALID_ARGS,
-    JOLT_APP_CMD_CONTACT_OOM,
-    JOLT_APP_CMD_CONTACT_DECLINED,
-};
 
 // TODO: use get_str
 static const char TITLE[]                   = "%s Contacts";
