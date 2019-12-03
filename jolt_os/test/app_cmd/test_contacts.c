@@ -12,7 +12,7 @@ TEST_CASE( "general contact test", MODULE_NAME )
     /* Standard Usage, first contact */
     JOLT_CLI_UNIT_TEST_CTX( 4096 )
     {
-        const char *argv[] = {"contact", "add", "Bob Jones", "crypto_address"};
+        char *argv[] = {"contact", "add", "Bob Jones", "crypto_address"};
         TEST_ASSERT_EQUAL_INT( JOLT_CLI_NON_BLOCKING, jolt_app_cmd_contact( argcount( argv ), argv ) );
         vTaskDelay( pdMS_TO_TICKS( 50 ) );
 
@@ -73,7 +73,7 @@ TEST_CASE( "general contact test", MODULE_NAME )
     /* Standard Usage, second contact */
     JOLT_CLI_UNIT_TEST_CTX( 4096 )
     {
-        const char *argv[] = {"contact", "add", "Madam MeowMeow", "Some arbitrary crypto address"};
+        char *argv[] = {"contact", "add", "Madam MeowMeow", "Some arbitrary crypto address"};
         TEST_ASSERT_EQUAL_INT( JOLT_CLI_NON_BLOCKING, jolt_app_cmd_contact( argcount( argv ), argv ) );
         vTaskDelay( pdMS_TO_TICKS( 50 ) );
 
@@ -149,7 +149,7 @@ TEST_CASE( "general contact test", MODULE_NAME )
     /* User declines an Add */
     JOLT_CLI_UNIT_TEST_CTX( 4096 )
     {
-        const char *argv[] = {"contact", "add", "Madam MeowMeow", "Some arbitrary crypto address"};
+        char *argv[] = {"contact", "add", "Madam MeowMeow", "Some arbitrary crypto address"};
         TEST_ASSERT_EQUAL_INT( JOLT_CLI_NON_BLOCKING, jolt_app_cmd_contact( argcount( argv ), argv ) );
         vTaskDelay( pdMS_TO_TICKS( 50 ) );
 
@@ -225,14 +225,14 @@ TEST_CASE( "general contact test", MODULE_NAME )
     /* Print out the current contact book */
     JOLT_CLI_UNIT_TEST_CTX( 4096 )
     {
-        const char *argv[] = {"contact", "read"};
+        char *argv[] = {"contact", "read"};
         TEST_ASSERT_EQUAL_INT( 0, jolt_app_cmd_contact( argcount( argv ), argv ) );
     }
 
     /* Update the first contact */
     JOLT_CLI_UNIT_TEST_CTX( 4096 )
     {
-        const char *argv[] = {"contact", "update", "0", "Finn Mertens", "dosh"};
+        char *argv[] = {"contact", "update", "0", "Finn Mertens", "dosh"};
         TEST_ASSERT_EQUAL_INT( JOLT_CLI_NON_BLOCKING, jolt_app_cmd_contact( argcount( argv ), argv ) );
         vTaskDelay( pdMS_TO_TICKS( 50 ) );
 
@@ -302,7 +302,7 @@ TEST_CASE( "general contact test", MODULE_NAME )
     /* Delete first contact */
     JOLT_CLI_UNIT_TEST_CTX( 4096 )
     {
-        const char *argv[] = {"contact", "delete", "0"};
+        char *argv[] = {"contact", "delete", "0"};
         TEST_ASSERT_EQUAL_INT( JOLT_CLI_NON_BLOCKING, jolt_app_cmd_contact( argcount( argv ), argv ) );
         vTaskDelay( pdMS_TO_TICKS( 50 ) );
 

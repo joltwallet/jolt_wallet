@@ -13,6 +13,6 @@ enum {
 /**
  *
  */
-int jolt_app_cmd_contact( int argc, const char **argv );
+int jolt_app_cmd_contact( int argc, char **argv );
 
 #endif

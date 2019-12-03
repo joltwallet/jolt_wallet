@@ -78,7 +78,7 @@ exit:
     return NULL;
 }
 
-static int contact_read( int argc, const char **argv )
+static int contact_read( int argc, char **argv )
 {
     int rc;
     cJSON *json = NULL, *contacts, *payload = NULL;
@@ -109,7 +109,7 @@ exit:
     return rc;
 }
 
-static int contact_delete( int argc, const char **argv )
+static int contact_delete( int argc, char **argv )
 {
     int rc;
     int index;
@@ -117,7 +117,7 @@ static int contact_delete( int argc, const char **argv )
 
     /* Argument Validation */
     {
-        const char *index_str;
+        char *index_str;
         char *endptr;
         if( !console_check_equal_argc( argc, 3 ) ) {
             rc = JOLT_APP_CMD_CONTACT_INVALID_ARGS;
@@ -170,14 +170,14 @@ exit:
     return rc;
 }
 
-static int contact_add( int argc, const char **argv )
+static int contact_add( int argc, char **argv )
 {
     int rc;
     cJSON *json    = NULL, *contacts;
     cJSON *contact = NULL;
 
     /* Argument Validation */
-    const char *name, *address;
+    char *name, *address;
     if( !console_check_equal_argc( argc, 4 ) ) {
         rc = JOLT_APP_CMD_CONTACT_INVALID_ARGS;
         goto exit;
@@ -213,14 +213,14 @@ exit:
     return rc;
 }
 
-static int contact_update( int argc, const char **argv )
+static int contact_update( int argc, char **argv )
 {
     int rc;
     cJSON *json = NULL, *contacts;
 
     /* Argument Validation */
     int index;
-    const char *index_str, *name, *address;
+    char *index_str, *name, *address;
     if( !console_check_equal_argc( argc, 5 ) ) {
         rc = JOLT_APP_CMD_CONTACT_INVALID_ARGS;
         goto exit;
@@ -280,10 +280,10 @@ exit:
     return rc;
 }
 
-static int contact_move( int argc, const char **argv )
+static int contact_move( int argc, char **argv )
 {
     /* Argument Validation */
-    const char *src_str, *dst_str;
+    char *src_str, *dst_str;
     int src, dst;
     if( !console_check_equal_argc( argc, 4 ) ) return JOLT_APP_CMD_CONTACT_INVALID_ARGS;
     src_str = argv[2];
@@ -302,7 +302,7 @@ exit:
     return rc;
 }
 
-int jolt_app_cmd_contact( int argc, const char **argv )
+int jolt_app_cmd_contact( int argc, char **argv )
 {
     /* Argument Verification */
     if( !console_check_range_argc( argc, 2, 5 ) ) { return 1; }
