@@ -227,6 +227,9 @@ TEST_CASE( "general contact test", MODULE_NAME )
     {
         char *argv[] = {"contact", "read"};
         TEST_ASSERT_EQUAL_INT( 0, jolt_app_cmd_contact( argcount( argv ), argv ) );
+        TEST_ASSERT_EQUAL_STRING( "{\"contacts\":[{\"name\":\"Bob Jones\",\"address\":\"crypto_address\"},"
+                                  "{\"name\":\"Madam MeowMeow\",\"address\":\"Some arbitrary crypto address\"}]}",
+                                  buf );
     }
 
     /* Update the first contact */

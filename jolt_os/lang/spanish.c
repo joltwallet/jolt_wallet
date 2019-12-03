@@ -96,6 +96,12 @@ const char *jolt_lang_spanish[JOLT_TEXT_LAST_STR] = {
         "Primera puesta en marcha",
         "Bienvenido a Jolt, haz una copia de seguridad de la siguiente mnemónica secreta.",
 
+        /* App Cmd Contact Book */
+        "%s Directorio",
+        "Agregar contacto:\nNombre: %s\nDirección:",
+        "Actualizar contacto %s a:\nNombre: %s\nDirección:",
+        "Borrar contacto:\nNombre: %s\nDirección:",
+
         /* Misc */
         "...",
 };

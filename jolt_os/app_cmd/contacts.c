@@ -1,6 +1,8 @@
 #include "contacts.h"
+#include "errno.h"
 #include "jolt_gui/jolt_gui.h"
 #include "json_config.h"
+#include "lang/lang.h"
 #include "syscore/cli.h"
 #include "syscore/cli_helpers.h"
 #include "syscore/launcher.h"
@@ -15,12 +17,7 @@
         goto exit;                     \
     }
 
-// TODO: use get_str
-static const char TITLE[]                   = "%s Contacts";
-static const char confirmation_add_str[]    = "Add contact:\nName: %s\nAddress:";
-static const char confirmation_delete_str[] = "Delete contact:\nName: %s\nAddress:";
-static const char confirmation_update_str[] = "Update contact %s to:\nName: %s\nAddress:";
-// static const char confirmation_update_str[] = "Update contact %d to:\nName: %s\nAddress:";
+static const char TAG[] = "contacts";
 
 /**
  * @brief callback for the confirmation screens.
@@ -152,8 +149,8 @@ static int contact_delete( int argc, char **argv )
         /* Create Confirmation Screen */
         char body_buf[128 + CONFIG_JOLT_CONTACT_NAME_LEN];
         char title_buf[140];
-        snprintf( title_buf, sizeof( title_buf ), TITLE, jolt_launch_get_name() );
-        snprintf( body_buf, sizeof( body_buf ), confirmation_delete_str, name );
+        snprintf( title_buf, sizeof( title_buf ), gettext( JOLT_TEXT_APP_CMD_CONTACT_TITLE ), jolt_launch_get_name() );
+        snprintf( body_buf, sizeof( body_buf ), gettext( JOLT_TEXT_APP_CMD_CONTACT_DELETE ), name );
         jolt_gui_obj_t *scr = NULL;
         scr                 = jolt_gui_scr_text_create( title_buf, body_buf );
         jolt_gui_scr_scroll_add_monospace_text( scr, address );
@@ -185,6 +182,17 @@ static int contact_add( int argc, char **argv )
     name    = argv[2];
     address = argv[3];
 
+    if( strlen( name ) >= CONFIG_JOLT_CONTACT_NAME_LEN ) {
+        rc = JOLT_APP_CMD_CONTACT_INVALID_ARGS;
+        ESP_LOGE( TAG, "Contact name too long." );
+        goto exit;
+    }
+    if( strlen( address ) >= CONFIG_JOLT_CONTACT_ADDRESS_LEN ) {
+        rc = JOLT_APP_CMD_CONTACT_INVALID_ARGS;
+        ESP_LOGE( TAG, "Contact address too long." );
+        goto exit;
+    }
+
     /* Read in config and add entry */
     CJSON_ERROR_CHECK( json = read_config() );
     CJSON_ERROR_CHECK( contacts = cJSON_GetObjectItemCaseSensitive( json, "contacts" ) );
@@ -197,8 +205,8 @@ static int contact_add( int argc, char **argv )
         /* Create Confirmation Screen */
         char body_buf[128 + CONFIG_JOLT_CONTACT_NAME_LEN];
         char title_buf[140];
-        snprintf( title_buf, sizeof( title_buf ), TITLE, jolt_launch_get_name() );
-        snprintf( body_buf, sizeof( body_buf ), confirmation_add_str, name );
+        snprintf( title_buf, sizeof( title_buf ), gettext( JOLT_TEXT_APP_CMD_CONTACT_TITLE ), jolt_launch_get_name() );
+        snprintf( body_buf, sizeof( body_buf ), gettext( JOLT_TEXT_APP_CMD_CONTACT_ADD ), name );
         jolt_gui_obj_t *scr = NULL;
         scr                 = jolt_gui_scr_text_create( title_buf, body_buf );
         jolt_gui_scr_scroll_add_monospace_text( scr, address );
@@ -243,6 +251,17 @@ static int contact_update( int argc, char **argv )
         }
     }
 
+    if( strlen( name ) >= CONFIG_JOLT_CONTACT_NAME_LEN ) {
+        rc = JOLT_APP_CMD_CONTACT_INVALID_ARGS;
+        ESP_LOGE( TAG, "Contact name too long." );
+        goto exit;
+    }
+    if( strlen( address ) >= CONFIG_JOLT_CONTACT_ADDRESS_LEN ) {
+        rc = JOLT_APP_CMD_CONTACT_INVALID_ARGS;
+        ESP_LOGE( TAG, "Contact address too long." );
+        goto exit;
+    }
+
     /* Read in config */
     CJSON_ERROR_CHECK( json = read_config() );
     CJSON_ERROR_CHECK( contacts = cJSON_GetObjectItemCaseSensitive( json, "contacts" ) );
@@ -261,8 +280,8 @@ static int contact_update( int argc, char **argv )
         /* Create Confirmation Screen */
         char body_buf[128 + 2 * CONFIG_JOLT_CONTACT_NAME_LEN];
         char title_buf[140];
-        snprintf( title_buf, sizeof( title_buf ), TITLE, jolt_launch_get_name() );
-        snprintf( body_buf, sizeof( body_buf ), confirmation_update_str, old_name, name );
+        snprintf( title_buf, sizeof( title_buf ), gettext( JOLT_TEXT_APP_CMD_CONTACT_TITLE ), jolt_launch_get_name() );
+        snprintf( body_buf, sizeof( body_buf ), gettext( JOLT_TEXT_APP_CMD_CONTACT_UPDATE ), old_name, name );
         jolt_gui_obj_t *scr = NULL;
         scr                 = jolt_gui_scr_text_create( title_buf, body_buf );
         jolt_gui_scr_scroll_add_monospace_text( scr, address );
@@ -280,6 +299,7 @@ exit:
     return rc;
 }
 
+#if 0
 static int contact_move( int argc, char **argv )
 {
     /* Argument Validation */
@@ -301,6 +321,7 @@ exit:
     if( NULL != json ) cJSON_Delete( json );
     return rc;
 }
+#endif
 
 int jolt_app_cmd_contact( int argc, char **argv )
 {
@@ -319,5 +340,5 @@ int jolt_app_cmd_contact( int argc, char **argv )
         return contact_update( argc, argv );
     }
 
-    return JOLT_APP_CMD_CONTACT_NOT_IMPLEMENTED;
+    return JOLT_APP_CMD_CONTACT_INVALID_ARGS;
 }

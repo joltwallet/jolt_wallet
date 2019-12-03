@@ -93,7 +93,13 @@ const char *jolt_lang_english[JOLT_TEXT_LAST_STR] = {
         "Pin Mismatch! Please try again.",
         "Write Down Mnemonic!",
         "First Startup",
-        "Welcome to Jolt, please backup the following secret mnemonic."
+        "Welcome to Jolt, please backup the following secret mnemonic.",
+
+        /* App Cmd Contact Book */
+        "%s Contacts",
+        "Add contact:\nName: %s\nAddress:",
+        "Update contact %s to:\nName: %s\nAddress:",
+        "Delete contact:\nName: %s\nAddress:",
 
         /* Misc */
         "...",
