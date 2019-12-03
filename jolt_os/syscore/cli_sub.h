@@ -2,6 +2,10 @@
  * @file cli_sub.h
  * @brief Interprets the Bluetooth and UART CLI.
  * @author Brian Pugh
+ *
+ * General Notes:
+ *     * Applications (both gui and cli invocations) are always executed in the
+ *       BG task.
  */
 
 /* Jolt Wallet - Open Source Cryptocurrency Hardware Wallet
@@ -38,6 +42,7 @@ int jolt_cli_sub_cmd_register( jolt_cli_sub_t *subconsole, esp_console_cmd_t *cm
 
 /**
  * @brief execute the cmd.
+ *
  * @param[in] subconsole Subconsole object
  * @param argc
  * @return Command's return code. Returns -100 if command is not found.

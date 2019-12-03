@@ -74,9 +74,9 @@ int jolt_cli_sub_cmd_run( jolt_cli_sub_t *subconsole, uint8_t argc, const char *
 
         while( current ) {
             if( 0 == strcmp( argv[0], current->cmd.command ) ) {
-                // todo: shuttle this to as a bg job
-                // jolt_bg_create( subconsole_execute, void *param, lv_obj_t *scr);
-                return ( current->cmd.func )( argc, (char **)argv );
+                int rc;
+                rc = ( current->cmd.func )( argc, (char **)argv );
+                return rc;
             }
             current = current->next;
         }

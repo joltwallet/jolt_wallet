@@ -103,7 +103,6 @@ int jolt_cli_get_return();
      * @brief Context for unit testing command line commands.
      *
      * Creates a scope where `stdout` is redirected to static buffer `buf`.
-     * Logging is also disabled within the context.
      * `stdout` is restored upon exit.
      *
      * @param[in] buf_size Size of static buffer to allocate.

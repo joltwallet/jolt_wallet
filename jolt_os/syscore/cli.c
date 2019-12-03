@@ -196,13 +196,13 @@ void jolt_cli_return( int val )
 
     if( JOLT_CLI_NON_BLOCKING != val ) {
         printf( "{\"exit_code\":%d}", val );
-        fflush(stdout);
+        fflush( stdout );
         if( app_call ) {
             jolt_launch_dec_ref_ctr();
             app_call = false;
         }
+        xQueueSend( ret_val_queue, &val, portMAX_DELAY );
     }
-    xQueueSend( ret_val_queue, &val, portMAX_DELAY );
 }
 
 #if !UNIT_TESTING

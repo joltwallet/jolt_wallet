@@ -15,11 +15,11 @@
         goto exit;                     \
     }
 
-
 // TODO: use get_str
 static const char TITLE[]                   = "%s Contacts";
 static const char confirmation_add_str[]    = "Add contact:\nName: %s\nAddress:";
 static const char confirmation_delete_str[] = "Delete contact:\nName: %s\nAddress:";
+static const char confirmation_update_str[] = "Update contact %s to:\nName: %s\nAddress:";
 // static const char confirmation_update_str[] = "Update contact %d to:\nName: %s\nAddress:";
 
 /**
@@ -96,7 +96,7 @@ static int contact_read( int argc, const char **argv )
 
     /* Recreate the overarching json object for printing */
     cJSON_AddItemToObjectCS( payload, "contacts", contacts );
-    CJSON_ERROR_CHECK( buf = cJSON_PrintUnformatted( contacts ) );
+    CJSON_ERROR_CHECK( buf = cJSON_PrintUnformatted( payload ) );
     printf( buf );
     fflush( stdout );
 
@@ -247,15 +247,33 @@ static int contact_update( int argc, const char **argv )
     CJSON_ERROR_CHECK( json = read_config() );
     CJSON_ERROR_CHECK( contacts = cJSON_GetObjectItemCaseSensitive( json, "contacts" ) );
 
-    cJSON *e;
-    CJSON_ERROR_CHECK( e = cJSON_GetArrayItem( contacts, index ) );
-    cJSON_DeleteItemFromObjectCaseSensitive( e, "name" );
-    cJSON_DeleteItemFromObjectCaseSensitive( e, "address" );
-    CJSON_ERROR_CHECK( cJSON_AddStringToObject( e, "name", name ) );
-    CJSON_ERROR_CHECK( cJSON_AddStringToObject( e, "address", address ) );
+    {
+        char *old_name, *old_address;
+        cJSON *e, *name_obj, *address_obj;
+        CJSON_ERROR_CHECK( e = cJSON_GetArrayItem( contacts, index ) );
+        CJSON_ERROR_CHECK( name_obj = cJSON_DetachItemFromObjectCaseSensitive( e, "name" ) );
+        CJSON_ERROR_CHECK( address_obj = cJSON_DetachItemFromObjectCaseSensitive( e, "address" ) );
+        old_name    = cJSON_GetStringValue( name_obj );
+        old_address = cJSON_GetStringValue( address_obj );
+        CJSON_ERROR_CHECK( cJSON_AddStringToObject( e, "name", name ) );
+        CJSON_ERROR_CHECK( cJSON_AddStringToObject( e, "address", address ) );
 
-    /* Save */
-    rc = jolt_json_write_app( json );
+        /* Create Confirmation Screen */
+        char body_buf[128 + 2 * CONFIG_JOLT_CONTACT_NAME_LEN];
+        char title_buf[140];
+        snprintf( title_buf, sizeof( title_buf ), TITLE, jolt_launch_get_name() );
+        snprintf( body_buf, sizeof( body_buf ), confirmation_update_str, old_name, name );
+        jolt_gui_obj_t *scr = NULL;
+        scr                 = jolt_gui_scr_text_create( title_buf, body_buf );
+        jolt_gui_scr_scroll_add_monospace_text( scr, address );
+        jolt_gui_scr_set_event_cb( scr, confirmation_cb );
+        jolt_gui_scr_set_active_param( scr, json );
+
+        cJSON_Delete( name_obj );
+        cJSON_Delete( address_obj );
+    }
+
+    return JOLT_CLI_NON_BLOCKING;
 
 exit:
     if( NULL != json ) cJSON_Delete( json );
@@ -284,8 +302,6 @@ exit:
     return rc;
 }
 
-static int contact_insert( int argc, const char **argv ) { return JOLT_APP_CMD_CONTACT_NOT_IMPLEMENTED; }
-
 int jolt_app_cmd_contact( int argc, const char **argv )
 {
     /* Argument Verification */
@@ -298,9 +314,6 @@ int jolt_app_cmd_contact( int argc, const char **argv )
     }
     else if( 0 == strcmp( argv[1], "add" ) ) {
         return contact_add( argc, argv );
-    }
-    else if( 0 == strcmp( argv[1], "insert" ) ) {
-        return contact_insert( argc, argv );
     }
     else if( 0 == strcmp( argv[1], "update" ) ) {
         return contact_update( argc, argv );
