@@ -175,6 +175,9 @@ void app_main( void )
     ESP_LOGW( TAG, "WARNING: UART \\n replaced with \\r" );
 #endif
 
+    /* Create Default System Event Loop */
+    ESP_ERROR_CHECK( esp_event_loop_create_default() );
+
     /* Ensure High Quality RNG */
 #if CONFIG_NO_BLOBS
     bootloader_random_enable();
@@ -231,15 +234,11 @@ void app_main( void )
         }
     }
 
-    /* Create Default System Event Loop */
-    ESP_ERROR_CHECK( esp_event_loop_create_default() );
-
     /* Initialize WiFi */
     {
-        esp_log_level_set( "wifi", ESP_LOG_NONE );
-        ESP_ERROR_CHECK( esp_event_handler_register( WIFI_EVENT, ESP_EVENT_ANY_ID, &jolt_wifi_event_handler, NULL ) );
-        ESP_ERROR_CHECK( esp_event_handler_register( IP_EVENT, IP_EVENT_STA_GOT_IP, &jolt_wifi_event_handler, NULL ) );
+        // esp_log_level_set( "wifi", ESP_LOG_NONE );
 
+        /* instantiate the app-friendly network client */
         ESP_ERROR_CHECK( jolt_network_client_init_from_nvs() );
 
         if( jolt_wifi_get_en() ) {
