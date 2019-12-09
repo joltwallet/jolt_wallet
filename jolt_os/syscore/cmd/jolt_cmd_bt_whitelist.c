@@ -4,8 +4,7 @@
 
 #if CONFIG_BT_ENABLED
 
-    #include "esp_bt_defs.h"
-    #include "esp_gap_ble_api.h"
+    # include "hal/radio/bluetooth.h"
 
 #endif
 
@@ -13,7 +12,8 @@ int jolt_cmd_bt_whitelist( int argc, char **argv )
 {
     /* Bonded Devices */
 
-#if CONFIG_BT_ENABLED
+    // TODO
+#if 0 && CONFIG_BT_ENABLED
     {
         int dev_num = esp_ble_get_bond_device_num();
         printf( "There are %d bonded BLE devices.\n", dev_num );

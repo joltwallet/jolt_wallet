@@ -2,8 +2,6 @@
 
 #if CONFIG_BT_ENABLED
 
-    #include "esp_bt.h"
-    #include "esp_bt_main.h"
     #include "hal/radio/bluetooth.h"
     #include "hal/storage/storage.h"
     #include "jolt_gui/jolt_gui.h"

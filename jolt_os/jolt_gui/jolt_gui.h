@@ -252,12 +252,12 @@ void jolt_gui_event_del( lv_obj_t *obj, lv_event_t event );
  *****************/
 #if CONFIG_BT_ENABLED
 
-    #include "esp_gap_ble_api.h"
+#include "host/ble_gap.h"
 
 /**
  * @brief GUI-related callbacks that get tagged onto the BLE GAP Event loop
  */
-void jolt_gui_gap_cb( esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param );
+int jolt_gui_gap_cb(struct ble_gap_event *event, void *arg);
 
 #endif
 

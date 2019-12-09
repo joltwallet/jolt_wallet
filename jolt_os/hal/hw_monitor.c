@@ -7,7 +7,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
-#include "hal/radio/bluetooth_gatts_profile_a.h"
+#include "hal/radio/bluetooth.h"
 #include "hal/storage/storage.h"
 #include "jolt_gui/jolt_gui.h"
 #include "jolt_helpers.h"
@@ -80,7 +80,7 @@ static void jolt_hw_monitor_get_bluetooth_level( hardware_monitor_t *monitor )
     esp_bt_controller_status_t status;
     status = esp_bt_controller_get_status();
     if( ESP_BT_CONTROLLER_STATUS_ENABLED == status ) {
-        if( gatts_profile_a_is_connected() ) { level = JOLT_BLUETOOTH_LEVEL_CONN; }
+        if( jolt_bluetooth_is_connected() ) { level = JOLT_BLUETOOTH_LEVEL_CONN; }
         else {
             level = JOLT_BLUETOOTH_LEVEL_ON;
         }

@@ -1,5 +1,4 @@
 #include "hal/radio/bluetooth.h"
-#include "hal/radio/bluetooth_state.h"
 #include "jolt_gui/jolt_gui.h"
 
 #if CONFIG_BT_ENABLED
@@ -56,8 +55,37 @@ void menu_bluetooth_temp_pair_create( jolt_gui_obj_t *btn, jolt_gui_event_t even
     }
 }
 
-void jolt_gui_bluetooth_pair_gap_cb( esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param )
+int jolt_gui_bluetooth_pair_gap_cb(struct ble_gap_event *event, void *arg)
 {
+    int rc;
+    switch(event->type){
+
+        case BLE_GAP_EVENT_PASSKEY_ACTION:
+            ESP_LOGI(TAG, "PASSKEY_ACTION_EVENT GUI started \n");
+            struct ble_sm_io pkey = {0};
+            int key = 0;
+
+            assert(event->passkey.params.action == BLE_SM_IOACT_DISP);
+
+            pkey.action = event->passkey.params.action;
+            // TODO random
+            pkey.passkey = 123456; // This is the passkey to be entered on peer
+            ESP_LOGI(TAG, "Enter passkey %d on the peer side", pkey.passkey);
+            rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);
+            ESP_LOGI(TAG, "ble_sm_inject_io result: %d\n", rc);
+            // TODO GUI
+            break;
+
+        default:
+            break;
+    }
+
+    return 0;
+}
+
+#if 0
+{
+    return 0;
     switch( event ) {
         case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:
             // todo: internationalization
@@ -102,4 +130,6 @@ void jolt_gui_bluetooth_pair_gap_cb( esp_gap_ble_cb_event_t event, esp_ble_gap_c
         default: break;
     }
 }
+#endif
+
 #endif

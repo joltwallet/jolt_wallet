@@ -13,11 +13,32 @@
 #include <stdint.h>
 #include "esp_vfs_dev.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "freertos/task.h"
 #include "sdkconfig.h"
 
-#define JOLT_BLE_WHITELIST_ADD       true
-#define JOLT_BLE_WHITELIST_REMOVE    false
-#define JOLT_BLE_WHITELIST_ADDR_TYPE BLE_WL_ADDR_TYPE_RANDOM
+#define ESP_GATT_UUID_SPP_DATA_NOTIFY     0xFFE2  // jolt->smartphone
+#define ESP_GATT_UUID_SPP_COMMAND_RECEIVE 0xABF3  // smartphone->jolt
+#define GATT_SVR_SVC_ALERT_UUID               0x1811
+
+#define SPP_DATA_MAX_LEN   ( 512 )
+#define SPP_CMD_MAX_LEN    ( 20 )
+#define SPP_STATUS_MAX_LEN ( 20 )
+#define SPP_SVC_INST_ID    ( 0 )  // todo; refine this?
+
+#define BLE_DEFAULT_DEVICE_NAME "Jolt"
+
+extern uint16_t spp_mtu_size;
+
+/**
+ * @brief Queue to shuttle data from the event handler to ble_in_task
+ */
+extern xQueueHandle ble_in_queue;
+
+/**
+ * @brief True if currently in pairing mode, false otherwise
+ */
+extern bool jolt_bluetooth_pair_mode;
 
 /**
  * Objects that store bluetooth packets
@@ -52,6 +73,8 @@ extern FILE *ble_stdout;
 extern FILE *ble_stderr;
 
 #endif
+
+bool jolt_bluetooth_is_connected();
 
 /**
  * @brief Register the bluetooth spp driver

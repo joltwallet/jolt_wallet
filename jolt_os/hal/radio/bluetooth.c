@@ -3,7 +3,7 @@
  * What doesn't work:
  *    *select
  */
-//#define LOG_LOCAL_LEVEL 4
+#define LOG_LOCAL_LEVEL 4
 
 #include "sdkconfig.h"
 
@@ -15,15 +15,8 @@
     #include <sys/lock.h>
     #include <sys/param.h>
     #include "bluetooth.h"
-    #include "bluetooth_cfg.h"
-    #include "bluetooth_state.h"
     #include "driver/uart.h"
-    #include "esp_bt.h"
-    #include "esp_bt_defs.h"
-    #include "esp_bt_main.h"
     #include "esp_console.h"
-    #include "esp_gap_ble_api.h"
-    #include "esp_gatts_api.h"
     #include "esp_log.h"
     #include "esp_system.h"
     #include "esp_timer.h"
@@ -32,11 +25,21 @@
     #include "freertos/event_groups.h"
     #include "freertos/portmacro.h"
     #include "freertos/task.h"
-    #include "hal/radio/spp_recv_buf.h"
     #include "jolt_gui/jolt_gui.h"
     #include "jolt_helpers.h"
     #include "nvs_flash.h"
     #include "string.h"
+    #include "jolt_gui/jolt_gui.h"
+
+    /* BLE */
+    #include "esp_nimble_hci.h"
+    #include "nimble/nimble_port.h"
+    #include "nimble/nimble_port_freertos.h"
+    #include "host/ble_hs.h"
+    #include "host/util/util.h"
+    #include "console/console.h"
+    #include "services/gap/ble_svc_gap.h"
+    #include "services/gatt/ble_svc_gatt.h"
 
     #define GATTS_SEND_REQUIRE_CONFIRM false
 
@@ -49,10 +52,27 @@ FILE *ble_stdin;
 FILE *ble_stdout;
 FILE *ble_stderr;
 
-static void gap_event_handler( esp_gap_ble_cb_event_t, esp_ble_gap_cb_param_t * );
-static void gatts_event_handler( esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param );
+static void bleprph_advertise(void);
+static void bleprph_on_sync(void);
+
+static int gap_event_handler(struct ble_gap_event *event, void *arg);
+static int gatt_svr_chr_access_spp_write(uint16_t conn_handle, uint16_t attr_handle,
+                             struct ble_gatt_access_ctxt *ctxt,
+                             void *arg);
 
 static const char TAG[] = "bluetooth.c";
+
+xQueueHandle ble_in_queue = NULL;
+
+    #if CONFIG_JOLT_BT_DEBUG_ALWAYS_ADV
+/* always in pairing mode for debugging */
+bool jolt_bluetooth_pair_mode = true;
+    #else
+bool jolt_bluetooth_pair_mode = false;
+    #endif
+
+static uint8_t own_addr_type;
+uint16_t spp_mtu_size;
 
 /***************************
  *  SPP PROFILE ATTRIBUTES *
@@ -126,15 +146,10 @@ static ssize_t ble_write( int fd, const void *data, size_t size )
 
         ESP_LOGD( TAG, "Sending %d bytes: %.*s", print_len, print_len, &data_c[idx] );
 
-        res = esp_ble_gatts_send_indicate( spp_profile_tab[SPP_PROFILE_A_APP_ID].gatts_if,
-                                           spp_profile_tab[SPP_PROFILE_A_APP_ID].conn_id,
-                                           spp_handle_table[SPP_IDX_SPP_DATA_NOTIFY_VAL], print_len,
-                                           (uint8_t *)&data_c[idx], GATTS_SEND_REQUIRE_CONFIRM );
+        // TODO change this
+		//ble_gattc_notify_custom()
+        // print_len, &data_c[idx]
 
-        if( ESP_OK != res ) {
-            // todo: res error handling
-            esp_restart();
-        }
         idx += print_len;
         remaining -= print_len;
     } while( remaining > 0 );
@@ -423,429 +438,370 @@ void ble_set_rx_line_endings( esp_line_endings_t mode ) { s_rx_mode = mode; }
 
 /* END DRIVER STUFF */
 
-static void add_all_bonded_to_whitelist()
+/**
+ * Logs information about a connection to the console.
+ */
+static void
+bleprph_print_conn_desc(struct ble_gap_conn_desc *desc)
 {
-    int dev_num                  = esp_ble_get_bond_device_num();
-    esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc( sizeof( esp_ble_bond_dev_t ) * dev_num );
-    esp_ble_get_bond_device_list( &dev_num, dev_list );
-    for( int i = 0; i < dev_num; i++ ) {
-        esp_ble_gap_update_whitelist( JOLT_BLE_WHITELIST_ADD, dev_list[i].bd_addr, JOLT_BLE_WHITELIST_ADDR_TYPE );
-    }
+    uint8_t *u8p;
 
-    free( dev_list );
+    u8p = desc->our_ota_addr.val;
+    ESP_LOGI(TAG, "handle=%d our_ota_addr_type=%d our_ota_addr="
+            "%02x:%02x:%02x:%02x:%02x:%02x",
+                desc->conn_handle, desc->our_ota_addr.type,
+                u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0]);
+
+
+    u8p = desc->our_id_addr.val;
+    ESP_LOGI(TAG, " our_id_addr_type=%d our_id_addr="
+            "%02x:%02x:%02x:%02x:%02x:%02x",
+                desc->our_id_addr.type,
+                u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0]);
+
+    u8p = desc->peer_ota_addr.val;
+    ESP_LOGI(TAG, " peer_ota_addr_type=%d peer_ota_addr="
+            "%02x:%02x:%02x:%02x:%02x:%02x",
+                desc->peer_ota_addr.type,
+                u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0]);
+
+    u8p = desc->peer_id_addr.val;
+    ESP_LOGI(TAG, " peer_id_addr_type=%d peer_id_addr="
+            "%02x:%02x:%02x:%02x:%02x:%02x",
+                desc->peer_id_addr.type,
+                u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0]);
+
+    ESP_LOGI(TAG, " conn_itvl=%d conn_latency=%d supervision_timeout=%d "
+                "encrypted=%d authenticated=%d bonded=%d\n",
+                desc->conn_itvl, desc->conn_latency,
+                desc->supervision_timeout,
+                desc->sec_state.encrypted,
+                desc->sec_state.authenticated,
+                desc->sec_state.bonded);
 }
 
-static const char *gap_evt_to_str( esp_gap_ble_cb_event_t event )
-{
-    #define CASE( x ) \
-        case x: return #x;
-    switch( event ) {
-        CASE( ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_SCAN_RESULT_EVT );
-        CASE( ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_ADV_START_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_SCAN_START_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_AUTH_CMPL_EVT );
-        CASE( ESP_GAP_BLE_KEY_EVT );
-        CASE( ESP_GAP_BLE_SEC_REQ_EVT );
-        CASE( ESP_GAP_BLE_PASSKEY_NOTIF_EVT );
-        CASE( ESP_GAP_BLE_PASSKEY_REQ_EVT );
-        CASE( ESP_GAP_BLE_OOB_REQ_EVT );
-        CASE( ESP_GAP_BLE_LOCAL_IR_EVT );
-        CASE( ESP_GAP_BLE_LOCAL_ER_EVT );
-        CASE( ESP_GAP_BLE_NC_REQ_EVT );
-        CASE( ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT );
-        CASE( ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT );
-        CASE( ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT );
-        CASE( ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT );
-        default: return "<unknown>";
-    }
-    #undef CASE
-}
+static bool is_connected = false;
 
-static const char *key_type_to_str( esp_ble_key_type_t key )
-{
-    #define CASE( x ) \
-        case x: return #x;
-    switch( key ) {
-        case ESP_LE_KEY_NONE: return "None";
-        case ESP_LE_KEY_PENC: return "Peer Encryption Key";
-        case ESP_LE_KEY_PID: return "Peer Identity Key";
-        case ESP_LE_KEY_PCSRK: return "Peer SRK";
-        case ESP_LE_KEY_PLK: return "Peer Link Key";
-        case ESP_LE_KEY_LLK: return "Local Link Key";
-        case ESP_LE_KEY_LENC: return "Local Encryption Key";
-        case ESP_LE_KEY_LID: return "Local Identity Key";
-        case ESP_LE_KEY_LCSRK: return "Local CSRK has been delivered to peer";
-        default: return "<unknown>";
-    }
-    #undef CASE
-}
+bool jolt_bluetooth_is_connected() { return is_connected; }
 
-static void gap_event_handler( esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param )
-{
-    esp_err_t err;
-    ESP_LOGI( TAG, "GAP event %d: %s", event, gap_evt_to_str( event ) );
-    switch( event ) {
-        /***************
-         * Advertising *
-         ***************/
-        /* Triggered by: esp_ble_gap_config_adv_data_raw( raw_data, raw_data_len ) */
-        case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT: /* fall through */
-        /* Triggered by: esp_ble_gap_config_adv_data( &adv_data ) */
-        case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
-            /* Start Advertising To Whitelisted Devices */
-            ESP_ERROR_CHECK( esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_wht_params ) );
-            break;
+/**
+ * The nimble host executes this callback when a GAP event occurs.  The
+ * application associates a GAP event callback with each connection that forms.
+ * bleuart uses the same callback for all connections.
+ *
+ * @param event                 The type of event being signalled.
+ * @param ctxt                  Various information pertaining to the event.
+ * @param arg                   Application-specified argument; unuesd by
+ *                                  bleuart.
+ *
+ * @return                      0 if the application successfully handled the
+ *                                  event; nonzero on failure.  The semantics
+ *                                  of the return code is specific to the
+ *                                  particular GAP event being signalled.
+ */
+static int gap_event_handler(struct ble_gap_event *event, void *arg)
+    {
+    struct ble_gap_conn_desc desc;
+    int rc;
 
-        /* esp_ble_gap_start_advertising */
-        case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
-            /* advertising start complete event to indicate advertising
-             * start successfully or failed. */
-            if( ( err = param->adv_start_cmpl.status ) != ESP_BT_STATUS_SUCCESS ) {
-                ESP_LOGE( TAG, "Advertising start failed: %s\n", esp_err_to_name( err ) );
+    switch (event->type) {
+        case BLE_GAP_EVENT_CONNECT:
+            /* A new connection was established or a connection attempt failed. */
+            ESP_LOGI(TAG, "connection %s; status=%d ",
+                        event->connect.status == 0 ? "established" : "failed",
+                        event->connect.status);
+            if (event->connect.status == 0) {
+                rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
+                assert(rc == 0);
+                bleprph_print_conn_desc(&desc);
+                is_connected = true;
+            }
+            ESP_LOGI(TAG, "\n");
+
+            if (event->connect.status != 0) {
+                /* Connection failed; resume advertising. */
+                bleprph_advertise();
             }
             break;
 
-        /*********
-         * Scans *
-         *********/
-        case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT:
-            /* scan response data set complete */
-            break;
-        /* Triggered by: esp_ble_gap_config_scan_rsp_data_raw( raw_data, raw_data_len ) */
-        case ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT: break;
+        case BLE_GAP_EVENT_DISCONNECT:
+            ESP_LOGI(TAG, "disconnect; reason=%d ", event->disconnect.reason);
+            bleprph_print_conn_desc(&event->disconnect.conn);
+            ESP_LOGI(TAG, "\n");
+            is_connected = false;
 
-        /* Triggered by: esp_ble_gap_set_scan_params( &scan_params ) */
-        case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT:
-            /* scan parameters set complete */
-            break;
-        case ESP_GAP_BLE_SCAN_RESULT_EVT:
-            /* one scan result ready */
-            /* todo: add debug logging here */
-            break;
-        /* Triggered by: esp_ble_gap_start_scanning( duration ) */
-        case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT:
-            /* Not used by Jolt*/
-            break;
-        /* Triggered by: esp_ble_gap_stop_scanning( ) */
-        case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
-            if( param->scan_stop_cmpl.status != ESP_BT_STATUS_SUCCESS ) {
-                ESP_LOGE( TAG, "Scan stop failed, error status = %x", param->scan_stop_cmpl.status );
-            }
-            else {
-                ESP_LOGI( TAG, "Stop scan successfully" );
-            }
+            /* Connection terminated; resume advertising. */
+            bleprph_advertise();
             break;
 
-        /************
-         * Security *
-         ************/
-        case ESP_GAP_BLE_AUTH_CMPL_EVT: {
-            /* Keys have been exchanged successfully between devices,
-             * the pairing process is completed and encryption of payload data can be started.
+        case BLE_GAP_EVENT_CONN_UPDATE:
+            /* The central has updated the connection parameters. */
+            ESP_LOGI(TAG, "connection updated; status=%d ",
+                        event->conn_update.status);
+            rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
+            assert(rc == 0);
+            bleprph_print_conn_desc(&desc);
+            ESP_LOGI(TAG, "\n");
+            break;
+
+        case BLE_GAP_EVENT_ADV_COMPLETE:
+            ESP_LOGI(TAG, "advertise complete; reason=%d",
+                        event->adv_complete.reason);
+            bleprph_advertise(); // TODO: I think this will continuously advertise.
+            break;
+
+        case BLE_GAP_EVENT_ENC_CHANGE:
+            /* Encryption has been enabled or disabled for this connection. */
+            ESP_LOGI(TAG, "encryption change event; status=%d ",
+                        event->enc_change.status);
+            rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
+            assert(rc == 0);
+            bleprph_print_conn_desc(&desc);
+            ESP_LOGI(TAG, "\n");
+            break;
+
+        case BLE_GAP_EVENT_SUBSCRIBE:
+            ESP_LOGI(TAG, "subscribe event; conn_handle=%d attr_handle=%d "
+                        "reason=%d prevn=%d curn=%d previ=%d curi=%d\n",
+                        event->subscribe.conn_handle,
+                        event->subscribe.attr_handle,
+                        event->subscribe.reason,
+                        event->subscribe.prev_notify,
+                        event->subscribe.cur_notify,
+                        event->subscribe.prev_indicate,
+                        event->subscribe.cur_indicate);
+            break;
+
+        case BLE_GAP_EVENT_MTU:
+            ESP_LOGI(TAG, "mtu update event; conn_handle=%d cid=%d mtu=%d\n",
+                        event->mtu.conn_handle,
+                        event->mtu.channel_id,
+                        event->mtu.value);
+            spp_mtu_size = event->mtu.value;
+            break;
+
+        case BLE_GAP_EVENT_REPEAT_PAIRING:
+            /* We already have a bond with the peer, but it is attempting to
+             * establish a new secure link.  This app sacrifices security for
+             * convenience: just throw away the old bond and accept the new link.
              */
 
-            /* [logging] Print Connection Data */
-    #if LOG_LOCAL_LEVEL >= 3 /* info */
+            /* Delete the old bond. */
+            rc = ble_gap_conn_find(event->repeat_pairing.conn_handle, &desc);
+            assert(rc == 0);
+            ble_store_util_delete_peer(&desc.peer_id_addr);
+
+            /* Return BLE_GAP_REPEAT_PAIRING_RETRY to indicate that the host should
+             * continue with the pairing operation.
+             */
+            return BLE_GAP_REPEAT_PAIRING_RETRY;
+
+        case BLE_GAP_EVENT_PASSKEY_ACTION:
+            // handled in bluetooth gui callback
+            break;
+    }
+
+    return jolt_gui_gap_cb( event, arg );
+}
+
+static int gatt_svr_chr_write(struct os_mbuf *om, uint16_t min_len, uint16_t max_len,
+                   void *dst, uint16_t *len)
+{
+    uint16_t om_len;
+    int rc;
+
+    om_len = OS_MBUF_PKTLEN(om);
+    if (om_len < min_len || om_len > max_len) {
+        return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+    }
+
+    rc = ble_hs_mbuf_to_flat(om, dst, max_len, len);
+    if (rc != 0) {
+        return BLE_ATT_ERR_UNLIKELY;
+    }
+
+    return 0;
+}
+
+const struct ble_gatt_svc_def gatt_svr_svcs[] = {
+    /**
+     *
+     * TODO
+     *     * Flags: AUTHEN vs AUTHOR
+     *
+     */
+    /** Service: SPP */
+	{
+        .type = BLE_GATT_SVC_TYPE_PRIMARY,
+        .uuid = BLE_UUID16_DECLARE(0xFFE0), 
+        .characteristics    = (struct ble_gatt_chr_def[]) {
             {
-                esp_bd_addr_t bd_addr;
-                memcpy( bd_addr, param->ble_security.auth_cmpl.bd_addr, sizeof( esp_bd_addr_t ) );
-                ESP_LOGI( TAG, "remote BD_ADDR: %08x%04x",
-                          ( bd_addr[0] << 24 ) + ( bd_addr[1] << 16 ) + ( bd_addr[2] << 8 ) + bd_addr[3],
-                          ( bd_addr[4] << 8 ) + bd_addr[5] );
-            }
-    #endif
-            ESP_LOGI( TAG, "address type = %d", param->ble_security.auth_cmpl.addr_type );
-            ESP_LOGI( TAG, "pair status = %s", param->ble_security.auth_cmpl.success ? "success" : "fail" );
-
-            if( param->ble_security.auth_cmpl.success ) {
-                ESP_LOGI( TAG, "auth mode = 0x%x", param->ble_security.auth_cmpl.auth_mode );
-                /* Add the address to the whitelist */
-                esp_err_t err;
-                esp_bd_addr_t bd_addr;
-                memcpy( bd_addr, param->ble_security.auth_cmpl.bd_addr, sizeof( esp_bd_addr_t ) );
-                err = esp_ble_gap_update_whitelist( JOLT_BLE_WHITELIST_ADD, bd_addr, JOLT_BLE_WHITELIST_ADDR_TYPE );
-                if( ESP_OK != err ) { ESP_LOGE( TAG, "Failed to add bd_addr to whitelist" ); }
-            }
-            else {
-                ESP_LOGI( TAG, "fail reason = 0x%x", param->ble_security.auth_cmpl.fail_reason );
-            }
-            break;
-        }
-        case ESP_GAP_BLE_KEY_EVT:
-            /* Triggered for every key exchange message */
-            ESP_LOGI( TAG, "key type 0x%02x: %s", param->ble_security.ble_key.key_type,
-                      key_type_to_str( param->ble_security.ble_key.key_type ) );
-            break;
-        case ESP_GAP_BLE_SEC_REQ_EVT:
-            /* Slave requests to start encryption.
-             * Send the [true] security response to the peer device to accept the security request.
-             * To reject the security request, send the security response with [false] value*/
-            ESP_LOGI( TAG, "Slave requesting security." );
-            esp_ble_gap_security_rsp( param->ble_security.ble_req.bd_addr, true );
-            break;
-        case ESP_GAP_BLE_PASSKEY_REQ_EVT:
-            /* If this device has digit input capabilities, and the remote device has
-             * display capabilities, this is triggered to input the digits shown on
-             * the remote display using esp_ble_passkey_reply() */
-            /* Not used in Jolt */
-            break;
-        case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:
-            /* The app will receive this evt when the IO has Output capability
-             * and the peer device IO has Input capability.
-             * Show the passkey integer param->ble_security.key_notif.passkey
-             * to the user to input it in the peer device. */
-            ESP_LOGI( TAG, "ESP_GAP_BLE_PASSKEY_NOTIF_EVT, the passkey Notify number:%06d",
-                      param->ble_security.key_notif.passkey );
-            /* See bluetooth_pair.c for gui handling */
-            break;
-        case ESP_GAP_BLE_NC_REQ_EVT:
-            /* The app will receive this evt when the IO has DisplayYesNO
-             * capability and the peer device IO also has DisplayYesNo capability.
-             * Show the passkey integer param->ble_security.key_notif.passkey
-             * to the user to confirm it with the number displayed by peer deivce. */
-            /* Not used in Jolt */
-            /* This shouldn't trigger due to the IO_CAP config */
-            break;
-        /* Triggered by: esp_ble_gap_update_whitelist() */
-        case ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT: break;
-        case ESP_GAP_BLE_OOB_REQ_EVT:
-            /* Out of Band is currently not supported by Jolt.
-             * Support was recently added to ESP-IDF*/
-            break;
-
-        /**********************
-         * Security - Bonding *
-         **********************/
-        case ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT:
-            ESP_LOGD( TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d",
-                      param->remove_bond_dev_cmpl.status );
-            ESP_LOGI( TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV" );
-            ESP_LOGI( TAG, "-----ESP_GAP_BLE_REMOVE_BOND_DEV----" );
-            esp_log_buffer_hex( TAG, (void *)param->remove_bond_dev_cmpl.bd_addr, sizeof( esp_bd_addr_t ) );
-            ESP_LOGI( TAG, "------------------------------------" );
-            break;
-        case ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT: break;
-        case ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT: break;
-
-        /************************************
-         * General Parameter Configurations *
-         ************************************/
-        /* Triggered by: esp_ble_gap_update_conn_params( &params ) */
-        case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
-            ESP_LOGI( TAG,
-                      "update connetion params "
-                      "status = %d, min_int = %d, max_int = %d, "
-                      "conn_int = %d,latency = %d, timeout = %d",
-                      param->update_conn_params.status, param->update_conn_params.min_int,
-                      param->update_conn_params.max_int, param->update_conn_params.conn_int,
-                      param->update_conn_params.latency, param->update_conn_params.timeout );
-            break;
-        /* Triggered by: esp_ble_gap_set_pkt_data_len() */
-        case ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT: break;
-        /* Triggered by: esp_ble_gap_config_local_privacy() */
-        case ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT: {
-            if( param->local_privacy_cmpl.status != ESP_BT_STATUS_SUCCESS ) {
-                ESP_LOGE( TAG, "config local privacy failed, error status = %x", param->local_privacy_cmpl.status );
-                break;
+                /* Read (Jolt -> smartphone/computer) */
+                .uuid = BLE_UUID16_DECLARE(ESP_GATT_UUID_SPP_DATA_NOTIFY),
+                .access_cb = NULL,
+                .flags = BLE_GATT_CHR_F_NOTIFY,
+            }, {
+                /* Write (smartphone/computer -> Jolt) */
+                .uuid = BLE_UUID16_DECLARE(ESP_GATT_UUID_SPP_COMMAND_RECEIVE),
+                .access_cb = gatt_svr_chr_access_spp_write,
+                .flags = BLE_GATT_CHR_F_WRITE_ENC | BLE_GATT_CHR_F_WRITE_AUTHEN | BLE_GATT_CHR_F_WRITE_NO_RSP,
+            }, {
+                0, /* No more characteristics in this service. */
             }
         }
+	},
+    {
+        0, /* No more services. */
+    },
+};
 
-        /****************
-         * Meta Queries *
-         ****************/
-        case ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT: break;
+/**
+ * @brief Write (smartphone/computer -> Jolt)
+ */
+static int gatt_svr_chr_access_spp_write(uint16_t conn_handle, uint16_t attr_handle,
+                             struct ble_gatt_access_ctxt *ctxt,
+                             void *arg)
+{
+    int rc = 0;
+    assert(ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR);
 
-        /********
-         * Misc *
-         ********/
-        /* Triggered by: sp_ble_gap_add_duplicate_scan_exceptional_device() */
-        case ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT:
+    {
+#if 0
+        /* Forward packet to the ble_in_queue */
+        ble_packet_t packet = {0};
+#if CONFIG_JOLT_BT_PROFILING
+        packet.t_receive = esp_timer_get_time();
+#endif
+        ESP_LOGI( TAG, " Allocating %d bytes.", p_data->write.len );
+        packet.data = (uint8_t *)malloc( p_data->write.len );
+        if( packet.data == NULL ) {
+            ESP_LOGE( TAG, "%s malloc failed\n", __func__ );
             break;
+        }
+        packet.len = p_data->write.len;
+        memcpy( packet.data, p_data->write.value, p_data->write.len );
+        if( !xQueueSend( ble_in_queue, &packet, 10 / portTICK_PERIOD_MS ) ) {
+            ESP_LOGE( TAG, "Timed out trying to put packet onto ble_in_queue" );
+            free( packet.data );
+            break;
+        }
 
-            /* The following events were used for internal esp-idf development; deprecated:
-             *     ESP_GAP_BLE_LOCAL_IR_EVT
-             *     ESP_GAP_BLE_LOCAL_ER_EVT
-             */
-
-        default: break;
+        rc = gatt_svr_chr_write(ctxt->om,
+                                sizeof gatt_svr_sec_test_static_val,
+                                sizeof gatt_svr_sec_test_static_val,
+                                &gatt_svr_sec_test_static_val, NULL);
+#endif
     }
-    jolt_gui_gap_cb( event, param );
+
+    return rc;
 }
 
-static void gatts_event_handler( esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param )
+void gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg)
 {
-    /* If event is register event, store the gatts_if for each profile */
-    if( event == ESP_GATTS_REG_EVT ) {
-        /* param contains status and application id to register */
-        if( param->reg.status == ESP_GATT_OK ) { spp_profile_tab[SPP_PROFILE_A_APP_ID].gatts_if = gatts_if; }
-        else {
-            ESP_LOGI( TAG, "Reg app failed, app_id %04x, status %d\n", param->reg.app_id, param->reg.status );
-            return;
-        }
-    }
+    char buf[BLE_UUID_STR_LEN];
 
-    /* Call the gatts_cb for the speicified gatts_if */
-    for( uint16_t idx = 0; idx < SPP_PROFILE_NUM; idx++ ) {
-        /* ESP_GATT_IF_NONE, not specify a certain gatt_if,
-         * need to call every profile cb function */
-        if( gatts_if == ESP_GATT_IF_NONE || gatts_if == spp_profile_tab[idx].gatts_if ) {
-            if( NULL != spp_profile_tab[idx].gatts_cb ) { spp_profile_tab[idx].gatts_cb( event, gatts_if, param ); }
-        }
+    switch (ctxt->op) {
+    case BLE_GATT_REGISTER_OP_SVC:
+        ESP_LOGD(TAG, "registered service %s with handle=%d\n",
+                    ble_uuid_to_str(ctxt->svc.svc_def->uuid, buf),
+                    ctxt->svc.handle);
+        break;
+
+    case BLE_GATT_REGISTER_OP_CHR:
+        ESP_LOGD(TAG, "registering characteristic %s with "
+                    "def_handle=%d val_handle=%d\n",
+                    ble_uuid_to_str(ctxt->chr.chr_def->uuid, buf),
+                    ctxt->chr.def_handle,
+                    ctxt->chr.val_handle);
+        break;
+
+    case BLE_GATT_REGISTER_OP_DSC:
+        ESP_LOGD(TAG, "registering descriptor %s with handle=%d\n",
+                    ble_uuid_to_str(ctxt->dsc.dsc_def->uuid, buf),
+                    ctxt->dsc.handle);
+        break;
+
+    default:
+        assert(0);
+        break;
     }
 }
 
-void jolt_bluetooth_config_security( bool bond )
+static void bleprph_host_task(void *param)
 {
-    /* This section sets the security parameters in the enumerated order */
-    /* ESP_BLE_SM_PASSKEY seems to be undocumented*/
-    {
-        /* Secure Connections with MITM Protection and Bonding */
-        esp_ble_auth_req_t auth_req;
-        auth_req = bond ? ESP_LE_AUTH_REQ_SC_MITM_BOND : ESP_LE_AUTH_REQ_SC_MITM;
-        ESP_ERROR_CHECK( esp_ble_gap_set_security_param( ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, sizeof( uint8_t ) ) );
-    }
+    ESP_LOGI(TAG, "BLE Host Task Started");
+    /* This function will return only when nimble_port_stop() is executed */
+    nimble_port_run();
+    nimble_port_freertos_deinit();
+}
 
-    {
-        /* Register Jolt's IO capability */
-        /* Set as CAP_OUT so that you MUST enter code on computer/smartphone */
-        esp_ble_io_cap_t iocap = ESP_IO_CAP_OUT;
-        ESP_ERROR_CHECK( esp_ble_gap_set_security_param( ESP_BLE_SM_IOCAP_MODE, &iocap, sizeof( uint8_t ) ) );
-    }
-
-    {
-        /* Initiator Key Distribution/Generation */
-        /* Type of key the smartphone/computer should distribute to Jolt */
-        uint8_t init_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
-        ESP_ERROR_CHECK( esp_ble_gap_set_security_param( ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof( uint8_t ) ) );
-
-        /* Type of key Jolt can distribute to smartphone/computer */
-        uint8_t rsp_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
-        ESP_ERROR_CHECK( esp_ble_gap_set_security_param( ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof( uint8_t ) ) );
-    }
-
-    {
-        /* Set Bluetooth Encryption Keysize */
-        uint8_t key_size = 16; /* 128-bit key */
-        ESP_ERROR_CHECK( esp_ble_gap_set_security_param( ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof( uint8_t ) ) );
-    }
-
-    /* ESP_BLE_SM_SET_STATIC_PASSKEY and ESP_BLE_SM_CLEAR_STATIC_PASSKEY are not used */
-
-    {
-        uint8_t auth_option = ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_ENABLE;  // todo: maybe set this to ENABLE
-        ESP_ERROR_CHECK( esp_ble_gap_set_security_param( ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH, &auth_option,
-                                                         sizeof( uint8_t ) ) );
-    }
-
-    {
-        /* ESP_BLE_SM_OOB_SUPPORT is not fully fleshed out in ESP32 */
-        uint8_t oob_support = ESP_BLE_OOB_DISABLE;
-        ESP_ERROR_CHECK( esp_ble_gap_set_security_param( ESP_BLE_SM_OOB_SUPPORT, &oob_support, sizeof( uint8_t ) ) );
-    }
+static void bleprph_on_reset(int reason)
+{
+    ESP_LOGE(TAG, "Resetting state; reason=%d\n", reason);
 }
 
 esp_err_t jolt_bluetooth_start()
 {
     esp_err_t err = ESP_OK;
 
-    /* Create BT Controller */
+    /* BT Controller and initialization */
     {
-        esp_bt_controller_config_t cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-        esp_bt_controller_status_t status;
-        status = esp_bt_controller_get_status();
-        switch( status ) {
-            /* Falls through */
-            case ESP_BT_CONTROLLER_STATUS_IDLE:
-                err = esp_bt_controller_init( &cfg );
-                if( err ) {
-                    ESP_LOGE( TAG,
-                              "%s bt_controller_init failed, "
-                              "error code = %s\n",
-                              __func__, esp_err_to_name( err ) );
-                    goto exit;
-                }
-            /* Falls through */
-            case ESP_BT_CONTROLLER_STATUS_INITED:
-                err = esp_bt_controller_enable( ESP_BT_MODE_BLE );
-                if( err ) {
-                    ESP_LOGE( TAG,
-                              "%s bt_controller_enable failed, "
-                              "error code = %s\n",
-                              __func__, esp_err_to_name( err ) );
-                    goto exit;
-                }
-            /* Falls through */
-            case ESP_BT_CONTROLLER_STATUS_ENABLED:
-                /* do nothing */
+        err = esp_nimble_hci_and_controller_init();
+        switch( err ) {
+            case ESP_OK:
+                break;
             default:
-                /* do nothing */
+                ESP_LOGE(TAG, "Error initializing BLE HCI and Controller (%s).", esp_err_to_name(err));
+                abort();
+                goto exit;
                 break;
         }
     }
 
-    /* Create Bluedroid */
+    nimble_port_init();
+
     {
-        esp_bluedroid_status_t status;
-        status = esp_bluedroid_get_status();
-        switch( status ) {
-            /* Falls through */
-            case ESP_BLUEDROID_STATUS_UNINITIALIZED:
-                err = esp_bluedroid_init();
-                if( err ) {
-                    ESP_LOGE( TAG, "%s init bluedroid failed, error code = %s\n", __func__, esp_err_to_name( err ) );
-                    goto exit;
-                }
-            /* Falls through */
-            case ESP_BLUEDROID_STATUS_INITIALIZED:
-                err = esp_bluedroid_enable();
-                if( err ) {
-                    ESP_LOGE( TAG, "%s enable bluedroid failed: %s\n", __func__, esp_err_to_name( err ) );
-                    goto exit;
-                }
-            /* Falls through */
-            case ESP_BLUEDROID_STATUS_ENABLED:
-                /* do nothing */
-            default:
-                /* do nothing */
-                break;
-        }
+        /* config */
+
+		/** @brief Stack sync callback
+		 *
+		 * This callback is executed when the host and controller become synced.
+		 * This happens at startup and after a reset.
+		 */
+		ble_hs_cfg.sync_cb = bleprph_on_sync;
+		ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
+		ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
+        ble_hs_cfg.reset_cb = bleprph_on_reset;
+
+        ble_hs_cfg.sm_bonding = 1;
+        ble_hs_cfg.sm_mitm  = 1;
+        ble_hs_cfg.sm_sc  = 1;
     }
 
-    add_all_bonded_to_whitelist();
-
-    err = esp_ble_gap_register_callback( gap_event_handler );
-    if( err ) {
-        ESP_LOGE( TAG, "%s gap register failed, error code = %s\n", __func__, esp_err_to_name( err ) );
-        goto exit;
+    /* Set the default device name. */
+    {
+        int rc;
+        rc = ble_svc_gap_device_name_set(BLE_DEFAULT_DEVICE_NAME);
+        assert(rc == 0);
     }
 
-    err = esp_ble_gatts_register_callback( gatts_event_handler );
-    if( err ) {
-        ESP_LOGE( TAG, "%s gatts register failed, error code = %s\n", __func__, esp_err_to_name( err ) );
-        goto exit;
-    }
+    ble_svc_gap_init();
+    ble_svc_gatt_init();
 
-    err = esp_ble_gatts_app_register( SPP_PROFILE_A_APP_ID );
-    if( err ) {
-        ESP_LOGE( TAG, "%s gatts app register failed, error code = %s\n", __func__, esp_err_to_name( err ) );
-        goto exit;
-    }
+	{
+		int rc;
+		rc = ble_gatts_count_cfg(gatt_svr_svcs); // TODO
+		if (rc != 0) {
+            goto exit;
+		}
 
-    /* Configure Bluetooth Security Parameters */
-    jolt_bluetooth_config_security( true );
+		rc = ble_gatts_add_svcs(gatt_svr_svcs); // TODO
+		if (rc != 0) {
+            goto exit;
+		}
+	}
+
+    nimble_port_freertos_init(bleprph_host_task);
 
 exit:
     return ESP_OK;
@@ -853,6 +809,9 @@ exit:
 
 esp_err_t jolt_bluetooth_stop()
 {
+    // TODO
+    
+#if 0
     esp_err_t err = ESP_OK;
 
     /* Destroy Bluedroid */
@@ -924,40 +883,128 @@ esp_err_t jolt_bluetooth_stop()
     }
 exit:
     return err;
+#else
+    return ESP_OK;
+#endif
 }
+
+/**
+ * Enables advertising with the following parameters:
+ *     o General discoverable mode.
+ *     o Undirected connectable mode.
+ */
+static void bleprph_advertise(void)
+{
+    struct ble_gap_adv_params adv_params;
+    struct ble_hs_adv_fields fields = { 0 };
+    const char *name;
+    int rc;
+
+    /**
+     *  Set the advertisement data included in our advertisements:
+     *     o Flags (indicates advertisement type and other general info).
+     *     o Advertising tx power.
+     *     o Device name.
+     *     o 16-bit service UUIDs (alert notifications).
+     */
+
+    /* Advertise two flags:
+     *     o Discoverability in forthcoming advertisement (general)
+     *     o BLE-only (BR/EDR unsupported).
+     */
+    fields.flags = BLE_HS_ADV_F_DISC_GEN |
+                   BLE_HS_ADV_F_BREDR_UNSUP;
+
+    /* Indicate that the TX power level field should be included; have the
+     * stack fill this value automatically.  This is done by assigning the
+     * special value BLE_HS_ADV_TX_PWR_LVL_AUTO.
+     */
+    fields.tx_pwr_lvl_is_present = 1;
+    fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
+
+    name = ble_svc_gap_device_name();
+    fields.name = (uint8_t *)name;
+    fields.name_len = strlen(name);
+    fields.name_is_complete = 1;
+
+    fields.uuids16 = (ble_uuid16_t[]) {
+        BLE_UUID16_INIT(GATT_SVR_SVC_ALERT_UUID)
+    };
+    fields.num_uuids16 = 1;
+    fields.uuids16_is_complete = 1;
+
+    rc = ble_gap_adv_set_fields(&fields);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "error setting advertisement data; rc=%d\n", rc);
+        return;
+    }
+
+    /* Begin advertising. */
+    memset(&adv_params, 0, sizeof adv_params);
+    adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
+    adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
+    rc = ble_gap_adv_start(own_addr_type, NULL, BLE_HS_FOREVER,
+                           &adv_params, gap_event_handler, NULL);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "error enabling advertisement; rc=%d\n", rc);
+        return;
+    }
+}
+
+static void bleprph_on_sync(void)
+{
+    int rc;
+
+    rc = ble_hs_util_ensure_addr(0);
+    assert(rc == 0);
+
+    /* Figure out address to use while advertising (no privacy for now) */
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "error determining address type; rc=%d\n", rc);
+        return;
+    }
+
+    /* Printing ADDR */
+    uint8_t addr_val[6] = {0};
+    rc = ble_hs_id_copy_addr(own_addr_type, addr_val, NULL);
+
+    {
+        uint8_t *u8p = addr_val;
+        ESP_LOGI(TAG, "Device Address: %02x:%02x:%02x:%02x:%02x:%02x",
+                    u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0]);
+    }
+
+    /* Begin advertising. */
+    bleprph_advertise();
+}
+
 
 /* Start Advertising to ALL devices; useful for pairing */
 esp_err_t jolt_bluetooth_adv_all_start()
 {
-    esp_err_t err;
-    jolt_bluetooth_adv_stop();
-
-    err = esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_pair_params );
-    if( ESP_OK != err ) {
-        ESP_LOGE( TAG, "Failed to start BT advertising: %d", err );
-        return err;
-    }
-
+    // TODO
+    bleprph_advertise();
     return ESP_OK;
 }
 
 /* Start Advertising to whitelisted devices */
 esp_err_t jolt_bluetooth_adv_wht_start()
 {
-    esp_err_t err;
-    jolt_bluetooth_adv_stop();
-
-    err = esp_ble_gap_start_advertising( (esp_ble_adv_params_t *)&spp_adv_wht_params );
-    if( ESP_OK != err ) {
-        ESP_LOGE( TAG, "Failed to start BT advertising: %d", err );
-        return err;
-    }
-
+    // TODO
+    bleprph_advertise();
     return ESP_OK;
 }
 
 /* Stop advertising */
-esp_err_t jolt_bluetooth_adv_stop() { return esp_ble_gap_stop_advertising(); }
+esp_err_t jolt_bluetooth_adv_stop() {
+    // TODO
+    return ESP_OK;
+}
+
+void jolt_bluetooth_config_security( bool bond ) {
+    // TODO
+}
 
 #else
 
