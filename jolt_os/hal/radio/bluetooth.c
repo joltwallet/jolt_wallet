@@ -906,6 +906,8 @@ exit:
  */
 static void bleprph_advertise(void)
 {
+    ESP_LOGI(TAG, "BLE Advertising start");
+
     struct ble_gap_adv_params adv_params;
     struct ble_hs_adv_fields fields = { 0 };
     const char *name;
@@ -939,7 +941,8 @@ static void bleprph_advertise(void)
     fields.name_is_complete = 1;
 
     fields.uuids16 = (ble_uuid16_t[]) {
-        BLE_UUID16_INIT(GATT_SVR_SVC_ALERT_UUID)
+        BLE_UUID16_INIT(0xFFE0)
+        //BLE_UUID16_INIT(GATT_SVR_SVC_ALERT_UUID)
     };
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
