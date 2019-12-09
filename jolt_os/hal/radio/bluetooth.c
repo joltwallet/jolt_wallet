@@ -719,7 +719,7 @@ void gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg)
         break;
 
     case BLE_GATT_REGISTER_OP_CHR:
-        ESP_LOGD(TAG, "registering characteristic %s with "
+        ESP_LOGD(TAG, "    registering characteristic %s with "
                     "def_handle=%d val_handle=%d",
                     ble_uuid_to_str(ctxt->chr.chr_def->uuid, buf),
                     ctxt->chr.def_handle,
@@ -727,7 +727,7 @@ void gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg)
         break;
 
     case BLE_GATT_REGISTER_OP_DSC:
-        ESP_LOGD(TAG, "registering descriptor %s with handle=%d",
+        ESP_LOGD(TAG, "    registering descriptor %s with handle=%d",
                     ble_uuid_to_str(ctxt->dsc.dsc_def->uuid, buf),
                     ctxt->dsc.handle);
         break;
