@@ -56,6 +56,9 @@ static void bleprph_advertise(void);
 static void bleprph_on_sync(void);
 
 static int gap_event_handler(struct ble_gap_event *event, void *arg);
+static int gatt_svr_chr_access_spp_read(uint16_t conn_handle, uint16_t attr_handle,
+                             struct ble_gatt_access_ctxt *ctxt,
+                             void *arg);
 static int gatt_svr_chr_access_spp_write(uint16_t conn_handle, uint16_t attr_handle,
                              struct ble_gatt_access_ctxt *ctxt,
                              void *arg);
@@ -625,6 +628,7 @@ static int gatt_svr_chr_write(struct os_mbuf *om, uint16_t min_len, uint16_t max
 
 const struct ble_gatt_svc_def gatt_svr_svcs[] = {
     /**
+     * l
      *
      * TODO
      *     * Flags: AUTHEN vs AUTHOR
@@ -638,7 +642,7 @@ const struct ble_gatt_svc_def gatt_svr_svcs[] = {
             {
                 /* Read (Jolt -> smartphone/computer) */
                 .uuid = BLE_UUID16_DECLARE(ESP_GATT_UUID_SPP_DATA_NOTIFY),
-                .access_cb = NULL,
+                .access_cb = gatt_svr_chr_access_spp_read,
                 .flags = BLE_GATT_CHR_F_NOTIFY,
             }, {
                 /* Write (smartphone/computer -> Jolt) */
@@ -654,6 +658,13 @@ const struct ble_gatt_svc_def gatt_svr_svcs[] = {
         0, /* No more services. */
     },
 };
+
+static int gatt_svr_chr_access_spp_read(uint16_t conn_handle, uint16_t attr_handle,
+                             struct ble_gatt_access_ctxt *ctxt,
+                             void *arg)
+{
+    return 0;
+}
 
 /**
  * @brief Write (smartphone/computer -> Jolt)
@@ -702,21 +713,21 @@ void gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg)
 
     switch (ctxt->op) {
     case BLE_GATT_REGISTER_OP_SVC:
-        ESP_LOGD(TAG, "registered service %s with handle=%d\n",
+        ESP_LOGD(TAG, "registered service %s with handle=%d",
                     ble_uuid_to_str(ctxt->svc.svc_def->uuid, buf),
                     ctxt->svc.handle);
         break;
 
     case BLE_GATT_REGISTER_OP_CHR:
         ESP_LOGD(TAG, "registering characteristic %s with "
-                    "def_handle=%d val_handle=%d\n",
+                    "def_handle=%d val_handle=%d",
                     ble_uuid_to_str(ctxt->chr.chr_def->uuid, buf),
                     ctxt->chr.def_handle,
                     ctxt->chr.val_handle);
         break;
 
     case BLE_GATT_REGISTER_OP_DSC:
-        ESP_LOGD(TAG, "registering descriptor %s with handle=%d\n",
+        ESP_LOGD(TAG, "registering descriptor %s with handle=%d",
                     ble_uuid_to_str(ctxt->dsc.dsc_def->uuid, buf),
                     ctxt->dsc.handle);
         break;
