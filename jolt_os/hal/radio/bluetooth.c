@@ -510,6 +510,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
     switch (event->type) {
         case BLE_GAP_EVENT_CONNECT:
             /* A new connection was established or a connection attempt failed. */
+            // TODO: if not authenticated, call ble_gap_security_initiate() ?
             ESP_LOGI(TAG, "connection %s; status=%d ",
                         event->connect.status == 0 ? "established" : "failed",
                         event->connect.status);
@@ -519,7 +520,10 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
                 bleprph_print_conn_desc(&desc);
                 is_connected = true;
             }
-            ESP_LOGI(TAG, "\n");
+
+            if (event->connect.status == 0) {
+                ble_gap_security_initiate(event->connect.conn_handle);
+            }
 
             if (event->connect.status != 0) {
                 /* Connection failed; resume advertising. */
@@ -530,7 +534,6 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
         case BLE_GAP_EVENT_DISCONNECT:
             ESP_LOGI(TAG, "disconnect; reason=%d ", event->disconnect.reason);
             bleprph_print_conn_desc(&event->disconnect.conn);
-            ESP_LOGI(TAG, "\n");
             is_connected = false;
 
             /* Connection terminated; resume advertising. */
@@ -544,7 +547,6 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             bleprph_print_conn_desc(&desc);
-            ESP_LOGI(TAG, "\n");
             break;
 
         case BLE_GAP_EVENT_ADV_COMPLETE:
@@ -560,7 +562,6 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             bleprph_print_conn_desc(&desc);
-            ESP_LOGI(TAG, "\n");
             break;
 
         case BLE_GAP_EVENT_SUBSCRIBE:
@@ -601,6 +602,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
 
         case BLE_GAP_EVENT_PASSKEY_ACTION:
             // handled in bluetooth gui callback
+            ESP_LOGI(TAG, "PASSKEY_ACTION_EVENT started \n");
             break;
     }
 
@@ -648,7 +650,10 @@ const struct ble_gatt_svc_def gatt_svr_svcs[] = {
                 /* Write (smartphone/computer -> Jolt) */
                 .uuid = BLE_UUID16_DECLARE(ESP_GATT_UUID_SPP_COMMAND_RECEIVE),
                 .access_cb = gatt_svr_chr_access_spp_write,
-                .flags = BLE_GATT_CHR_F_WRITE_ENC | BLE_GATT_CHR_F_WRITE_AUTHEN | BLE_GATT_CHR_F_WRITE_NO_RSP,
+                // TODO
+                //.flags = BLE_GATT_CHR_F_WRITE_ENC | BLE_GATT_CHR_F_WRITE_AUTHEN | BLE_GATT_CHR_F_WRITE_NO_RSP,
+                .flags = BLE_GATT_CHR_F_WRITE, // works!
+                //.flags = BLE_GATT_CHR_F_WRITE  | BLE_GATT_CHR_F_WRITE_ENC,
             }, {
                 0, /* No more characteristics in this service. */
             }
@@ -663,6 +668,7 @@ static int gatt_svr_chr_access_spp_read(uint16_t conn_handle, uint16_t attr_hand
                              struct ble_gatt_access_ctxt *ctxt,
                              void *arg)
 {
+    ESP_LOGD(TAG, "(%d) READ", __LINE__);
     return 0;
 }
 
@@ -673,37 +679,44 @@ static int gatt_svr_chr_access_spp_write(uint16_t conn_handle, uint16_t attr_han
                              struct ble_gatt_access_ctxt *ctxt,
                              void *arg)
 {
+    ESP_LOGD(TAG, "(%d) WRITE", __LINE__);
     int rc = 0;
     assert(ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR);
 
     {
-#if 0
+#if 1
         /* Forward packet to the ble_in_queue */
         ble_packet_t packet = {0};
 #if CONFIG_JOLT_BT_PROFILING
         packet.t_receive = esp_timer_get_time();
 #endif
-        ESP_LOGI( TAG, " Allocating %d bytes.", p_data->write.len );
-        packet.data = (uint8_t *)malloc( p_data->write.len );
+        ESP_LOGI( TAG, " Allocating %d bytes.", OS_MBUF_PKTLEN(ctxt->om) );
+        packet.data = (uint8_t *)malloc( OS_MBUF_PKTLEN(ctxt->om) );
         if( packet.data == NULL ) {
             ESP_LOGE( TAG, "%s malloc failed\n", __func__ );
-            break;
+            rc = 1; // TODO better rc
+            goto exit;
         }
-        packet.len = p_data->write.len;
-        memcpy( packet.data, p_data->write.value, p_data->write.len );
+        packet.len = OS_MBUF_PKTLEN(ctxt->om);
+        uint16_t written_len;
+        rc = ble_hs_mbuf_to_flat(ctxt->om, packet.data, packet.len, &written_len);
         if( !xQueueSend( ble_in_queue, &packet, 10 / portTICK_PERIOD_MS ) ) {
             ESP_LOGE( TAG, "Timed out trying to put packet onto ble_in_queue" );
             free( packet.data );
-            break;
+            rc = 1; // TODO better rc
+            goto exit;
         }
 
+#if 0
         rc = gatt_svr_chr_write(ctxt->om,
                                 sizeof gatt_svr_sec_test_static_val,
                                 sizeof gatt_svr_sec_test_static_val,
                                 &gatt_svr_sec_test_static_val, NULL);
 #endif
+#endif
     }
 
+exit:
     return rc;
 }
 
@@ -784,9 +797,12 @@ esp_err_t jolt_bluetooth_start()
 		ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
         ble_hs_cfg.reset_cb = bleprph_on_reset;
 
-        ble_hs_cfg.sm_bonding = 1;
+        ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_DISP_ONLY;
+        ble_hs_cfg.sm_bonding = 1;  // TODO: uncomment
         ble_hs_cfg.sm_mitm  = 1;
         ble_hs_cfg.sm_sc  = 1;
+        ble_hs_cfg.sm_our_key_dist = 1;
+        ble_hs_cfg.sm_their_key_dist = 1;
     }
 
     /* Set the default device name. */

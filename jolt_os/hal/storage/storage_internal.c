@@ -48,7 +48,15 @@ static jolt_err_t init_nvs_namespace( nvs_handle *nvs_h, const char *namespace )
 
 bool storage_internal_startup()
 {
-    // nothing to do
+    esp_err_t err = nvs_flash_init();
+    if( err == ESP_ERR_NVS_NO_FREE_PAGES ) {
+        // NVS partition was truncated and needs to be erased
+        ESP_LOGE( TAG, "Corrupt NVS partition; erasing..." );
+        ESP_ERROR_CHECK( nvs_flash_erase() );
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
+
     return true;
 }
 
