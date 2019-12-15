@@ -76,6 +76,8 @@ bool jolt_bluetooth_pair_mode = false;
 
 static uint8_t own_addr_type;
 uint16_t spp_mtu_size;
+static uint16_t conn_handle = 0;
+static uint16_t resp_att_handle = 0;
 
 /***************************
  *  SPP PROFILE ATTRIBUTES *
@@ -134,6 +136,7 @@ static int ble_open( const char *path, int flags, int mode )
 
 static ssize_t ble_write( int fd, const void *data, size_t size )
 {
+    int rc;
     size_t remaining   = size;
     const char *data_c = (const char *)data;
 
@@ -149,9 +152,15 @@ static ssize_t ble_write( int fd, const void *data, size_t size )
 
         ESP_LOGD( TAG, "Sending %d bytes: %.*s", print_len, print_len, &data_c[idx] );
 
-        // TODO change this
-		//ble_gattc_notify_custom()
-        // print_len, &data_c[idx]
+        struct os_mbuf* om;
+        om = ble_hs_mbuf_from_flat(&data_c[idx], print_len);
+        if( NULL == om ) { 
+            abort();
+        }
+        rc =  ble_gattc_notify_custom(conn_handle, resp_att_handle, om);
+        if( 0 != rc ) {
+            abort();
+        }
 
         idx += print_len;
         remaining -= print_len;
@@ -522,6 +531,8 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
             }
 
             if (event->connect.status == 0) {
+                // TODO see what to really do here
+                conn_handle = event->connect.conn_handle;
                 ble_gap_security_initiate(event->connect.conn_handle);
             }
 
@@ -537,6 +548,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
             is_connected = false;
 
             /* Connection terminated; resume advertising. */
+            conn_handle = 0;
             bleprph_advertise();
             break;
 
@@ -646,6 +658,7 @@ const struct ble_gatt_svc_def gatt_svr_svcs[] = {
                 .uuid = BLE_UUID16_DECLARE(ESP_GATT_UUID_SPP_DATA_NOTIFY),
                 .access_cb = gatt_svr_chr_access_spp_read,
                 .flags = BLE_GATT_CHR_F_NOTIFY,
+                .val_handle = &resp_att_handle, 
             }, {
                 /* Write (smartphone/computer -> Jolt) */
                 .uuid = BLE_UUID16_DECLARE(ESP_GATT_UUID_SPP_COMMAND_RECEIVE),
@@ -707,12 +720,6 @@ static int gatt_svr_chr_access_spp_write(uint16_t conn_handle, uint16_t attr_han
             goto exit;
         }
 
-#if 0
-        rc = gatt_svr_chr_write(ctxt->om,
-                                sizeof gatt_svr_sec_test_static_val,
-                                sizeof gatt_svr_sec_test_static_val,
-                                &gatt_svr_sec_test_static_val, NULL);
-#endif
 #endif
     }
 
