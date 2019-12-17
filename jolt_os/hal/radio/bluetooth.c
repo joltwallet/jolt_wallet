@@ -2,7 +2,17 @@
  *    *streams: ble_stdin, ble_stdout, ble_stderr
  * What doesn't work:
  *    *select
+ *
+ * For nimble error codes, see:
+ *     https://mynewt.apache.org/latest/network/ble_hs/ble_hs_return_codes.html
+ *     0x00XX - Core (nimble)
+ *     0x01XX - ATT
+ *     0x02XX - HCI
+ *     0x03XX - L2CAP
+ *     0x04XX - Security Manager (us)
+ *     0x05XX - Security Manager (peer)
  */
+
 #define LOG_LOCAL_LEVEL 4
 
 #include "sdkconfig.h"
@@ -533,7 +543,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
             if (event->connect.status == 0) {
                 // TODO see what to really do here
                 conn_handle = event->connect.conn_handle;
-                ble_gap_security_initiate(event->connect.conn_handle);
+                //ble_gap_security_initiate(event->connect.conn_handle);
             }
 
             if (event->connect.status != 0) {
@@ -543,7 +553,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
             break;
 
         case BLE_GAP_EVENT_DISCONNECT:
-            ESP_LOGI(TAG, "disconnect; reason=%d ", event->disconnect.reason);
+            ESP_LOGI(TAG, "disconnect; reason=0x%04X", event->disconnect.reason);
             bleprph_print_conn_desc(&event->disconnect.conn);
             is_connected = false;
 
@@ -562,7 +572,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
             break;
 
         case BLE_GAP_EVENT_ADV_COMPLETE:
-            ESP_LOGI(TAG, "advertise complete; reason=%d",
+            ESP_LOGI(TAG, "advertise complete; reason=0x%04X",
                         event->adv_complete.reason);
             bleprph_advertise(); // TODO: I think this will continuously advertise.
             break;
@@ -578,7 +588,7 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
 
         case BLE_GAP_EVENT_SUBSCRIBE:
             ESP_LOGI(TAG, "subscribe event; conn_handle=%d attr_handle=%d "
-                        "reason=%d prevn=%d curn=%d previ=%d curi=%d\n",
+                        "reason=0x%04X prevn=%d curn=%d previ=%d curi=%d\n",
                         event->subscribe.conn_handle,
                         event->subscribe.attr_handle,
                         event->subscribe.reason,
@@ -768,7 +778,7 @@ static void bleprph_host_task(void *param)
 
 static void bleprph_on_reset(int reason)
 {
-    ESP_LOGE(TAG, "Resetting state; reason=%d\n", reason);
+    ESP_LOGE(TAG, "Resetting state; reason=0x%04X\n", reason);
 }
 
 esp_err_t jolt_bluetooth_start()
