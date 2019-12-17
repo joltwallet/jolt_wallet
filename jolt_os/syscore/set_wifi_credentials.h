@@ -7,6 +7,8 @@
 #ifndef JOLT_SYSCORE_SET_WIFI_CREDENTIALS_H__
 #define JOLT_SYSCORE_SET_WIFI_CREDENTIALS_H__
 
+#include "stdbool.h"
+
 /**
  * @brief Update saved WiFi credentials.
  *
@@ -18,7 +20,9 @@
  *
  * @param[in] ssid NULL-terminated network SSID to save
  * @param[in] pass NULL-terminated network password
+ * @param[in] free_vars If set to `true`, `ssid` and `pass` will be freed upon
+ *    exit.
  */
-void set_wifi_credentials( const char *ssid, const char *pass );
+void set_wifi_credentials( const char *ssid, const char *pass, bool free_vars );
 
 #endif

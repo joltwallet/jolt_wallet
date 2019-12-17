@@ -24,7 +24,7 @@ int jolt_cmd_wifi_update( int argc, char **argv )
         goto exit;
     }
 
-    set_wifi_credentials( ssid, pass );
+    set_wifi_credentials( ssid, pass, false );
 
     return_code = JOLT_CLI_NON_BLOCKING;
 

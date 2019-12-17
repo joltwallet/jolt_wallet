@@ -32,6 +32,7 @@ Statusbar symbols like battery, wifi, etc.
 
 ###Conversion Settings
 
+* Input: `jolt_symbols.ttf`
 * Size: 8
 * Bpp: 1
 * Range: 0xF000-0xF00D
@@ -39,7 +40,6 @@ Statusbar symbols like battery, wifi, etc.
 After conversion, manually change:
 
 * `line_height` to `9`.
-* `base_line` to `1`.
 
 
 ## unscii_8

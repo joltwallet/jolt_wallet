@@ -1,5 +1,5 @@
 
-#define LOG_LOCAL_LEVEL 4
+//#define LOG_LOCAL_LEVEL 4
 
 #include "syscore/set_wifi_credentials.h"
 #include "esp_log.h"
@@ -18,6 +18,7 @@
 static const char TAG[]   = "set_wifi_cred";
 static const char title[] = "WiFi Update";
 
+static bool free_vars    = false;
 static char *target_ssid = NULL;
 static char *target_pass = NULL;
 
@@ -25,16 +26,17 @@ static bool in_progress = false;
 
 static void clear_vars()
 {
-    if( NULL != target_ssid ) {
+    if( NULL != target_ssid && true == free_vars ) {
         free( target_ssid );
         target_ssid = NULL;
     }
-    if( NULL != target_pass ) {
+    if( NULL != target_pass && true == free_vars ) {
         sodium_memzero( target_pass, JOLT_WIFI_PASS_LEN_MAX );
         free( target_pass );
         target_pass = NULL;
     }
     in_progress = false;
+    free_vars   = false;
 }
 
 static void vault_fail_cb( void *dummy )
@@ -75,7 +77,7 @@ static void prompt_1_cb( lv_obj_t *btn, lv_event_t event )
 }
 
 /* Non-blocking */
-void set_wifi_credentials( const char *ssid, const char *pass )
+void set_wifi_credentials( const char *ssid, const char *pass, bool free_vars )
 {
     char buf[100 + JOLT_WIFI_SSID_LEN_MAX + JOLT_WIFI_PASS_LEN_MAX + 1] = {0};
 
@@ -84,6 +86,7 @@ void set_wifi_credentials( const char *ssid, const char *pass )
         return;
     }
     in_progress = true;
+    free_vars   = free_vars;
 
     /* Validate Inputs */
     if( NULL == ssid ) { goto exit_error; }
