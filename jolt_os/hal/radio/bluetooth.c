@@ -529,7 +529,6 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
     switch (event->type) {
         case BLE_GAP_EVENT_CONNECT:
             /* A new connection was established or a connection attempt failed. */
-            // TODO: if not authenticated, call ble_gap_security_initiate() ?
             ESP_LOGI(TAG, "connection %s; status=%d ",
                         event->connect.status == 0 ? "established" : "failed",
                         event->connect.status);
@@ -542,8 +541,9 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
 
             if (event->connect.status == 0) {
                 // TODO see what to really do here
+                // Set conn_handle for notify responses
                 conn_handle = event->connect.conn_handle;
-                //ble_gap_security_initiate(event->connect.conn_handle);
+                ble_gap_security_initiate(event->connect.conn_handle);
             }
 
             if (event->connect.status != 0) {
@@ -655,7 +655,7 @@ const struct ble_gatt_svc_def gatt_svr_svcs[] = {
      * l
      *
      * TODO
-     *     * Flags: AUTHEN vs AUTHOR
+     *     * Flags: AUTHEN vs AUTHOR ?
      *
      */
     /** Service: SPP */
@@ -675,8 +675,8 @@ const struct ble_gatt_svc_def gatt_svr_svcs[] = {
                 .access_cb = gatt_svr_chr_access_spp_write,
                 // TODO
                 //.flags = BLE_GATT_CHR_F_WRITE_ENC | BLE_GATT_CHR_F_WRITE_AUTHEN | BLE_GATT_CHR_F_WRITE_NO_RSP,
-                .flags = BLE_GATT_CHR_F_WRITE, // works!
-                //.flags = BLE_GATT_CHR_F_WRITE  | BLE_GATT_CHR_F_WRITE_ENC,
+                //.flags = BLE_GATT_CHR_F_WRITE, // works!
+                .flags = BLE_GATT_CHR_F_WRITE  | BLE_GATT_CHR_F_WRITE_ENC,
             }, {
                 0, /* No more characteristics in this service. */
             }
