@@ -542,12 +542,18 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
             if (event->connect.status == 0) {
                 // TODO see what to really do here
                 // Set conn_handle for notify responses
+                ESP_LOGD(TAG, "Setting conn_handle to 0x%04X", conn_handle);
                 conn_handle = event->connect.conn_handle;
-                ble_gap_security_initiate(event->connect.conn_handle);
+                ESP_LOGD(TAG, "ble_gap_security_initiate");
+                rc = ble_gap_security_initiate(event->connect.conn_handle);
+                if( 0 != rc ) {
+                    ESP_LOGE(TAG, "ble_gap_security_initiate: 0x%04x", rc);
+                }
             }
 
             if (event->connect.status != 0) {
                 /* Connection failed; resume advertising. */
+                ESP_LOGE(TAG, "Connection failed; resuming advertising.");
                 bleprph_advertise();
             }
             break;
@@ -815,7 +821,7 @@ esp_err_t jolt_bluetooth_start()
         ble_hs_cfg.reset_cb = bleprph_on_reset;
 
         ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_DISP_ONLY;
-        ble_hs_cfg.sm_bonding = 1;  // TODO: uncomment
+        ble_hs_cfg.sm_bonding = 1;
         ble_hs_cfg.sm_mitm  = 1;
         ble_hs_cfg.sm_sc  = 1;
         ble_hs_cfg.sm_our_key_dist = 1;
