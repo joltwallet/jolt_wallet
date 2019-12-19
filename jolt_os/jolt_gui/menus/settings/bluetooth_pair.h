@@ -14,7 +14,7 @@
 /**
  * @brief Callback that needs to be included in the GAP event loop handler.
  */
-int jolt_gui_bluetooth_pair_gap_cb(struct ble_gap_event *event, void *arg);
+int jolt_gui_bluetooth_pair_gap_cb( struct ble_gap_event *event, void *arg );
 
 #endif
 

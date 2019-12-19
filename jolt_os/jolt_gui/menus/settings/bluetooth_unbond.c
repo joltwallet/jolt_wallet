@@ -7,8 +7,8 @@
 
 static const char TAG[] = "bt_unbond";
 
-// TODO
-#if 0
+    // TODO
+    #if 0
 static void remove_all_bonded_devices()
 {
     int dev_num = esp_ble_get_bond_device_num();
@@ -24,21 +24,19 @@ static void remove_all_bonded_devices()
 
     free( dev_list );
 }
-#endif
+    #endif
 
 void menu_bluetooth_unbond_create( jolt_gui_obj_t *btn, jolt_gui_event_t event )
 {
     /* todo: confirmation screens.
      * todo: internationalization */
-    if( jolt_gui_event.short_clicked == event ) {
-        ESP_LOGE(TAG, "NOT_IMPLEMENTED");
-    }
-#if 0
+    if( jolt_gui_event.short_clicked == event ) { ESP_LOGE( TAG, "NOT_IMPLEMENTED" ); }
+    #if 0
     if( jolt_gui_event.short_clicked == event ) {
         jolt_gui_scr_text_create( gettext( JOLT_TEXT_UNBONDS ), "All saved bluetooth devices wiped." );
         remove_all_bonded_devices();
     }
-#endif
+    #endif
 }
 
 #endif

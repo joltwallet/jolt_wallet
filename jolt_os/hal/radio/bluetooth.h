@@ -19,7 +19,7 @@
 
 #define ESP_GATT_UUID_SPP_DATA_NOTIFY     0xFFE2  // jolt->smartphone
 #define ESP_GATT_UUID_SPP_COMMAND_RECEIVE 0xABF3  // smartphone->jolt
-#define GATT_SVR_SVC_ALERT_UUID               0x1811
+#define GATT_SVR_SVC_ALERT_UUID           0x1811
 
 #define SPP_DATA_MAX_LEN   ( 512 )
 #define SPP_CMD_MAX_LEN    ( 20 )

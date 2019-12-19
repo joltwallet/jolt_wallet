@@ -58,40 +58,24 @@ void menu_bluetooth_temp_pair_create( jolt_gui_obj_t *btn, jolt_gui_event_t even
     }
 }
 
-int jolt_gui_bluetooth_pair_gap_cb(struct ble_gap_event *event, void *arg)
+int jolt_gui_bluetooth_pair_gap_cb( struct ble_gap_event *event, void *arg )
 {
     int rc;
-    switch(event->type){
+    struct ble_gap_conn_desc desc;
 
+    switch( event->type ) {
         case BLE_GAP_EVENT_PASSKEY_ACTION:
-            ESP_LOGI(TAG, "PASSKEY_ACTION_EVENT GUI started \n");
+            ESP_LOGI( TAG, "PASSKEY_ACTION_EVENT GUI started \n" );
             struct ble_sm_io pkey = {0};
-            int key = 0;
 
-            assert(event->passkey.params.action == BLE_SM_IOACT_DISP);
+            assert( event->passkey.params.action == BLE_SM_IOACT_DISP );
 
-            pkey.action = event->passkey.params.action;
-            // TODO random
-            pkey.passkey = 123456; // This is the passkey to be entered on peer
-            ESP_LOGI(TAG, "Enter passkey %d on the peer side", pkey.passkey);
-            rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);
-            ESP_LOGI(TAG, "ble_sm_inject_io result: %d\n", rc);
-            // TODO GUI
-            break;
+            pkey.action  = event->passkey.params.action;
+            pkey.passkey = jolt_random_range( 0, 1000000 );  // 6 digit number
+            ESP_LOGD( TAG, "Enter passkey %06d on the peer side", pkey.passkey );
+            rc = ble_sm_inject_io( event->passkey.conn_handle, &pkey );
+            assert( 0 == rc );
 
-        default:
-            break;
-    }
-
-    return 0;
-}
-
-#if 0
-{
-    return 0;
-    switch( event ) {
-        case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:
-            // todo: internationalization
             if( NULL != passkey_scr ) {
                 JOLT_GUI_CTX
                 {
@@ -107,32 +91,37 @@ int jolt_gui_bluetooth_pair_gap_cb(struct ble_gap_event *event, void *arg)
                 }
             }
 
-            passkey_scr = jolt_gui_scr_bignum_create( "Bluetooth Pair", "Pairing Key",
-                                                      param->ble_security.key_notif.passkey, 6 );
+            passkey_scr = jolt_gui_scr_bignum_create( "Bluetooth Pair", "Pairing Key", pkey.passkey, 6 );
             jolt_gui_scr_set_event_cb( passkey_scr, passkey_scr_cb );
+
             break;
-        case ESP_GAP_BLE_AUTH_CMPL_EVT:
-    #if !CONFIG_JOLT_BT_DEBUG_ALWAYS_ADV
-            jolt_bluetooth_pair_mode = false;
-    #endif
-            if( NULL != passkey_scr ) {
-                JOLT_GUI_CTX
-                {
-                    jolt_gui_obj_del( passkey_scr );
-                    passkey_scr = NULL;
+
+        case BLE_GAP_EVENT_ENC_CHANGE:
+            rc = ble_gap_conn_find( event->connect.conn_handle, &desc );
+            assert( rc == 0 );
+
+            if( desc.sec_state.encrypted && desc.sec_state.authenticated ) {
+                if( NULL != passkey_scr ) {
+                    JOLT_GUI_CTX
+                    {
+                        jolt_gui_obj_del( passkey_scr );
+                        passkey_scr = NULL;
+                    }
+                }
+                if( NULL != scanning_scr ) {
+                    JOLT_GUI_CTX
+                    {
+                        jolt_gui_obj_del( scanning_scr );
+                        scanning_scr = NULL;
+                    }
                 }
             }
-            if( NULL != scanning_scr ) {
-                JOLT_GUI_CTX
-                {
-                    jolt_gui_obj_del( scanning_scr );
-                    scanning_scr = NULL;
-                }
-            }
             break;
+
         default: break;
     }
+
+    return 0;
 }
-#endif
 
 #endif

@@ -4,7 +4,7 @@
 
 #if CONFIG_BT_ENABLED
 
-    # include "hal/radio/bluetooth.h"
+    #include "hal/radio/bluetooth.h"
 
 #endif
 

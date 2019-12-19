@@ -39,15 +39,14 @@
     #include "jolt_helpers.h"
     #include "nvs_flash.h"
     #include "string.h"
-    #include "jolt_gui/jolt_gui.h"
 
     /* BLE */
+    #include "console/console.h"
     #include "esp_nimble_hci.h"
-    #include "nimble/nimble_port.h"
-    #include "nimble/nimble_port_freertos.h"
     #include "host/ble_hs.h"
     #include "host/util/util.h"
-    #include "console/console.h"
+    #include "nimble/nimble_port.h"
+    #include "nimble/nimble_port_freertos.h"
     #include "services/gap/ble_svc_gap.h"
     #include "services/gatt/ble_svc_gatt.h"
 
@@ -62,16 +61,14 @@ FILE *ble_stdin;
 FILE *ble_stdout;
 FILE *ble_stderr;
 
-static void bleprph_advertise(void);
-static void bleprph_on_sync(void);
+static void bleprph_advertise( void );
+static void bleprph_on_sync( void );
 
-static int gap_event_handler(struct ble_gap_event *event, void *arg);
-static int gatt_svr_chr_access_spp_read(uint16_t conn_handle, uint16_t attr_handle,
-                             struct ble_gatt_access_ctxt *ctxt,
-                             void *arg);
-static int gatt_svr_chr_access_spp_write(uint16_t conn_handle, uint16_t attr_handle,
-                             struct ble_gatt_access_ctxt *ctxt,
-                             void *arg);
+static int gap_event_handler( struct ble_gap_event *event, void *arg );
+static int gatt_svr_chr_access_spp_read( uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt,
+                                         void *arg );
+static int gatt_svr_chr_access_spp_write( uint16_t conn_handle, uint16_t attr_handle,
+                                          struct ble_gatt_access_ctxt *ctxt, void *arg );
 
 static const char TAG[] = "bluetooth.c";
 
@@ -86,7 +83,7 @@ bool jolt_bluetooth_pair_mode = false;
 
 static uint8_t own_addr_type;
 uint16_t spp_mtu_size;
-static uint16_t conn_handle = 0;
+static uint16_t conn_handle     = 0;
 static uint16_t resp_att_handle = 0;
 
 /***************************
@@ -162,15 +159,11 @@ static ssize_t ble_write( int fd, const void *data, size_t size )
 
         ESP_LOGD( TAG, "Sending %d bytes: %.*s", print_len, print_len, &data_c[idx] );
 
-        struct os_mbuf* om;
-        om = ble_hs_mbuf_from_flat(&data_c[idx], print_len);
-        if( NULL == om ) { 
-            abort();
-        }
-        rc =  ble_gattc_notify_custom(conn_handle, resp_att_handle, om);
-        if( 0 != rc ) {
-            abort();
-        }
+        struct os_mbuf *om;
+        om = ble_hs_mbuf_from_flat( &data_c[idx], print_len );
+        if( NULL == om ) { abort(); }
+        rc = ble_gattc_notify_custom( conn_handle, resp_att_handle, om );
+        if( 0 != rc ) { abort(); }
 
         idx += print_len;
         remaining -= print_len;
@@ -463,53 +456,83 @@ void ble_set_rx_line_endings( esp_line_endings_t mode ) { s_rx_mode = mode; }
 /**
  * Logs information about a connection to the console.
  */
-static void
-bleprph_print_conn_desc(struct ble_gap_conn_desc *desc)
+static void bleprph_print_conn_desc( struct ble_gap_conn_desc *desc )
 {
     uint8_t *u8p;
 
     u8p = desc->our_ota_addr.val;
-    ESP_LOGI(TAG, "handle=%d our_ota_addr_type=%d our_ota_addr="
-            "%02x:%02x:%02x:%02x:%02x:%02x",
-                desc->conn_handle, desc->our_ota_addr.type,
-                u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0]);
-
+    ESP_LOGI( TAG,
+              "handle=%d our_ota_addr_type=%d our_ota_addr="
+              "%02x:%02x:%02x:%02x:%02x:%02x",
+              desc->conn_handle, desc->our_ota_addr.type, u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0] );
 
     u8p = desc->our_id_addr.val;
-    ESP_LOGI(TAG, " our_id_addr_type=%d our_id_addr="
-            "%02x:%02x:%02x:%02x:%02x:%02x",
-                desc->our_id_addr.type,
-                u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0]);
+    ESP_LOGI( TAG,
+              " our_id_addr_type=%d our_id_addr="
+              "%02x:%02x:%02x:%02x:%02x:%02x",
+              desc->our_id_addr.type, u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0] );
 
     u8p = desc->peer_ota_addr.val;
-    ESP_LOGI(TAG, " peer_ota_addr_type=%d peer_ota_addr="
-            "%02x:%02x:%02x:%02x:%02x:%02x",
-                desc->peer_ota_addr.type,
-                u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0]);
+    ESP_LOGI( TAG,
+              " peer_ota_addr_type=%d peer_ota_addr="
+              "%02x:%02x:%02x:%02x:%02x:%02x",
+              desc->peer_ota_addr.type, u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0] );
 
     u8p = desc->peer_id_addr.val;
-    ESP_LOGI(TAG, " peer_id_addr_type=%d peer_id_addr="
-            "%02x:%02x:%02x:%02x:%02x:%02x",
-                desc->peer_id_addr.type,
-                u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0]);
+    ESP_LOGI( TAG,
+              " peer_id_addr_type=%d peer_id_addr="
+              "%02x:%02x:%02x:%02x:%02x:%02x",
+              desc->peer_id_addr.type, u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0] );
 
-    ESP_LOGI(TAG, " conn_itvl=%d conn_latency=%d supervision_timeout=%d "
-                "encrypted=%d authenticated=%d bonded=%d\n",
-                desc->conn_itvl, desc->conn_latency,
-                desc->supervision_timeout,
-                desc->sec_state.encrypted,
-                desc->sec_state.authenticated,
-                desc->sec_state.bonded);
+    ESP_LOGI( TAG,
+              " conn_itvl=%d conn_latency=%d supervision_timeout=%d "
+              "encrypted=%d authenticated=%d bonded=%d\n",
+              desc->conn_itvl, desc->conn_latency, desc->supervision_timeout, desc->sec_state.encrypted,
+              desc->sec_state.authenticated, desc->sec_state.bonded );
 }
 
 static bool is_connected = false;
 
 bool jolt_bluetooth_is_connected() { return is_connected; }
 
+static const char *gap_event_to_str( uint8_t event )
+{
+    switch( event ) {
+        case 2: return "<reserved>";
+        case BLE_GAP_EVENT_CONNECT: return "BLE_GAP_EVENT_CONNECT";
+        case BLE_GAP_EVENT_DISCONNECT: return "BLE_GAP_EVENT_DISCONNECT";
+        case BLE_GAP_EVENT_CONN_UPDATE: return "BLE_GAP_EVENT_CONN_UPDATE";
+        case BLE_GAP_EVENT_CONN_UPDATE_REQ: return "BLE_GAP_EVENT_CONN_UPDATE_REQ";
+        case BLE_GAP_EVENT_L2CAP_UPDATE_REQ: return "BLE_GAP_EVENT_L2CAP_UPDATE_REQ";
+        case BLE_GAP_EVENT_TERM_FAILURE: return "BLE_GAP_EVENT_TERM_FAILURE";
+        case BLE_GAP_EVENT_DISC: return "BLE_GAP_EVENT_DISC";
+        case BLE_GAP_EVENT_DISC_COMPLETE: return "BLE_GAP_EVENT_DISC_COMPLETE";
+        case BLE_GAP_EVENT_ADV_COMPLETE: return "BLE_GAP_EVENT_ADV_COMPLETE";
+        case BLE_GAP_EVENT_ENC_CHANGE: return "BLE_GAP_EVENT_ENC_CHANGE";
+        case BLE_GAP_EVENT_PASSKEY_ACTION: return "BLE_GAP_EVENT_PASSKEY_ACTION";
+        case BLE_GAP_EVENT_NOTIFY_RX: return "BLE_GAP_EVENT_NOTIFY_RX";
+        case BLE_GAP_EVENT_NOTIFY_TX: return "BLE_GAP_EVENT_NOTIFY_TX";
+        case BLE_GAP_EVENT_SUBSCRIBE: return "BLE_GAP_EVENT_SUBSCRIBE";
+        case BLE_GAP_EVENT_MTU: return "BLE_GAP_EVENT_MTU";
+        case BLE_GAP_EVENT_IDENTITY_RESOLVED: return "BLE_GAP_EVENT_IDENTITY_RESOLVED";
+        case BLE_GAP_EVENT_REPEAT_PAIRING: return "BLE_GAP_EVENT_REPEAT_PAIRING";
+        case BLE_GAP_EVENT_PHY_UPDATE_COMPLETE: return "BLE_GAP_EVENT_PHY_UPDATE_COMPLETE";
+        case BLE_GAP_EVENT_EXT_DISC: return "BLE_GAP_EVENT_EXT_DISC";
+        case BLE_GAP_EVENT_PERIODIC_SYNC: return "BLE_GAP_EVENT_PERIODIC_SYNC";
+        case BLE_GAP_EVENT_PERIODIC_REPORT: return "BLE_GAP_EVENT_PERIODIC_REPORT";
+        case BLE_GAP_EVENT_PERIODIC_SYNC_LOST: return "BLE_GAP_EVENT_PERIODIC_SYNC_LOST";
+        case BLE_GAP_EVENT_SCAN_REQ_RCVD: return "BLE_GAP_EVENT_SCAN_REO_RCVD";
+        default: return "<unknown>";
+    }
+}
+
 /**
  * The nimble host executes this callback when a GAP event occurs.  The
  * application associates a GAP event callback with each connection that forms.
  * bleuart uses the same callback for all connections.
+ *
+ * Programming Notes:
+ *     * Never return early, would break JoltOS callback chain.
  *
  * @param event                 The type of event being signalled.
  * @param ctxt                  Various information pertaining to the event.
@@ -521,46 +544,45 @@ bool jolt_bluetooth_is_connected() { return is_connected; }
  *                                  of the return code is specific to the
  *                                  particular GAP event being signalled.
  */
-static int gap_event_handler(struct ble_gap_event *event, void *arg)
-    {
+static int gap_event_handler( struct ble_gap_event *event, void *arg )
+{
     struct ble_gap_conn_desc desc;
     int rc;
 
-    switch (event->type) {
+    ESP_LOGI( TAG, "GAP Event: %s", gap_event_to_str( event->type ) );
+
+    switch( event->type ) {
         case BLE_GAP_EVENT_CONNECT:
             /* A new connection was established or a connection attempt failed. */
-            ESP_LOGI(TAG, "connection %s; status=%d ",
-                        event->connect.status == 0 ? "established" : "failed",
-                        event->connect.status);
-            if (event->connect.status == 0) {
-                rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
-                assert(rc == 0);
-                bleprph_print_conn_desc(&desc);
+            ESP_LOGI( TAG, "connection %s; status=%d ", event->connect.status == 0 ? "established" : "failed",
+                      event->connect.status );
+            if( event->connect.status == 0 ) {
+                rc = ble_gap_conn_find( event->connect.conn_handle, &desc );
+                assert( rc == 0 );
+                bleprph_print_conn_desc( &desc );
                 is_connected = true;
             }
 
-            if (event->connect.status == 0) {
+            if( event->connect.status == 0 ) {
                 // TODO see what to really do here
                 // Set conn_handle for notify responses
-                ESP_LOGD(TAG, "Setting conn_handle to 0x%04X", conn_handle);
+                ESP_LOGD( TAG, "Setting conn_handle to 0x%04X", conn_handle );
                 conn_handle = event->connect.conn_handle;
-                ESP_LOGD(TAG, "ble_gap_security_initiate");
-                rc = ble_gap_security_initiate(event->connect.conn_handle);
-                if( 0 != rc ) {
-                    ESP_LOGE(TAG, "ble_gap_security_initiate: 0x%04x", rc);
-                }
+                ESP_LOGD( TAG, "ble_gap_security_initiate" );
+                rc = ble_gap_security_initiate( event->connect.conn_handle );
+                if( 0 != rc ) { ESP_LOGE( TAG, "ble_gap_security_initiate: 0x%04x", rc ); }
             }
 
-            if (event->connect.status != 0) {
+            if( event->connect.status != 0 ) {
                 /* Connection failed; resume advertising. */
-                ESP_LOGE(TAG, "Connection failed; resuming advertising.");
+                ESP_LOGE( TAG, "Connection failed; resuming advertising." );
                 bleprph_advertise();
             }
             break;
 
         case BLE_GAP_EVENT_DISCONNECT:
-            ESP_LOGI(TAG, "disconnect; reason=0x%04X", event->disconnect.reason);
-            bleprph_print_conn_desc(&event->disconnect.conn);
+            ESP_LOGI( TAG, "disconnect; reason=0x%04X", event->disconnect.reason );
+            bleprph_print_conn_desc( &event->disconnect.conn );
             is_connected = false;
 
             /* Connection terminated; resume advertising. */
@@ -570,45 +592,37 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
 
         case BLE_GAP_EVENT_CONN_UPDATE:
             /* The central has updated the connection parameters. */
-            ESP_LOGI(TAG, "connection updated; status=%d ",
-                        event->conn_update.status);
-            rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
-            assert(rc == 0);
-            bleprph_print_conn_desc(&desc);
+            ESP_LOGI( TAG, "connection updated; status=%d ", event->conn_update.status );
+            rc = ble_gap_conn_find( event->connect.conn_handle, &desc );
+            assert( rc == 0 );
+            bleprph_print_conn_desc( &desc );
             break;
 
         case BLE_GAP_EVENT_ADV_COMPLETE:
-            ESP_LOGI(TAG, "advertise complete; reason=0x%04X",
-                        event->adv_complete.reason);
-            bleprph_advertise(); // TODO: I think this will continuously advertise.
+            ESP_LOGI( TAG, "advertise complete; reason=0x%04X", event->adv_complete.reason );
+            bleprph_advertise();  // TODO: I think this will continuously advertise.
             break;
 
         case BLE_GAP_EVENT_ENC_CHANGE:
             /* Encryption has been enabled or disabled for this connection. */
-            ESP_LOGI(TAG, "encryption change event; status=%d ",
-                        event->enc_change.status);
-            rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
-            assert(rc == 0);
-            bleprph_print_conn_desc(&desc);
+            ESP_LOGI( TAG, "encryption change event; status=%d ", event->enc_change.status );
+            rc = ble_gap_conn_find( event->connect.conn_handle, &desc );
+            assert( rc == 0 );
+            bleprph_print_conn_desc( &desc );
             break;
 
         case BLE_GAP_EVENT_SUBSCRIBE:
-            ESP_LOGI(TAG, "subscribe event; conn_handle=%d attr_handle=%d "
-                        "reason=0x%04X prevn=%d curn=%d previ=%d curi=%d\n",
-                        event->subscribe.conn_handle,
-                        event->subscribe.attr_handle,
-                        event->subscribe.reason,
-                        event->subscribe.prev_notify,
-                        event->subscribe.cur_notify,
-                        event->subscribe.prev_indicate,
-                        event->subscribe.cur_indicate);
+            ESP_LOGI( TAG,
+                      "subscribe event; conn_handle=%d attr_handle=%d "
+                      "reason=0x%04X prevn=%d curn=%d previ=%d curi=%d\n",
+                      event->subscribe.conn_handle, event->subscribe.attr_handle, event->subscribe.reason,
+                      event->subscribe.prev_notify, event->subscribe.cur_notify, event->subscribe.prev_indicate,
+                      event->subscribe.cur_indicate );
             break;
 
         case BLE_GAP_EVENT_MTU:
-            ESP_LOGI(TAG, "mtu update event; conn_handle=%d cid=%d mtu=%d\n",
-                        event->mtu.conn_handle,
-                        event->mtu.channel_id,
-                        event->mtu.value);
+            ESP_LOGI( TAG, "mtu update event; conn_handle=%d cid=%d mtu=%d\n", event->mtu.conn_handle,
+                      event->mtu.channel_id, event->mtu.value );
             spp_mtu_size = event->mtu.value;
             break;
 
@@ -619,9 +633,9 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
              */
 
             /* Delete the old bond. */
-            rc = ble_gap_conn_find(event->repeat_pairing.conn_handle, &desc);
-            assert(rc == 0);
-            ble_store_util_delete_peer(&desc.peer_id_addr);
+            rc = ble_gap_conn_find( event->repeat_pairing.conn_handle, &desc );
+            assert( rc == 0 );
+            ble_store_util_delete_peer( &desc.peer_id_addr );
 
             /* Return BLE_GAP_REPEAT_PAIRING_RETRY to indicate that the host should
              * continue with the pairing operation.
@@ -630,162 +644,147 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg)
 
         case BLE_GAP_EVENT_PASSKEY_ACTION:
             // handled in bluetooth gui callback
-            ESP_LOGI(TAG, "PASSKEY_ACTION_EVENT started \n");
+            ESP_LOGI( TAG, "PASSKEY_ACTION_EVENT started \n" );
             break;
     }
 
     return jolt_gui_gap_cb( event, arg );
 }
 
-static int gatt_svr_chr_write(struct os_mbuf *om, uint16_t min_len, uint16_t max_len,
-                   void *dst, uint16_t *len)
+static int gatt_svr_chr_write( struct os_mbuf *om, uint16_t min_len, uint16_t max_len, void *dst, uint16_t *len )
 {
     uint16_t om_len;
     int rc;
 
-    om_len = OS_MBUF_PKTLEN(om);
-    if (om_len < min_len || om_len > max_len) {
-        return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
-    }
+    om_len = OS_MBUF_PKTLEN( om );
+    if( om_len < min_len || om_len > max_len ) { return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN; }
 
-    rc = ble_hs_mbuf_to_flat(om, dst, max_len, len);
-    if (rc != 0) {
-        return BLE_ATT_ERR_UNLIKELY;
-    }
+    rc = ble_hs_mbuf_to_flat( om, dst, max_len, len );
+    if( rc != 0 ) { return BLE_ATT_ERR_UNLIKELY; }
 
     return 0;
 }
 
 const struct ble_gatt_svc_def gatt_svr_svcs[] = {
-    /**
-     * l
-     *
-     * TODO
-     *     * Flags: AUTHEN vs AUTHOR ?
-     *
-     */
-    /** Service: SPP */
-	{
-        .type = BLE_GATT_SVC_TYPE_PRIMARY,
-        .uuid = BLE_UUID16_DECLARE(0xFFE0), 
-        .characteristics    = (struct ble_gatt_chr_def[]) {
-            {
-                /* Read (Jolt -> smartphone/computer) */
-                .uuid = BLE_UUID16_DECLARE(ESP_GATT_UUID_SPP_DATA_NOTIFY),
-                .access_cb = gatt_svr_chr_access_spp_read,
-                .flags = BLE_GATT_CHR_F_NOTIFY,
-                .val_handle = &resp_att_handle, 
-            }, {
-                /* Write (smartphone/computer -> Jolt) */
-                .uuid = BLE_UUID16_DECLARE(ESP_GATT_UUID_SPP_COMMAND_RECEIVE),
-                .access_cb = gatt_svr_chr_access_spp_write,
-                // TODO
-                //.flags = BLE_GATT_CHR_F_WRITE_ENC | BLE_GATT_CHR_F_WRITE_AUTHEN | BLE_GATT_CHR_F_WRITE_NO_RSP,
-                //.flags = BLE_GATT_CHR_F_WRITE, // works!
-                .flags = BLE_GATT_CHR_F_WRITE  | BLE_GATT_CHR_F_WRITE_ENC,
-            }, {
-                0, /* No more characteristics in this service. */
-            }
-        }
-	},
-    {
-        0, /* No more services. */
-    },
+        /**
+         * l
+         *
+         * TODO
+         *     * Flags: AUTHEN vs AUTHOR ?
+         *
+         */
+        /** Service: SPP */
+        {.type = BLE_GATT_SVC_TYPE_PRIMARY,
+         .uuid = BLE_UUID16_DECLARE( 0xFFE0 ),
+         .characteristics =
+                 ( struct ble_gatt_chr_def[] ) {
+                         {
+                                 /* Read (Jolt -> smartphone/computer) */
+                                 .uuid       = BLE_UUID16_DECLARE( ESP_GATT_UUID_SPP_DATA_NOTIFY ),
+                                 .access_cb  = gatt_svr_chr_access_spp_read,
+                                 .flags      = BLE_GATT_CHR_F_NOTIFY,
+                                 .val_handle = &resp_att_handle,
+                         },
+                         {
+                                 /* Write (smartphone/computer -> Jolt) */
+                                 .uuid      = BLE_UUID16_DECLARE( ESP_GATT_UUID_SPP_COMMAND_RECEIVE ),
+                                 .access_cb = gatt_svr_chr_access_spp_write,
+                                 // TODO
+                                 //.flags = BLE_GATT_CHR_F_WRITE_ENC | BLE_GATT_CHR_F_WRITE_AUTHEN |
+                                 //BLE_GATT_CHR_F_WRITE_NO_RSP, .flags = BLE_GATT_CHR_F_WRITE, // works!
+                                 .flags = BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_WRITE_ENC,
+                         },
+                         {
+                                 0, /* No more characteristics in this service. */
+                         }}},
+        {
+                0, /* No more services. */
+        },
 };
 
-static int gatt_svr_chr_access_spp_read(uint16_t conn_handle, uint16_t attr_handle,
-                             struct ble_gatt_access_ctxt *ctxt,
-                             void *arg)
+static int gatt_svr_chr_access_spp_read( uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt,
+                                         void *arg )
 {
-    ESP_LOGD(TAG, "(%d) READ", __LINE__);
+    ESP_LOGD( TAG, "(%d) READ", __LINE__ );
     return 0;
 }
 
 /**
  * @brief Write (smartphone/computer -> Jolt)
  */
-static int gatt_svr_chr_access_spp_write(uint16_t conn_handle, uint16_t attr_handle,
-                             struct ble_gatt_access_ctxt *ctxt,
-                             void *arg)
+static int gatt_svr_chr_access_spp_write( uint16_t conn_handle, uint16_t attr_handle,
+                                          struct ble_gatt_access_ctxt *ctxt, void *arg )
 {
-    ESP_LOGD(TAG, "(%d) WRITE", __LINE__);
+    ESP_LOGD( TAG, "(%d) WRITE", __LINE__ );
     int rc = 0;
-    assert(ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR);
+    assert( ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR );
 
     {
-#if 1
+    #if 1
         /* Forward packet to the ble_in_queue */
         ble_packet_t packet = {0};
-#if CONFIG_JOLT_BT_PROFILING
+        #if CONFIG_JOLT_BT_PROFILING
         packet.t_receive = esp_timer_get_time();
-#endif
-        ESP_LOGI( TAG, " Allocating %d bytes.", OS_MBUF_PKTLEN(ctxt->om) );
-        packet.data = (uint8_t *)malloc( OS_MBUF_PKTLEN(ctxt->om) );
+        #endif
+        ESP_LOGI( TAG, " Allocating %d bytes.", OS_MBUF_PKTLEN( ctxt->om ) );
+        packet.data = (uint8_t *)malloc( OS_MBUF_PKTLEN( ctxt->om ) );
         if( packet.data == NULL ) {
             ESP_LOGE( TAG, "%s malloc failed\n", __func__ );
-            rc = 1; // TODO better rc
+            rc = 1;  // TODO better rc
             goto exit;
         }
-        packet.len = OS_MBUF_PKTLEN(ctxt->om);
+        packet.len = OS_MBUF_PKTLEN( ctxt->om );
         uint16_t written_len;
-        rc = ble_hs_mbuf_to_flat(ctxt->om, packet.data, packet.len, &written_len);
+        rc = ble_hs_mbuf_to_flat( ctxt->om, packet.data, packet.len, &written_len );
         if( !xQueueSend( ble_in_queue, &packet, 10 / portTICK_PERIOD_MS ) ) {
             ESP_LOGE( TAG, "Timed out trying to put packet onto ble_in_queue" );
             free( packet.data );
-            rc = 1; // TODO better rc
+            rc = 1;  // TODO better rc
             goto exit;
         }
 
-#endif
+    #endif
     }
 
 exit:
     return rc;
 }
 
-void gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg)
+void gatt_svr_register_cb( struct ble_gatt_register_ctxt *ctxt, void *arg )
 {
     char buf[BLE_UUID_STR_LEN];
 
-    switch (ctxt->op) {
-    case BLE_GATT_REGISTER_OP_SVC:
-        ESP_LOGD(TAG, "registered service %s with handle=%d",
-                    ble_uuid_to_str(ctxt->svc.svc_def->uuid, buf),
-                    ctxt->svc.handle);
-        break;
+    switch( ctxt->op ) {
+        case BLE_GATT_REGISTER_OP_SVC:
+            ESP_LOGD( TAG, "registered service %s with handle=%d", ble_uuid_to_str( ctxt->svc.svc_def->uuid, buf ),
+                      ctxt->svc.handle );
+            break;
 
-    case BLE_GATT_REGISTER_OP_CHR:
-        ESP_LOGD(TAG, "    registering characteristic %s with "
-                    "def_handle=%d val_handle=%d",
-                    ble_uuid_to_str(ctxt->chr.chr_def->uuid, buf),
-                    ctxt->chr.def_handle,
-                    ctxt->chr.val_handle);
-        break;
+        case BLE_GATT_REGISTER_OP_CHR:
+            ESP_LOGD( TAG,
+                      "    registering characteristic %s with "
+                      "def_handle=%d val_handle=%d",
+                      ble_uuid_to_str( ctxt->chr.chr_def->uuid, buf ), ctxt->chr.def_handle, ctxt->chr.val_handle );
+            break;
 
-    case BLE_GATT_REGISTER_OP_DSC:
-        ESP_LOGD(TAG, "    registering descriptor %s with handle=%d",
-                    ble_uuid_to_str(ctxt->dsc.dsc_def->uuid, buf),
-                    ctxt->dsc.handle);
-        break;
+        case BLE_GATT_REGISTER_OP_DSC:
+            ESP_LOGD( TAG, "    registering descriptor %s with handle=%d",
+                      ble_uuid_to_str( ctxt->dsc.dsc_def->uuid, buf ), ctxt->dsc.handle );
+            break;
 
-    default:
-        assert(0);
-        break;
+        default: assert( 0 ); break;
     }
 }
 
-static void bleprph_host_task(void *param)
+static void bleprph_host_task( void *param )
 {
-    ESP_LOGI(TAG, "BLE Host Task Started");
+    ESP_LOGI( TAG, "BLE Host Task Started" );
     /* This function will return only when nimble_port_stop() is executed */
     nimble_port_run();
     nimble_port_freertos_deinit();
 }
 
-static void bleprph_on_reset(int reason)
-{
-    ESP_LOGE(TAG, "Resetting state; reason=0x%04X\n", reason);
-}
+static void bleprph_on_reset( int reason ) { ESP_LOGE( TAG, "Resetting state; reason=0x%04X\n", reason ); }
 
 esp_err_t jolt_bluetooth_start()
 {
@@ -795,10 +794,9 @@ esp_err_t jolt_bluetooth_start()
     {
         err = esp_nimble_hci_and_controller_init();
         switch( err ) {
-            case ESP_OK:
-                break;
+            case ESP_OK: break;
             default:
-                ESP_LOGE(TAG, "Error initializing BLE HCI and Controller (%s).", esp_err_to_name(err));
+                ESP_LOGE( TAG, "Error initializing BLE HCI and Controller (%s).", esp_err_to_name( err ) );
                 abort();
                 goto exit;
                 break;
@@ -810,48 +808,44 @@ esp_err_t jolt_bluetooth_start()
     {
         /* config */
 
-		/** @brief Stack sync callback
-		 *
-		 * This callback is executed when the host and controller become synced.
-		 * This happens at startup and after a reset.
-		 */
-		ble_hs_cfg.sync_cb = bleprph_on_sync;
-		ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
-		ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
-        ble_hs_cfg.reset_cb = bleprph_on_reset;
+        /** @brief Stack sync callback
+         *
+         * This callback is executed when the host and controller become synced.
+         * This happens at startup and after a reset.
+         */
+        ble_hs_cfg.sync_cb           = bleprph_on_sync;
+        ble_hs_cfg.store_status_cb   = ble_store_util_status_rr;
+        ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
+        ble_hs_cfg.reset_cb          = bleprph_on_reset;
 
-        ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_DISP_ONLY;
-        ble_hs_cfg.sm_bonding = 1;
-        ble_hs_cfg.sm_mitm  = 1;
-        ble_hs_cfg.sm_sc  = 1;
-        ble_hs_cfg.sm_our_key_dist = 1;
+        ble_hs_cfg.sm_io_cap         = BLE_SM_IO_CAP_DISP_ONLY;
+        ble_hs_cfg.sm_bonding        = 1;
+        ble_hs_cfg.sm_mitm           = 1;
+        ble_hs_cfg.sm_sc             = 1;
+        ble_hs_cfg.sm_our_key_dist   = 1;
         ble_hs_cfg.sm_their_key_dist = 1;
     }
 
     /* Set the default device name. */
     {
         int rc;
-        rc = ble_svc_gap_device_name_set(BLE_DEFAULT_DEVICE_NAME);
-        assert(rc == 0);
+        rc = ble_svc_gap_device_name_set( BLE_DEFAULT_DEVICE_NAME );
+        assert( rc == 0 );
     }
 
     ble_svc_gap_init();
     ble_svc_gatt_init();
 
-	{
-		int rc;
-		rc = ble_gatts_count_cfg(gatt_svr_svcs); // TODO
-		if (rc != 0) {
-            goto exit;
-		}
+    {
+        int rc;
+        rc = ble_gatts_count_cfg( gatt_svr_svcs );  // TODO
+        if( rc != 0 ) { goto exit; }
 
-		rc = ble_gatts_add_svcs(gatt_svr_svcs); // TODO
-		if (rc != 0) {
-            goto exit;
-		}
-	}
+        rc = ble_gatts_add_svcs( gatt_svr_svcs );  // TODO
+        if( rc != 0 ) { goto exit; }
+    }
 
-    nimble_port_freertos_init(bleprph_host_task);
+    nimble_port_freertos_init( bleprph_host_task );
 
 exit:
     return ESP_OK;
@@ -860,8 +854,8 @@ exit:
 esp_err_t jolt_bluetooth_stop()
 {
     // TODO
-    
-#if 0
+
+    #if 0
     esp_err_t err = ESP_OK;
 
     /* Destroy Bluedroid */
@@ -933,9 +927,9 @@ esp_err_t jolt_bluetooth_stop()
     }
 exit:
     return err;
-#else
+    #else
     return ESP_OK;
-#endif
+    #endif
 }
 
 /**
@@ -943,12 +937,12 @@ exit:
  *     o General discoverable mode.
  *     o Undirected connectable mode.
  */
-static void bleprph_advertise(void)
+static void bleprph_advertise( void )
 {
-    ESP_LOGI(TAG, "BLE Advertising start");
+    ESP_LOGI( TAG, "BLE Advertising start" );
 
     struct ble_gap_adv_params adv_params;
-    struct ble_hs_adv_fields fields = { 0 };
+    struct ble_hs_adv_fields fields = {0};
     const char *name;
     int rc;
 
@@ -964,74 +958,71 @@ static void bleprph_advertise(void)
      *     o Discoverability in forthcoming advertisement (general)
      *     o BLE-only (BR/EDR unsupported).
      */
-    fields.flags = BLE_HS_ADV_F_DISC_GEN |
-                   BLE_HS_ADV_F_BREDR_UNSUP;
+    fields.flags = BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP;
 
     /* Indicate that the TX power level field should be included; have the
      * stack fill this value automatically.  This is done by assigning the
      * special value BLE_HS_ADV_TX_PWR_LVL_AUTO.
      */
     fields.tx_pwr_lvl_is_present = 1;
-    fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
+    fields.tx_pwr_lvl            = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
-    name = ble_svc_gap_device_name();
-    fields.name = (uint8_t *)name;
-    fields.name_len = strlen(name);
+    name                    = ble_svc_gap_device_name();
+    fields.name             = (uint8_t *)name;
+    fields.name_len         = strlen( name );
     fields.name_is_complete = 1;
 
-    fields.uuids16 = (ble_uuid16_t[]) {
-        BLE_UUID16_INIT(0xFFE0)
-        //BLE_UUID16_INIT(GATT_SVR_SVC_ALERT_UUID)
+    fields.uuids16 = ( ble_uuid16_t[] ) {
+            BLE_UUID16_INIT( 0xFFE0 )
+            // BLE_UUID16_INIT(GATT_SVR_SVC_ALERT_UUID)
     };
-    fields.num_uuids16 = 1;
+    fields.num_uuids16         = 1;
     fields.uuids16_is_complete = 1;
 
-    rc = ble_gap_adv_set_fields(&fields);
-    if (rc != 0) {
-        ESP_LOGE(TAG, "error setting advertisement data; rc=%d\n", rc);
+    rc = ble_gap_adv_set_fields( &fields );
+    if( rc != 0 ) {
+        ESP_LOGE( TAG, "error setting advertisement data; rc=%d\n", rc );
         return;
     }
 
     /* Begin advertising. */
-    memset(&adv_params, 0, sizeof adv_params);
+    memset( &adv_params, 0, sizeof adv_params );
     adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
     adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
-    rc = ble_gap_adv_start(own_addr_type, NULL, BLE_HS_FOREVER,
-                           &adv_params, gap_event_handler, NULL);
-    if (rc != 0) {
-        ESP_LOGE(TAG, "error enabling advertisement; rc=%d\n", rc);
+    rc = ble_gap_adv_start( own_addr_type, NULL, BLE_HS_FOREVER, &adv_params, gap_event_handler, NULL );
+    if( rc != 0 ) {
+        ESP_LOGE( TAG, "error enabling advertisement; rc=%d\n", rc );
         return;
     }
 }
 
-static void bleprph_on_sync(void)
+static void bleprph_on_sync( void )
 {
     int rc;
 
-    rc = ble_hs_util_ensure_addr(0);
-    assert(rc == 0);
+    rc = ble_hs_util_ensure_addr( 0 );
+    assert( rc == 0 );
 
     /* Figure out address to use while advertising (no privacy for now) */
-    rc = ble_hs_id_infer_auto(0, &own_addr_type);
-    if (rc != 0) {
-        MODLOG_DFLT(ERROR, "error determining address type; rc=%d\n", rc);
+    rc = ble_hs_id_infer_auto( 0, &own_addr_type );
+    if( rc != 0 ) {
+        MODLOG_DFLT( ERROR, "error determining address type; rc=%d\n", rc );
         return;
     }
 
     /* Printing ADDR */
     uint8_t addr_val[6] = {0};
-    rc = ble_hs_id_copy_addr(own_addr_type, addr_val, NULL);
+    rc                  = ble_hs_id_copy_addr( own_addr_type, addr_val, NULL );
 
     {
         uint8_t *u8p = addr_val;
-        ESP_LOGI(TAG, "Device Address: %02x:%02x:%02x:%02x:%02x:%02x",
-                    u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0]);
+        ESP_LOGI( TAG, "Device Address: %02x:%02x:%02x:%02x:%02x:%02x", u8p[5], u8p[4], u8p[3], u8p[2], u8p[1],
+                  u8p[0] );
     }
 
     /* Begin advertising. */
     bleprph_advertise();
 }
-
 
 /* Start Advertising to ALL devices; useful for pairing */
 esp_err_t jolt_bluetooth_adv_all_start()
@@ -1050,12 +1041,14 @@ esp_err_t jolt_bluetooth_adv_wht_start()
 }
 
 /* Stop advertising */
-esp_err_t jolt_bluetooth_adv_stop() {
+esp_err_t jolt_bluetooth_adv_stop()
+{
     // TODO
     return ESP_OK;
 }
 
-void jolt_bluetooth_config_security( bool bond ) {
+void jolt_bluetooth_config_security( bool bond )
+{
     // TODO
 }
 
