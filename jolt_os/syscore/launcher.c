@@ -53,13 +53,6 @@ static void launch_app_cache_clear()
     }
 }
 
-/* Launches app specified without ".jelf" suffix. i.e. "app"
- * Launches the app's function with same name as func.
- *
- * If the app was the last app launched (or currently launched app), it will
- * use the last cached instance (unless vault has been invalidated and
- * matches derivation path)
- */
 int jolt_launch_file( const char *fn_basename, int app_argc, char **app_argv, const char *passphrase )
 {
     int return_code          = JOLT_LAUNCHER_ERR_UNKNOWN_FAIL;
@@ -180,7 +173,7 @@ exec:
 
     ESP_LOGI( TAG, "Derivation Purpose: 0x%x. Coin Type: 0x%x", app_cache.ctx->header.e_coin_purpose,
               app_cache.ctx->header.e_coin_path );
-    ESP_LOGI( TAG, "The following BIP32 Key is %d char long:%s.", strlen( app_cache.ctx->bip32_key ),
+    ESP_LOGI( TAG, "The following BIP32 Key is %d char long:%s.", strlen( app_cache.ctx->header.e_bip32key ),
               app_cache.ctx->header.e_bip32key );
     jolt_launch_inc_ref_ctr();
     vault_set( app_cache.ctx->header.e_coin_purpose, app_cache.ctx->header.e_coin_path,

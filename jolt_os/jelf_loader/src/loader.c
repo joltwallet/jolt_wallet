@@ -4,6 +4,8 @@
  * which in turn is mostly an ESP32-port of martinribelotta's ARMv7 elfloader.
  */
 
+//#define LOG_LOCAL_LEVEL 3
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -19,8 +21,6 @@
 #endif
 
 #if ESP_PLATFORM
-
-//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
     #include "esp_log.h"
     #include "hal/storage/storage.h"
@@ -249,6 +249,9 @@ int jelfLoaderReadHeader( FILE *fd, crypto_hash_sha512_state *hs, Jelf_Ehdr *h )
         h->e_version_major = buf[0];
         h->e_version_minor = buf[1];
         h->e_version_patch = buf[2];
+        INFO( "JoltOS Jelf Version: %d.%d.%d", JOLT_JELF_VERSION.major, JOLT_JELF_VERSION.minor,
+              JOLT_JELF_VERSION.patch )
+        INFO( "JApp Jelf Version:  %d.%d.%d", h->e_version_major, h->e_version_minor, h->e_version_patch );
     }
 
     /* Broad initial check on JELF version */
@@ -482,6 +485,8 @@ static jelfLoaderSection_t *findSection( jelfLoaderContext_t *ctx, int index )
  * false if public_key doesn't match approved public_key. */
 static bool app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const char *name )
 {
+    int rc;
+
     /* Initialize Signature Check Hashing */
     ctx->hs = LOADER_ALLOC_DATA( sizeof( crypto_hash_sha512_state ) );
     if( NULL == ctx->hs ) {
@@ -492,7 +497,8 @@ static bool app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const ch
     /* Hash the app name */
     app_hash_update( ctx->hs, (uint8_t *)name, strlen( name ) );
 
-    assert( 0 == jelfLoaderReadHeader( ctx->fd, ctx->hs, header ) );
+    rc = jelfLoaderReadHeader( ctx->fd, ctx->hs, header );
+    if( 0 != rc ) goto err;
 
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
     {

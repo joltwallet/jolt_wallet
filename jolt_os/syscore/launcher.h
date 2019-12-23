@@ -33,12 +33,14 @@ enum {
 /**
  * @brief Runs a Jolt Application file.
  *
- *
  * If the app was the last app launched (or currently launched app), it will
  * use the last cached instance (unless vault has been invalidated and
  * matches derivation path)
  *
- * @param[in] fn_basename app specified without ".elf" suffix. i.e. "app"
+ * Loads and links in current task, but will execute the application in
+ * the background task.
+ *
+ * @param[in] fn_basename app specified without ".jelf" suffix. i.e. "app"
  * @param[in] app_argc argument count to pass in to application.
  * @param[in] app_argv variable arguments
  * @param[in] passphrase string to use during BIP32 derivation

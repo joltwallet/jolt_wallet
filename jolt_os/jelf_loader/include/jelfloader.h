@@ -106,8 +106,7 @@ typedef struct jelfLoaderContext_t {
     size_t symtab_count;   /**< Number of Symbols in the SymTab */
 
     /* Coin Derivation Data */
-    char bip32_key[JELF_BIP32KEY_LEN + 1]; /**< BIP32 Seed String; e.g. "bitcoin_seed" */
-    jelfLoaderContext_state_t state;       /**< Current State of the launching procedure */
+    jelfLoaderContext_state_t state; /**< Current State of the launching procedure */
 
     /* Inflator */
     inf_stream_t inf_stream; /**< Inflator/Decompressor object */
