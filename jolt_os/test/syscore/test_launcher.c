@@ -12,9 +12,19 @@
 static const char MODULE_NAME[] = "[jolt_launcher]";
 
 #define JELF_OFFSET_MAGIC         0
-#define JELF_OFFSET_VERSION_MAJOR JELF_OFFSET_MAGIC + 6
-#define JELF_OFFSET_VERSION_MINOR JELF_OFFSET_VERSION_MAJOR + 1
-#define JELF_OFFSET_VERSION_PATCH JELF_OFFSET_VERSION_MAJOR + 2
+#define JELF_OFFSET_VERSION_MAJOR (JELF_OFFSET_MAGIC + 6)
+#define JELF_OFFSET_VERSION_MINOR (JELF_OFFSET_VERSION_MAJOR + 1)
+#define JELF_OFFSET_VERSION_PATCH (JELF_OFFSET_VERSION_MAJOR + 2)
+#define JELF_OFFSET_APP_VERSION_MAJOR (JELF_OFFSET_VERSION_PATCH + 1)
+#define JELF_OFFSET_APP_VERSION_MINOR (JELF_OFFSET_APP_VERSION_MAJOR + 1)
+#define JELF_OFFSET_APP_VERSION_PATCH (JELF_OFFSET_APP_VERSION_MAJOR + 2)
+#define JELF_OFFSET_PUBLIC_KEY (JELF_OFFSET_APP_VERSION_PATCH + 1)
+#define JELF_OFFSET_SIGNATURE (JELF_OFFSET_PUBLIC_KEY + 32)
+#define JELF_OFFSET_ENTRY_INDEX (JELF_OFFSET_SIGNATURE + 64)
+#define JELF_OFFSET_SHNUM (JELF_OFFSET_ENTRY_INDEX + 2)
+#define JELF_OFFSET_COIN_PURPOSE (JELF_OFFSET_SHNUM + 2)
+#define JELF_OFFSET_COIN_PATH (JELF_OFFSET_COIN_PURPOSE + 4)
+#define JELF_OFFSET_BIP32KEY (JELF_OFFSET_COIN_PATH + 4)
 
 /**
  * Compiled Jolt App for "Hello World"
@@ -62,6 +72,13 @@ static uint8_t failure_scr_data[] = {
         0x83, 0x22, 0x02, 0x00, 0x10, 0x83, 0x2A, 0x0B, 0x3C, 0x00, 0x02, 0x1F, 0x22, 0x00, 0x22, 0x3E, 0x20, 0x00,
         0x1C, 0x83, 0x22, 0x04, 0x1C, 0x00, 0x3E, 0x04, 0x82, 0x02, 0x02, 0x3C, 0x00, 0x82, 0x30, 0xFF, 0x00, 0xFF,
         0x00, 0xFF, 0x00, 0xFF, 0x00, 0xC7, 0x00};
+
+static jolt_display_t expected_failure_scr = {
+        .type     = JOLT_DISPLAY_TYPE_SSD1306,
+        .encoding = JOLT_ENCODING_JRLE,
+        .len      = sizeof( failure_scr_data ),
+        .data     = failure_scr_data,
+};
 
 static const char test_app_name[] = "Hello World";
 
@@ -174,14 +191,7 @@ TEST_CASE( "greater minor launch", MODULE_NAME )
 
     vTaskDelay( pdMS_TO_TICKS( 50 ) );
 
-    jolt_display_t expected_scr = {
-            .type     = JOLT_DISPLAY_TYPE_SSD1306,
-            .encoding = JOLT_ENCODING_JRLE,
-            .len      = sizeof( failure_scr_data ),
-            .data     = failure_scr_data,
-    };
-
-    TEST_ASSERT_EQUAL_DISPLAY( &expected_scr, NULL );
+    TEST_ASSERT_EQUAL_DISPLAY( &expected_failure_scr, NULL );
     JOLT_BACK;  // Exit the error screen.
 
     remove( fn );
@@ -190,7 +200,7 @@ TEST_CASE( "greater minor launch", MODULE_NAME )
 }
 
 /**
- * @brief Tests for when the app minor version exceeds the current version.
+ * @brief Tests for when the app major version exceeds the current version.
  *
  * Should always fail.
  */
@@ -199,7 +209,7 @@ TEST_CASE( "greater major launch", MODULE_NAME )
     char *fn;
     FILE *f;
     int n, rc;
-    const uint8_t new_minor = JOLT_JELF_VERSION.minor + 1;
+    const uint8_t new_major = JOLT_JELF_VERSION.major + 1;
 
     vault_clear();
 
@@ -211,7 +221,7 @@ TEST_CASE( "greater major launch", MODULE_NAME )
     n = fwrite( hello_world_jelf_v_0_1_0, 1, sizeof( hello_world_jelf_v_0_1_0 ), f );
     TEST_ASSERT_EQUAL_INT_MESSAGE( n, sizeof( hello_world_jelf_v_0_1_0 ), "Failed to write hello world app" );
     fseek( f, JELF_OFFSET_VERSION_MAJOR, SEEK_SET );
-    fwrite( &new_minor, 1, 1, f );
+    fwrite( &new_major, 1, 1, f );
     fclose( f );
 
     /* Need an argc > 0 in order to get a return code */
@@ -220,17 +230,98 @@ TEST_CASE( "greater major launch", MODULE_NAME )
 
     vTaskDelay( pdMS_TO_TICKS( 50 ) );
 
-    jolt_display_t expected_scr = {
-            .type     = JOLT_DISPLAY_TYPE_SSD1306,
-            .encoding = JOLT_ENCODING_JRLE,
-            .len      = sizeof( failure_scr_data ),
-            .data     = failure_scr_data,
-    };
-
-    TEST_ASSERT_EQUAL_DISPLAY( &expected_scr, NULL );
+    TEST_ASSERT_EQUAL_DISPLAY( &expected_failure_scr, NULL );
     JOLT_BACK;  // Exit the error screen.
 
     remove( fn );
 
     free( fn );
 }
+
+/**
+ * @brief Tests for incorrect magic.
+ *
+ * Should always fail.
+ */
+TEST_CASE( "japp magic", MODULE_NAME )
+{
+    char *fn;
+    FILE *f;
+    int n, rc;
+
+    vault_clear();
+
+    fn = jolt_fs_parse( test_app_name, "jelf" );
+    assert( fn );
+
+    f = fopen( fn, "w" );
+    assert( f );
+    n = fwrite( hello_world_jelf_v_0_1_0, 1, sizeof( hello_world_jelf_v_0_1_0 ), f );
+    TEST_ASSERT_EQUAL_INT_MESSAGE( n, sizeof( hello_world_jelf_v_0_1_0 ), "Failed to write hello world app" );
+    fseek( f, JELF_OFFSET_MAGIC, SEEK_SET );
+    {
+        const uint8_t bad_magic[] = { 0x7D };
+        fwrite( bad_magic, 1, sizeof(bad_magic), f );
+    }
+    fclose( f );
+
+    /* Need an argc > 0 in order to get a return code */
+    rc = jolt_launch_file( test_app_name, 1, NULL, EMPTY_STR );
+    TEST_ASSERT_EQUAL_INT( -1, rc );
+
+    vTaskDelay( pdMS_TO_TICKS( 50 ) );
+
+
+    TEST_ASSERT_EQUAL_DISPLAY( &expected_failure_scr, NULL );
+    JOLT_BACK;  // Exit the error screen.
+
+    remove( fn );
+
+    free( fn );
+}
+
+/**
+ * @brief Tests for too-long bip32 key.
+ *
+ * Should always fail.
+ */
+TEST_CASE( "japp bip32", MODULE_NAME )
+{
+    char *fn;
+    FILE *f;
+    int n, rc;
+
+    vault_clear();
+
+    fn = jolt_fs_parse( test_app_name, "jelf" );
+    assert( fn );
+
+    f = fopen( fn, "w" );
+    assert( f );
+    n = fwrite( hello_world_jelf_v_0_1_0, 1, sizeof( hello_world_jelf_v_0_1_0 ), f );
+    TEST_ASSERT_EQUAL_INT_MESSAGE( n, sizeof( hello_world_jelf_v_0_1_0 ), "Failed to write hello world app" );
+    fseek( f, JELF_OFFSET_BIP32KEY, SEEK_SET );
+    {
+        const char fill = 'A';
+        /* The bip32key must be NULL-terminated. */
+        for(uint8_t i=0; i < 32; i++){
+            fwrite( &fill, 1, 1, f );
+        }
+    }
+    fclose( f );
+
+    /* Need an argc > 0 in order to get a return code */
+    rc = jolt_launch_file( test_app_name, 1, NULL, EMPTY_STR );
+    TEST_ASSERT_EQUAL_INT( -1, rc );
+
+    vTaskDelay( pdMS_TO_TICKS( 50 ) );
+
+
+    TEST_ASSERT_EQUAL_DISPLAY( &expected_failure_scr, NULL );
+    JOLT_BACK;  // Exit the error screen.
+
+    remove( fn );
+
+    free( fn );
+}
+

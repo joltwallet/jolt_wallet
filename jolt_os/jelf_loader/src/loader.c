@@ -232,7 +232,7 @@ int jelfLoaderReadHeader( FILE *fd, crypto_hash_sha512_state *hs, Jelf_Ehdr *h )
 
         /* Make sure that we have a correct and compatible ELF header. */
         char JelfMagic[] = {0x7f, 'J', 'E', 'L', 'F', '\0'};
-        if( 0 != memcmp( h->e_ident, JelfMagic, strlen( JelfMagic ) ) ) {
+        if( 0 != memcmp( h->e_ident, JelfMagic, sizeof( JelfMagic ) ) ) {
             ERR( "Bad JELF Identification" );
             goto err;
         }
@@ -299,7 +299,13 @@ int jelfLoaderReadHeader( FILE *fd, crypto_hash_sha512_state *hs, Jelf_Ehdr *h )
             POPULATE_O( h->e_shnum );
             POPULATE_O( h->e_coin_purpose );
             POPULATE_O( h->e_coin_path );
+            memzero(h->e_bip32key, sizeof(h->e_bip32key));
             POPULATE_P( h->e_bip32key );
+            if( '\0' != h->e_bip32key[sizeof(h->e_bip32key)-1] ) {
+                /* Ensures this is a NULL-terminated string */
+                ERR("bip32key either exceeds 31 characters or is not null-terminated");
+                goto err;
+            }
         }
         else {
             goto unsupported_jelf_version;
