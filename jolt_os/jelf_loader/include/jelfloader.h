@@ -129,18 +129,22 @@ typedef struct jelfLoaderContext_t {
  * @brief Application loading return codes
  */
 typedef enum jelfLoaderStatus_t {
-    JELF_LOADER_OK = 0,         /**< Success */
-    JELF_LOADER_ERROR,          /**< Generic error if one was not explicitly defined */
-    JELF_LOADER_INVALID_STATE,  /**< Context is not in correct state to perform requested action */
-    JELF_LOADER_INVALID_KEY,    /**< Application's public key doesn't match approved */
-    JELF_LOADER_OOM,            /**< Out of memory */
-    JELF_LOADER_VERSION_JOLTOS, /**< JoltOS is out of date */
-    JELF_LOADER_VERSION_APP,    /**< Application is out of data */
-    JELF_LOADER_MALFORMED,      /**< Malformed data */
-    JELF_LOADER_RELOC,          /**< Error relocating section */
-    JELF_LOADER_LINK,           /**< Invalid section linking data */
-    JELF_LOADER_SYMTAB,         /**< Missing symbol table */
-    JELF_LOADER_ENTRYPOINT,     /**< Missing entrypoint */
+    JELF_LOADER_OK = 0,          /**< Success */
+    JELF_LOADER_ERROR,           /**< Generic error if one was not explicitly defined */
+    JELF_LOADER_INVALID_STATE,   /**< Context is not in correct state to perform requested action */
+    JELF_LOADER_INVALID_KEY,     /**< Application's public key doesn't match approved */
+    JELF_LOADER_OOM,             /**< Out of memory */
+    JELF_LOADER_VERSION_JOLTOS,  /**< JoltOS is out of date */
+    JELF_LOADER_VERSION_APP,     /**< Application is out of data */
+    JELF_LOADER_MALFORMED,       /**< Malformed data */
+    JELF_LOADER_RELOC,           /**< Error relocating section */
+    JELF_LOADER_LINK,            /**< Invalid section linking data */
+    JELF_LOADER_SYMTAB,          /**< Missing symbol table */
+    JELF_LOADER_ENTRYPOINT,      /**< Missing entrypoint */
+    JELF_LOADER_MAGIC,           /**< Bad Magic Field */
+    JELF_LOADER_BIP32KEY,        /**< Bad BIP32 Key */
+    JELF_LOADER_CORRUPT_STORAGE, /**< Corrupt stored parameter */
+    JELF_LOADER_CONTEXT,         /** Improperly initialized loader context */
 } jelfLoaderStatus_t;
 
 /**

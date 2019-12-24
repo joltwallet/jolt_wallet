@@ -11,20 +11,20 @@
 
 static const char MODULE_NAME[] = "[jolt_launcher]";
 
-#define JELF_OFFSET_MAGIC         0
-#define JELF_OFFSET_VERSION_MAJOR (JELF_OFFSET_MAGIC + 6)
-#define JELF_OFFSET_VERSION_MINOR (JELF_OFFSET_VERSION_MAJOR + 1)
-#define JELF_OFFSET_VERSION_PATCH (JELF_OFFSET_VERSION_MAJOR + 2)
-#define JELF_OFFSET_APP_VERSION_MAJOR (JELF_OFFSET_VERSION_PATCH + 1)
-#define JELF_OFFSET_APP_VERSION_MINOR (JELF_OFFSET_APP_VERSION_MAJOR + 1)
-#define JELF_OFFSET_APP_VERSION_PATCH (JELF_OFFSET_APP_VERSION_MAJOR + 2)
-#define JELF_OFFSET_PUBLIC_KEY (JELF_OFFSET_APP_VERSION_PATCH + 1)
-#define JELF_OFFSET_SIGNATURE (JELF_OFFSET_PUBLIC_KEY + 32)
-#define JELF_OFFSET_ENTRY_INDEX (JELF_OFFSET_SIGNATURE + 64)
-#define JELF_OFFSET_SHNUM (JELF_OFFSET_ENTRY_INDEX + 2)
-#define JELF_OFFSET_COIN_PURPOSE (JELF_OFFSET_SHNUM + 2)
-#define JELF_OFFSET_COIN_PATH (JELF_OFFSET_COIN_PURPOSE + 4)
-#define JELF_OFFSET_BIP32KEY (JELF_OFFSET_COIN_PATH + 4)
+#define JELF_OFFSET_MAGIC             0
+#define JELF_OFFSET_VERSION_MAJOR     ( JELF_OFFSET_MAGIC + 6 )
+#define JELF_OFFSET_VERSION_MINOR     ( JELF_OFFSET_VERSION_MAJOR + 1 )
+#define JELF_OFFSET_VERSION_PATCH     ( JELF_OFFSET_VERSION_MAJOR + 2 )
+#define JELF_OFFSET_APP_VERSION_MAJOR ( JELF_OFFSET_VERSION_PATCH + 1 )
+#define JELF_OFFSET_APP_VERSION_MINOR ( JELF_OFFSET_APP_VERSION_MAJOR + 1 )
+#define JELF_OFFSET_APP_VERSION_PATCH ( JELF_OFFSET_APP_VERSION_MAJOR + 2 )
+#define JELF_OFFSET_PUBLIC_KEY        ( JELF_OFFSET_APP_VERSION_PATCH + 1 )
+#define JELF_OFFSET_SIGNATURE         ( JELF_OFFSET_PUBLIC_KEY + 32 )
+#define JELF_OFFSET_ENTRY_INDEX       ( JELF_OFFSET_SIGNATURE + 64 )
+#define JELF_OFFSET_SHNUM             ( JELF_OFFSET_ENTRY_INDEX + 2 )
+#define JELF_OFFSET_COIN_PURPOSE      ( JELF_OFFSET_SHNUM + 2 )
+#define JELF_OFFSET_COIN_PATH         ( JELF_OFFSET_COIN_PURPOSE + 4 )
+#define JELF_OFFSET_BIP32KEY          ( JELF_OFFSET_COIN_PATH + 4 )
 
 /**
  * Compiled Jolt App for "Hello World"
@@ -260,8 +260,8 @@ TEST_CASE( "japp magic", MODULE_NAME )
     TEST_ASSERT_EQUAL_INT_MESSAGE( n, sizeof( hello_world_jelf_v_0_1_0 ), "Failed to write hello world app" );
     fseek( f, JELF_OFFSET_MAGIC, SEEK_SET );
     {
-        const uint8_t bad_magic[] = { 0x7D };
-        fwrite( bad_magic, 1, sizeof(bad_magic), f );
+        const uint8_t bad_magic[] = {0x7D};
+        fwrite( bad_magic, 1, sizeof( bad_magic ), f );
     }
     fclose( f );
 
@@ -270,7 +270,6 @@ TEST_CASE( "japp magic", MODULE_NAME )
     TEST_ASSERT_EQUAL_INT( -1, rc );
 
     vTaskDelay( pdMS_TO_TICKS( 50 ) );
-
 
     TEST_ASSERT_EQUAL_DISPLAY( &expected_failure_scr, NULL );
     JOLT_BACK;  // Exit the error screen.
@@ -304,9 +303,7 @@ TEST_CASE( "japp bip32", MODULE_NAME )
     {
         const char fill = 'A';
         /* The bip32key must be NULL-terminated. */
-        for(uint8_t i=0; i < 32; i++){
-            fwrite( &fill, 1, 1, f );
-        }
+        for( uint8_t i = 0; i < 32; i++ ) { fwrite( &fill, 1, 1, f ); }
     }
     fclose( f );
 
@@ -316,7 +313,6 @@ TEST_CASE( "japp bip32", MODULE_NAME )
 
     vTaskDelay( pdMS_TO_TICKS( 50 ) );
 
-
     TEST_ASSERT_EQUAL_DISPLAY( &expected_failure_scr, NULL );
     JOLT_BACK;  // Exit the error screen.
 
@@ -324,4 +320,3 @@ TEST_CASE( "japp bip32", MODULE_NAME )
 
     free( fn );
 }
-
