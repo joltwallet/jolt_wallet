@@ -757,7 +757,7 @@ def main():
     name_to_sign = os.path.basename(output_fn[:-5]).encode('utf-8')
 
     # TODO: not make the 44 not hardprogrammed
-    # Exclude the signature bbytes of the header
+    # Exclude the signature bytes of the header
     t_hash = sha512(name_to_sign + \
             jelf_ehdr_contents[:44] + \
             jelf_ehdr_contents[(44+64):] + \

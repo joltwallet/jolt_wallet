@@ -354,3 +354,80 @@ TEST_CASE( "japp bip32", MODULE_NAME )
 
     free( fn );
 }
+
+/**
+ * @brief Tests that the application cache is invalidated if the application
+ * file has been invalidated..
+ */
+TEST_CASE( "japp cache invalidation", MODULE_NAME )
+{
+    char *fn;
+    int n, rc;
+
+    vault_clear();
+
+    fn = jolt_fs_parse( test_app_name, "jelf" );
+    assert( fn );
+
+    {
+        /* Write app to disk */
+        FILE *f;
+        f = fopen( fn, "w" );
+        TEST_ASSERT_NOT_NULL_MESSAGE( f, "Failed to open file" );
+        n = fwrite( hello_world_jelf_v_0_1_0, 1, sizeof( hello_world_jelf_v_0_1_0 ), f );
+        TEST_ASSERT_EQUAL_INT_MESSAGE( n, sizeof( hello_world_jelf_v_0_1_0 ), "Failed to write hello world app" );
+        fclose( f );
+
+        /* debug */
+        struct stat sb;
+        assert( 0 == stat( fn, &sb ) );
+        printf( "Last status change:       %s", ctime( &sb.st_ctime ) );
+        printf( "Last file access:         %s", ctime( &sb.st_atime ) );
+        printf( "Last file modification:   %s", ctime( &sb.st_mtime ) );
+    }
+
+    /* Need an argc > 0 in order to get a return code */
+    rc = jolt_launch_file( test_app_name, 1, NULL, EMPTY_STR );
+    TEST_ASSERT_EQUAL_INT_MESSAGE( 0, rc, "Failed to launch file." );
+
+    /* Unlock to launch app */
+    vTaskDelay( pdMS_TO_TICKS( 100 ) );
+    vault_set_pin_auto_enter();
+
+    rc = jolt_cli_get_return();
+    TEST_ASSERT_EQUAL_INT_MESSAGE( 0, rc, "App returned non-zero return code." );
+
+    remove( fn );
+
+    {
+        /* Overwrite app with dummy data */
+        FILE *f;
+        f                       = fopen( fn, "w" );
+        const char dummy_data[] = "dummy data";
+        assert( f );
+        fwrite( dummy_data, 1, sizeof( dummy_data ), f );
+        TEST_ASSERT_EQUAL_INT_MESSAGE( n, sizeof( hello_world_jelf_v_0_1_0 ), "Failed to write dummy data" );
+        fseek( f, JELF_OFFSET_BIP32KEY, SEEK_SET );
+        {
+            const char fill = 'A';
+            /* The bip32key must be NULL-terminated. */
+            for( uint8_t i = 0; i < 32; i++ ) { fwrite( &fill, 1, 1, f ); }
+        }
+        fclose( f );
+    }
+
+    /* Need an argc > 0 in order to get a return code */
+    /* If the app cache is used, the application will still launch as if nothing
+     * is wrong */
+    rc = jolt_launch_file( test_app_name, 1, NULL, EMPTY_STR );
+    TEST_ASSERT_EQUAL_INT( JOLT_LAUNCHER_ERR_UNKNOWN_FAIL, rc );
+
+    vTaskDelay( pdMS_TO_TICKS( 50 ) );
+
+    TEST_ASSERT_EQUAL_DISPLAY( &expected_failure_scr_invalid_or_corrupt_application, NULL );
+    JOLT_BACK;  // Exit the error screen.
+
+    remove( fn );
+
+    free( fn );
+}
