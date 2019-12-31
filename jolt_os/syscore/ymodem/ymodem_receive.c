@@ -26,7 +26,7 @@
  * this software.
  */
 
-#define LOG_LOCAL_LEVEL 3
+//#define LOG_LOCAL_LEVEL 3
 
 #include <driver/uart.h>
 #include <esp_timer.h>

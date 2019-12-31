@@ -3,7 +3,7 @@
  https://www.joltwallet.com/
  */
 
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include <driver/adc.h>
 #include <esp_system.h>

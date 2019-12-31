@@ -3,7 +3,7 @@
  *    * Haven't been able to test due to OOM errors while initializing mz_deflateInit2.
  */
 
-#define LOG_LOCAL_LEVEL 4
+//#define LOG_LOCAL_LEVEL 4
 
 #include "esp_log.h"
 #include "miniz.h"

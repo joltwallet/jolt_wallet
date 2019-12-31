@@ -2,7 +2,8 @@
  Copyright (C) 2018  Brian Pugh, James Coxon, Michael Smaili
  https://www.joltwallet.com/
  */
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include "bipmnemonic.h"
 #include "esp_console.h"
