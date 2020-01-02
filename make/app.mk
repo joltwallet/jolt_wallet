@@ -34,13 +34,15 @@ PYTHONBIN    ?= python3
 DEVICE_PORT  ?= /dev/ttyUSB0
 
 # Add all the Jolt Wallet paths
+export JOLT_WALLET_PATH := $(PWD)/jolt_wallet
+
 EXTRA_COMPONENT_DIRS = \
 		$(IDF_PATH)/tools/unit-test-app/components/ \
         $(PROJECT_PATH) \
         $(PROJECT_PATH)/src \
-        $(PROJECT_PATH)/jolt_wallet/jolt_os/lvgl \
-        $(PROJECT_PATH)/jolt_wallet/jolt_os \
-        $(PROJECT_PATH)/jolt_wallet/components
+        $(JOLT_WALLET_PATH)/jolt_os/lvgl \
+        $(JOLT_WALLET_PATH)/jolt_os \
+        $(JOLT_WALLET_PATH)/components
 
 CFLAGS += \
         -Werror \
@@ -52,6 +54,7 @@ CFLAGS += \
         -DJOLT_APP
 
 include $(IDF_PATH)/make/project.mk
+include $(JOLT_WALLET_PATH)/make/jolt_lib.mk
 
 # Internally link all components directly included in the Jolt App's Project.
 APP_COMPONENTS := $(dir $(wildcard $(PROJECT_PATH)/components/*/component.mk))
@@ -65,6 +68,9 @@ APP_LIBRARIES := $(foreach n, $(APP_COMPONENTS), build/$(n)/lib$(n).a)
 APP_COMPONENTS_TARGETS := $(foreach n, $(APP_COMPONENTS), component-$(n)-build)
 
 .PHONY: tests lint clean-jolt jflash japp merge-menuconfig print-%
+
+# Make sure jolt_lib.h is created before building components
+$(APP_COMPONENTS_TARGETS): jolt_lib.h
 
 # Build ELF file
 $(ELF_BIN_NAME): sdkconfig.defaults $(APP_COMPONENTS_TARGETS)

@@ -11,7 +11,7 @@ xtensa-esp32-elf/
 .mainframer
 
 # Jolt Specific
-jolt_os/jolt_commit.c
+jolt_os/jolt_lib.h
 
 # Documentation
 docs/html/
