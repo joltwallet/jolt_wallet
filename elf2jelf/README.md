@@ -306,3 +306,34 @@ we can stop reading. This has two nice properties:
 
 # Going Further
 Now that everything is a sequential read (with absolutely no random reads, assuming cached section header table and cached symtab), we can get rid of offsets in the section header table. In the Nano app, this saves about 681 bytes of compressed data. We can also now compress all the sections, further speeding up loading and reducing the file size by ~50%.
+
+## Compression Libraries
+
+Since we can now compress the payload, we should now choose the best compression algorithm.
+
+When a window-size is a compression parameter, 12-bits (4096 bytes) is chosen.
+
+All unspecified sizes are in bytes.
+
+https://gregoryszorc.com/blog/2017/03/07/better-compression-with-zstandard/
+
+### miniz/zlib
+Since esp32 has miniz baked into the ROM, this is the defacto choice and will be used as a baseline
+
+App Size: 21847
+Flash Size: 949
+
+Benefits: very low RAM requirements for decompression.
+
+### brotli
+https://github.com/google/brotli
+App Size: 18124 (-17.0%) 
+Flash Size: 120KB + ?
+
+Has a pre-defined dictionary of size ~120KB, which is quite prohibitive.
+
+### zstandard
+App Size: 22768 (+4.3%)
+Flash Size: ?
+
+No training dictionary used.

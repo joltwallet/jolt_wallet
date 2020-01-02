@@ -61,7 +61,36 @@ from jelf_structs import \
 HARDEN = 0x80000000
 log = logging.getLogger('elf2jelf')
 
-def compress_data(data):
+def compress_data(data, method='zlib'):
+    methods = {
+            'zlib': compress_data_zlib,
+            'brotli': compress_data_brotli,
+            'zstandard': compress_data_zstandard,
+            }
+    return methods[method](data)
+
+def compress_data_zstandard(data):
+    """ Compress data via zstandard
+    """
+    import zstandard as zstd
+
+    params = zstd.ZstdCompressionParameters(
+            window_log=12
+            )
+    cctx = zstd.ZstdCompressor(level=22, compression_params=params)
+    compressed_data = cctx.compress(data, )
+    return compressed_data
+
+def compress_data_brotli(data):
+    """ Compress data via brotli
+    """
+    import brotli
+    w_bits = 12
+    return brotli.compress(data, lgwin=w_bits) 
+
+def compress_data_zlib(data):
+    """ Compress data via zlib
+    """
     w_bits = 12
     level = zlib.Z_BEST_COMPRESSION
     log.info("Compressing at level %d with window (dict) size %d", level, 2**w_bits)
