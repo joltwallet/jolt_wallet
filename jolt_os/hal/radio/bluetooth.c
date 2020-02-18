@@ -6,6 +6,11 @@
 //#define LOG_LOCAL_LEVEL 4
 
 #include "sdkconfig.h"
+#include "esp_err.h"
+
+FILE *ble_stdin = NULL;
+FILE *ble_stdout = NULL;
+FILE *ble_stderr = NULL;
 
 #if CONFIG_BT_ENABLED
 
@@ -44,10 +49,6 @@
 uint64_t ble_packet_cum_life = 0;
 uint32_t ble_packet_n        = 0;
     #endif
-
-FILE *ble_stdin;
-FILE *ble_stdout;
-FILE *ble_stderr;
 
 static void gap_event_handler( esp_gap_ble_cb_event_t, esp_ble_gap_cb_param_t * );
 static void gatts_event_handler( esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param );
@@ -962,6 +963,9 @@ esp_err_t jolt_bluetooth_adv_stop() { return esp_ble_gap_stop_advertising(); }
 #else
 
 /* Stubs */
+
+void esp_vfs_dev_ble_spp_register() { }
+
 esp_err_t jolt_bluetooth_start() { return ESP_OK; }
 
 esp_err_t jolt_bluetooth_stop() { return ESP_OK; }

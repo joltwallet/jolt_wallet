@@ -35,7 +35,6 @@ extern uint64_t ble_packet_cum_life;
 extern uint32_t ble_packet_n;
 #endif
 
-#if CONFIG_BT_ENABLED
 /**
  * @brief Stream for BLE STDIN
  */
@@ -50,8 +49,6 @@ extern FILE *ble_stdout;
  * @brief Stream for BLE STDERR
  */
 extern FILE *ble_stderr;
-
-#endif
 
 /**
  * @brief Register the bluetooth spp driver
