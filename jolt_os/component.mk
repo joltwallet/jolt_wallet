@@ -43,12 +43,12 @@ COMPONENT_EXTRA_CLEAN := \
 # Additional Build Artifacts #
 ##############################
 
-jelf_loader/src/loader.o: jolt_lib.h
-main.o: jolt_lib.h
-syscore/cmd/jolt_cmd_about.o: jolt_lib.h
-syscore/cmd/jolt_cmd_lv_obj.o: jolt_lib.h
-syscore/launcher.o: jolt_lib.h
-test/app_cmd/test_contacts.o: jolt_lib.h
-test/syscore/test_launcher.o: jolt_lib.h
+jelf_loader/src/loader.o: $(JOLT_WALLET_PATH)/jolt_os/jolt_lib.h
+main.o: $(JOLT_WALLET_PATH)/jolt_os/jolt_lib.h
+syscore/cmd/jolt_cmd_about.o: $(JOLT_WALLET_PATH)/jolt_os/jolt_lib.h
+syscore/cmd/jolt_cmd_lv_obj.o: $(JOLT_WALLET_PATH)/jolt_os/jolt_lib.h
+syscore/launcher.o: $(JOLT_WALLET_PATH)/jolt_os/jolt_lib.h
+test/app_cmd/test_contacts.o: $(JOLT_WALLET_PATH)/jolt_os/jolt_lib.h
+test/syscore/test_launcher.o: $(JOLT_WALLET_PATH)/jolt_os/jolt_lib.h
 
 include $(COMPONENT_PATH)/../make/jolt_lib.mk

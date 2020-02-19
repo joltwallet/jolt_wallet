@@ -53,6 +53,7 @@ CFLAGS += \
 		-DCONFIG_APP_VERSION_PATCH=$(APP_VERSION_PATCH) \
         -DJOLT_APP
 
+
 include $(IDF_PATH)/make/project.mk
 include $(JOLT_WALLET_PATH)/make/jolt_lib.mk
 
@@ -67,10 +68,10 @@ APP_LIBRARIES := $(foreach n, $(APP_COMPONENTS), build/$(n)/lib$(n).a)
 # Component build dependencies
 APP_COMPONENTS_TARGETS := $(foreach n, $(APP_COMPONENTS), component-$(n)-build)
 
-.PHONY: tests lint clean-jolt jflash japp merge-menuconfig print-%
+.PHONY: sdkconfig_defaults tests lint clean-jolt jflash japp merge-menuconfig print-%
 
 # Make sure jolt_lib.h is created before building components
-$(APP_COMPONENTS_TARGETS): jolt_lib.h
+$(APP_COMPONENTS_TARGETS): $(JOLT_WALLET_PATH)/jolt_os/jolt_lib.h
 
 # Build ELF file
 $(ELF_BIN_NAME): sdkconfig.defaults $(APP_COMPONENTS_TARGETS)
@@ -126,7 +127,7 @@ lint:
 		\) \
 		| xargs clang-format -style=file -i -fallback-style=google
 
-tests: sdkconfig.defaults
+tests: sdkconfig_defaults $(JOLT_WALLET_PATH)/jolt_os/jolt_lib.h
 	CFLAGS='-DUNIT_TESTING=1' \
 		$(MAKE) \
 		TEST_COMPONENTS='main' \
@@ -146,18 +147,15 @@ clean-jolt:
 	rm -rf build/jolt_wallet
 
 # Combine the Jolt sdkconfig.defaults and the app's sdkconfig.japp
-sdkconfig.defaults: sdkconfig.japp jolt_wallet/sdkconfig.defaults jolt_wallet/pyutils/merge-menuconfig.py
+sdkconfig_defaults: 
 	# Create a new sdkconfig.default file that combines the japp-specific defaults and jolt-os defaults
 	$(PYTHONBIN) jolt_wallet/pyutils/merge-menuconfig.py sdkconfig.japp jolt_wallet/sdkconfig.defaults
 
 # Make the generation of sdkconfig.defaults a pre-req to menuconfig
-menuconfig: sdkconfig.defaults
-defconfig: sdkconfig.defaults
-sdkconfig: sdkconfig.defaults
-$(KCONFIG_TOOL_DIR)/conf-idf: sdkconfig.defaults
+prepare_kconfig_files: sdkconfig_defaults
 
 # Alias merge-menuconfig
-merge-menuconfig: sdkconfig.defaults ;
+merge-menuconfig: sdkconfig_defaults ;
 
 clean-japp: component-main-clean clean-jolt ;
 	

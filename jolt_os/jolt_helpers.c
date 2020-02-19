@@ -368,3 +368,48 @@ int uart_printf( const char *fmt, ... )
     free( buf );
     return n;
 }
+
+#if UNIT_TESTING
+
+#include "unity.h"
+
+/* Unity Asserts */
+
+/**
+ * @brief Compares a binary buffer to a null-terminated hexidecimal string. Pass test if same.
+ *
+ * Length of binary buffer is derived from the length of `expected`.
+ *
+ * @param[in] expected Exected null-terminated hexidecimal string.
+ * @param[in] actual Binary buffer to compare against.
+ */
+void TEST_ASSERT_EQUAL_HEX_STR( const char *expected, const uint8_t *actual ) {
+    TEST_ASSERT_EQUAL_HEX_STR_MESSAGE(expected, actual, NULL);
+}
+
+
+void TEST_ASSERT_EQUAL_HEX_STR_MESSAGE( const char *expected, const uint8_t *actual, const char *msg ) {
+    uint8_t *bin = NULL;
+
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, strlen(expected) % 2, "Expected must contain an even number of characters");
+
+    uint32_t bin_len = strlen(expected) / 2;
+    bin = malloc(bin_len);
+    TEST_ASSERT_NOT_NULL_MESSAGE(bin, "Couldn't allocate memory for test");
+
+    {
+        int res;
+        res = sodium_hex2bin( bin, bin_len, expected, strlen( expected ), NULL, NULL, NULL );
+        TEST_ASSERT_EQUAL_INT_MESSAGE( 0, res, "Failed to convert expected hex string to binary." );
+    }
+
+    if( NULL == msg )
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(bin, actual, bin_len);
+    else
+        TEST_ASSERT_EQUAL_HEX8_ARRAY_MESSAGE(bin, actual, bin_len, msg);
+
+    free(bin);
+}
+
+#endif
+

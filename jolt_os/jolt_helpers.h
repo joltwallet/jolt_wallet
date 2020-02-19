@@ -365,4 +365,21 @@ int uart_printf( const char *fmt, ... );
         if( LOG_LOCAL_LEVEL >= 1 ) BLE_UART_LOG_BUF( buf, buf_len ); \
     } while( 0 )
 
+
+
+#if UNIT_TESTING
+
+/* Unity Asserts */
+
+/**
+ * @brief Compares a binary buffer to a null-terminated hexidecimal string. Pass test if same.
+ * @param[in] expected Exected null-terminated hexidecimal string.
+ * @param[in] actual Binary buffer to compare against.
+ */
+void TEST_ASSERT_EQUAL_HEX_STR( const char *expected, const uint8_t *actual );
+
+void TEST_ASSERT_EQUAL_HEX_STR_MESSAGE( const char *expected, const uint8_t *actual, const char *msg );
+
+#endif
+
 #endif
