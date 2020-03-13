@@ -37,3 +37,6 @@
 [submodule "jolt_os/hal/storage/cryptoauthlib"]
 	path = components/cryptoauthlib
 	url = https://github.com/joltwallet/cryptoauthlib.git
+[submodule "jolt_os/crypto/algorithms/secp256k1"]
+	path = components/secp256k1/secp256k1
+	url = git@github.com:joltwallet/secp256k1.git
