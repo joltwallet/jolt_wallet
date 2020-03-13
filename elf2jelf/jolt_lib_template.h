@@ -57,6 +57,7 @@
     #include "newlib.h"
     #include "qrcode.h"
     #include "sdkconfig.h"
+    #include "secp256k1.h"
     #include "setjmp.h"
     #include "signal.h"
     #include "sodium.h"
