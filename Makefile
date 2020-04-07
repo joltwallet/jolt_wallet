@@ -25,6 +25,7 @@ all: $(PB_GENS)
 install:
 	mkdir -p $(IDF_TOOLS_PATH)
 	pip3 install -r requirements.txt
+	pip3 install -r $(IDF_PATH)/requirements.txt
 	$(IDF_PATH)/tools/idf_tools.py install
 
 tests: $(PB_GENS)
