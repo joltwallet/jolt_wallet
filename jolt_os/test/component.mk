@@ -9,5 +9,6 @@ COMPONENT_SRCDIRS := .\
 	hash/ \
 	hash/algorithms \
 	jolt_gui \
+	nanopb \
 	syscore \
 	syscore/encoding

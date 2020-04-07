@@ -56,6 +56,7 @@ CFLAGS += \
 
 include $(IDF_PATH)/make/project.mk
 include $(JOLT_WALLET_PATH)/make/jolt_lib.mk
+include $(JOLT_WALLET_PATH)/make/common.mk
 
 # Internally link all components directly included in the Jolt App's Project.
 APP_COMPONENTS := $(dir $(wildcard $(PROJECT_PATH)/components/*/component.mk))

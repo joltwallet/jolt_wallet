@@ -16,23 +16,24 @@ CFLAGS += \
 		-DJOLT_OS
 
 include $(IDF_PATH)/make/project.mk
-
-print-%  : ; @echo $* = $($*)
+include $(JOLT_WALLET_PATH)/make/common.mk
 
 .PHONY: install tests test-menu lint compilation_db cppcheck decode
+
+all: $(PB_GENS)
 
 install:
 	mkdir -p $(IDF_TOOLS_PATH)
 	pip3 install -r requirements.txt
 	$(IDF_PATH)/tools/idf_tools.py install
 
-tests:
+tests: $(PB_GENS)
 	CFLAGS='-DUNIT_TESTING=1' \
 		$(MAKE) \
 		TEST_COMPONENTS='jolt_os' \
 		flash monitor;
 
-test-menu:
+test-menu: $(PB_GENS)
 	CFLAGS='-DJOLT_GUI_TEST_MENU=1' $(MAKE)
 
 lint:
@@ -75,6 +76,9 @@ cppcheck: compile_commands.json
 clean-jolt:
 	rm -rf build/jolt_os
 	rm -rf build/jolt_wallet
+	rm -f $(PB_GENS)
+
+clean: clean-jolt
 
 decode:
 	# usage: make decode 0x40...:\0x3ff 0x40...

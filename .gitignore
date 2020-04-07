@@ -26,3 +26,7 @@ compile_commands.json
 
 # RNG analysis
 rng.raw
+
+# Protobuf-generated files
+*.pb.c
+*.pb.h
