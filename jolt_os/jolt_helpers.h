@@ -365,8 +365,6 @@ int uart_printf( const char *fmt, ... );
         if( LOG_LOCAL_LEVEL >= 1 ) BLE_UART_LOG_BUF( buf, buf_len ); \
     } while( 0 )
 
-
-
 #if UNIT_TESTING
 
 /* Unity Asserts */

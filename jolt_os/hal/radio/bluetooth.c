@@ -5,10 +5,10 @@
  */
 //#define LOG_LOCAL_LEVEL 4
 
-#include "sdkconfig.h"
 #include "esp_err.h"
+#include "sdkconfig.h"
 
-FILE *ble_stdin = NULL;
+FILE *ble_stdin  = NULL;
 FILE *ble_stdout = NULL;
 FILE *ble_stderr = NULL;
 
@@ -964,7 +964,7 @@ esp_err_t jolt_bluetooth_adv_stop() { return esp_ble_gap_stop_advertising(); }
 
 /* Stubs */
 
-void esp_vfs_dev_ble_spp_register() { }
+void esp_vfs_dev_ble_spp_register() {}
 
 esp_err_t jolt_bluetooth_start() { return ESP_OK; }
 
