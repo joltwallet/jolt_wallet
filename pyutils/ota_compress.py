@@ -66,7 +66,6 @@ def main():
         log.error("Can't find ELF file.")
         sys.exit(-1)
 
-
     with open(args.input, 'rb') as f:
         data = f.read()
 

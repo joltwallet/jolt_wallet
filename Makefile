@@ -18,11 +18,61 @@ CFLAGS += \
 include $(IDF_PATH)/make/project.mk
 include $(JOLT_WALLET_PATH)/make/common.mk
 
-.PHONY: install tests test-menu lint compilation_db cppcheck decode
+# Executables that generate/apply binary patches
+HDIFFZ=components/esp_hdiffz/HDiffPatch/hdiffz
+HPATCHZ=components/esp_hdiffz/HDiffPatch/hpatchz
+
+ifeq ("$(shell uname)", "Darwin")
+    # Mac OS X platform        
+	INSTALL_SYSTEM_DEPENDENCIES = \
+		printf "No system-dependencies rules for MacOS\n" \
+		&& exit 1
+else ifeq ("$(shell expr substr $$(uname -s) 1 5)", "Linux")
+    # GNU/Linux platform
+	OS=$(shell lsb_release -si)
+	ifeq ($(OS), Ubuntu)
+		INSTALL_SYSTEM_DEPENDENCIES = \
+			apt update && apt install -y \
+				bison \
+				ccache \
+				cmake \
+				flex \
+				git \
+				gperf \
+				libffi-dev \
+				libssl-dev \
+				ninja-build \
+				python3 \
+				python3-pip \
+				python3-setuptools \
+				wget
+	else
+		INSTALL_SYSTEM_DEPENDENCIES = \
+			printf "No rules for your linux distribution: \"$(OS)\"\n" \
+			&& exit 1
+	endif
+else 
+	INSTALL_SYSTEM_DEPENDENCIES = \
+		printf "No system-dependencies rules for your operating system\n" \
+		&& exit 1
+endif
+
+
+
+.PHONY: install tests test-menu lint compilation_db cppcheck decode \
+	system-dependencies
 
 all: $(PB_GENS)
 
-install:
+system-dependencies:
+	$(INSTALL_SYSTEM_DEPENDENCIES)
+
+$(HDIFFZ): system-dependencies
+	# Build the hdiffpatch generator binary
+	cd components/esp_hdiffz/HDiffPatch \
+		&& make
+
+install: system-dependencies
 	mkdir -p $(IDF_TOOLS_PATH)
 	pip3 install -r requirements.txt
 	pip3 install -r $(IDF_PATH)/requirements.txt
@@ -81,6 +131,10 @@ clean-jolt:
 
 clean: clean-jolt
 
+compress: all
+	# Compress firmware build/jolt.bin -> build/jolt.bin.gz
+	python3 pyutils/ota_compress.py
+	
 decode:
 	# usage: make decode 0x40...:\0x3ff 0x40...
 	echo "\n"
