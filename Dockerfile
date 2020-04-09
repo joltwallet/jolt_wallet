@@ -32,8 +32,8 @@ RUN curl -sL https://firebase.tools | bash
 # 3. `make compress` - builds `jolt.bin` and compresses `jolt.bin.gz`
 
 # TODO for Firebase
-# Upload jolt.bin and jolt.bin.gz to Firebase Cloud Storage and store the return URLs
-# Craft DB object entry for Firestore DB with:
+# 1. Upload jolt.bin and jolt.bin.gz to Firebase Cloud Storage and store the return Unsigned URLs
+# 2. Craft DB object entry for Firestore DB with:
 # - SemVar
 # - Uncompressed Unsigned URL
 # - Compressed Unsigned URL
