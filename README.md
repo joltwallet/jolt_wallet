@@ -71,6 +71,10 @@ source export.sh
 
 ## Flashing
 
+Note: final `sdkconfig.defaults` overrides can be applied via a file 
+`sdkconfigs/sdkconfig.personal`. Useful things like device port can be set in
+this file.
+
 #### Default JoltOS
 
 ```
@@ -91,6 +95,16 @@ via the UART console.
 ```
 make tests -j
 ```
+
+#### Other hardware targets
+JoltOS supports other esp32-based hardware; These generally only differ in supported 
+functionality and pinout. To set the target board, set the env var `TARGET_BOARD`
+prior to generating `sdkconfig`. For example:
+```
+TARGET_BOARD=dstike make menuconfig
+```
+To load the `sdkconfigs/sdkconfig.defaults.dstike` to override some of the definitions in
+`sdkconfigs/sdkconfig.defaults`.
 
 ## Support
 

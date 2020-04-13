@@ -1,3 +1,8 @@
+# USAGE:
+# board selection:
+#     env var TARGET_BOARD
+#     
+
 PROJECT_NAME := jolt
 
 export IDF_TOOLS_PATH := $(PWD)/xtensa-esp32-elf
@@ -15,6 +20,9 @@ CFLAGS += \
 		-Werror \
 		-DJOLT_OS
 
+# cfg.mk first to override sdkconfig.defaults
+# set targetname via `TARGET_BOARD=target`
+include $(JOLT_WALLET_PATH)/make/cfg.mk
 include $(IDF_PATH)/make/project.mk
 include $(JOLT_WALLET_PATH)/make/common.mk
 
