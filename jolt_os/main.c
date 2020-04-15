@@ -236,7 +236,7 @@ void app_main( void )
 
     /* Initialize WiFi */
     {
-        // esp_log_level_set( "wifi", ESP_LOG_NONE );
+        esp_log_level_set( "wifi", ESP_LOG_NONE );
 
         /* instantiate the app-friendly network client */
         ESP_ERROR_CHECK( jolt_network_client_init_from_nvs() );
