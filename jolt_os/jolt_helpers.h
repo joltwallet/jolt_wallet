@@ -17,6 +17,7 @@
 #include "esp_system.h"
 #include "jolttypes.h"
 #include "lvgl/lvgl.h"
+#include "soc/adc_channel.h"
 #include "vault.h"
 
 #define XJOLT_ADC1( x ) ADC1_GPIO##x##_CHANNEL
