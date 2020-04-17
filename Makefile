@@ -1,8 +1,8 @@
 PROJECT_NAME := jolt
 
-export IDF_TOOLS_PATH := $(PWD)/xtensa-esp32-elf
-export IDF_PATH := $(PWD)/esp-idf
-export JOLT_WALLET_PATH := $(PWD)
+export IDF_TOOLS_PATH := $(pwd)/xtensa-esp32-elf
+export IDF_PATH := $(pwd)/esp-idf
+export JOLT_WALLET_PATH := $(pwd)
 
 # Have to add current path to EXTRA_COMPONENT_DIRS so unit tester will work.
 # Unfortunately, JoltOS gets built twice.
