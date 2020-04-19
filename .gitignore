@@ -1,6 +1,7 @@
 # Build artifacts, esp-idf, and toolchain
-sdkconfig*
-!sdkconfig.defaults
+sdkconfig
+sdkconfig.old
+sdkconfigs/sdkconfig.personal
 build/
 xtensa-esp32-elf/
 

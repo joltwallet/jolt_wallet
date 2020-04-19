@@ -13,6 +13,7 @@ void jolt_display_init()
     static lv_disp_buf_t disp_buf;
 
     /* Set reset pin as output */
+#if CONFIG_JOLT_DISPLAY_PIN_RST >= 0
     gpio_config_t io_config;
     io_config.pin_bit_mask = ( 1 << CONFIG_JOLT_DISPLAY_PIN_RST );
     io_config.mode         = GPIO_MODE_OUTPUT;
@@ -20,11 +21,21 @@ void jolt_display_init()
     io_config.pull_down_en = GPIO_PULLDOWN_ENABLE;
     io_config.intr_type    = GPIO_INTR_DISABLE;
     ESP_ERROR_CHECK( gpio_config( &io_config ) );
+#endif
 
     disp_hal.protocol = SSD1306_PROTO_I2C;
+#if CONFIG_JOLT_DISPLAY_TYPE_SSD1306
     disp_hal.screen   = SSD1306_SCREEN;
+#elif CONFIG_JOLT_DISPLAY_TYPE_SH1106
+    disp_hal.screen   = SH1106_SCREEN;
+#else
+    #error JOLT_DISPLAY_TYPE_* must be defined
+#endif
+
     disp_hal.i2c_dev  = CONFIG_JOLT_DISPLAY_ADDRESS;
+#if CONFIG_JOLT_DISPLAY_PIN_RST >= 0
     disp_hal.rst_pin  = CONFIG_JOLT_DISPLAY_PIN_RST;
+#endif
     disp_hal.width    = LV_HOR_RES_MAX;
     disp_hal.height   = LV_VER_RES_MAX;
     ESP_ERROR_CHECK( ssd1306_init( &disp_hal ) );
