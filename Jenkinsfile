@@ -25,7 +25,7 @@ pipeline {
                         sh 'id && ls -lha ~/.ssh'
                         sh 'docker pull "joltwallet/jolt_firmware:latest"'
                         sh 'id -u && cat ~/.ssh/id_rsa'
-                        sh 'docker run --rm -i   --mount type=bind,source=/home/nobody/.ssh,target=/home/jolt/.ssh,readonly joltwallet/jolt_firmware:latest' 
+                        sh 'docker run --rm -i   --mount type=bind,source=/home/nobody/.ssh/id_rsa,target=/home/jolt/.ssh/id_rsa,readonly joltwallet/jolt_firmware:latest' 
                     }
                 }
             }
