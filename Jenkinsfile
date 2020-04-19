@@ -21,7 +21,7 @@ pipeline {
                 }
 
                 // Run Docker Container
-                sh 'whoami && ls -lha ~/.ssh'
+                sh 'id && ls -lha ~/.ssh'
                 sh 'docker run -v ~/.ssh/id_rsa:/home/jolt/.ssh/id_rsa joltwallet/jolt_firmware:latest' 
             }
         }
