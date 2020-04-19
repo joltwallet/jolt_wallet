@@ -17,9 +17,7 @@ pipeline {
             steps {
                 // Save SSH Key to local dir
                 withCredentials([sshUserPrivateKey(credentialsId: 'github-push', keyFileVariable: 'keyfile')]) {
-                    sh 'ls -lha && ls -lha  ~/.ssh'
                     sh 'rm -f ~/.ssh/* && cp ${keyfile} ~/.ssh/id_rsa'
-                    sh 'ls -lha && ls -lha  ~/.ssh'
                 }
 
                 // Run Docker Container
