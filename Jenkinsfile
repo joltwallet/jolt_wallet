@@ -19,14 +19,12 @@ pipeline {
                 withCredentials([sshUserPrivateKey(credentialsId: 'github-push', keyFileVariable: 'keyfile')]) {
                     sh 'rm -f ~/.ssh/* && cp ${keyfile} ~/.ssh/id_rsa'
                     sh 'chmod 700 ~/.ssh && chmod 600 ~/.ssh/id_rsa'
-                    sh 'cat /home/nobody/.ssh/id_rsa'
                 }
                 script {
                     docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
                         sh 'id && ls -lha ~/.ssh'
                         sh 'docker pull "joltwallet/jolt_firmware:latest"'
-                        sh 'cat /home/jolt/.ssh/id_rsa'
-                        sh 'docker run -v /home/nobody/.ssh/id_rsa:/home/jolt/.ssh/id_rsa joltwallet/jolt_firmware:latest' 
+                        sh 'docker run -i -v ~/.ssh:/home/jolt/.ssh/ joltwallet/jolt_firmware:latest' 
                     }
                 }
             }
