@@ -24,7 +24,7 @@ pipeline {
                     docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
                         sh 'id && ls -lha ~/.ssh'
                         sh 'docker pull "joltwallet/jolt_firmware:latest"'
-                        sh 'docker run -i --mount ~/.ssh/id_rsa:/home/jolt/.ssh/id_rsa joltwallet/jolt_firmware:latest' 
+                        sh 'docker run -i --mount type=bind,source="~/.ssh/id_rsa",target="/home/jolt/.ssh/id_rsa" joltwallet/jolt_firmware:latest' 
                     }
                 }
             }
