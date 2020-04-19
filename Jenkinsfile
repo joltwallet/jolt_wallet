@@ -21,7 +21,7 @@ pipeline {
                 }
 
                 // Run Docker Container
-                withDockerContainer(image: 'joltwallet/jolt_firmware:latest', args: '-v ~/.ssh/id_rsa:/home/jolt/.ssh/id_rsa'){}
+                sh 'docker run -it -v ~/.ssh/id_rsa:/home/jolt/.ssh/id_rsa joltwallet/jolt_firmware:latest' 
             }
         }
     }
