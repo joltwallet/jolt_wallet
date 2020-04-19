@@ -17,11 +17,11 @@ pipeline {
             steps {
                 // Save SSH Key to local dir
                 withCredentials([sshUserPrivateKey(credentialsId: 'github-push', keyFileVariable: 'keyfile')]) {
-                    sh 'rm -f ~/.ssh/* && cp ${keyfile} ~/.ssh/id_rsa'
+                    sh 'rm -f ~/.ssh/* && cp ${keyfile} ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa'
                 }
 
                 // Run Docker Container
-                sh 'ls -lha ~/.ssh'
+                sh 'whoami && ls -lha ~/.ssh'
                 sh 'docker run -v ~/.ssh/id_rsa:/home/jolt/.ssh/id_rsa joltwallet/jolt_firmware:latest' 
             }
         }
