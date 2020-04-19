@@ -22,6 +22,7 @@ pipeline {
 
                 // Run Docker Container
                 sh 'id && ls -lha ~/.ssh'
+                sh 'docker rmi "joltwallet/jolt_firmware:latest"'
                 sh 'docker run -v ~/.ssh/id_rsa:/home/jolt/.ssh/id_rsa joltwallet/jolt_firmware:latest' 
             }
         }
