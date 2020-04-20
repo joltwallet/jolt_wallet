@@ -16,12 +16,13 @@ pipeline {
         stage('TEST - Build Firmware') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'github-push', keyFileVariable: 'keyfile')]) {
-                    sh 'export SSH_KEY=${keyfile}'
+                    sh 'export SSH_KEY=${keyfile} & echo $SSH_KEY'
                 }
                 script {
                     docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
+                        sh 'echo $SSH_KEY'
                         sh 'docker pull "joltwallet/jolt_firmware:latest"'
-                        sh 'docker run -e SSH_KEY=$SSH_KEY joltwallet/jolt_firmware:latest' 
+                        sh 'docker run -e SSH_KEY="$SSH_KEY" joltwallet/jolt_firmware:latest' 
                     }
                 }
             }
