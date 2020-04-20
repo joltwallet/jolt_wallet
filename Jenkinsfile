@@ -22,7 +22,7 @@ pipeline {
                     docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
                         echo "${env.SSH_KEY}"
                         sh 'docker pull "joltwallet/jolt_firmware:latest"'
-                        sh 'docker run -e SSH_KEY=$env.SSH_KEY joltwallet/jolt_firmware:latest' 
+                        sh 'docker run -e SSH_KEY="${env.SSH_KEY}" joltwallet/jolt_firmware:latest' 
                     }
                 }
             }
