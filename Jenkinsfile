@@ -21,7 +21,6 @@ pipeline {
                 script {
                     docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
                         sh 'docker pull "joltwallet/jolt_firmware:latest"'
-                        echo "$SSH_KEY"
                         sh 'docker run -e SSH_KEY joltwallet/jolt_firmware:latest'
                     }
                 }
