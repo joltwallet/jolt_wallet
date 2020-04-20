@@ -17,14 +17,13 @@ pipeline {
             }
         }
         stage('TEST - Build Firmware') {
-                steps {
-                    script {
-                        docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
-                            sh 'docker pull "joltwallet/jolt_firmware:latest"'
-                            echo "$SSH_KEY"
-                            withCredentials([sshUserPrivateKey(credentialsId: 'github-push', keyFileVariable: 'SSH_KEY', passphraseVariable: '', usernameVariable: '')]) {
-                                sh 'docker run -e SSH_KEY joltwallet/jolt_firmware:latest'
-                            }
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
+                        sh 'docker pull "joltwallet/jolt_firmware:latest"'
+                        echo "$SSH_KEY"
+                        withCredentials([sshUserPrivateKey(credentialsId: 'github-push', keyFileVariable: 'SSH_KEY', passphraseVariable: '', usernameVariable: '')]) {
+                            sh 'docker run -e SSH_KEY joltwallet/jolt_firmware:latest'
                         }
                     }
                 }
