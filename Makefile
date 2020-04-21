@@ -84,10 +84,10 @@ $(HDIFFZ): system-dependencies
 		&& make
 
 install: system-dependencies
-	mkdir -p $(IDF_TOOLS_PATH)
-	pip3 install -r requirements.txt
-	pip3 install -r $(IDF_PATH)/requirements.txt
-	$(IDF_PATH)/tools/idf_tools.py install
+	sudo mkdir -p $(IDF_TOOLS_PATH)
+	sudo pip3 install -r requirements.txt
+	sudo pip3 install -r $(IDF_PATH)/requirements.txt
+	sudo $(IDF_PATH)/tools/idf_tools.py install
 
 tests: $(PB_GENS)
 	CFLAGS='-DUNIT_TESTING=1' \
