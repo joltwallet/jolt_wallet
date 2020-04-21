@@ -22,6 +22,8 @@ ifndef APP_VERSION_PATCH
 $(error APP_VERSION_PATCH is not set)
 endif
 
+MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+export JOLT_WALLET_PATH := $(abspath $(dir $(MKFILE_PATH))/..)
 
 # Parse output binary paths
 ELF_BIN_NAME             = $(PROJECT_PATH)/$(PROJECT_NAME).elf
@@ -32,9 +34,6 @@ BIP32_KEY    ?= $(DEFAULT_BIP32_KEY)
 ELF2JELF     ?= $(PROJECT_PATH)/jolt_wallet/elf2jelf/elf2jelf.py
 PYTHONBIN    ?= python3
 DEVICE_PORT  ?= /dev/ttyUSB0
-
-# Add all the Jolt Wallet paths
-export JOLT_WALLET_PATH := $(PWD)/jolt_wallet
 
 EXTRA_COMPONENT_DIRS = \
 		$(IDF_PATH)/tools/unit-test-app/components/ \
@@ -54,6 +53,7 @@ CFLAGS += \
         -DJOLT_APP
 
 
+include $(JOLT_WALLET_PATH)/make/cfg.mk
 include $(IDF_PATH)/make/project.mk
 include $(JOLT_WALLET_PATH)/make/jolt_lib.mk
 include $(JOLT_WALLET_PATH)/make/common.mk
@@ -69,7 +69,7 @@ APP_LIBRARIES := $(foreach n, $(APP_COMPONENTS), build/$(n)/lib$(n).a)
 # Component build dependencies
 APP_COMPONENTS_TARGETS := $(foreach n, $(APP_COMPONENTS), component-$(n)-build)
 
-.PHONY: sdkconfig_defaults tests lint clean-jolt jflash japp merge-menuconfig print-%
+.PHONY: tests lint clean-jolt jflash japp print-%
 
 # Make sure jolt_lib.h is created before building components
 $(APP_COMPONENTS_TARGETS): $(JOLT_WALLET_PATH)/jolt_os/jolt_lib.h
@@ -146,17 +146,6 @@ decode:
 clean-jolt:
 	rm -rf build/jolt_os
 	rm -rf build/jolt_wallet
-
-# Combine the Jolt sdkconfig.defaults and the app's sdkconfig.japp
-sdkconfig_defaults: 
-	# Create a new sdkconfig.default file that combines the japp-specific defaults and jolt-os defaults
-	$(PYTHONBIN) jolt_wallet/pyutils/merge-menuconfig.py sdkconfig.japp jolt_wallet/sdkconfig.defaults
-
-# Make the generation of sdkconfig.defaults a pre-req to menuconfig
-prepare_kconfig_files: sdkconfig_defaults
-
-# Alias merge-menuconfig
-merge-menuconfig: sdkconfig_defaults ;
 
 clean-japp: component-main-clean clean-jolt ;
 	

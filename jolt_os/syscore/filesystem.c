@@ -52,7 +52,6 @@ void jolt_fs_init()
     ESP_LOGI( TAG, "Mounting internal LittleFS filesystem." );
     const esp_vfs_littlefs_conf_t conf = {.base_path              = JOLT_FS_MOUNTPT,
                                           .partition_label        = JOLT_FS_PARTITION,
-                                          .max_files              = MAX_FILES,
                                           .format_if_mount_failed = true};
     ret                                = esp_vfs_littlefs_register( &conf );
 #elif CONFIG_JOLT_FS_FAT
