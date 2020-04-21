@@ -42,7 +42,7 @@ else ifeq ("$(shell expr substr $$(uname -s) 1 5)", "Linux")
 	OS=$(shell lsb_release -si)
 	ifeq ($(OS), Ubuntu)
 		INSTALL_SYSTEM_DEPENDENCIES = \
-			sudo apt-get update && apt-get install -y \
+			sudo apt-get update && sudo apt-get install -y \
 				bison \
 				ccache \
 				cmake \
