@@ -10,7 +10,7 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 #idf_build_get_property(JOLT_WALLET_PATH, PROJECT_DIR)
 set(JOLT_WALLET_PATH ${CMAKE_SOURCE_DIR})
-message("Jolt wallet path is \"${JOLT_WALLET_PATH}\"")
+#message("Jolt wallet path is \"${JOLT_WALLET_PATH}\"")
 
 # set targetname via `TARGET_BOARD=target`
 include(${JOLT_WALLET_PATH}/make/cfg.cmake)
