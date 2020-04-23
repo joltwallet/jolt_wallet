@@ -35,7 +35,7 @@
 	path = esp-idf
 	url = https://github.com/espressif/esp-idf.git
 [submodule "jolt_os/hal/storage/cryptoauthlib"]
-	path = components/cryptoauthlib
+	path = components/cryptoauthlib/cryptoauthlib
 	url = https://github.com/joltwallet/cryptoauthlib.git
 [submodule "components/nanopb/nanopb"]
 	path = components/nanopb/nanopb

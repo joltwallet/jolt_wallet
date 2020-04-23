@@ -1,4 +1,4 @@
-CRYPTOAUTHLIB_DIR := ../cryptoauthlib/lib
+CRYPTOAUTHLIB_DIR := cryptoauthlib/lib
 
 COMPONENT_SRCDIRS := $(CRYPTOAUTHLIB_DIR)/hal
 
