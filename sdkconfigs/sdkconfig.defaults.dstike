@@ -2,7 +2,7 @@
 
 # Serial Connection
 # For some reason (possibly my cable), DSTIKE can't handle 230400
-CONFIG_MONITOR_BAUD_115200B=y
+CONFIG_ESPTOOLPY_MONITOR_BAUD_115200B=y
 CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
 
 #
