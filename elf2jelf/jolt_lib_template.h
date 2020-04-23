@@ -212,13 +212,13 @@ extern uint64_t __umulsidi3(unsigned x, unsigned y);
 extern int __unorddf2(double x, double y);
 extern int __unordsf2(float x, float y);
 
-#if CONFIG_COMPILER_STACK_CHECK
-extern void *__stack_chk_fail;
-extern void *__stack_chk_guard;
-#else  // CONFIG_COMPILER_STACK_CHECK
+#if CONFIG_STACK_CHECK_NONE
 static inline void __stack_chk_fail (void) { return; }
 void *__stack_chk_guard = NULL;
-#endif  // CONFIG_COMPILER_STACK_CHECK
+#else
+extern void *__stack_chk_fail;
+extern void *__stack_chk_guard;
+#endif
 
 #define EXPORT_SYMBOL(x) &x
 
