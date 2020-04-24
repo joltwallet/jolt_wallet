@@ -141,6 +141,8 @@ idf_component_register(
             "hal/storage/atca"
             "hash"
             "jelf_loader/include"
+        PRIV_INCLUDE_DIRS
+            "${CMAKE_CURRENT_BINARY_DIR}"
         REQUIRES
             "QRCode"
             "app_trace"
@@ -171,3 +173,22 @@ idf_component_register(
             "wear_levelling"
             "wpa_supplicant"
 )
+
+#######################
+# Generate jolt_lib.h #
+#######################
+add_custom_command(OUTPUT jolt_lib.h
+     COMMAND
+        python3 ${COMPONENT_DIR}/../elf2jelf/elf2jelf.py --export_only --jolt_lib jolt_lib.h
+     DEPENDS
+         ${COMPONENT_DIR}/../elf2jelf/export_list.txt
+         ${COMPONENT_DIR}/../elf2jelf/jolt_lib_template.h
+         ${COMPONENT_DIR}/../elf2jelf/elf2jelf.py
+         ${COMPONENT_DIR}/../elf2jelf/common_structs.py
+     VERBATIM)
+
+add_custom_target(jolt_lib DEPENDS jolt_lib.h)
+add_dependencies(${COMPONENT_LIB} jolt_lib)
+
+set_property(DIRECTORY "${COMPONENT_DIR}" APPEND PROPERTY
+     ADDITIONAL_MAKE_CLEAN_FILES jolt_lib.h)
