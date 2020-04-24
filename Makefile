@@ -51,6 +51,7 @@ else ifeq ("$(shell expr substr $$(uname -s) 1 5)", "Linux")
 				gperf \
 				libffi-dev \
 				libssl-dev \
+				libusb-1.0 \
 				ninja-build \
 				protobuf-compiler \
 				python3 \
