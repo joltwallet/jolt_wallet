@@ -20,6 +20,11 @@ include(${JOLT_WALLET_PATH}/make/common.cmake)
 set(HDIFFZ components/esp_hdiffz/HDiffPatch/hdiffz)
 set(HPATCHZ components/esp_hdiffz/HDiffPatch/hpatchz)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -DJOLT_OS")
+
+#########################################
+# Toolchain and Dependency Installation #
+#########################################
 if (WIN32)
     message(FATAL_ERROR "Dependency installation not yet implemented for WIN32")
 elseif (UNIX)
@@ -30,6 +35,23 @@ elseif (UNIX)
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     if (${LSB_RELEASE_ID_SHORT} STREQUAL "Ubuntu")
+        set(INSTALL_SYSTEM_DEPENDENCIES sudo apt-get update && sudo apt-get install -y
+                 bison
+                 ccache
+                 cmake
+                 flex
+                 git
+                 gperf
+                 libffi-dev
+                 libssl-dev
+                 libusb-1.0
+                 ninja-build
+                 protobuf-compiler
+                 python3
+                 python3-pip
+                 python3-setuptools
+                 wget
+        )
     else()
         message(FATAL_ERROR "Unable to determine linux distro")
     endif()
@@ -39,7 +61,22 @@ else()
     message(FATAL_ERROR "Unable to determine operating system")
 endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -DJOLT_OS")
+if(NOT DEFINED INSTALL_SYSTEM_DEPENDENCIES)
+    set(INSTALL_SYSTEM_DEPENDENCIES "printf \"No rules for your OS\" && exit 1")
+endif()
+
+add_custom_target("system_dependencies")
+add_custom_command(TARGET system_dependencies
+     COMMAND ${INSTALL_SYSTEM_DEPENDENCIES})
+
+add_custom_target("toolchain")
+add_custom_command(TARGET toolchain
+    COMMAND mkdir -p $ENV{IDF_TOOLS_PATH}
+    COMMAND pip3 install -r ${JOLT_WALLET_PATH}/requirements.txt
+    COMMAND pip3 install -r $ENV{IDF_PATH}/requirements.txt
+    COMMAND ${IDF_PATH}/tools/idf_tools.py install
+    DEPENDS system_dependencies
+    )
 
 
 # Dictates name of produced .elf/.bin

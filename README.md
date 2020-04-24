@@ -51,6 +51,32 @@ To see the latest on what we've done, what we're planning, and where we're heade
 
 
 ## Environment setup
+For all commands, we need to source some environment variables and 
+generate the build files so we can take further action.
+
+```
+source export.sh  # On initial setup this may error, that's fine
+mkdir -p build/ && cd build && cmake .. -g Ninja
+```
+
+Unless otherwise noted, all commands in the following subsections are executed
+from the `build/` directory.
+
+### Setup toolchain and other depdencies
+
+```
+# Install system dependencies
+ninja system_dependencies
+
+# Install toolchain (and system dependencies)
+ninja toolchain
+
+# Re-initialize some env vars
+cd .. && source export.sh
+```
+
+## Environment setup (Legacy GNU Make)
+[deprecated]
 
 #### Prerequisites
 Install the prerequisites specified in the [ESP-IDF docs](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started-get-prerequisites). The rest of the ESP-iDF steps are handled below.
