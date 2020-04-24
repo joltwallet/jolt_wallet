@@ -42,7 +42,7 @@ else ifeq ("$(shell expr substr $$(uname -s) 1 5)", "Linux")
 	OS=$(shell lsb_release -si)
 	ifeq ($(OS), Ubuntu)
 		INSTALL_SYSTEM_DEPENDENCIES = \
-			apt update && apt install -y \
+			sudo apt-get update && sudo apt-get install -y \
 				bison \
 				ccache \
 				cmake \
@@ -51,6 +51,7 @@ else ifeq ("$(shell expr substr $$(uname -s) 1 5)", "Linux")
 				gperf \
 				libffi-dev \
 				libssl-dev \
+				libusb-1.0 \
 				ninja-build \
 				protobuf-compiler \
 				python3 \
