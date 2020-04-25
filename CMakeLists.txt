@@ -47,6 +47,7 @@ elseif (UNIX)
                  libffi-dev
                  libssl-dev
                  libusb-1.0
+                 libz-dev
                  ninja-build
                  protobuf-compiler
                  python3
@@ -88,6 +89,11 @@ add_custom_command(TARGET compress
         ${JOLT_WALLET_PATH}/pyutils/ota_compress.py
 )
 add_dependencies(compress app)
+
+add_custom_target("build-hdiffz")
+add_custom_command(TARGET build-hdiffz
+    COMMAND cd ${JOLT_WALLET_PATH}/components/esp_hdiffz/HDiffPatch && make
+)
 
 project(${PROJECT_NAME})
 
