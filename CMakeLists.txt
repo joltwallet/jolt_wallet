@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
+set(PROJECT_NAME "JoltOS")
+
 #    "."  # TODO: only needed for unity, need to figure out unity in cmake
 set(EXTRA_COMPONENT_DIRS
         "$ENV{IDF_PATH}/tools/unit-test-app/components"
@@ -78,7 +80,16 @@ add_custom_command(TARGET toolchain
     DEPENDS system_dependencies
     )
 
+add_custom_target("compress")
+add_custom_command(TARGET compress
+    COMMAND python3 ${JOLT_WALLET_PATH}/pyutils/ota_compress.py --input ${PROJECT_NAME}.bin
+    DEPENDS
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin
+        ${JOLT_WALLET_PATH}/pyutils/ota_compress.py
+)
+add_dependencies(compress app)
 
-# Dictates name of produced .elf/.bin
-# Called at the end because this executes all the ESP-IDF CMake stuff
-project(JoltOS)
+project(${PROJECT_NAME})
+
+#get_directory_property(MAIN_BUILDSYSTEM_TARGETS BUILDSYSTEM_TARGETS)
+#message( "BUILDSYSTEM_TARGETS ${MAIN_BUILDSYSTEM_TARGETS}" )

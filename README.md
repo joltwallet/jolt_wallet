@@ -56,11 +56,13 @@ generate the build files so we can take further action.
 
 ```
 source export.sh  # On initial setup this may error, that's fine
-mkdir -p build/ && cd build && cmake .. -g Ninja
+mkdir -p build/ && cd build && cmake .. -G Ninja
 ```
 
 Unless otherwise noted, all commands in the following subsections are executed
 from the `build/` directory.
+
+GNU Make may be used instead of Ninja.
 
 ### Setup toolchain and other depdencies
 
@@ -73,6 +75,29 @@ ninja toolchain
 
 # Re-initialize some env vars
 cd .. && source export.sh
+```
+
+### Vanilla build
+
+Either run the following from the `build/` directory:
+
+```
+ninja build
+```
+
+or run the following from the project root directory:
+
+```
+idf.py build
+```
+
+
+### Compressed build
+
+This will build the compressed `JoltOS.bin.gz` file
+
+```
+ninja compress
 ```
 
 ## Environment setup (Legacy GNU Make)
