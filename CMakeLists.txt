@@ -65,7 +65,7 @@ else()
 endif()
 
 if(NOT DEFINED INSTALL_SYSTEM_DEPENDENCIES)
-    set(INSTALL_SYSTEM_DEPENDENCIES "printf \"No rules for your OS\" && exit 1")
+    set(INSTALL_SYSTEM_DEPENDENCIES printf "No rules for your OS" && exit 1)
 endif()
 
 add_custom_target("system_dependencies")
