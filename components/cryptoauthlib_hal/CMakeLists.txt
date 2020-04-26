@@ -1,4 +1,4 @@
-set(CRYPTOAUTHLIB_DIR "cryptoauthlib/lib")
+set(CRYPTOAUTHLIB_DIR "../cryptoauthlib/lib")
 
 idf_component_register(
 		SRCS
