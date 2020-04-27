@@ -37,7 +37,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, default=default_elf_fn,
-            helf='ESP32 binary file to compress.')
+            help='ESP32 binary file to compress.')
     parser.add_argument('--verbose', '-v', type=str, default='INFO',
             help='''
             Valid options:
