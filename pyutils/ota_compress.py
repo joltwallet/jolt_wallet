@@ -16,7 +16,7 @@ import logging
 
 # Configure logging
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-log = logging.getLogger('elf2jelf')
+log = logging.getLogger('ota_compress')
 
 def compress_data(data):
     w_bits = 12
