@@ -33,7 +33,7 @@ def compress_data(data):
 
 def parse_args():
     this_path = os.path.abspath(__file__)
-    default_elf_fn = os.path.join(this_path, '..', 'build', 'jolt_os.bin')
+    default_elf_fn = os.path.join(this_path, '..', '..', 'build', 'jolt_os.bin')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, default=default_elf_fn,
