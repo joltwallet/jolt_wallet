@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(PROJECT_NAME "JoltOS")
+set(PROJECT_NAME "jolt_os")
 
-#    "."  # TODO: only needed for unity, need to figure out unity in cmake
 set(EXTRA_COMPONENT_DIRS
         "$ENV{IDF_PATH}/tools/unit-test-app/components"
         "jolt_os"
@@ -16,7 +15,6 @@ set(JOLT_WALLET_PATH ${CMAKE_SOURCE_DIR})
 
 # set targetname via `TARGET_BOARD=target`
 include(${JOLT_WALLET_PATH}/make/cfg.cmake)
-include(${JOLT_WALLET_PATH}/make/common.cmake)
 
 # Executables that generate/apply binary patches
 set(HDIFFZ components/esp_hdiffz/HDiffPatch/hdiffz)
@@ -96,6 +94,3 @@ add_custom_command(TARGET build-hdiffz
 )
 
 project(${PROJECT_NAME})
-
-#get_directory_property(MAIN_BUILDSYSTEM_TARGETS BUILDSYSTEM_TARGETS)
-#message( "BUILDSYSTEM_TARGETS ${MAIN_BUILDSYSTEM_TARGETS}" )

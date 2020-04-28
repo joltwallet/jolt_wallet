@@ -10,6 +10,7 @@ xtensa-esp32-elf/
 .*project
 .settings
 .mainframer
+*__pycache__*
 
 # Jolt Specific
 jolt_os/jolt_lib.h
@@ -20,6 +21,7 @@ docs/latex/
 
 # Misc
 *.sh
+*.backup
 
 # Static Analysis
 cppcheck.log
