@@ -17,16 +17,5 @@ pipeline {
                 }
             }
         }
-        stage('TEST - Build Firmware') {
-            steps {
-                script {
-                    echo "Building $BRANCH_NAME"
-                    docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-credentials') {
-                        sh 'docker pull "joltwallet/jolt_firmware:latest"'
-                        sh 'docker run -e SSH_KEY -e TAG_NAME=${BRANCH_NAME} -e FIREBASE_SERVICE_ACCOUNT joltwallet/jolt_firmware:latest'
-                    }
-                }
-            }
-        }
     }
 }
