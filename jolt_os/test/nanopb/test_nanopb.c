@@ -1,6 +1,6 @@
 #include "pb_decode.h"
 #include "pb_encode.h"
-#include "simple.pb.h"
+#include "nanopb/simple.pb.h"
 #include "unity.h"
 
 static const char MODULE_NAME[] = "[nanopb]";
