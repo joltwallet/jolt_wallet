@@ -3,7 +3,7 @@
 #     env var TARGET_BOARD
 #     
 
-PROJECT_NAME := jolt
+PROJECT_NAME := jolt_os
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 

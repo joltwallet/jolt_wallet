@@ -16,7 +16,7 @@ import logging
 
 # Configure logging
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-log = logging.getLogger('elf2jelf')
+log = logging.getLogger('ota_compress')
 
 def compress_data(data):
     w_bits = 12
@@ -32,7 +32,7 @@ def compress_data(data):
     return compressed_data
 
 def parse_args():
-    this_path = os.path.abspath(__file__)
+    this_path = os.path.dirname(os.path.abspath(__file__))
     default_elf_fn = os.path.join(this_path, '..', 'build', 'jolt_os.bin')
 
     parser = argparse.ArgumentParser()
