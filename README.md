@@ -62,6 +62,10 @@ mkdir -p build/ && cd build && cmake .. -G Ninja
 GNU Make may be used instead of Ninja.  If a build system is not specified,
 `Ninja` will be used.
 
+Many of these options change either how the default `sdkconfig` is generated,
+or how the `make`/`ninja` filed is generated. To be safe, delete both the
+`build/` directory and the `sdkconfig.*` files in the project root.
+
 
 ### Setup toolchain and other depdencies
 
@@ -106,6 +110,21 @@ the default GUI with a unit-testing menu
 rm -rf build/  # Make sure the previously generated make/ninja file is gone
 idf.py tests
 ```
+
+The `tests` target generates a slightly different build file, so clear
+the `build/` directory before running.
+
+### Specifying different sdkconfig defaults
+JoltOS supports different hardware configurations. These hardware differences
+get applied over the defaults via the `TARGET_BOARD`-specific `sdkconfig.defaults`
+files in the `sdkconfigs/` directory. Delete your generated `sdkconfig` file
+and generate a hardware-specific configuration via:
+
+```
+TARGET_BOARD=my_hardware_name idf.py defconfig
+```
+
+The `TARGET_BOARD` environment variable is only used for `sdkconfig` generation.
 
 ## Environment setup (Legacy GNU Make)
 [deprecated]
