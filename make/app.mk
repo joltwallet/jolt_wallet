@@ -22,6 +22,8 @@ ifndef APP_VERSION_PATCH
 $(error APP_VERSION_PATCH is not set)
 endif
 
+MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+export JOLT_WALLET_PATH := $(abspath $(dir $(MKFILE_PATH))/..)
 
 # Parse output binary paths
 ELF_BIN_NAME             = $(PROJECT_PATH)/$(PROJECT_NAME).elf
@@ -32,9 +34,6 @@ BIP32_KEY    ?= $(DEFAULT_BIP32_KEY)
 ELF2JELF     ?= $(PROJECT_PATH)/jolt_wallet/elf2jelf/elf2jelf.py
 PYTHONBIN    ?= python3
 DEVICE_PORT  ?= /dev/ttyUSB0
-
-# Add all the Jolt Wallet paths
-export JOLT_WALLET_PATH := $(PWD)/jolt_wallet
 
 EXTRA_COMPONENT_DIRS = \
 		$(IDF_PATH)/tools/unit-test-app/components/ \

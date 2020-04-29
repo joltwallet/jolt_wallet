@@ -1,0 +1,4 @@
+build/
+docs/
+sdkconfig.old
+xtensa-esp32-elf/
