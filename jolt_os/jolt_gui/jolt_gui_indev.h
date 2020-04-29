@@ -8,6 +8,7 @@
 #define JOLT_GUI_INDEV_H__
 
 #include "easy_input.h"
+#include "sdkconfig.h"
 
 enum {
     JOLT_BTN_UP    = EASY_INPUT_UP,

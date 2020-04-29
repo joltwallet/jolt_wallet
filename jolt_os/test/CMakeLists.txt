@@ -52,4 +52,6 @@ if(REL_PROTO_FILES)
         PROPERTIES GENERATED TRUE)
     add_custom_target(protobuf_${COMPONENT_LIB} DEPENDS ${PROTO_SRCS} ${PROTO_HDRS})
     add_dependencies(${COMPONENT_LIB} protobuf_${COMPONENT_LIB})
+    set_property(DIRECTORY "${COMPONENT_DIR}" APPEND PROPERTY
+        ADDITIONAL_MAKE_CLEAN_FILES ${PROTO_SRCS} ${PROTO_HDRS})
 endif()

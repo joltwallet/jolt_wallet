@@ -59,14 +59,16 @@ source export.sh  # On initial setup this may error, that's fine
 mkdir -p build/ && cd build && cmake .. -G Ninja
 ```
 
-Unless otherwise noted, all commands in the following subsections are executed
-from the `build/` directory.
+GNU Make may be used instead of Ninja.  If a build system is not specified,
+`Ninja` will be used.
 
-GNU Make may be used instead of Ninja.
 
 ### Setup toolchain and other depdencies
 
 ```
+# Go into the build directory
+cd build/
+
 # Install system dependencies
 ninja system_dependencies
 
@@ -79,13 +81,6 @@ cd .. && source export.sh
 
 ### Vanilla build
 
-Either run the following from the `build/` directory:
-
-```
-ninja build
-```
-
-or run the following from the project root directory:
 
 ```
 idf.py build
@@ -94,10 +89,22 @@ idf.py build
 
 ### Compressed build
 
-This will build the compressed `JoltOS.bin.gz` file
+This will also build the compressed `build/jolt_os.bin.gz` file
 
 ```
-ninja compress
+idf.py compress
+```
+
+
+### Unit Testing
+
+This will build JoltOS with additional testing functionality and override
+the default GUI with a unit-testing menu
+
+```
+# From the project directory
+rm -rf build/  # Make sure the previously generated make/ninja file is gone
+idf.py tests
 ```
 
 ## Environment setup (Legacy GNU Make)

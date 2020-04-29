@@ -66,9 +66,17 @@ if(NOT DEFINED INSTALL_SYSTEM_DEPENDENCIES)
     set(INSTALL_SYSTEM_DEPENDENCIES printf "No rules for your OS" && exit 1)
 endif()
 
+
+
+##################
+# CUSTOM TARGETS #
+##################
+
 add_custom_target("system_dependencies")
 add_custom_command(TARGET system_dependencies
-     COMMAND ${INSTALL_SYSTEM_DEPENDENCIES})
+     COMMAND ${INSTALL_SYSTEM_DEPENDENCIES}
+)
+
 
 add_custom_target("toolchain")
 add_custom_command(TARGET toolchain
@@ -77,7 +85,8 @@ add_custom_command(TARGET toolchain
     COMMAND pip3 install -r $ENV{IDF_PATH}/requirements.txt
     COMMAND ${IDF_PATH}/tools/idf_tools.py install
     DEPENDS system_dependencies
-    )
+)
+
 
 add_custom_target("compress")
 add_custom_command(TARGET compress
@@ -88,9 +97,20 @@ add_custom_command(TARGET compress
 )
 add_dependencies(compress app)
 
+
 add_custom_target("build-hdiffz")
 add_custom_command(TARGET build-hdiffz
     COMMAND cd ${JOLT_WALLET_PATH}/components/esp_hdiffz/HDiffPatch && make
 )
+
+
+# the UNIT_TESTING variable is set via this project's idf_ext.py when the
+# "tests" target is built. This passes it along as a COMPILE_DEFINITIONS
+# so the macro is available at build time.
+if( ${UNIT_TESTING} )
+    idf_build_set_property(COMPILE_DEFINITIONS "-DUNIT_TESTING=1" APPEND)
+endif()
+
+
 
 project(${PROJECT_NAME})
