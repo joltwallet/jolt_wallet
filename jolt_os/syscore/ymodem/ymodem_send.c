@@ -42,7 +42,7 @@
 #include "syscore/ymodem/ymodem_common.h"
 
 //------------------------------------------------------------------------------------
-static void IRAM_ATTR ymodem_prepare_initial_packet( uint8_t *data, char *fileName, uint32_t length )
+static void ymodem_prepare_initial_packet( uint8_t *data, char *fileName, uint32_t length )
 {
     uint16_t tempCRC;
 
@@ -67,7 +67,7 @@ static void IRAM_ATTR ymodem_prepare_initial_packet( uint8_t *data, char *fileNa
 }
 
 //-------------------------------------------------
-static void IRAM_ATTR ymodem_prepare_last_packet( uint8_t *data )
+static void ymodem_prepare_last_packet( uint8_t *data )
 {
     uint16_t tempCRC;
 
@@ -81,7 +81,7 @@ static void IRAM_ATTR ymodem_prepare_last_packet( uint8_t *data )
 }
 
 //-----------------------------------------------------------------------------------------
-static void IRAM_ATTR ymodem_prepare_packet( uint8_t *data, uint8_t pktNo, uint32_t sizeBlk, FILE *ffd )
+static void ymodem_prepare_packet( uint8_t *data, uint8_t pktNo, uint32_t sizeBlk, FILE *ffd )
 {
     uint16_t size, tempCRC;
 
@@ -105,7 +105,7 @@ static void IRAM_ATTR ymodem_prepare_packet( uint8_t *data, uint8_t pktNo, uint3
 }
 
 //-------------------------------------------------------------
-static uint8_t IRAM_ATTR ymodem_wait_response( uint8_t ackchr, uint8_t tmo )
+static uint8_t ymodem_wait_response( uint8_t ackchr, uint8_t tmo )
 {
     unsigned char receivedC;
     uint32_t errors = 0;
@@ -137,7 +137,7 @@ static uint8_t IRAM_ATTR ymodem_wait_response( uint8_t ackchr, uint8_t tmo )
     send_CA();            \
     error_code = x;       \
     goto exit;
-int IRAM_ATTR ymodem_transmit( char *sendFileName, unsigned int sizeFile, FILE *ffd )
+int ymodem_transmit( char *sendFileName, unsigned int sizeFile, FILE *ffd )
 {
     int error_code = 0;
     uint8_t *packet_data;

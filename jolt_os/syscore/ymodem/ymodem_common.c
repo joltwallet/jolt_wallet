@@ -51,7 +51,7 @@ uint64_t t_ble_read_timeout      = 0;
 bool ymodem_transfer_in_progress = false;
 #endif
 
-unsigned short IRAM_ATTR crc16( const unsigned char *buf, unsigned long count )
+unsigned short crc16( const unsigned char *buf, unsigned long count )
 {
     unsigned short crc = 0;
     int i;
@@ -75,7 +75,7 @@ unsigned short IRAM_ATTR crc16( const unsigned char *buf, unsigned long count )
  * @param[in] n number of bytes to read.
  * @return Amount of bytes actually read.
  */
-int32_t IRAM_ATTR receive_bytes( unsigned char *c, uint32_t timeout, uint32_t n )
+int32_t receive_bytes( unsigned char *c, uint32_t timeout, uint32_t n )
 {
     int return_code = 0;
     int amount_read = 0;
@@ -140,7 +140,7 @@ exit:
     return return_code;
 }
 
-void IRAM_ATTR rx_consume()
+void rx_consume()
 {
     if( stdin == ble_stdin ) {
         /* Temporary hack in lieu of writing proper bluetooth select drivers */

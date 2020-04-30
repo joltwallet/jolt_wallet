@@ -71,7 +71,7 @@ static uint32_t n_ymodem_packet         = 0;
  *                -2: abort by user
  */
 //--------------------------------------------------------------------------
-static int32_t IRAM_ATTR receive_packet( uint8_t *data, int *length, uint32_t timeout )
+static int32_t receive_packet( uint8_t *data, int *length, uint32_t timeout )
 {
     int packet_size, rec_bytes;
     unsigned char ch;
@@ -150,7 +150,7 @@ static int32_t IRAM_ATTR receive_packet( uint8_t *data, int *length, uint32_t ti
     send_ACK();            \
     size = x;              \
     goto exit;
-int IRAM_ATTR ymodem_receive_write( void *ffd, unsigned int maxsize, char *getname, write_fun_t write_fun,
+int ymodem_receive_write( void *ffd, unsigned int maxsize, char *getname, write_fun_t write_fun,
                                     int8_t *progress )
 {
     /* Just incase stdin is from uart, we override the current settings to
@@ -460,7 +460,7 @@ exit:
 
 // Receive a file using the ymodem protocol.
 //-----------------------------------------------------------------
-int IRAM_ATTR ymodem_receive( FILE *ffd, unsigned int maxsize, char *getname, int8_t *progress )
+int ymodem_receive( FILE *ffd, unsigned int maxsize, char *getname, int8_t *progress )
 {
     return ymodem_receive_write( ffd, maxsize, getname, (write_fun_t)&fwrite, progress );
 }
