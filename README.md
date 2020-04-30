@@ -51,6 +51,83 @@ To see the latest on what we've done, what we're planning, and where we're heade
 
 
 ## Environment setup
+For all commands, we need to source some environment variables and 
+generate the build files so we can take further action.
+
+```
+source export.sh  # On initial setup this may error, that's fine
+mkdir -p build/ && cd build && cmake .. -G Ninja
+```
+
+GNU Make may be used instead of Ninja.  If a build system is not specified,
+`Ninja` will be used.
+
+Many of these options change either how the default `sdkconfig` is generated,
+or how the `make`/`ninja` filed is generated. To be safe, delete both the
+`build/` directory and the `sdkconfig.*` files in the project root.
+
+
+### Setup toolchain and other depdencies
+
+```
+# Go into the build directory
+cd build/
+
+# Install system dependencies
+ninja system_dependencies
+
+# Install toolchain (and system dependencies)
+ninja toolchain
+
+# Re-initialize some env vars
+cd .. && source export.sh
+```
+
+### Vanilla build
+
+
+```
+idf.py build
+```
+
+
+### Compressed build
+
+This will also build the compressed `build/jolt_os.bin.gz` file
+
+```
+idf.py compress
+```
+
+
+### Unit Testing
+
+This will build JoltOS with additional testing functionality and override
+the default GUI with a unit-testing menu
+
+```
+# From the project directory
+rm -rf build/  # Make sure the previously generated make/ninja file is gone
+idf.py tests
+```
+
+The `tests` target generates a slightly different build file, so clear
+the `build/` directory before running.
+
+### Specifying different sdkconfig defaults
+JoltOS supports different hardware configurations. These hardware differences
+get applied over the defaults via the `TARGET_BOARD`-specific `sdkconfig.defaults`
+files in the `sdkconfigs/` directory. Delete your generated `sdkconfig` file
+and generate a hardware-specific configuration via:
+
+```
+TARGET_BOARD=my_hardware_name idf.py defconfig
+```
+
+The `TARGET_BOARD` environment variable is only used for `sdkconfig` generation.
+
+## Environment setup (Legacy GNU Make)
+[deprecated]
 
 #### Prerequisites
 Install the prerequisites specified in the [ESP-IDF docs](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started-get-prerequisites). The rest of the ESP-iDF steps are handled below.
