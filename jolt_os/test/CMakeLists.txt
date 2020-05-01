@@ -37,6 +37,8 @@ idf_component_register(
 ##########
 set(NANOPB_SRC_ROOT_FOLDER "${COMPONENT_DIR}/../../components/nanopb/nanopb")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${NANOPB_SRC_ROOT_FOLDER}/extra)
+set(NANOPB_GENERATE_CPP_APPEND_PATH FALSE)
+
 find_package( Nanopb REQUIRED )
 include_directories(${NANOPB_INCLUDE_DIRS})
 

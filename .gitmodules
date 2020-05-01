@@ -39,4 +39,4 @@
 	url = https://github.com/joltwallet/cryptoauthlib.git
 [submodule "components/nanopb/nanopb"]
 	path = components/nanopb/nanopb
-	url = https://github.com/joltwallet/nanopb.git
+	url = https://github.com/nanopb/nanopb.git
