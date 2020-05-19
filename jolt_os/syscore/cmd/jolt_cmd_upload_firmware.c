@@ -74,7 +74,15 @@ static int jolt_cmd_upload_firmware_ymodem_task( jolt_bg_job_t *job )
         remove( JOLT_FS_TMP_FN );
 
         if(ESP_OK != err) {
-            EXIT_PRINT(-3, "Failed to apply patch");
+            /* Failure */
+            char buf[64];
+
+            ESP_LOGE(TAG, "Failed to apply patch");
+            snprintf( buf, sizeof( buf ), "%s=%d", gettext( JOLT_TEXT_ERROR ), err );
+            jolt_gui_scr_loadingbar_update( loading_scr, NULL, buf, -1 );
+            /* Allow screen to be deleted via back button */
+            jolt_gui_scr_set_event_cb( loading_scr, jolt_gui_event_del );
+            EXIT( -6 );
         }
     }
     else{
