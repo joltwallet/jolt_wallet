@@ -4,9 +4,14 @@
 #include "syscore/cli.h"
 #include "syscore/cli_helpers.h"
 #include "syscore/ota.h"
+#include "syscore/filesystem.h"
+#include "syscore/ymodem.h"
 #include "syscore/ymodem/ymodem_common.h"
+#include "esp_hdiffz.h"
 
 static const char TAG[] = "cmd_upload_firmware";
+static bool is_patch;
+
 
 static void jolt_cmd_upload_firmware_cb( lv_obj_t *bar, lv_event_t event )
 {
@@ -35,16 +40,47 @@ static int jolt_cmd_upload_firmware_ymodem_task( jolt_bg_job_t *job )
     progress = jolt_gui_scr_loadingbar_autoupdate( loading_scr );
     jolt_gui_scr_loadingbar_update( loading_scr, NULL, gettext( JOLT_TEXT_CONNECTING ), 0 );
 
-    /* Begin transfer/update */
-    if( ESP_OK == jolt_ota_ymodem( progress ) ) {
-        ESP_LOGI( TAG, "OTA Success; rebooting..." );
-        esp_restart();
+    if(is_patch) {
+        esp_err_t err;
+        FILE *ffd = NULL;
+        int32_t max_fsize = jolt_fs_free();
+        int res;
+
+        /* Pre-run cleanup */
+        if( jolt_fs_exists( JOLT_FS_TMP_FN ) ) remove( JOLT_FS_TMP_FN );
+
+        /* Open tmp file */
+        if( NULL == ( ffd = fopen( JOLT_FS_TMP_FN, "wb" ) ) ) { EXIT_PRINT( -2, "Error opening tmp for receive." ); }
+
+        /* Perform Transfer */
+        res = ymodem_receive( ffd, max_fsize, NULL, progress );
+        ESP_LOGI(TAG, "Upload successful");
+
+        /* apply the patch */
+        ESP_LOGI(TAG, "Applying patch...");
+        err = esp_hdiffz_ota_file(ffd);
+        SAFE_CLOSE(ffd);
+        remove( JOLT_FS_TMP_FN );
+
+        if(ESP_OK != err) {
+            EXIT_PRINT(-3, "Failed to apply patch");
+        }
+    }
+    else{
+        /* Begin transfer/update */
+        if( ESP_OK != jolt_ota_ymodem( progress ) ) {
+            ESP_LOGE( TAG, "OTA Failure" );
+            jolt_gui_obj_del( loading_scr );
+
+            EXIT( 0 );
+        }
+
     }
 
-    ESP_LOGE( TAG, "OTA Failure" );
-    jolt_gui_obj_del( loading_scr );
+    ESP_LOGI( TAG, "OTA Success; rebooting..." );
 
-    EXIT( 0 );
+    esp_restart();
+
 
 exit:
     jolt_resume_logging();
@@ -62,6 +98,9 @@ static void jolt_cmd_upload_firmware_vault_failure_cb( void *dummy )
     jolt_cli_resume();
 }
 
+/**
+ * @brief Creating the loading screen and dispatch ymodem_task to bg.
+ */
 static void jolt_cmd_upload_firmware_vault_success_cb( void *name )
 {
     if( ESP_OK != ( jolt_bg_create( jolt_cmd_upload_firmware_ymodem_task, name, NULL ) ) ) goto exit;
@@ -74,6 +113,9 @@ exit:
     jolt_cli_resume();
 }
 
+/**
+ * @brief Callback for "Accept Transfer" confirmation screen.
+ */
 static void jolt_cmd_upload_firmware_confirmation_cb( jolt_gui_obj_t *obj, jolt_gui_event_t event )
 {
     if( jolt_gui_event.short_clicked == event ) {
@@ -94,9 +136,17 @@ int jolt_cmd_upload_firmware( int argc, char **argv )
     jolt_gui_obj_t *scr = NULL;
     char body[256];
 
+    /* parse cli args */
+    is_patch = false;
+    for(uint8_t i=1; i < argc; i++) {
+        if(0 == strcmp(argv[i], "--patch")) {
+            is_patch = true;
+        }
+    }
+
     jolt_suspend_logging();
 
-    snprintf( body, sizeof( body ) - 1, gettext( JOLT_TEXT_TRANSFER_TO_JOLT ), "JoltOS" );
+    snprintf( body, sizeof( body ), gettext( JOLT_TEXT_TRANSFER_TO_JOLT ), "JoltOS" );
 
     if( NULL == ( scr = jolt_gui_scr_text_create( gettext( JOLT_TEXT_UPLOAD ), body ) ) ) goto exit;
     jolt_gui_scr_set_event_cb( scr, jolt_cmd_upload_firmware_confirmation_cb );

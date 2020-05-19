@@ -52,7 +52,7 @@ int ymodem_receive_write( void *ffd, unsigned int maxsize, char *getname, write_
  * @brief Convenience function that will write the transfer to disk
  * @param[in] ffd File Descriptor
  * @param[in] maxsize Maximum file size to accept.
- * @param[out] getname (optional) buffer to store .
+ * @param[out] getname (optional) buffer to store filename.
  * @param[out] progress (optional) updated with transfer progress 0~100
  *
  * @return 0 on success.

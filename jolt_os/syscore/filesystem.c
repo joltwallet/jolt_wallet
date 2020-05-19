@@ -137,9 +137,15 @@ uint16_t jolt_fs_get_all_jelf_fns( char ***fns )
 
 uint32_t jolt_fs_free()
 {
-    uint32_t tot, used;
+    uint32_t tot, used, remain;
     jolt_fs_info( &tot, &used );
-    return ( tot - used - JOLT_FS_MIN_FREE );
+    remain = tot - used;
+    if(remain > JOLT_FS_MIN_FREE) {
+        return remain - JOLT_FS_MIN_FREE;
+    }
+    else {
+        return 0;
+    }
 }
 
 size_t jolt_fs_size( const char *fname )

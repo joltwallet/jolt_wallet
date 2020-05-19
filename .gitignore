@@ -11,6 +11,7 @@ xtensa-esp32-elf/
 .settings
 .mainframer
 *__pycache__*
+*.pyc
 
 # Jolt Specific
 jolt_os/jolt_lib.h
