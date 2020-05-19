@@ -73,7 +73,7 @@ static int jolt_cmd_upload_ymodem_task( jolt_bg_job_t *job )
     if( rec_res <= 0 ) {
         /* Failure */
         char buf[64];
-        ESP_LOGE( TAG, "Transfer complete, Error=%d", rec_res );
+        ESP_LOGE( TAG, "Transfer incomplete, Error=%d", rec_res );
         snprintf( buf, sizeof( buf ), "%s=%d", gettext( JOLT_TEXT_ERROR ), rec_res );
         jolt_gui_scr_loadingbar_update( loading_scr, NULL, buf, -1 );
         /* Allow screen to be deleted via back button */

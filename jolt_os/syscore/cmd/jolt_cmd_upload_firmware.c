@@ -44,7 +44,7 @@ static int jolt_cmd_upload_firmware_ymodem_task( jolt_bg_job_t *job )
         esp_err_t err;
         FILE *ffd = NULL;
         int32_t max_fsize = jolt_fs_free();
-        int res;
+        int rec_res;
 
         /* Pre-run cleanup */
         if( jolt_fs_exists( JOLT_FS_TMP_FN ) ) remove( JOLT_FS_TMP_FN );
@@ -53,7 +53,18 @@ static int jolt_cmd_upload_firmware_ymodem_task( jolt_bg_job_t *job )
         if( NULL == ( ffd = fopen( JOLT_FS_TMP_FN, "wb" ) ) ) { EXIT_PRINT( -2, "Error opening tmp for receive." ); }
 
         /* Perform Transfer */
-        res = ymodem_receive( ffd, max_fsize, NULL, progress );
+        rec_res = ymodem_receive( ffd, max_fsize, NULL, progress );
+        if( rec_res <= 0 ) {
+            /* Failure */
+            char buf[64];
+            ESP_LOGE( TAG, "Transfer incomplete, Error=%d", rec_res );
+            snprintf( buf, sizeof( buf ), "%s=%d", gettext( JOLT_TEXT_ERROR ), rec_res );
+            jolt_gui_scr_loadingbar_update( loading_scr, NULL, buf, -1 );
+            /* Allow screen to be deleted via back button */
+            jolt_gui_scr_set_event_cb( loading_scr, jolt_gui_event_del );
+            EXIT( -5 );
+        }
+
         ESP_LOGI(TAG, "Upload successful");
 
         /* apply the patch */
