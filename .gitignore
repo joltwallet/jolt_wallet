@@ -34,3 +34,8 @@ rng.raw
 # Protobuf-generated files
 *.pb.c
 *.pb.h
+
+# Compiled firmware and patches
+*.bin
+*.elf
+*.patch
