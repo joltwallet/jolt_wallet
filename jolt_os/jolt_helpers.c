@@ -258,6 +258,9 @@ void jolt_resume_logging()
         ESP_LOGE(TAG, "jolt_resume_logging() called when jolt_suspend_logging() was never called.");
         return ;
     }
+    if( 0 == uxSemaphoreGetCount( suspend_logging_sem ) ) {
+        return;
+    }
     if( !xSemaphoreTake( suspend_logging_sem, 0 ) ) {
         assert( 0 );
         esp_restart();
