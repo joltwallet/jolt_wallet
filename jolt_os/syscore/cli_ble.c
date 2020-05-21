@@ -58,8 +58,7 @@ static void jolt_cli_ble_listener_task( void *param )
         if( i > 0 ) {
             ESP_LOGD( TAG, "sending command from ble: \"%s\"", line );
             bool suspend = false;
-            if( 0 == strcmp( line, "upload_firmware" ) || 0 == strcmp( line, "upload" ) ||
-                0 == strncmp( line, "upload ", 7 ) ) {
+            if( 0 == strncmp( line, "upload", 6 ) ) {
                 suspend = true;
             }
             else if( 0 == strcmp( line, "ping" ) ) {
@@ -77,7 +76,11 @@ static void jolt_cli_ble_listener_task( void *param )
 
             line = NULL;
 
-            if( suspend == true ) jolt_cli_ble_suspend();
+            /* NOTE: if suspended, the cli command MUST unsuspend upon
+             * completion. */
+            if( suspend == true ) {
+                jolt_cli_ble_suspend();
+            }
         }
     }
 
