@@ -91,6 +91,7 @@ void jolt_gui_scr_loadingbar_update( jolt_gui_obj_t *parent, const char *title, 
         if( text ) { lv_label_set_text( label_loading, text ); }
         if( title ) { lv_label_set_text( label_title, title ); }
     }
+    taskYIELD();
 }
 
 /* lv_task that periodically updates the loading screen */
