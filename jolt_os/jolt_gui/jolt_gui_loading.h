@@ -34,7 +34,7 @@ jolt_gui_obj_t *jolt_gui_scr_loadingbar_create( const char *title );
  * @param[in,out] parent loading-bar screen
  * @param[in] title Statusbar title string. NULL for an empty title
  * @param[in] text subtitle text displayed above the loading-bar. NULL for an empty subtitle.
- * @param[in] percentage Current progress [0~100]
+ * @param[in] percentage Current progress [0~100] Set to a negative value to not update the progressbar.
  */
 void jolt_gui_scr_loadingbar_update( jolt_gui_obj_t *parent, const char *title, const char *text, int8_t percentage );
 /**

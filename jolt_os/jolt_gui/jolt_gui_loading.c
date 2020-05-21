@@ -25,6 +25,7 @@ typedef struct autoupdate_param_t {
     jolt_gui_obj_t *scr;
     lv_task_t *task;
     int8_t progress;
+    uint8_t apply_sent;
 } autoupdate_param_t;
 
 typedef struct {
@@ -103,7 +104,10 @@ static void autoupdate_task( lv_task_t *input )
         if( ext->autoupdate->progress <= 100 && ext->autoupdate->progress >= 0 ) {
             jolt_gui_scr_loadingbar_update( scr, NULL, NULL, ext->autoupdate->progress );
         }
-        if( ext->autoupdate->progress >= 100 ) { lv_event_send( bar, jolt_gui_event.apply, NULL ); }
+        if( !ext->autoupdate->apply_sent && ext->autoupdate->progress >= 100 ) { 
+            lv_event_send( bar, jolt_gui_event.apply, NULL ); 
+            ext->autoupdate->apply_sent = true;
+        }
     }
 }
 
