@@ -353,7 +353,7 @@ menu "JoltOS"
         config JOLT_TASK_STACK_SIZE_BACKGROUND
             int
             prompt "Background Stack Size"
-            default 8192
+            default 12000
             help
                 Primary task of executing any lengthy function to not block the GUI loop.
 
