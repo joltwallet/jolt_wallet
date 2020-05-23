@@ -104,5 +104,6 @@ const char *jolt_lang_spanish[JOLT_TEXT_LAST_STR] = {
 
         /* Misc */
         "...",
+        "Reinicio...",
 };
 #endif

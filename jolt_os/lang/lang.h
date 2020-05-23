@@ -131,6 +131,7 @@ typedef enum jolt_text_id_t {
 
     /* Misc */
     JOLT_TEXT_ELLIPSIS,
+    JOLT_TEXT_REBOOTING,
 
     /* Used for allocating resources. Not actually a string */
     JOLT_TEXT_LAST_STR,

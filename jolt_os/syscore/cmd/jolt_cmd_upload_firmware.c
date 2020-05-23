@@ -1,6 +1,5 @@
 /**
  *
- * TODO: replace some error strings with ``gettext`` counterparts
  */
 
 //#define LOG_LOCAL_LEVEL 4
@@ -80,9 +79,6 @@ static int jolt_cmd_upload_firmware_ymodem_task( jolt_bg_job_t *job )
         if( NULL == ( ffd = fopen( JOLT_FS_TMP_FN, "rb" ) ) ) { EXIT_PRINT( -8, "Error opening tmp for reading." ); }
 
         /* Apply the patch */
-        ESP_LOGI(TAG, "Applying patch...");
-        jolt_gui_scr_loadingbar_update( loading_scr, NULL, "Applying patch", -1 );
-
         // TODO: progress bar
         err = esp_hdiffz_ota_file(ffd);
 
@@ -102,13 +98,14 @@ static int jolt_cmd_upload_firmware_ymodem_task( jolt_bg_job_t *job )
         /* Begin transfer/update */
         if( ESP_OK != jolt_ota_ymodem( progress ) ) {
             ESP_LOGE( TAG, "OTA Failure" );
-            jolt_gui_scr_loadingbar_update( loading_scr, NULL, "OTA Failure", -1 );
-            EXIT( 0 );
+            snprintf( buf, sizeof( buf ), "%s=%d", gettext( JOLT_TEXT_ERROR ), -10 );
+            jolt_gui_scr_loadingbar_update( loading_scr, NULL, buf, -1 );
+            EXIT( -10 );
         }
     }
 
     ESP_LOGI( TAG, "OTA Success; rebooting..." );
-    jolt_gui_scr_loadingbar_update( loading_scr, NULL, "Rebooting...", -1 );
+    jolt_gui_scr_loadingbar_update( loading_scr, NULL, gettext( JOLT_TEXT_REBOOTING ), -1 );
     vTaskDelay(pdMS_TO_TICKS(1000)); /* Pause slightly so user can see message */
 
     esp_restart();
@@ -122,7 +119,7 @@ exit:
         jolt_gui_scr_set_event_cb( loading_scr, jolt_gui_event_del );
     }
     jolt_cli_return( return_code );
-    return 0;
+    return 0;  // Dont repeat this task
 }
 
 static void jolt_cmd_upload_firmware_vault_failure_cb( void *dummy )
