@@ -29,14 +29,21 @@
  */
 jolt_gui_obj_t *jolt_gui_scr_loadingbar_create( const char *title );
 
+
 /**
  * @brief Update the loading-bar progress
+ *
+ * If `autoupdate` is enabled (see `jolt_gui_scr_loadingbar_autoupdate()`), then
+ * the percentage will be updated if >= 0.
+ *
  * @param[in,out] parent loading-bar screen
- * @param[in] title Statusbar title string. NULL for an empty title
- * @param[in] text subtitle text displayed above the loading-bar. NULL for an empty subtitle.
- * @param[in] percentage Current progress [0~100] Set to a negative value to not update the progressbar.
+ * @param[in] title Statusbar title string. NULL to not change the current title.
+ * @param[in] text Subtitle text displayed above the loading-bar. NULL to not change the current subtitle.
+ * @param[in] percentage Current progress [0~100]. Set to a negative value to not update the progressbar.
  */
 void jolt_gui_scr_loadingbar_update( jolt_gui_obj_t *parent, const char *title, const char *text, int8_t percentage );
+
+
 /**
  * @brief Automatically updates the loading bar according to the value of progress [0~100]
  *
@@ -49,6 +56,7 @@ void jolt_gui_scr_loadingbar_update( jolt_gui_obj_t *parent, const char *title, 
  */
 int8_t *jolt_gui_scr_loadingbar_autoupdate( jolt_gui_obj_t *parent );
 
+
 /**
  * @brief Cleanup the autoupdate task.
  *
@@ -58,11 +66,13 @@ int8_t *jolt_gui_scr_loadingbar_autoupdate( jolt_gui_obj_t *parent );
  */
 void jolt_gui_scr_loadingbar_autoupdate_del( jolt_gui_obj_t *parent );
 
+
 /**
  * @brief Get pointer to progress value
  * @param[in,out] obj Screen or bar object
  */
 int8_t *jolt_gui_scr_loadingbar_progress_get( lv_obj_t *obj );
+
 
 /**
  * @brief Creates a spinning arc preloading screen.
@@ -75,6 +85,7 @@ int8_t *jolt_gui_scr_loadingbar_progress_get( lv_obj_t *obj );
  * @return preloading screen
  */
 jolt_gui_obj_t *jolt_gui_scr_preloading_create( const char *title, const char *text );
+
 
 /**
  * @brief Update the preloading screen's text fields.

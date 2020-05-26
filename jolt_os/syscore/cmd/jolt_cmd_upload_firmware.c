@@ -16,18 +16,43 @@
 #include "esp_hdiffz.h"
 
 static const char TAG[] = "cmd_upload_firmware";
-static bool is_patch;
+
+/* Use these enums to update the subtitle upon percentage change */
+enum {
+    FIRMWARE_UPGRADE_STATE_NONE,
+    FIRMWARE_UPGRADE_STATE_TRANSFERRING,
+};
+typedef uint8_t firmware_upgrade_state_t;
+
+typedef struct {
+    firmware_upgrade_state_t state;
+    bool is_patch;
+} firmware_upgrade_ctx_t;
+static firmware_upgrade_ctx_t ctx;
 
 
 static void jolt_cmd_upload_firmware_cb( lv_obj_t *bar, lv_event_t event )
 {
     if( jolt_gui_event.apply == event ) {
-        jolt_gui_scr_loadingbar_update( bar, NULL, gettext( JOLT_TEXT_INSTALLING ), -1 );
+        // No action
     }
     else if( jolt_gui_event.value_changed == event ) {
         int8_t *progress;
         progress = jolt_gui_scr_loadingbar_progress_get( bar );
-        if( *progress > 0 ) { jolt_gui_scr_loadingbar_update( bar, NULL, gettext( JOLT_TEXT_TRANSFERRING ), -1 ); }
+
+        if(*progress > 0 && ctx.state != FIRMWARE_UPGRADE_STATE_NONE) {
+            /* Callbacks to update subtitle depending on progress.
+             * (Subtitles that cannot be updated via inline blocking code) */
+            switch(ctx.state) {
+                case FIRMWARE_UPGRADE_STATE_TRANSFERRING:
+                    jolt_gui_scr_loadingbar_update( bar, NULL, gettext( JOLT_TEXT_TRANSFERRING ), -1 ); 
+                    break;
+                default:
+                    // Reaches here in an undefined state, abort for safety.
+                    abort();
+            }
+            ctx.state = FIRMWARE_UPGRADE_STATE_NONE;
+        }
     }
     else if( jolt_gui_event.cancel == event ) {
         // TODO: Tell bg jolt_cmd_upload_ymodem_task to abort, clean up, etc.
@@ -47,7 +72,9 @@ static int jolt_cmd_upload_firmware_ymodem_task( jolt_bg_job_t *job )
     progress = jolt_gui_scr_loadingbar_autoupdate( loading_scr );
     jolt_gui_scr_loadingbar_update( loading_scr, NULL, gettext( JOLT_TEXT_CONNECTING ), 0 );
 
-    if(is_patch) {
+    ctx.state = FIRMWARE_UPGRADE_STATE_TRANSFERRING;
+
+    if(ctx.is_patch) {
         esp_err_t err;
         FILE *ffd = NULL;
         int32_t max_fsize = jolt_fs_free();
@@ -78,9 +105,11 @@ static int jolt_cmd_upload_firmware_ymodem_task( jolt_bg_job_t *job )
         SAFE_CLOSE(ffd);
         if( NULL == ( ffd = fopen( JOLT_FS_TMP_FN, "rb" ) ) ) { EXIT_PRINT( -8, "Error opening tmp for reading." ); }
 
+        jolt_gui_scr_loadingbar_update( loading_scr, NULL, gettext(JOLT_TEXT_INSTALLING), 0 );
+        vTaskDelay(50); // small delay to allow screen to update. TODO: mitigate gui task starvation
+
         /* Apply the patch */
-        // TODO: progress bar
-        err = esp_hdiffz_ota_file(ffd);
+        err = esp_hdiffz_ota_file_progress(ffd, progress);
 
         /* Clean up resources prior to error check */
         SAFE_CLOSE(ffd);
@@ -102,11 +131,13 @@ static int jolt_cmd_upload_firmware_ymodem_task( jolt_bg_job_t *job )
             jolt_gui_scr_loadingbar_update( loading_scr, NULL, buf, -1 );
             EXIT( -10 );
         }
+        // TODO: Verify integrity of next ota partition to tell user if
+        // firmware transfer was successful/unsuccessful
     }
 
     ESP_LOGI( TAG, "OTA Success; rebooting..." );
     jolt_gui_scr_loadingbar_update( loading_scr, NULL, gettext( JOLT_TEXT_REBOOTING ), -1 );
-    vTaskDelay(pdMS_TO_TICKS(1000)); /* Pause slightly so user can see message */
+    vTaskDelay(pdMS_TO_TICKS(1000));  /* Pause slightly so user can see message */
 
     esp_restart();
 
@@ -168,12 +199,14 @@ int jolt_cmd_upload_firmware( int argc, char **argv )
     jolt_gui_obj_t *scr = NULL;
     char body[256];
 
+    ctx.state = FIRMWARE_UPGRADE_STATE_NONE;
+    ctx.is_patch = false;
+
     /* parse cli args */
-    is_patch = false;
     for(uint8_t i=1; i < argc; i++) {
         if(0 == strcmp(argv[i], "--patch")) {
             ESP_LOGD(TAG, "Expecting Patch Data");
-            is_patch = true;
+            ctx.is_patch = true;
         }
         else {
             ESP_LOGE(TAG, "Invalid arg %s", argv[i]);
