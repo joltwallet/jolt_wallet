@@ -86,8 +86,7 @@ static void jolt_cli_uart_listener_task( void *param )
         /* Add the command to the history */
         linenoiseHistoryAdd( line );
 
-        if( 0 == strcmp( line, "upload_firmware" ) || 0 == strcmp( line, "upload" ) ||
-            0 == strncmp( line, "upload ", 7 )
+        if( 0 == strncmp( line, "upload", 6 )
 #if JOLT_GUI_TEST_MENU
             || 0 == strcmp( line, "display" )
 #endif
@@ -107,6 +106,8 @@ static void jolt_cli_uart_listener_task( void *param )
         src.prompt = prompt;
         jolt_cli_set_src( &src );
 
+        /* NOTE: if suspended, the cli command MUST unsuspend upon
+         * completion. */
         if( suspend ) {
             /* Extra safety precaution for firmware upload */
             jolt_cli_uart_suspend();

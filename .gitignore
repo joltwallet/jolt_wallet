@@ -11,6 +11,7 @@ xtensa-esp32-elf/
 .settings
 .mainframer
 *__pycache__*
+*.pyc
 
 # Jolt Specific
 jolt_os/jolt_lib.h
@@ -33,3 +34,8 @@ rng.raw
 # Protobuf-generated files
 *.pb.c
 *.pb.h
+
+# Compiled firmware and patches
+*.bin
+*.elf
+*.patch

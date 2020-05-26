@@ -25,6 +25,7 @@ typedef struct autoupdate_param_t {
     jolt_gui_obj_t *scr;
     lv_task_t *task;
     int8_t progress;
+    uint8_t apply_sent;
 } autoupdate_param_t;
 
 typedef struct {
@@ -51,8 +52,7 @@ static lv_res_t new_bar_signal( jolt_gui_obj_t *bar, lv_signal_t sign, void *par
     return res;
 }
 
-/* Update the loading screen.
- * Title and Text are optional.*/
+
 void jolt_gui_scr_loadingbar_update( jolt_gui_obj_t *parent, const char *title, const char *text, int8_t percentage )
 {
     JOLT_GUI_CTX
@@ -87,9 +87,14 @@ void jolt_gui_scr_loadingbar_update( jolt_gui_obj_t *parent, const char *title, 
             if( ext->autoupdate ) { ext->autoupdate->progress = percentage; }
             lv_event_send( bar_loading, jolt_gui_event.value_changed, NULL );
         }
-        if( text ) { lv_label_set_text( label_loading, text ); }
-        if( title ) { lv_label_set_text( label_title, title ); }
+        if( text && strcmp(lv_label_get_text(label_loading), text)) {
+            lv_label_set_text( label_loading, text ); 
+        }
+        if( title && strcmp(lv_label_get_text(label_title), text)) { 
+            lv_label_set_text( label_title, title ); 
+        }
     }
+    taskYIELD();  // This doesn't seem sufficient to let the screen fully draw.
 }
 
 /* lv_task that periodically updates the loading screen */
@@ -100,10 +105,18 @@ static void autoupdate_task( lv_task_t *input )
     {
         jolt_gui_obj_t *bar   = BREAK_IF_NULL( jolt_gui_scr_get_active( scr ) );
         loadingbar_ext_t *ext = lv_obj_get_ext_attr( bar );
+        if( ext->autoupdate->progress < 100 && ext->autoupdate->progress >= 0 ) {
+            /* Reset the apply_sent flag if the percentage is a valid range
+             * and its not at 100% */
+            ext->autoupdate->apply_sent = false;
+        }
         if( ext->autoupdate->progress <= 100 && ext->autoupdate->progress >= 0 ) {
             jolt_gui_scr_loadingbar_update( scr, NULL, NULL, ext->autoupdate->progress );
         }
-        if( ext->autoupdate->progress >= 100 ) { lv_event_send( bar, jolt_gui_event.apply, NULL ); }
+        if( !ext->autoupdate->apply_sent && ext->autoupdate->progress >= 100 ) { 
+            lv_event_send( bar, jolt_gui_event.apply, NULL ); 
+            ext->autoupdate->apply_sent = true;
+        }
     }
 }
 

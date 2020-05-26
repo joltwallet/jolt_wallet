@@ -85,6 +85,8 @@ $(HDIFFZ): system-dependencies
 	cd components/esp_hdiffz/HDiffPatch \
 		&& make
 
+hdiffz: $(HDIFFZ) ;
+
 install: system-dependencies
 	mkdir -p $(IDF_TOOLS_PATH)
 	pip3 install -r requirements.txt

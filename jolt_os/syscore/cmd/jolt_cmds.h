@@ -203,7 +203,10 @@ int jolt_cmd_unlock( int argc, char** argv );
 /**
  * @brief Update JoltOS
  *
- * Takes no arguments
+ * Optional arguments:
+ *
+ * Optional flags:
+ *     --patch The uploaded file will be a patch
  */
 int jolt_cmd_upload_firmware( int argc, char** argv );
 

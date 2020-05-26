@@ -253,7 +253,15 @@ void jolt_suspend_logging()
 
 void jolt_resume_logging()
 {
-    if( NULL == suspend_logging_sem || !xSemaphoreTake( suspend_logging_sem, 0 ) ) {
+    if( NULL == suspend_logging_sem ) {
+        /* jolt_suspend_logging must have never been called */
+        ESP_LOGE(TAG, "jolt_resume_logging() called when jolt_suspend_logging() was never called.");
+        return ;
+    }
+    if( 0 == uxSemaphoreGetCount( suspend_logging_sem ) ) {
+        return;
+    }
+    if( !xSemaphoreTake( suspend_logging_sem, 0 ) ) {
         assert( 0 );
         esp_restart();
     }
