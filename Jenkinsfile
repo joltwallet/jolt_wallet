@@ -19,7 +19,7 @@ pipeline {
         }
         stage('Build Firmware on PR') {
             when {
-                branch pattern: "PR-*", comparator: "REGEXP"
+                branch pattern: "PR-.*", comparator: "REGEXP"
             }
             steps {
                 script {
