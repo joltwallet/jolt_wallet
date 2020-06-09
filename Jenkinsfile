@@ -18,7 +18,9 @@ pipeline {
             }
         }
         stage('Build Firmware on PR') {
-            when { env.BRANCH_NAME.startsWith('PR')}
+            when {
+                branch pattern: "PR-.*", comparator: "REGEXP"
+            }
             steps {
                 script {
                     echo "Building on PR : $BRANCH_NAME"
