@@ -32,6 +32,20 @@
 #include <stdint.h>
 #include "jolttypes.h"
 
+
+/**
+ */
+typedef enum {
+    YMODEM_ERR_EMPTY = 0,
+    YMODEM_ERR_TIMEOUT = -1,
+    YMODEM_ERR_ABORT_BY_USER = -2,
+    YMODEM_ERR_INSUFFICIENT_DATA = -3,  /*< less data was received/sent than expected */
+    YMODEM_ERR_COMM = -4,  /*< Generic error in the communication layer */
+    YMODEM_ERR_PROTOCOL = -5,  /*< Received a sequence of bytes thats undefined by the ymodem standard */
+    YMODEM_ERR_UNKNOWN = -999
+} ymodem_err_t;
+
+
 /**
  * @brief Receive a file
  * @param[in] ffd File Descriptor

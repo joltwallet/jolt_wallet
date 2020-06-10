@@ -101,7 +101,7 @@ int32_t receive_bytes( unsigned char *c, uint32_t timeout, uint32_t n )
         }
         if( amount_read != n ) {
             BLE_UART_LOGD( "Only read %d/%d bytes\n", amount_read, n );
-            EXIT( -1 );
+            EXIT( YMODEM_ERR_COMM );
         }
     }
     else {
@@ -120,11 +120,11 @@ int32_t receive_bytes( unsigned char *c, uint32_t timeout, uint32_t n )
 
             if( s < 0 ) {
                 // Select Failure
-                EXIT( -1 );
+                EXIT( YMODEM_ERR_UNKNOWN );
             }
             else if( s == 0 ) {
                 // timed out
-                EXIT( -1 );
+                EXIT( YMODEM_ERR_TIMEOUT );
             }
             else {
                 amount_read += fread( c, 1, n - amount_read, stdin );

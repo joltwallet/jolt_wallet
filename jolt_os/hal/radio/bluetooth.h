@@ -105,7 +105,7 @@ int ble_read_char( int fd, TickType_t timeout );
  * @param[out] data Data buffer to store output bytes.
  * @param[in] size Number of bytes to read.
  * @param[in] timeout; Maximum number of ticks to wait.
- * @return Number of bytes read.
+ * @return Number of bytes read. Returns a negative number on error and sets errno.
  */
 ssize_t ble_read_timeout( int fd, void *data, size_t size, TickType_t timeout );
 
