@@ -7,7 +7,9 @@ CONFIG_BOOTLOADER_LOG_LEVEL_WARN=y
 #
 # Application manager
 #
-CONFIG_APP_COMPILE_TIME_DATE=y
+
+# Disabled so that builds have deterministic hashes
+CONFIG_APP_COMPILE_TIME_DATE=n
 
 #
 # Bootloader config
