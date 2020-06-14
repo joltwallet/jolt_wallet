@@ -42,6 +42,10 @@ typedef enum {
     YMODEM_ERR_INSUFFICIENT_DATA = -3,  /*< less data was received/sent than expected */
     YMODEM_ERR_COMM = -4,  /*< Generic error in the communication layer */
     YMODEM_ERR_PROTOCOL = -5,  /*< Received a sequence of bytes thats undefined by the ymodem standard */
+    YMODEM_ERR_BAD_FILENAME = -6,
+    YMODEM_ERR_MAX_ERRORS = -7,
+    YMODEM_ERR_FILE_TOO_LARGE = -8,
+    YMODEM_ERR_STORAGE = -9,
     YMODEM_ERR_UNKNOWN = -999
 } ymodem_err_t;
 

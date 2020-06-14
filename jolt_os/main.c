@@ -52,6 +52,8 @@ static heap_trace_record_t trace_records[HEAP_TRACING_NUM_RECORDS];
 #endif /* CONFIG_HEAP_TRACING */
 
 /* DO NOT directly change JOLT_OS_VERSION. It is updated via bumpversion */
+// TODO deprecate this in favor of version.txt via something like:
+// const esp_app_desc_t *app_desc = esp_ota_get_app_description();
 const jolt_version_t JOLT_OS_VERSION = {.major = 0, .minor = 0, .patch = 0};
 
 /* TODO: this information should be stored in another partition */

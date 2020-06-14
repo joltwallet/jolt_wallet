@@ -63,15 +63,13 @@ static uint32_t n_ymodem_packet         = 0;
  * @brief    Receive a packet from sender
  * @param[out]    data
  * @param[out]    length
- *        >0: packet length
- *         0: end of transmission
- *        -1: abort by sender
- *        -2: error or crc error
+ *        <0: see ymodem_err_t
  * @param[in]    timeout
  * @retval 0: normal return (successful communication according to protocol)
  */
 static int32_t receive_packet( uint8_t *data, int *length, uint32_t timeout )
 {
+    ymodem_err_t err;
     int packet_size, rec_bytes;
     unsigned char ch;
     *length = 0;
@@ -80,7 +78,7 @@ static int32_t receive_packet( uint8_t *data, int *length, uint32_t timeout )
 #if CONFIG_JOLT_BT_YMODEM_PROFILING
     uint64_t t_start = esp_timer_get_time();
 #endif
-    if( receive_byte( &ch, timeout ) < 0 ) { return YMODEM_ERR_TIMEOUT; }
+    if( (err = receive_byte( &ch, timeout )) < 0 ) { return err; }
 #if CONFIG_JOLT_BT_YMODEM_PROFILING
     t_ymodem_first_byte_cum += esp_timer_get_time() - t_start;
     n_ymodem_first_byte++;
@@ -200,23 +198,15 @@ int ymodem_receive_write( void *ffd, unsigned int maxsize, char *getname, write_
             switch( receive_packet( packet_data, &packet_length, NAK_TIMEOUT ) ) {
                 case RECEIVE_PACKET_OK:
                     if(packet_length < 0) {
-                        switch( packet_length ) {
-                            case YMODEM_ERR_ABORT_BY_USER:
-                                // Abort by sender
-                                SEND_ACK_EXIT( YMODEM_ERR_ABORT_BY_USER );
-                            case -2:
-                                BLE_UART_LOGW( "%d) Case -2", __LINE__ );
-                                /* Fall Through */
-                            case -3:
-                                // error
-                                BLE_UART_LOGW( "%d) Case -3", __LINE__ );
-
-                                errors++;
-                                if( errors > 5 ) { SEND_CA_EXIT( -2 ); }
-                                send_NAK();
-                                break;
-                            default:
-                                assert( 0 );
+                        /* Error Cases */
+                        if(packet_length == YMODEM_ERR_ABORT_BY_USER) {
+                            // Abort by sender
+                            SEND_ACK_EXIT( YMODEM_ERR_ABORT_BY_USER );
+                        }
+                        errors++;
+                        BLE_UART_LOGW( "Error Count %d; ErrNo %d", errors, packet_length );
+                        if( errors > 5 ) { SEND_CA_EXIT( YMODEM_ERR_MAX_ERRORS ); }
+                        send_NAK();
                         break;
                     }
                     if(packet_length == 0) {
@@ -236,7 +226,7 @@ int ymodem_receive_write( void *ffd, unsigned int maxsize, char *getname, write_
                         BLE_UART_LOGE( "%d) Incorrect PACKET_SEQNO %02x; expected %02x", __LINE__,
                                        packet_data[PACKET_SEQNO_INDEX] & 0xff, packets_received & 0x000000ff );
                         errors++;
-                        if( errors > MAX_ERRORS ) { SEND_CA_EXIT( -3 ); }
+                        if( errors > MAX_ERRORS ) { SEND_CA_EXIT( YMODEM_ERR_MAX_ERRORS ); }
                         send_NAK();
                         break;
                     }
@@ -254,7 +244,7 @@ int ymodem_receive_write( void *ffd, unsigned int maxsize, char *getname, write_
                                      *file_ptr != '\0'; i++ ) {
                                     if( i >= JOLT_FS_MAX_FILENAME_LEN ) {
                                         /* Filename too long */
-                                        SEND_CA_EXIT( -13 );
+                                        SEND_CA_EXIT( YMODEM_ERR_BAD_FILENAME );
                                     }
                                     *name_ptr++ = *file_ptr++;
                                 }
@@ -266,7 +256,7 @@ int ymodem_receive_write( void *ffd, unsigned int maxsize, char *getname, write_
                                     }
                                     /* Compare string */
                                     else if( 0 != strcmp( name, getname ) ) {
-                                        SEND_CA_EXIT( -14 );
+                                        SEND_CA_EXIT( YMODEM_ERR_BAD_FILENAME );
                                     }
                                 }
 
@@ -284,7 +274,7 @@ int ymodem_receive_write( void *ffd, unsigned int maxsize, char *getname, write_
                             for( i = 0, file_ptr++; *file_ptr != ' ' && *file_ptr != '\0'; ) {
                                 if( i >= FILE_SIZE_LENGTH ) {
                                     /* This file is definitely too big */
-                                    size = -9;
+                                    size = YMODEM_ERR_FILE_TOO_LARGE;
                                     goto exit;
                                 }
                                 file_size[i++] = *file_ptr++;
@@ -300,9 +290,9 @@ int ymodem_receive_write( void *ffd, unsigned int maxsize, char *getname, write_
                             if( ( size < 1 ) || ( size > maxsize ) ) {
                                 // End session
                                 send_CA();
-                                if( size > maxsize ) { size = -9; }
+                                if( size > maxsize ) { size = YMODEM_ERR_FILE_TOO_LARGE; }
                                 else {
-                                    size = -4;
+                                    size = YMODEM_ERR_PROTOCOL;
                                 }
                                 goto exit;
                             }
@@ -313,7 +303,7 @@ int ymodem_receive_write( void *ffd, unsigned int maxsize, char *getname, write_
                         // Filename packet is empty, end session
                         else {
                             errors++;
-                            if( errors > 5 ) { SEND_CA_EXIT( -5 ); }
+                            if( errors > 5 ) { SEND_CA_EXIT( YMODEM_ERR_MAX_ERRORS ); }
                             send_NAK();
                         }
                     }
@@ -359,9 +349,9 @@ int ymodem_receive_write( void *ffd, unsigned int maxsize, char *getname, write_
                             t_disk += esp_timer_get_time() - t_disk_start;
 #endif
 
-                            if( written_bytes != write_len ) {  // failed
+                            if( written_bytes != write_len ) {
                                 /* End session */
-                                SEND_CA_EXIT( -6 );
+                                SEND_CA_EXIT( YMODEM_ERR_STORAGE );
                             }
                         }
                         // success
@@ -380,7 +370,7 @@ int ymodem_receive_write( void *ffd, unsigned int maxsize, char *getname, write_
                     if( eof_cnt > 1 ) { file_done = 1; }
                     else {
                         errors++;
-                        if( errors > MAX_ERRORS ) { SEND_CA_EXIT( -8 ); }
+                        if( errors > MAX_ERRORS ) { SEND_CA_EXIT( YMODEM_ERR_MAX_ERRORS ); }
                         else if( size == 0 ) {
                             send_CRC16();
                         }
