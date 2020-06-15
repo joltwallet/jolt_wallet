@@ -29,3 +29,6 @@ foreach(SDKCONFIG_FILE ${SDKCONFIG_DEFAULTS_OPTIONAL})
         #message("\"${SDKCONFIG_FILE}\" doesn't exist")
     endif()
 endforeach()
+
+# Set hardware identifier
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DTARGET_BOARD=\\\"${TARGET_BOARD}\\\"")

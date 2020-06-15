@@ -9,3 +9,5 @@ export SDKCONFIG_DEFAULTS := \
 	sdkconfig.japp \
 	sdkconfig.personal
 # sdkconfig.japp and sdkconfig.personal are intended for jolt apps
+
+CLAGS += -DTARGET_BOARD="\\\"${TARGET_BOARD}\\\""

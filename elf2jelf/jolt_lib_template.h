@@ -107,7 +107,7 @@ typedef struct jolt_version_t {
 } jolt_version_t;
 
 extern const jolt_version_t JOLT_OS_VERSION;   /**< JoltOS version */
-extern const jolt_version_t JOLT_HW_VERSION;   /**< To check hardware compatability */
+extern const char JOLT_HW_TAG[];  /**< To check hardware compatability */
 
 #define cJSON_Get cJSON_GetObjectItemCaseSensitive
 #define HARDEN    0x80000000

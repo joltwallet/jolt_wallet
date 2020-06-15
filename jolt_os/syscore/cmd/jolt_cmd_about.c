@@ -11,9 +11,9 @@
 
 static const char TAG[] = "jolt_cmd_about";
 
-extern const jolt_version_t JOLT_OS_VERSION;   /**< JoltOS version */
-extern const jolt_version_t JOLT_JELF_VERSION; /**< Used to determine app compatibility */
-extern const jolt_version_t JOLT_HW_VERSION;   /**< To check hardware compatability */
+//extern const jolt_version_t JOLT_OS_VERSION;   /**< JoltOS version */
+//extern const jolt_version_t JOLT_JELF_VERSION; /**< Used to determine app compatibility */
+//extern const jolt_version_t JOLT_HW_TAG;   /**< To check hardware compatability */
 
 #define PRINT_AND_END( x )    \
     if( print_response( x ) ) \
@@ -94,16 +94,13 @@ int jolt_cmd_about( int argc, char **argv )
         } while( 0 );
 #endif
 
-        if( !add_semver_to_object( json, "hardware", JOLT_HW_VERSION.major, JOLT_HW_VERSION.minor,
-                                   JOLT_HW_VERSION.patch ) )
-            goto end;
+        if( NULL == cJSON_AddStringToObject( json, "hardware", JOLT_HW_TAG ) ) goto end;
         if( !add_semver_to_object( json, "jolt_os", JOLT_OS_VERSION.major, JOLT_OS_VERSION.minor,
                                    JOLT_OS_VERSION.patch ) )
             goto end;
         {
             const esp_app_desc_t *desc = esp_ota_get_app_description();
-            if( NULL == cJSON_AddStringToObject( json, "jolt_os_commit", desc->version ) ) goto end;
-            if( NULL == cJSON_AddStringToObject( json, "jolt_os_idf_commit", desc->idf_ver ) ) goto end;
+            if( NULL == cJSON_AddStringToObject( json, "esp_idf_commit", desc->idf_ver ) ) goto end;
         }
         if( !add_semver_to_object( json, "jelf_loader", JOLT_JELF_VERSION.major, JOLT_JELF_VERSION.minor,
                                    JOLT_JELF_VERSION.patch ) )
