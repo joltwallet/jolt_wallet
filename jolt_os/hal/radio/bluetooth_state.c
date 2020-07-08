@@ -16,6 +16,9 @@ uint16_t spp_handle_table[SPP_IDX_NB];
 
 xQueueHandle ble_in_queue = NULL;
 
+/* This isn't a good solution; but it works for now */
+volatile uint8_t ble_buf_free_count = 2;
+
     #if CONFIG_JOLT_BT_DEBUG_ALWAYS_ADV
 /* always in pairing mode for debugging */
 bool jolt_bluetooth_pair_mode = true;

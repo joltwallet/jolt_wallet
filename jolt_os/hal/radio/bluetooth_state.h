@@ -36,6 +36,12 @@ typedef struct gatts_profile_inst_t {
 } gatts_profile_inst_t;
 
 /**
+ * Count of the available free slots in the ble send buffer.
+ * 32-bit operations are atomic on the esp32, so no need to guard this var.
+ */
+extern volatile uint8_t ble_buf_free_count;
+
+/**
  * @brief Table of available profiles
  */
 extern gatts_profile_inst_t spp_profile_tab[SPP_PROFILE_NUM];

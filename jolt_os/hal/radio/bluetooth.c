@@ -121,21 +121,34 @@ static ssize_t ble_write( int fd, const void *data, size_t size )
 
     int idx = 0;
     do {
+        while(ble_buf_free_count == 0) {
+            ESP_LOGD(TAG, "Waiting for free ble buf...");
+            vTaskDelay( 10 / portTICK_PERIOD_MS );  /* poll until there's a free slot */
+        }
+        ESP_LOGI(TAG, "ble_buf_free_count: %d", ble_buf_free_count);
+
         esp_err_t res;
         size_t print_len = remaining;
         if( print_len > ( spp_mtu_size - 3 ) ) { print_len = ( spp_mtu_size - 3 ); }
 
         ESP_LOGD( TAG, "Sending %d bytes: %.*s", print_len, print_len, &data_c[idx] );
 
-        res = esp_ble_gatts_send_indicate( spp_profile_tab[SPP_PROFILE_A_APP_ID].gatts_if,
-                                           spp_profile_tab[SPP_PROFILE_A_APP_ID].conn_id,
-                                           spp_handle_table[SPP_IDX_SPP_DATA_NOTIFY_VAL], print_len,
-                                           (uint8_t *)&data_c[idx], GATTS_SEND_REQUIRE_CONFIRM );
+        ble_buf_free_count--;
+        for(uint8_t i=0;; i++){
+            res = esp_ble_gatts_send_indicate( spp_profile_tab[SPP_PROFILE_A_APP_ID].gatts_if,
+                                               spp_profile_tab[SPP_PROFILE_A_APP_ID].conn_id,
+                                               spp_handle_table[SPP_IDX_SPP_DATA_NOTIFY_VAL], print_len,
+                                               (uint8_t *)&data_c[idx], GATTS_SEND_REQUIRE_CONFIRM );
+            if( ESP_OK == res ) {
+                break;
+            }
+            if( i >= 20 ) {
+                esp_restart();  /* Fail-safe */
+            }
 
-        if( ESP_OK != res ) {
-            // todo: res error handling
-            esp_restart();
+            vTaskDelay(10/portTICK_PERIOD_MS);
         }
+
         idx += print_len;
         remaining -= print_len;
     } while( remaining > 0 );

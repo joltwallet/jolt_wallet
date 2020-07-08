@@ -149,7 +149,10 @@ void IRAM_ATTR gatts_profile_a_event_handler( esp_gatts_cb_event_t event, esp_ga
                       p_data->mtu.mtu );
             spp_mtu_size = p_data->mtu.mtu;
             break;
-        case ESP_GATTS_CONF_EVT: break;
+        case ESP_GATTS_CONF_EVT: 
+            ble_buf_free_count++;
+            ESP_LOGV(TAG, "ble_buf_free_count: %d", ble_buf_free_count);
+            break;
         case ESP_GATTS_UNREG_EVT: break;
         case ESP_GATTS_DELETE_EVT: break;
         case ESP_GATTS_START_EVT: break;
