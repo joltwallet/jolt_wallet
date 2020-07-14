@@ -20,7 +20,7 @@ include(${JOLT_WALLET_PATH}/make/cfg.cmake)
 set(HDIFFZ components/esp_hdiffz/HDiffPatch/hdiffz)
 set(HPATCHZ components/esp_hdiffz/HDiffPatch/hpatchz)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -DJOLT_OS")
+idf_build_set_property(COMPILE_DEFINITIONS "-DJOLT_OS" APPEND)
 
 #########################################
 # Toolchain and Dependency Installation #

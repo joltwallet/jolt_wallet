@@ -31,4 +31,4 @@ foreach(SDKCONFIG_FILE ${SDKCONFIG_DEFAULTS_OPTIONAL})
 endforeach()
 
 # Set hardware identifier
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DTARGET_BOARD=\\\"${TARGET_BOARD}\\\"")
+idf_build_set_property(COMPILE_DEFINITIONS "-DTARGET_BOARD=\"${TARGET_BOARD}\"" APPEND)
