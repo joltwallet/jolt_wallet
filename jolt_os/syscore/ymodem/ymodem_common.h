@@ -74,7 +74,9 @@ int32_t receive_bytes( unsigned char *c, uint32_t timeout, uint32_t n );
  * @brief Wrapper to read a single byte from STDIN
  * @param[out] c character buffer
  * @param[in] timeout maximum number of milliseconds to wait before returning without a byte
- * @return Number of bytes read
+ * @return Number of bytes read. Negative for a `ymodem_err_t` code
+ * @retval YMODEM_ERR_UNKNOWN 
+ * @retval YMODEM_ERR_TIMEOUT
  */
 static inline int32_t receive_byte( unsigned char *c, uint32_t timeout )
 {
@@ -130,7 +132,6 @@ static inline void send_ACK( void ) { send_byte( ACK ); }
  */
 static inline void send_NAK( void )
 {
-    BLE_UART_LOG( "%d) send_NAK", __LINE__ );
     send_byte( NAK );
 }
 

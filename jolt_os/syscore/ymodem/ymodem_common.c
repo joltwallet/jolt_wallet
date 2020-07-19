@@ -98,10 +98,10 @@ int32_t receive_bytes( unsigned char *c, uint32_t timeout, uint32_t n )
             BLE_UART_LOGD_STR( "\"" );
             if( 1 == amount_read ) BLE_UART_LOGD( " Ascii: 0x%02x", (int)c[0] );
             BLE_UART_LOGD_STR( "\n" );
-        }
-        if( amount_read != n ) {
-            BLE_UART_LOGD( "Only read %d/%d bytes\n", amount_read, n );
-            EXIT( YMODEM_ERR_COMM );
+
+            if( amount_read != n ) {
+                BLE_UART_LOGD( "Only read %d/%d bytes\n", amount_read, n );
+            }
         }
     }
     else {

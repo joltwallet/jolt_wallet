@@ -195,7 +195,9 @@ int ymodem_receive_write( void *ffd, unsigned int maxsize, char *getname, write_
                 /* update progress value */
                 *progress = file_len * 100 / size;
             }
-            switch( receive_packet( packet_data, &packet_length, NAK_TIMEOUT ) ) {
+            int32_t receive_res;
+            receive_res = receive_packet( packet_data, &packet_length, NAK_TIMEOUT );
+            switch( receive_res ) {
                 case RECEIVE_PACKET_OK:
                     if(packet_length < 0) {
                         /* Error Cases */
@@ -380,7 +382,8 @@ int ymodem_receive_write( void *ffd, unsigned int maxsize, char *getname, write_
                     }
                     break;
                 default:
-                    assert(0);  // Better to just hard crash
+                    /* TODO: Maybe add a case for YMODEM_ERR_COMM */
+                    SEND_CA_EXIT(receive_res);
             }
             if( file_done != 0 ) {
                 session_done = 1;
