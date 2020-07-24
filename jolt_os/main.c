@@ -3,7 +3,7 @@
  https://www.joltwallet.com/
  */
 
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include <driver/adc.h>
 #include <esp_system.h>
@@ -52,14 +52,12 @@ static heap_trace_record_t trace_records[HEAP_TRACING_NUM_RECORDS];
 #endif /* CONFIG_HEAP_TRACING */
 
 /* DO NOT directly change JOLT_OS_VERSION. It is updated via bumpversion */
+// TODO deprecate this in favor of version.txt via something like:
+// const esp_app_desc_t *app_desc = esp_ota_get_app_description();
 const jolt_version_t JOLT_OS_VERSION = {.major = 0, .minor = 0, .patch = 0};
 
-/* todo: this information should be stored in another partition */
-const jolt_version_t JOLT_HW_VERSION = {
-        .major = JOLT_HW_JOLT,
-        .minor = 1,
-        .patch = 0,
-};
+/* TODO: this information should be stored in another partition */
+const char JOLT_HW_TAG[] = TARGET_BOARD;
 
 static const char TAG[] = "main";
 
@@ -236,7 +234,7 @@ void app_main( void )
 
     /* Initialize WiFi */
     {
-        // esp_log_level_set( "wifi", ESP_LOG_NONE );
+        esp_log_level_set( "wifi", ESP_LOG_NONE );
 
         /* instantiate the app-friendly network client */
         ESP_ERROR_CHECK( jolt_network_client_init_from_nvs() );

@@ -190,4 +190,12 @@ uint8_t vault_str_to_purpose_type( const char *str, uint32_t *purpose, uint32_t 
  */
 void vault_set_unit_test( const char *str, const char *bip32_key );
 
+/**
+ * @brief Convenience function for app unit testing to enter the all-zero pin
+ * on a PIN screen.
+ *
+ * `vault_set_unit_test` calls this to get past the PIN screen.
+ */
+void vault_set_pin_auto_enter();
+
 #endif

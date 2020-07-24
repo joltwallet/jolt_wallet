@@ -26,6 +26,9 @@ python3 elf2jelf.py --help
 Unless otherwise specified, ELF32 and JELF are the same. C Structs are used to
 describe changes in the data format.
 
+This document is constantly under construction, so until this is removed, some
+information may be inaccurate and savings calculations may not entirely add up.
+
 ## Data Types
 ```
 typedef uint16_t   Elf32_Half;
@@ -42,7 +45,9 @@ typedef Elf32_Half Elf32_Versym;
 
 ## Program Header
 Since the program header is only present once in the file, we are less agressive
-to optimize and more inclined for future expandability.
+to optimize and more inclined for future expandability. We can also stick
+miscellaneous metadata here for easy retrieval.
+
 ```
 typedef struct {
     unsigned char  e_ident[EI_NIDENT];  /* Magic number and other info */
@@ -61,23 +66,28 @@ typedef struct {
     Elf32_Half     e_shstrndx;          /* Section header string table index */
 } Elf32_Ehdr;
 ```
-52 Bytes
+84 Bytes
 
 ```
 #define EI_NIDENT 6
 typedef struct {
     unsigned char  e_ident[EI_NIDENT];  /* Magic number and other info */
+    uint8_t        e_public_key[32];
+    uint8_t        e_signature[64];
     uint8_t        e_version_major;
     uint8_t        e_version_minor;
+    uint8_t        e_version_patch;
+    uint8_t        e_app_major;
+    uint8_t        e_app_minor;
+    uint8_t        e_app_patch;
     uint16_t       e_entry_offset;      /* Entry point function offset */
     uint16_t       e_shnum;             /* Section header table entry count */
     uint32_t       e_coin_purpose;
     uint32_t       e_coin_path;
     char           e_bip32key[32];
-    uint8_t        e_signature[32];
 } Jelf_Ehdr;
 ```
-84 Bytes
+152 Bytes
 
 `EI_NIDENT` - Reduced from 16 bytes to 6 bytes. The magic value for a JELF file
  is `{0x7F, 'J', 'E', 'L', 'F', '\0'}`.
@@ -96,7 +106,13 @@ typedef struct {
 
  additions:
 
- `e_signature` - 256-bit signature of the whole file. While computing the signature, replace the `e_signature` field with 256 bits of 0's.
+ `e_public_key` - 256-bit public key of whomever signed the file
+
+ `e_signature` - 512-bit signature of the whole file. While computing the signature, skip `e_signature` field.
+
+ `e_version_*` - Version of the jelf file that may impact subsequent header contents and file contents.
+
+ `e_app_*` - Application versioning.
 
  `e_coin` - 8 bytes specifying the coin derivation. For example, 44'/165'
 
@@ -123,10 +139,10 @@ typedef struct {
 ```
 ```
 typedef struct {
-    uint64_t      sh_type     :2;         /* Section type */
-    uint64_t      sh_flags    :2;         /* Section flags */
-    uint64_t      sh_size     :16;        /* Section size in bytes */
-    uint64_t      sh_info     :12;        /* Additional section information */
+    uint32_t      sh_type     :2;         /* Section type */
+    uint32_t      sh_flags    :2;         /* Section flags */
+    uint32_t      sh_size     :16;        /* Section size in bytes */
+    uint32_t      sh_info     :12;        /* Additional section information */
 } Jelf_Shdr;
 ```
 
@@ -146,17 +162,15 @@ typedef struct {
 
 * `SHF_ALLOC`
 
-`sh_addr`, `sh_addralign`, `sh_link`, and`sh_entsize` are removed because they are not used.
+`sh_addr`, `sh_addralign`, `sh_link`, `sh_offset` and `sh_entsize` are removed because they are not used. Most notably, we don't need `sh_offset` because we will be ordering the sections in a very particular order (discussed more later).
 
-`sh_offset` - The section file offset from the beginning of the file. Reducing this to 19 bits limits Jolt applications to be a maximum of 512KB in size.
-
-`sh_size` - Section size, needs to be able to (almost) contain the maximum `sh_offset` value.
+`sh_size` - Section size, 16 bits allows each section to be up to 65,535 bytes long.
 
 `sh_info` - Various information depending on section type. We only use it for the `SHT_RELA` type where it contains the section header index for which the relocation applies. 14 bits allows for 16,384 sections. For non RELA sections this is `0`.
 
 
-These optimizations reduce the 40 byte section header to just 7 bytes. There are 
-about 250 sections in the Jolt Nano App, so this translates to 8,250 bytes saved.
+These optimizations reduce the 40 byte section header to just 4 bytes. There are 
+about 250 sections in the Jolt Nano App, so this translates to 9,000 bytes saved.
 
 
 ## Symbol and Symbol Table
@@ -170,6 +184,7 @@ typedef struct {
     Elf32_Section    st_shndx;       /* Section index */
 } Elf32_Sym;
 ```
+16 bytes
 
 ```
 typedef struct {
@@ -177,6 +192,7 @@ typedef struct {
     uint16_t         st_shndx:12;        /* Section index */
 } Jelf_Sym;
 ```
+3 bytes
 
 `st_size` - Contains symbol size; unused
 
@@ -220,7 +236,7 @@ contains 1818 relocations, so this optimization saves a whopping 10,908 bytes.
 ## Remove `.strtab`
 The `.strtab` string table gives human-readable names to symbols.
 
-Functions are mapped from JoltOS to the app by matching function names.
+Functions are mapped from JoltOS to the app via an append-only symbol table in JoltOS.
 
 The Jolt Nano App's `.strtab` is 2615 Bytes and contains 155 entries, meaning that on average, each string takes up 16.87 bytes. Since the function names don't need to be human readable, we can completely remove the `.strtab` and instead have the `st_name` field of a `Jelf_Sym` index into JoltOS's exported functions. So long as we only append new functions to the exported function table in new versions of JoltOS, this is a valid solution. This solution also reduces necessary caching and
 CPU cycles for comparing string names.
@@ -246,22 +262,20 @@ Original ELF32 Nano App: 54,604 Bytes
 | Optimization                          | Bytes Saved  |
 |---------------------------------------|--------------|
 | Reduced RELA Info                     | +10,908      |
-| Reduced Section Headers               | +8,250       |
+| Reduced Section Headers               | +9,000       |
 | Remove `.shstrtab`                    | +4,208       |
 | Remove `.strtab`                      | +2,615       |
 | Reduced Symbols (and thus, `.symtab`) | +3,354       |
 
-Grand Total: 28,045 Bytes saved, reducing the binary from 54,604 bytes to 25269 bytes.
+Grand Total: 28,795 Bytes saved, reducing the binary from 54,604 bytes to 24519 bytes (not including application header).
 
-todo: additionals/subtractions from program header
-
-# Misc Design Decisions
+# Misc Design Decisions and Improvements
 
 # Section Reordering
 We can reorder the sections so we can take advantage of:
 
 * Locality caching
-* Loading from a compressed file (todo)
+* Loading from a compressed file
 
 In the Jelf Loader code, first all sections that take up memory during 
 execution are allocated and loaded. By default, these are scattered all over the file, 
@@ -283,7 +297,7 @@ we can stop reading. This has two nice properties:
   decompressed data. Every random access would require decompressing from the beginning of the file to that point.
   One could transverse and decompress the compressed file once, making buffer checkpoints throughout the file
   so that any random access could just be picked up from the previous checkpoint; but this takes too much memory for Jolt. Instead, we just
-  smartly organize the jelf sections so that all information can be loaded and processed in a single sequential pass. Compressed data reduces the disk size of the app (typically by ~50%) and the number of SPI Flash reads (which are slow).
+  smartly organize the jelf sections so that all information can be loaded and processed in a single sequential pass. Compressed data reduces the disk size of the app (typically by ~50%) and the number of SPI Flash reads (which are much slower than the cpu cycles to decompress data).
 
 ## Gotchas
 
@@ -291,4 +305,35 @@ we can stop reading. This has two nice properties:
 
 
 # Going Further
-Now that everything is a sequential read (with absolutely no random reads, assuming cached section header table and cached symtab), we can get rid of offsets in the section header table. In the Nano app, this saves about 681 bytes of compressed data.
+Now that everything is a sequential read (with absolutely no random reads, assuming cached section header table and cached symtab), we can get rid of offsets in the section header table. In the Nano app, this saves about 681 bytes of compressed data. We can also now compress all the sections, further speeding up loading and reducing the file size by ~50%.
+
+## Compression Libraries
+
+Since we can now compress the payload, we should now choose the best compression algorithm.
+
+When a window-size is a compression parameter, 12-bits (4096 bytes) is chosen.
+
+All unspecified sizes are in bytes.
+
+https://gregoryszorc.com/blog/2017/03/07/better-compression-with-zstandard/
+
+### miniz/zlib
+Since esp32 has miniz baked into the ROM, this is the defacto choice and will be used as a baseline
+
+App Size: 21847
+Flash Size: 949
+
+Benefits: very low RAM requirements for decompression.
+
+### brotli
+https://github.com/google/brotli
+App Size: 18124 (-17.0%) 
+Flash Size: 120KB + ?
+
+Has a pre-defined dictionary of size ~120KB, which is quite prohibitive.
+
+### zstandard
+App Size: 22768 (+4.3%)
+Flash Size: ?
+
+No training dictionary used.

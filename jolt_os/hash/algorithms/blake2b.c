@@ -1,4 +1,4 @@
-#define LOG_LOCAL_LEVEL 4
+//#define LOG_LOCAL_LEVEL 4
 
 #include "esp_log.h"
 #include "hash_internal.h"

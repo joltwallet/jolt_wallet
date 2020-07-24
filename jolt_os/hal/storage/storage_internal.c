@@ -162,7 +162,10 @@ uint32_t storage_internal_get_pin_count()
     /* Gets the current PIN counter. This value is monotomicly increasing.
      * Factory resets on failure to retrieve pin_count value. */
     uint32_t pin_count;
-    if( !storage_get_u32( &pin_count, "secret", "pin_count", UINT32_MAX ) ) { storage_factory_reset( true ); }
+    if( !storage_get_u32( &pin_count, "secret", "pin_count", UINT32_MAX ) ) {
+        ESP_LOGE( TAG, "Failed to get pin_count from storage; performing factory reset" );
+        storage_factory_reset( true );
+    }
     return pin_count;
 }
 
@@ -176,7 +179,10 @@ uint32_t storage_internal_get_pin_last()
     /* Gets the pin counter of the last successful pin attempt.
      */
     uint32_t pin_last;
-    if( !storage_get_u32( &pin_last, "secret", "pin_last", 0 ) ) { storage_factory_reset( true ); }
+    if( !storage_get_u32( &pin_last, "secret", "pin_last", 0 ) ) {
+        ESP_LOGE( TAG, "Failed to get pin_last from storage; performing factory reset" );
+        storage_factory_reset( true );
+    }
     return pin_last;
 }
 

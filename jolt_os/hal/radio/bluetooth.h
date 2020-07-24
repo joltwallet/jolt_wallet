@@ -56,7 +56,6 @@ extern uint64_t ble_packet_cum_life;
 extern uint32_t ble_packet_n;
 #endif
 
-#if CONFIG_BT_ENABLED
 /**
  * @brief Stream for BLE STDIN
  */
@@ -71,10 +70,6 @@ extern FILE *ble_stdout;
  * @brief Stream for BLE STDERR
  */
 extern FILE *ble_stderr;
-
-#endif
-
-bool jolt_bluetooth_is_connected();
 
 /**
  * @brief Register the bluetooth spp driver
@@ -131,7 +126,7 @@ int ble_read_char( int fd, TickType_t timeout );
  * @param[out] data Data buffer to store output bytes.
  * @param[in] size Number of bytes to read.
  * @param[in] timeout; Maximum number of ticks to wait.
- * @return Number of bytes read.
+ * @return Number of bytes read. Returns a negative number on error and sets errno.
  */
 ssize_t ble_read_timeout( int fd, void *data, size_t size, TickType_t timeout );
 
@@ -140,5 +135,12 @@ ssize_t ble_read_timeout( int fd, void *data, size_t size, TickType_t timeout );
  * @param[in] type ending rule. -1 for no rules.
  */
 void ble_set_rx_line_endings( esp_line_endings_t mode );
+
+
+/**
+ * @brief Check bluetooth connection status.
+ * @return True if a bluetooth device is connected; false otherwise.
+ */
+bool jolt_bluetooth_is_connected();
 
 #endif

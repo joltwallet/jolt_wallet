@@ -1,10 +1,12 @@
 #!/usr/bin/python3
 
-'''
+"""
 Uploads files/firmware to Jolt over YMODEM
 
-if the file has name "jolt_os.bin" or "jolt_os.bin.gz", it will start an OS update.
-'''
+If the file has name "jolt_os.bin" or "jolt_os.bin.gz", it will start an OS update.
+
+If the file ends in ".patch" it will be applied as a patch (triggering an OS update).
+"""
 
 import argparse
 import os, sys
@@ -81,16 +83,23 @@ def main(args):
 
     ymodem = YMODEM(getc, putc)
 
+    firmware_names = ['jolt_os.bin', 'jolt_os.bin.gz', 'JoltOS.bin', 'JoltOS.bin.gz']
 
     basename = os.path.basename(args.input)
     log.info("Initiating Upload")
-    if basename in ['jolt_os.bin', 'jolt_os.bin.gz']:
-        log.debug('Sending "upload_firmware" command')
-        ser.write(b"upload_firmware\n")
+    cmd = []
+    if basename in firmware_names:
+        cmd.append("upload_firmware")
+    elif basename.endswith(".patch"):
+        cmd.append("upload_firmware")
+        cmd.append("--patch")
     else:
-        cmd = b'upload "%s"\n' % basename.encode()
-        log.debug('Sending "%s" command' % cmd.decode("utf-8")[:-1])
-        ser.write(cmd)
+        cmd.append("upload")
+        cmd.append(basename)
+
+    cmd = ' '.join(cmd) + '\n'
+    log.debug('Sending "%s" command' % cmd.strip())
+    ser.write(cmd.encode('ascii'));
     consume(ser)
 
     log.info("Sending File")

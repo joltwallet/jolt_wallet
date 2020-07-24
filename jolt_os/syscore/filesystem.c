@@ -52,7 +52,6 @@ void jolt_fs_init()
     ESP_LOGI( TAG, "Mounting internal LittleFS filesystem." );
     const esp_vfs_littlefs_conf_t conf = {.base_path              = JOLT_FS_MOUNTPT,
                                           .partition_label        = JOLT_FS_PARTITION,
-                                          .max_files              = MAX_FILES,
                                           .format_if_mount_failed = true};
     ret                                = esp_vfs_littlefs_register( &conf );
 #elif CONFIG_JOLT_FS_FAT
@@ -76,6 +75,9 @@ void jolt_fs_init()
     else {
         ESP_LOGI( TAG, "Partition size: total: %d, used: %d", total, used );
     }
+
+    /* Delete any left over temporary file */
+    if( jolt_fs_exists( JOLT_FS_TMP_FN ) ) remove( JOLT_FS_TMP_FN );
 }
 
 uint16_t jolt_fs_get_all_fns( char **fns, uint32_t fns_len, const char *ext, bool remove_ext )
@@ -138,9 +140,15 @@ uint16_t jolt_fs_get_all_jelf_fns( char ***fns )
 
 uint32_t jolt_fs_free()
 {
-    uint32_t tot, used;
+    uint32_t tot, used, remain;
     jolt_fs_info( &tot, &used );
-    return ( tot - used - JOLT_FS_MIN_FREE );
+    remain = tot - used;
+    if(remain > JOLT_FS_MIN_FREE) {
+        return remain - JOLT_FS_MIN_FREE;
+    }
+    else {
+        return 0;
+    }
 }
 
 size_t jolt_fs_size( const char *fname )

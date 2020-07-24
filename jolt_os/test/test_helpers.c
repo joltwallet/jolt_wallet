@@ -1,7 +1,16 @@
 #include "jolt_helpers.h"
 #include "unity.h"
+#include "sdkconfig.h"
 
 static const char MODULE_NAME[] = "[jolt_helpers]";
+
+
+#if !UNIT_TESTING
+// This check is primarily to ensure the build system set the UNIT_TESTING
+// flag so additional functionality is enabled in JoltOS
+#error "UNIT_TESTING project var is not set"
+#endif
+
 
 TEST_CASE( "jolt_strcmp_suffix", MODULE_NAME )
 {

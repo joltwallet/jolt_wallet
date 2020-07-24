@@ -15,7 +15,12 @@
 
 #define LOG_LOCAL_LEVEL 4
 
+#include "esp_err.h"
 #include "sdkconfig.h"
+
+FILE *ble_stdin  = NULL;
+FILE *ble_stdout = NULL;
+FILE *ble_stderr = NULL;
 
 #if CONFIG_BT_ENABLED
 
@@ -41,7 +46,7 @@
     #include "string.h"
 
     /* BLE */
-    #include "console/console.h"
+    //#include "console/console.h"
     #include "esp_nimble_hci.h"
     #include "host/ble_hs.h"
     #include "host/util/util.h"
@@ -164,7 +169,6 @@ static ssize_t ble_write( int fd, const void *data, size_t size )
         if( NULL == om ) { abort(); }
         rc = ble_gattc_notify_custom( conn_handle, resp_att_handle, om );
         if( 0 != rc ) { abort(); }
-
         idx += print_len;
         remaining -= print_len;
     } while( remaining > 0 );
@@ -1055,6 +1059,9 @@ void jolt_bluetooth_config_security( bool bond )
 #else
 
 /* Stubs */
+
+void esp_vfs_dev_ble_spp_register() {}
+
 esp_err_t jolt_bluetooth_start() { return ESP_OK; }
 
 esp_err_t jolt_bluetooth_stop() { return ESP_OK; }

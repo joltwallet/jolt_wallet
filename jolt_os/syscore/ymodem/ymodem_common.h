@@ -59,7 +59,7 @@ extern bool ymodem_transfer_in_progress;
  * @param[in] count Input data buffer length in bytes
  * @return CRC16 checksum
  */
-unsigned short IRAM_ATTR crc16( const unsigned char *buf, unsigned long count );
+unsigned short crc16( const unsigned char *buf, unsigned long count );
 
 /**
  * @brief Wrapper to read bytes from STDIN
@@ -68,15 +68,17 @@ unsigned short IRAM_ATTR crc16( const unsigned char *buf, unsigned long count );
  * @param[in] count Number of bytes to read.
  * @reutrn Number of bytes read
  */
-int32_t IRAM_ATTR receive_bytes( unsigned char *c, uint32_t timeout, uint32_t n );
+int32_t receive_bytes( unsigned char *c, uint32_t timeout, uint32_t n );
 
 /**
  * @brief Wrapper to read a single byte from STDIN
  * @param[out] c character buffer
  * @param[in] timeout maximum number of milliseconds to wait before returning without a byte
- * @return Number of bytes read
+ * @return Number of bytes read. Negative for a `ymodem_err_t` code
+ * @retval YMODEM_ERR_UNKNOWN 
+ * @retval YMODEM_ERR_TIMEOUT
  */
-static inline int32_t IRAM_ATTR receive_byte( unsigned char *c, uint32_t timeout )
+static inline int32_t receive_byte( unsigned char *c, uint32_t timeout )
 {
     return receive_bytes( c, timeout, 1 );
 }
@@ -84,14 +86,14 @@ static inline int32_t IRAM_ATTR receive_byte( unsigned char *c, uint32_t timeout
 /**
  * @brief Flush STDIN
  */
-void IRAM_ATTR rx_consume();
+void rx_consume();
 
 /**
  * @brief Wrapper to write bytes to STDOUT
  * @param[in] c pointer to byte array to send
  * @param[in] n number of bytes to send
  */
-static inline uint32_t IRAM_ATTR send_bytes( char *c, uint32_t n )
+static inline uint32_t send_bytes( char *c, uint32_t n )
 {
     const char new_line = '\n';
 #if JOLT_YMODEM_PROFILING
@@ -109,12 +111,12 @@ static inline uint32_t IRAM_ATTR send_bytes( char *c, uint32_t n )
  * @brief Wrapper to send a single byte to STDOUT
  * @param[in] c byte to send
  */
-static inline uint32_t IRAM_ATTR send_byte( char c ) { return send_bytes( &c, 1 ); }
+static inline uint32_t send_byte( char c ) { return send_bytes( &c, 1 ); }
 
 /**
  * @brief Helper to send Cancel bytes
  */
-static inline void IRAM_ATTR send_CA( void )
+static inline void send_CA( void )
 {
     char caca[] = {CA, CA};
     send_bytes( caca, sizeof( caca ) );
@@ -123,26 +125,25 @@ static inline void IRAM_ATTR send_CA( void )
 /**
  * @brief Helper to send Acknowledge byte
  */
-static inline void IRAM_ATTR send_ACK( void ) { send_byte( ACK ); }
+static inline void send_ACK( void ) { send_byte( ACK ); }
 
 /**
  * @brief Helper to send Negative Acknowledge byte
  */
-static inline void IRAM_ATTR send_NAK( void )
+static inline void send_NAK( void )
 {
-    BLE_UART_LOG( "%d) send_NAK", __LINE__ );
     send_byte( NAK );
 }
 
 /**
  * @brief Helper to send CRC16 byte
  */
-static inline void IRAM_ATTR send_CRC16( void ) { send_byte( CRC16 ); }
+static inline void send_CRC16( void ) { send_byte( CRC16 ); }
 
 /**
  * @brief Helper to send Acknowledge byte followed by the CRC16 byte.
  */
-static inline void IRAM_ATTR send_ACKCRC16( void )
+static inline void send_ACKCRC16( void )
 {
     char ack_crc16[] = {ACK, CRC16};
     send_bytes( ack_crc16, sizeof( ack_crc16 ) );

@@ -4,6 +4,8 @@
  * which in turn is mostly an ESP32-port of martinribelotta's ARMv7 elfloader.
  */
 
+//#define LOG_LOCAL_LEVEL 3
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -19,8 +21,6 @@
 #endif
 
 #if ESP_PLATFORM
-
-//#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
     #include "esp_log.h"
     #include "hal/storage/storage.h"
@@ -53,10 +53,11 @@ static int decompress_get( jelfLoaderContext_t *ctx, uint8_t *data, size_t len )
 static inline void app_hash_update( crypto_hash_sha512_state *hs, const uint8_t *data, size_t len );
 static const char *type2String( int symt );
 static jelfLoaderSection_t *findSection( jelfLoaderContext_t *ctx, int index );
-static bool app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const char *name );
+static int app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const char *name );
 static Jelf_Addr findSymAddr( jelfLoaderContext_t *ctx, Jelf_Sym *sym );
 static int relocateSymbol( Jelf_Addr relAddr, int type, Jelf_Addr symAddr, uint32_t *from, uint32_t *to );
 static int relocateSection( jelfLoaderContext_t *ctx, jelfLoaderSection_t *s );
+static int8_t check_version_compatability( uint8_t major, uint8_t minor, uint8_t patch );
 
 /* Allocation Macros */
 #define CEIL4( x ) ( ( x + 3 ) & ~0x03 )
@@ -222,18 +223,21 @@ void jelfLoaderProfilerPrint()
  ******************************************************/
 int jelfLoaderReadHeader( FILE *fd, crypto_hash_sha512_state *hs, Jelf_Ehdr *h )
 {
+    int rc = JELF_LOADER_ERROR;
     {
         /* Read Identifier */
         int n = fread( h->e_ident, 1, JELF_EI_NIDENT, fd );
         if( JELF_EI_NIDENT != n ) {
             ERR( "Failed to fetch file identifier" );
+            rc = JELF_LOADER_MALFORMED;
             goto err;
         }
 
         /* Make sure that we have a correct and compatible ELF header. */
         char JelfMagic[] = {0x7f, 'J', 'E', 'L', 'F', '\0'};
-        if( 0 != memcmp( h->e_ident, JelfMagic, strlen( JelfMagic ) ) ) {
-            ERR( "Bad JELF Identification" );
+        if( 0 != memcmp( h->e_ident, JelfMagic, sizeof( JelfMagic ) ) ) {
+            ERR( "Bad JELF Magic Identification" );
+            rc = JELF_LOADER_MAGIC;
             goto err;
         }
     }
@@ -244,16 +248,22 @@ int jelfLoaderReadHeader( FILE *fd, crypto_hash_sha512_state *hs, Jelf_Ehdr *h )
         int n = fread( buf, 1, 3 * sizeof( uint8_t ), fd );
         if( 3 != n ) {
             ERR( "Failed to fetch JELF Version" );
+            rc = JELF_LOADER_MALFORMED;
             goto err;
         }
         h->e_version_major = buf[0];
         h->e_version_minor = buf[1];
         h->e_version_patch = buf[2];
+        INFO( "JoltOS Jelf Version: %d.%d.%d", JOLT_JELF_VERSION.major, JOLT_JELF_VERSION.minor,
+              JOLT_JELF_VERSION.patch )
+        INFO( "JApp Jelf Version:  %d.%d.%d", h->e_version_major, h->e_version_minor, h->e_version_patch );
     }
 
-    /* Broad initial check on JELF version */
-    if( h->e_version_major > JOLT_JELF_VERSION.major ) { goto unsupported_jelf_version; }
-    if( h->e_version_minor > JOLT_JELF_VERSION.minor ) { goto unsupported_jelf_version; }
+    /* Initial check on JELF version */
+    MSG( "Checking Version Compatability" );
+    rc = check_version_compatability( h->e_version_major, h->e_version_minor, h->e_version_patch );
+    if( 0 != rc ) goto err;
+    rc = JELF_LOADER_ERROR;
 
 /* VERSION DEPENDENT READING */
 #define POPULATE_P( dst )              \
@@ -273,6 +283,7 @@ int jelfLoaderReadHeader( FILE *fd, crypto_hash_sha512_state *hs, Jelf_Ehdr *h )
             int n = fread( buffer, 1, sizeof( buffer ), fd );
             if( sizeof( buffer ) != n ) {
                 ERR( "Failed to read remaining of JELF Header" );
+                rc = JELF_LOADER_MALFORMED;
                 goto err;
             }
 
@@ -296,7 +307,14 @@ int jelfLoaderReadHeader( FILE *fd, crypto_hash_sha512_state *hs, Jelf_Ehdr *h )
             POPULATE_O( h->e_shnum );
             POPULATE_O( h->e_coin_purpose );
             POPULATE_O( h->e_coin_path );
+            memzero( h->e_bip32key, sizeof( h->e_bip32key ) );
             POPULATE_P( h->e_bip32key );
+            if( '\0' != h->e_bip32key[sizeof( h->e_bip32key ) - 1] ) {
+                /* Ensures this is a NULL-terminated string */
+                ERR( "bip32key either exceeds 31 characters or is not null-terminated" );
+                rc = JELF_LOADER_BIP32KEY;
+                goto err;
+            }
         }
         else {
             goto unsupported_jelf_version;
@@ -306,54 +324,66 @@ int jelfLoaderReadHeader( FILE *fd, crypto_hash_sha512_state *hs, Jelf_Ehdr *h )
     else {
     unsupported_jelf_version:
         ERR( "Unsupported JELF version %d.%d.%d", h->e_version_major, h->e_version_minor, h->e_version_patch )
+        rc = JELF_LOADER_VERSION_JOLTOS;
         goto err;
     }
 #undef POPULATE_P
 #undef POPULATE_O
 
-    return 0;
+    return JELF_LOADER_OK;
 err:
-    return -1;
+    return rc;
 }
 
 static int loader_shdr( jelfLoaderContext_t *ctx, uint16_t n, Jelf_Shdr *h )
 {
+    int rc       = JELF_LOADER_MALFORMED;
     uint8_t *buf = (uint8_t *)ctx->sht_cache + n * JELF_SHDR_SIZE;
     if( n > ctx->header.e_shnum ) {
         ERR( "Attempt to index past SectionHeaderTable" );
-        return -1;
+        goto err;
     }
 
     h->sh_type  = ( buf[0] >> 6 ) & 0x03;
     h->sh_flags = ( buf[0] >> 4 ) & 0x03;
     h->sh_size  = ( ( buf[0] & 0x0F ) ) | ( (uint32_t)buf[1] << 4 ) | ( ( uint32_t )( buf[2] & 0xF0 ) << 8 );
     h->sh_info  = ( buf[2] & 0x0F ) | ( (uint32_t)buf[3] << 4 );
-    return 0;
+    return JELF_LOADER_OK;
+
+err:
+    return rc;
 }
 
 static int loader_sym( jelfLoaderContext_t *ctx, uint16_t n, Jelf_Sym *h )
 {
+    int rc       = JELF_LOADER_ERROR;
     uint8_t *buf = (uint8_t *)ctx->symtab_cache + n * JELF_SYM_SIZE;
     if( n >= ctx->symtab_count ) {
         ERR( "Attempt to index past SymbolTable ( %d >= %d )", n, ctx->symtab_count );
-        return -1;
+        goto err;
     }
 
     h->st_name  = buf[0] | ( ( uint32_t )( buf[1] & 0xF0 ) << 4 );
     h->st_shndx = ( buf[1] & 0x0F ) | ( (uint32_t)buf[2] << 4 );
-    return 0;
+
+    return JELF_LOADER_OK;
+
+err:
+    return rc;
 }
 
 static int loader_rela( jelfLoaderContext_t *ctx, Jelf_Rela *h )
 {
+    int rc                      = JELF_LOADER_ERROR;
     uint8_t buf[JELF_RELA_SIZE] = {0};
     LOADER_GETDATA( ctx, (char *)&buf, sizeof( buf ) );
     h->r_offset = buf[0] | ( (uint32_t)buf[1] << 8 );
     h->r_info   = buf[2] | ( (uint32_t)buf[3] << 8 );
     h->r_addend = buf[4] | ( (uint32_t)buf[5] << 8 );
-    return 0;
+    return JELF_LOADER_OK;
+
 err:
-    return -1;
+    return rc;
 }
 
 /********************
@@ -480,19 +510,23 @@ static jelfLoaderSection_t *findSection( jelfLoaderContext_t *ctx, int index )
 /* Checks the application's digital signature data structures.
  * Returns true on successful initialization;
  * false if public_key doesn't match approved public_key. */
-static bool app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const char *name )
+static int app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const char *name )
 {
+    int rc = JELF_LOADER_ERROR;
+
     /* Initialize Signature Check Hashing */
     ctx->hs = LOADER_ALLOC_DATA( sizeof( crypto_hash_sha512_state ) );
     if( NULL == ctx->hs ) {
         ERR( "Failed to allocate memory for sha512 hash state" );
+        rc = JELF_LOADER_OOM;
         goto err;
     }
     crypto_hash_sha512_init( ctx->hs );
     /* Hash the app name */
     app_hash_update( ctx->hs, (uint8_t *)name, strlen( name ) );
 
-    assert( 0 == jelfLoaderReadHeader( ctx->fd, ctx->hs, header ) );
+    rc = jelfLoaderReadHeader( ctx->fd, ctx->hs, header );
+    if( JELF_LOADER_OK != rc ) goto err;
 
 #if CONFIG_JOLT_APP_SIG_CHECK_EN
     {
@@ -509,11 +543,13 @@ static bool app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const ch
         else if( sizeof( approved_pub_key ) != required_size ||
                  !storage_get_blob( approved_pub_key, &required_size, "user", "app_key" ) ) {
             ERR( "Stored Public Key Blob doesn't have expected len." );
-            return false;
+            rc = JELF_LOADER_CORRUPT_STORAGE;
+            goto err;
         }
         if( 0 != sodium_memcmp( approved_pub_key, header->e_public_key, sizeof( uint256_t ) ) ) {
             ERR( "Application Public Key doesn't match approved public key." );
-            return false;
+            rc = JELF_LOADER_INVALID_KEY;
+            goto err;
         }
     #endif
 
@@ -521,9 +557,11 @@ static bool app_hash_init( jelfLoaderContext_t *ctx, Jelf_Ehdr *header, const ch
     }
 
 #endif
-    return true;
+
+    return JELF_LOADER_OK;
+
 err:
-    return false;
+    return rc;
 }
 
 /**
@@ -546,36 +584,42 @@ static inline void app_hash_update( crypto_hash_sha512_state *hs, const uint8_t 
  *  2. minor version must be <= current version
  *  3. patch must be <= current version
  *
+ * @param[in] major
+ * @param[in] minor
+ * @param[in] patch
  * @return 0 on success. -1 if app is too old. Return -2 if JoltOS is too old.
  */
-static int8_t check_version_compatability( Jelf_Ehdr *header )
+static int8_t check_version_compatability( uint8_t major, uint8_t minor, uint8_t patch )
 {
 #if ESP_PLATFORM
-    if( header->e_version_major == JOLT_JELF_VERSION.major ) {
-        if( header->e_version_minor == JOLT_JELF_VERSION.minor ) {
+    if( major == JOLT_JELF_VERSION.major ) {
+        if( minor == JOLT_JELF_VERSION.minor ) {
+            return JELF_LOADER_OK;
             // compare patch
-            if( header->e_version_patch <= JOLT_JELF_VERSION.patch ) { return 0; }
+            if( patch <= JOLT_JELF_VERSION.patch ) { return JELF_LOADER_OK; }
             else {
-                return -2;
+                // need to update JoltOS
+                return JELF_LOADER_VERSION_JOLTOS;
             }
         }
-        else if( header->e_version_minor < JOLT_JELF_VERSION.minor ) {
-            return 0;
+        else if( minor < JOLT_JELF_VERSION.minor ) {
+            return JELF_LOADER_OK;
         }
         else {
-            return -2;
+            // need to update JoltOS
+            return JELF_LOADER_VERSION_JOLTOS;
         }
     }
-    else if( header->e_version_major < JOLT_JELF_VERSION.major ) {
+    else if( major < JOLT_JELF_VERSION.major ) {
         // need to update app
-        return -1;
+        return JELF_LOADER_VERSION_APP;
     }
     else {
         // need to update JoltOS
-        return -2;
+        return JELF_LOADER_VERSION_JOLTOS;
     }
 #else
-    return 0;
+    return JELF_LOADER_OK;
 #endif
 }
 
@@ -614,6 +658,7 @@ static Jelf_Addr findSymAddr( jelfLoaderContext_t *ctx, Jelf_Sym *sym )
  */
 static int relocateSymbol( Jelf_Addr relAddr, int type, Jelf_Addr symAddr, uint32_t *from, uint32_t *to )
 {
+    int rc = JELF_LOADER_RELOC;
     PROFILER_START_RELOCATESYMBOL;
     PROFILER_INC_RELOCATESYMBOL;
 
@@ -649,7 +694,7 @@ static int relocateSymbol( Jelf_Addr relAddr, int type, Jelf_Addr symAddr, uint3
                 int32_t delta = symAddr - ( ( relAddr + 4 ) & 0xfffffffc );
                 if( delta & 0x0000003 ) {
                     ERR( "Relocation: CALL error" );
-                    return -1;
+                    goto err;
                 }
                 delta = delta >> 2;
                 delta = delta << 6;
@@ -737,10 +782,11 @@ static int relocateSymbol( Jelf_Addr relAddr, int type, Jelf_Addr symAddr, uint3
     }
 
     PROFILER_STOP_RELOCATESYMBOL;
-    return 0;
+    return JELF_LOADER_OK;
+
 err:
     PROFILER_STOP_RELOCATESYMBOL;
-    return -1;
+    return rc;
 }
 
 static int relocateSection( jelfLoaderContext_t *ctx, jelfLoaderSection_t *s )
@@ -749,17 +795,19 @@ static int relocateSection( jelfLoaderContext_t *ctx, jelfLoaderSection_t *s )
     PROFILER_START_RELOCATESECTION;
     PROFILER_INC_RELOCATESECTION;
 
+    int rc = JELF_LOADER_ERROR;
     Jelf_Shdr sectHdr;
 
     /* Input Validation */
     if( !( s->relSecIdx ) ) {
         PROFILER_STOP_RELOCATESECTION;
         MSG( "  Section %d: no relocation index", s->secIdx );
-        return 0;
+        return JELF_LOADER_OK;
     }
     else if( !( s->data ) ) {
         PROFILER_STOP_RELOCATESECTION;
         ERR( "Section not loaded: %d", s->secIdx );
+        rc = JELF_LOADER_RELOC;
         goto err;
     }
 
@@ -767,11 +815,12 @@ static int relocateSection( jelfLoaderContext_t *ctx, jelfLoaderSection_t *s )
     PROFILER_STOP_RELOCATESECTION;
     if( loader_shdr( ctx, s->relSecIdx, &sectHdr ) != 0 ) {
         ERR( "Error reading rela section header" );
+        rc = JELF_LOADER_RELOC;
         goto err;
     }
     PROFILER_START_RELOCATESECTION;
 
-    int r             = 0;
+    rc                = JELF_LOADER_OK;
     Jelf_Rela rel     = {0};
     size_t relEntries = sectHdr.sh_size / sizeof( rel );
     PROFILER_REL_COUNT( relEntries );
@@ -780,7 +829,7 @@ static int relocateSection( jelfLoaderContext_t *ctx, jelfLoaderSection_t *s )
          "symAddr  defValue                    Name + addend" );
     /* Read every RELA entry in the current RELA section */
     for( size_t relCount = 0; relCount < relEntries; relCount++ ) {
-        r |= loader_rela( ctx, &rel );
+        rc |= ( 0 == loader_rela( ctx, &rel ) ) ? 0 : JELF_LOADER_RELOC;
         PROFILER_MAX_R_OFFSET( rel.r_offset );
 
         Jelf_Sym sym = {0};
@@ -806,26 +855,24 @@ static int relocateSection( jelfLoaderContext_t *ctx, jelfLoaderSection_t *s )
             ERR( "  %04X %04X %-20s %08X %08X %08X"
                  "             + %X",
                  symEntry, relType, type2String( relType ), relAddr, symAddr, sym.st_name, rel.r_addend );
-            r |= -1;
+            rc |= JELF_LOADER_RELOC;
         }
         else if( relocateSymbol( relAddr, relType, symAddr, &from, &to ) != 0 ) {
             ERR( "relocateSymbol fail" );
             ERR( "  %04X %04X %-20s %08X %08X %08X->%08X  + %X", symEntry, relType, type2String( relType ), relAddr,
                  symAddr, from, to, rel.r_addend );
-            r |= -1;
+            rc |= JELF_LOADER_RELOC;
         }
         else {
             MSG( "  %04X %04X %-20s %08X %08X %08X->%08X  + %X", symEntry, relType, type2String( relType ), relAddr,
                  symAddr, from, to, rel.r_addend );
         }
     }
-    PROFILER_STOP_RELOCATESECTION;
-    return r;
 
 err:
     PROFILER_STOP_RELOCATESECTION;
-    ERR( "Error reading relocation data" );
-    return -1;
+    if( JELF_LOADER_OK != rc ) { ERR( "Error reading relocation data" ); }
+    return rc;
 }
 
 /********************
@@ -856,25 +903,25 @@ uint8_t *jelfLoaderGetHash( const jelfLoaderContext_t *ctx )
 {
     if( JELF_CTX_READY != ctx->state ) {
         ERR( "Invalid context state: %d", ctx->state );
-        goto exit;
+        goto err;
     }
     return (uint8_t *)ctx->hash;
-exit:
+err:
     return NULL;
 }
 
 int jelfLoaderRun( jelfLoaderContext_t *ctx, int argc, char **argv )
 {
+    int rc = JELF_LOADER_ERROR;
     if( JELF_CTX_READY != ctx->state ) {
         ERR( "Invalid context state: %d", ctx->state );
-        return -1;
+        rc = JELF_LOADER_CONTEXT;
+        goto err;
     }
-
-    int res = -1;
 
     if( !ctx->exec ) {
         MSG( "No Entrypoint set." );
-        return 0;
+        return JELF_LOADER_OK;
     }
 
     /* Free up loading cache */
@@ -898,10 +945,12 @@ int jelfLoaderRun( jelfLoaderContext_t *ctx, int argc, char **argv )
         typedef int ( *func_t )( int, char ** );
         func_t func = (func_t)ctx->exec;
         MSG( "Running... (%p)", func );
-        res = func( argc, argv );
-        MSG( "Result: %08X", res );
+        rc = func( argc, argv );
+        MSG( "App Returned: 0x%08X", rc );
     }
-    return res;
+
+err:
+    return rc;
 }
 
 /* First Operation: Performs the following:
@@ -916,8 +965,8 @@ int jelfLoaderRun( jelfLoaderContext_t *ctx, int argc, char **argv )
 jelfLoaderStatus_t jelfLoaderInit( jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd, const char *name,
                                    const jelfLoaderEnv_t *env )
 {
-    jelfLoaderStatus_t response = JELF_LOADER_ERROR;
-    jelfLoaderContext_t *ctx    = NULL;
+    jelfLoaderStatus_t rc    = JELF_LOADER_ERROR;
+    jelfLoaderContext_t *ctx = NULL;
 
     if( NULL == ctx_ptr ) { goto err; }
 
@@ -934,7 +983,7 @@ jelfLoaderStatus_t jelfLoaderInit( jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd
     ctx      = *ctx_ptr;
     if( NULL == ctx ) {
         ERR( "Insufficient memory for ElfLoaderContext_t" );
-        response = JELF_LOADER_OOM;
+        rc = JELF_LOADER_OOM;
         goto err;
     }
     memset( ctx, 0, sizeof( jelfLoaderContext_t ) );
@@ -947,7 +996,7 @@ jelfLoaderStatus_t jelfLoaderInit( jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd
     ctx->inf_stream.in_buf = LOADER_ALLOC_DATA( CONFIG_JELFLOADER_INPUTBUF_LEN );
     if( NULL == ctx->inf_stream.in_buf ) {
         ERR( "Insufficient memory for miniz input buffer" );
-        response = JELF_LOADER_OOM;
+        rc = JELF_LOADER_OOM;
         goto err;
     }
     ctx->inf_stream.in_buf_len = CONFIG_JELFLOADER_INPUTBUF_LEN;
@@ -957,7 +1006,7 @@ jelfLoaderStatus_t jelfLoaderInit( jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd
     ctx->inf_stream.out_buf = LOADER_ALLOC_DATA( CONFIG_JOLT_COMPRESSION_OUTPUT_BUFFER );
     if( NULL == ctx->inf_stream.out_buf ) {
         ERR( "Insufficient memory for miniz output buffer" );
-        response = JELF_LOADER_OOM;
+        rc = JELF_LOADER_OOM;
         goto err;
     }
     ctx->inf_stream.out_buf_len = CONFIG_JOLT_COMPRESSION_OUTPUT_BUFFER;
@@ -966,30 +1015,13 @@ jelfLoaderStatus_t jelfLoaderInit( jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd
     ctx->inf_stream.out_read  = ctx->inf_stream.out_buf;
     ctx->inf_stream.out_avail = 0;
 
-    /********************
-     * Read Jelf Header *
-     ********************/
-
     /**********************************
      * Initialize App Signature Check *
      **********************************/
     /* Will populate the main JELF header */
     MSG( "Initializing Signature Checker" );
-    if( !app_hash_init( ctx, &ctx->header, name ) ) {
-        response = JELF_LOADER_INVALID_KEY;
-        goto err;
-    }
-
-    /* Version Compatability Check */
-    MSG( "Checking Version Compatability" );
-    switch( check_version_compatability( &ctx->header ) ) {
-        case 0:
-            /* success */
-            break;
-        case -1: response = JELF_LOADER_VERSION_APP; goto err;
-        case -2: response = JELF_LOADER_VERSION_JOLTOS; goto err;
-        default: goto err;
-    }
+    rc = app_hash_init( ctx, &ctx->header, name );
+    if( JELF_LOADER_OK != rc ) { goto err; }
 
     /* Debug Sanity Checks */
     MSG( "SectionHeaderTableEntries: %d", ctx->header.e_shnum );
@@ -1005,7 +1037,7 @@ jelfLoaderStatus_t jelfLoaderInit( jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd
         ctx->sht_cache  = LOADER_ALLOC_DATA( sht_size );
         if( NULL == ctx->sht_cache ) {
             ERR( "Insufficient memory for section header table cache" );
-            response = JELF_LOADER_OOM;
+            rc = JELF_LOADER_OOM;
             goto err;
         }
         /* Populate the cache */
@@ -1019,12 +1051,12 @@ jelfLoaderStatus_t jelfLoaderInit( jelfLoaderContext_t **ctx_ptr, LOADER_FD_T fd
 err:
     if( NULL != ctx ) { jelfLoaderFree( ctx ); }
     *ctx_ptr = NULL;
-    return response;
+    return rc;
 }
 
 jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
 {
-    jelfLoaderStatus_t response = JELF_LOADER_ERROR;
+    jelfLoaderStatus_t rc = JELF_LOADER_ERROR;
 
     if( NULL == ctx ) {
         ERR( "NULL context" );
@@ -1033,7 +1065,7 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
 
     if( JELF_CTX_INITIALIZED != ctx->state ) {
         ERR( "Invalid context state: %d", ctx->state );
-        response = JELF_LOADER_INVALID_STATE;
+        rc = JELF_LOADER_INVALID_STATE;
         goto err;
     }
 
@@ -1048,9 +1080,9 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
          ***********************/
         // Read the section header at index n
         // Populates "secHdr" with the Section's Header
-        if( 0 != loader_shdr( ctx, n, &sectHdr ) ) {
+        rc = loader_shdr( ctx, n, &sectHdr );
+        if( JELF_LOADER_OK != rc ) {
             ERR( "Error reading section" );
-            response = JELF_LOADER_MALFORMED;
             goto err;
         }
 
@@ -1063,7 +1095,7 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
                 jelfLoaderSection_t *section = LOADER_ALLOC_DATA( sizeof( jelfLoaderSection_t ) );
                 if( NULL == section ) {
                     ERR( "Error allocating space for SHF_ALLOC section" );
-                    response = JELF_LOADER_OOM;
+                    rc = JELF_LOADER_OOM;
                     goto err;
                 }
                 memset( section, 0, sizeof( jelfLoaderSection_t ) );
@@ -1089,7 +1121,7 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
 
                 if( !section->data ) {
                     ERR( "Section %d malloc failed.", n );
-                    response = JELF_LOADER_OOM;
+                    rc = JELF_LOADER_OOM;
                     goto err;
                 }
 
@@ -1130,7 +1162,7 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
              * it must be erroneous */
             if( sectHdr.sh_info >= n ) {
                 ERR( "Rela section: bad linked section (%i -> %i)", n, sectHdr.sh_info );
-                response = JELF_LOADER_LINK;
+                rc = JELF_LOADER_LINK;
                 goto err;
             }
 
@@ -1154,7 +1186,7 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
             ctx->symtab_cache = LOADER_ALLOC_DATA( sectHdr.sh_size );
             if( NULL == ctx->symtab_cache ) {
                 ERR( "Error allocating space for SymbolTable cache" );
-                response = JELF_LOADER_OOM;
+                rc = JELF_LOADER_OOM;
                 goto err;
             }
             LOADER_GETDATA( ctx, (char *)( ctx->symtab_cache ), sectHdr.sh_size );
@@ -1163,18 +1195,22 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
     }
     if( NULL == ctx->symtab_cache ) {
         ERR( "Missing .symtab" );
-        response = JELF_LOADER_SYMTAB;
+        rc = JELF_LOADER_SYMTAB;
         goto err;
     }
     MSG( "successfully loaded sections" );
 
     Jelf_Sym sym;
-    if( 0 != loader_sym( ctx, ctx->header.e_entry_index, &sym ) ) { goto err; }
+    rc = loader_sym( ctx, ctx->header.e_entry_index, &sym );
+    if( JELF_LOADER_OK != rc ) {
+        ERR( "Failed to load entrypoint" );
+        goto err;
+    }
 
     jelfLoaderSection_t *symbol_section = findSection( ctx, sym.st_shndx );
     if( NULL == symbol_section ) {
         ERR( "Error setting entrypoint." );
-        response = JELF_LOADER_ENTRYPOINT;
+        rc = JELF_LOADER_ENTRYPOINT;
         goto err;
     }
     ctx->exec = (void *)( (Jelf_Addr)symbol_section->data );
@@ -1185,34 +1221,34 @@ jelfLoaderStatus_t jelfLoaderLoad( jelfLoaderContext_t *ctx )
 
 err:
     if( NULL != ctx ) { ctx->state = JELF_CTX_ERROR; }
-    return response;
+    return rc;
 }
 
 jelfLoaderStatus_t jelfLoaderRelocate( jelfLoaderContext_t *ctx )
 {
-    jelfLoaderStatus_t response = JELF_LOADER_ERROR;
+    jelfLoaderStatus_t rc = JELF_LOADER_OK;
 
     if( NULL == ctx ) {
         ERR( "NULL context" );
+        rc = JELF_LOADER_ERROR;
         goto err;
     }
 
     if( JELF_CTX_LOADED != ctx->state ) {
         ERR( "Invalid context state: %d", ctx->state );
-        response = JELF_LOADER_INVALID_STATE;
+        rc = JELF_LOADER_INVALID_STATE;
         goto err;
     }
 
     MSG( "Relocating sections" );
-    int r          = 0;
     uint32_t count = 0;
     for( jelfLoaderSection_t *section = ctx->section; section != NULL; section = section->next ) {
-        r |= relocateSection( ctx, section );
+        rc |= relocateSection( ctx, section );
         count++;
     }
-    if( r != 0 ) {
+    if( JELF_LOADER_OK != rc ) {
         MSG( "Relocation failed" );
-        response = JELF_LOADER_RELOC;
+        rc = JELF_LOADER_RELOC;
         goto err;
     }
     MSG( "Successfully relocated %d sections.", count );
@@ -1229,7 +1265,7 @@ jelfLoaderStatus_t jelfLoaderRelocate( jelfLoaderContext_t *ctx )
 
 err:
     if( NULL != ctx ) { ctx->state = JELF_CTX_ERROR; }
-    return response;
+    return rc;
 }
 
 void jelfLoaderFree( jelfLoaderContext_t *ctx )

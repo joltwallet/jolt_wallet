@@ -16,7 +16,7 @@ import logging
 
 # Configure logging
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-log = logging.getLogger('elf2jelf')
+log = logging.getLogger('ota_compress')
 
 def compress_data(data):
     w_bits = 12
@@ -32,12 +32,12 @@ def compress_data(data):
     return compressed_data
 
 def parse_args():
-    this_path = os.path.abspath(__file__)
+    this_path = os.path.dirname(os.path.abspath(__file__))
     default_elf_fn = os.path.join(this_path, '..', 'build', 'jolt_os.bin')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=str, default=default_elf_fn,
-            helf='ESP32 binary file to compress.')
+            help='ESP32 binary file to compress.')
     parser.add_argument('--verbose', '-v', type=str, default='INFO',
             help='''
             Valid options:
@@ -65,7 +65,6 @@ def main():
     if not os.path.isfile(args.input):
         log.error("Can't find ELF file.")
         sys.exit(-1)
-
 
     with open(args.input, 'rb') as f:
         data = f.read()

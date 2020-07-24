@@ -61,7 +61,36 @@ from jelf_structs import \
 HARDEN = 0x80000000
 log = logging.getLogger('elf2jelf')
 
-def compress_data(data):
+def compress_data(data, method='zlib'):
+    methods = {
+            'zlib': compress_data_zlib,
+            'brotli': compress_data_brotli,
+            'zstandard': compress_data_zstandard,
+            }
+    return methods[method](data)
+
+def compress_data_zstandard(data):
+    """ Compress data via zstandard
+    """
+    import zstandard as zstd
+
+    params = zstd.ZstdCompressionParameters(
+            window_log=12
+            )
+    cctx = zstd.ZstdCompressor(level=22, compression_params=params)
+    compressed_data = cctx.compress(data, )
+    return compressed_data
+
+def compress_data_brotli(data):
+    """ Compress data via brotli
+    """
+    import brotli
+    w_bits = 12
+    return brotli.compress(data, lgwin=w_bits) 
+
+def compress_data_zlib(data):
+    """ Compress data via zlib
+    """
     w_bits = 12
     level = zlib.Z_BEST_COMPRESSION
     log.info("Compressing at level %d with window (dict) size %d", level, 2**w_bits)
@@ -104,7 +133,9 @@ def parse_args():
             default='000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F',
             help="256-bit private key in hexidecimal (len=64).")
     parser.add_argument('--export_only', action='store_true',
-            help='''Only compile the new jolt_lib.c exports, then exit''')
+            help='''Only compile the new jolt_lib.h exports, then exit''')
+    parser.add_argument('--jolt_lib', type=str, default=None,
+            help="Path to save jolt_lib.h.  Defaults to current directory.")
 
     parser.add_argument('--release', action='store_true',
             help='''Set versioning to RELEASE''')
@@ -119,6 +150,8 @@ def parse_args():
     args = parser.parse_args()
     dargs = vars(args)
     return (args, dargs)
+
+args, dargs = parse_args()
 
 def read_export_list():
     """
@@ -144,9 +177,10 @@ def read_export_list():
 
 def write_export_file(export_list, major, minor, patch, release):
     """
-    Writes the export struct used in jolt_lib.c.
+    Writes the export struct used in jolt_lib.h.
     """
-    with open(os.path.join(this_path, 'jolt_lib_template.c')) as f:
+
+    with open(os.path.join(this_path, 'jolt_lib_template.h'), 'r') as f:
         template = f.read()
 
     export_string = ''
@@ -158,7 +192,11 @@ def write_export_file(export_list, major, minor, patch, release):
             export_string, len(export_list) )
 
     # Write it to where the hardware firmware expects it
-    jolt_lib_path = os.path.join(this_path, '..', 'jolt_os', 'jolt_lib.c')
+    if args.jolt_lib is None:
+        jolt_lib_path = os.path.join(this_path, '..', 'jolt_os', 'jolt_lib.h')
+    else:
+        jolt_lib_path = args.jolt_lib
+
     with open(jolt_lib_path, 'w') as f:
         f.write(jolt_lib)
 
@@ -597,7 +635,6 @@ def write_jelf_sectionheadertable(jelf_contents,
     return jelf_contents, section_count
 
 def main():
-    args, dargs = parse_args()
 
     global log
     logging_level = args.verbose.upper()
@@ -614,7 +651,7 @@ def main():
     export_list, _JELF_VERSION_MAJOR, _JELF_VERSION_MINOR, _JELF_VERSION_PATCH = read_export_list()
 
     ###################################
-    # Generate jolt_lib.c export list #
+    # Generate jolt_lib.h export list #
     ###################################
     if(args.release):
         release = "JOLT_VERSION_RELEASE"
@@ -757,7 +794,7 @@ def main():
     name_to_sign = os.path.basename(output_fn[:-5]).encode('utf-8')
 
     # TODO: not make the 44 not hardprogrammed
-    # Exclude the signature bbytes of the header
+    # Exclude the signature bytes of the header
     t_hash = sha512(name_to_sign + \
             jelf_ehdr_contents[:44] + \
             jelf_ehdr_contents[(44+64):] + \

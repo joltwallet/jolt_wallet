@@ -69,6 +69,18 @@ menu "JoltOS"
     endmenu
 
     menu "Display"
+        choice
+            prompt "Select Display Type"
+            config JOLT_DISPLAY_TYPE_SSD1306
+                bool "SSD1306"
+                help
+                    Help text here
+            config JOLT_DISPLAY_TYPE_SH1106
+                bool "SH1106"
+                help
+                    Help text here
+        endchoice
+
         config JOLT_DISPLAY_BRIGHTNESS
             int
             prompt "Default display brightness"
@@ -341,7 +353,7 @@ menu "JoltOS"
         config JOLT_TASK_STACK_SIZE_BACKGROUND
             int
             prompt "Background Stack Size"
-            default 6144
+            default 12000
             help
                 Primary task of executing any lengthy function to not block the GUI loop.
 

@@ -1,6 +1,7 @@
 #include "sdkconfig.h"
 
 #define LOG_LOCAL_LEVEL ESP_LOG_INFO
+
 #include <driver/adc.h>
 #include "cJSON.h"
 #include "esp_log.h"

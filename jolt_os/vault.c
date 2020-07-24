@@ -2,6 +2,15 @@
  Copyright (C) 2018  Brian Pugh, James Coxon, Michael Smaili
  https://www.joltwallet.com/
  */
+
+/**
+ * @file vault.c
+ * @bugs
+ *     * TODO: Under current UNIT_TESTING configuration, doesn't automatically
+ *     test vault NVS items.
+ *
+ */
+
 //#define LOG_LOCAL_LEVEL 4
 
 #include "vault.h"
@@ -30,15 +39,6 @@
     #include "jolt_gui/jolt_gui_indev.h"
     #include "unity.h"
 #endif
-
-/* Overall vault steps
- * 1. Check to see if vault is valid and params match; if so, kick the dog, then
- *    directly trigger the user's success callback. If not, continue.
- * 2. Set vault to the provided params; keep the semaphore until a pin is entered.
- * 3. Delete the pin screen and provide clean up. Kick the dog again.
- * 4. Call
- *
- */
 
 /* Type Declarations */
 /* Objects relevant to the current PIN screen. We can store these globally
@@ -113,7 +113,17 @@ static esp_err_t ps_state_exec()
     return jolt_bg_create( ps_state_exec_task, NULL, NULL );
 }
 
-/* Increments the PIN Entry State Machine in the BG */
+/**
+ * @brief Increments the PIN Entry State Machine in the BG
+ *
+ * Overall vault steps
+ * 1. Check to see if vault is valid and params match; if so, kick the dog, then
+ *    directly trigger the user's success callback. If not, continue.
+ * 2. Set vault to the provided params; keep the semaphore until a pin is entered.
+ * 3. Delete the pin screen and provide clean up. Kick the dog again.
+ * 4. Call
+ */
+
 static int ps_state_exec_task( jolt_bg_job_t *job )
 {
     /* This always gets executed in the BG Task */
@@ -126,14 +136,21 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
 
     switch( ps.state ) {
         case PIN_STATE_INIT:
+            ESP_LOGD( TAG, "[%s] PIN_STATE_INIT", __func__ );
             vault_sem_take();
             /* falls through */
         case PIN_STATE_CREATE: {
+            ESP_LOGD( TAG, "[%s] PIN_STATE_CREATE", __func__ );
             /* Create the PIN Screen */
             char title[JOLT_FS_MAX_FILENAME_BUF_LEN + 10 + 10 + 5];
 
             /* Check PIN Attempts */
-            uint32_t pin_attempts = storage_get_pin_count() - storage_get_pin_last();
+            uint32_t pin_attempts;
+#if UNIT_TESTING
+            pin_attempts = 0;
+#else
+            pin_attempts = storage_get_pin_count() - storage_get_pin_last();
+#endif
             if( pin_attempts >= CONFIG_JOLT_PIN_DEFAULT_MAX_ATTEMPT ) {
                 ESP_LOGE( TAG, "MAX PIN Attempts exceeded; factory resetting" );
                 storage_factory_reset( true );
@@ -161,7 +178,6 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
 #endif
 
             /* Create GUI Objects */
-            ESP_LOGD( TAG, "Creating PIN screen" );
             ps.state = PIN_STATE_FAIL;  // Set incase gui creation fails.
             JOLT_GUI_CTX
             {
@@ -173,6 +189,7 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
             break;
         }
         case PIN_STATE_STRETCH: {
+            ESP_LOGD( TAG, "[%s] PIN_STATE_STRETCH", __func__ );
             /* Converts a pin guess into the mnemonic string.
              * Loops back to PIN_STATE_CREATE on an erroneous PIN attempt. */
 
@@ -304,6 +321,7 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
         }
             /* falls through */
         case PIN_STATE_SUCCESS_CB: {
+            ESP_LOGD( TAG, "[%s] PIN_STATE_SUCCESS_CB", __func__ );
             /* Cleanup and Call the user callback */
             vault_cb_t cb = ps.success_cb;
             void *param   = ps.param;
@@ -315,6 +333,7 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
             break;
         }
         case PIN_STATE_FAIL: {
+            ESP_LOGD( TAG, "[%s] PIN_STATE_FAIL", __func__ );
             vault_cb_t cb = ps.failure_cb;
             void *param   = ps.param;
             ps_state_cleanup();
@@ -325,8 +344,14 @@ static int ps_state_exec_task( jolt_bg_job_t *job )
             }
             break;
         }
-        case PIN_STATE_EMPTY: ps_state_cleanup(); break;
-        default: ps_state_cleanup(); break;
+        case PIN_STATE_EMPTY:
+            ESP_LOGD( TAG, "[%s] PIN_STATE_EMPTY", __func__ );
+            ps_state_cleanup();
+            break;
+        default:
+            ESP_LOGD( TAG, "[%s] default", __func__ );
+            ps_state_cleanup();
+            break;
     }
     return 0;
 }
@@ -566,18 +591,13 @@ esp_err_t vault_set( uint32_t purpose, uint32_t coin_type, const char *bip32_key
     return ps_state_exec();
 }
 
-void vault_set_unit_test( const char *str, const char *bip32_key )
+void vault_set_pin_auto_enter()
 {
 #if UNIT_TESTING
-    uint32_t purpose, coin_type;
-    if( 0 != vault_str_to_purpose_type( str, &purpose, &coin_type ) )
-        TEST_FAIL_MESSAGE( "Failed to parse derivation path string" );
-    vault_set( purpose, coin_type, bip32_key, EMPTY_STR, NULL, NULL, NULL );
-
-    taskYIELD();
-
-    // If Vault is already valid, no need to auto-enter PIN
-    if( vault_get_valid() ) return;
+    if( vault_get_valid() ) {
+        ESP_LOGD( TAG, "Vault already valid" );
+        return;
+    }
 
     /* Enter the PIN 0 0 0 0 0 0 0 0 */
     for( uint8_t i = 0; i < CONFIG_JOLT_GUI_PIN_LEN; i++ ) {
@@ -595,6 +615,24 @@ void vault_set_unit_test( const char *str, const char *bip32_key )
 #endif
 }
 
+void vault_set_unit_test( const char *str, const char *bip32_key )
+{
+#if UNIT_TESTING
+    uint32_t purpose, coin_type;
+    if( 0 != vault_str_to_purpose_type( str, &purpose, &coin_type ) )
+        TEST_FAIL_MESSAGE( "Failed to parse derivation path string" );
+    vault_set( purpose, coin_type, bip32_key, EMPTY_STR, NULL, NULL, NULL );
+
+    taskYIELD();
+
+    vault_set_pin_auto_enter();
+
+    // If Vault is already valid, no need to auto-enter PIN
+    if( vault_get_valid() ) return;
+
+#endif
+}
+
 /* Kicks dog if vault is valid.
  * Repopulates node (therefore prompting user for PIN otherwise
  *
@@ -605,6 +643,7 @@ void vault_set_unit_test( const char *str, const char *bip32_key )
  */
 void vault_refresh( vault_cb_t failure_cb, vault_cb_t success_cb, void *param )
 {
+    ESP_LOGD( TAG, "%s", __func__ );
     if( vault_kick() ) {
         ESP_LOGI( TAG, "Vault refreshed and valid; calling %p", success_cb );
         if( NULL != success_cb ) {

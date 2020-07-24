@@ -17,6 +17,7 @@
 #include "esp_system.h"
 #include "jolttypes.h"
 #include "lvgl/lvgl.h"
+#include "soc/adc_channel.h"
 #include "vault.h"
 
 #define XJOLT_ADC1( x ) ADC1_GPIO##x##_CHANNEL
@@ -364,5 +365,20 @@ int uart_printf( const char *fmt, ... );
     do {                                                             \
         if( LOG_LOCAL_LEVEL >= 1 ) BLE_UART_LOG_BUF( buf, buf_len ); \
     } while( 0 )
+
+#if UNIT_TESTING
+
+/* Unity Asserts */
+
+/**
+ * @brief Compares a binary buffer to a null-terminated hexidecimal string. Pass test if same.
+ * @param[in] expected Exected null-terminated hexidecimal string.
+ * @param[in] actual Binary buffer to compare against.
+ */
+void TEST_ASSERT_EQUAL_HEX_STR( const char *expected, const uint8_t *actual );
+
+void TEST_ASSERT_EQUAL_HEX_STR_MESSAGE( const char *expected, const uint8_t *actual, const char *msg );
+
+#endif
 
 #endif

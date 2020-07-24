@@ -1,18 +1,121 @@
 /* All of the functions available to an app.
  *
- * DO NOT CHANGE THIS FILE (jolt_lib.c) directly, either change:
- *     * elf2jelf/jolt_lib_template.c
+ * DO NOT CHANGE THIS FILE (jolt_lib.h) directly, either change:
+ *     * elf2jelf/jolt_lib_template.h
  *     * elf2jelf/export_list.txt 
  *
  * jolt_lib.c will automatically be updated upon make
  * */
 
-#include "jolt_lib.h"
-#include "sdkconfig.h"
+/**
+ * @file jolt_lib.h
+ * @brief Primary JoltOS library for developing applications
+ * @author Brian Pugh
+ * @bugs
+ *     * Currently versioning isn't used.
+ */
+
+#ifndef JOLT_LIB_H__
+#define JOLT_LIB_H__
+
+/* It's not excellent practice to have all these in a header file like this,
+ * but it makes app development significantly easier */
+
+#include "jelf_loader/include/jelfloader.h"
+
+#if ESP_PLATFORM
+
+    #include "app_cmd/contacts.h"
+    #include "assert.h"
+    #include "bipmnemonic.h"
+    #include "cJSON.h"
+    #include "complex.h"
+    #include "ctype.h"
+    #include "driver/uart.h"
+    #include "errno.h"
+    #include "esp_console.h"
+    #include "esp_log.h"
+    #include "esp_vfs_dev.h"
+    #include "fenv.h"
+    #include "float.h"
+    #include "freertos/FreeRTOS.h"
+    #include "freertos/queue.h"
+    #include "freertos/task.h"
+    #include "hal/display.h"
+    #include "hal/storage/storage.h"
+    #include "inttypes.h"
+    #include "iso646.h"
+    #include "jolt_crypto.h"
+    #include "jolt_gui/jolt_gui.h"
+    #include "jolt_hash.h"
+    #include "jolt_helpers.h"
+    #include "json_config.h"
+    #include "limits.h"
+    #include "locale.h"
+    #include "math.h"
+    #include "mbedtls/bignum.h"
+    #include "newlib.h"
+    #include "qrcode.h"
+    #include "sdkconfig.h"
+    #include "setjmp.h"
+    #include "signal.h"
+    #include "sodium.h"
+    #include "sodium/private/curve25519_ref10.h"
+    #include "stdalign.h"
+    #include "stdarg.h"
+    #include "stdatomic.h"
+    #include "stdbool.h"
+    #include "stddef.h"
+    #include "stdint.h"
+    #include "stdio.h"
+    #include "stdlib.h"
+    #include "stdnoreturn.h"
+    #include "string.h"
+    #include "syscore/cli.h"
+    #include "syscore/cli_helpers.h"
+    #include "syscore/cli_sub.h"
+    #include "syscore/filesystem.h"
+    #include "syscore/https.h"
+    #include "syscore/launcher.h"
+    #include "tgmath.h"
+    #include "time.h"
+    #include "vault.h"
+    #include "wchar.h"
+    #include "wctype.h"
+
+#endif  // ESP_PLATFORM
+
+/**
+ * @brief Whether this was compiled for development or release
+ */
+enum {
+    JOLT_VERSION_RELEASE = 0,
+    JOLT_VERSION_DEV     = 1,
+};
+typedef uint8_t jolt_release_type_t;
+
+enum {
+    JOLT_HW_JOLT = 0,
+};
+typedef uint8_t jolt_hw_type_t;
+
+typedef struct jolt_version_t {
+    uint8_t major;
+    uint8_t minor;
+    uint8_t patch;
+    jolt_release_type_t release;
+} jolt_version_t;
+
+extern const jolt_version_t JOLT_OS_VERSION;   /**< JoltOS version */
+extern const char JOLT_HW_TAG[];  /**< To check hardware compatability */
+
+#define cJSON_Get cJSON_GetObjectItemCaseSensitive
+#define HARDEN    0x80000000
 
 #if JOLT_OS
 
-const jolt_version_t JOLT_JELF_VERSION = {
+/**< Used to determine app compatibility */
+static const jolt_version_t JOLT_JELF_VERSION = {
     .major = %d,
     .minor = %d,
     .patch = %d,
@@ -109,12 +212,12 @@ extern uint64_t __umulsidi3(unsigned x, unsigned y);
 extern int __unorddf2(double x, double y);
 extern int __unordsf2(float x, float y);
 
-#if CONFIG_COMPILER_STACK_CHECK
-extern void *__stack_chk_fail;
-extern void *__stack_chk_guard;
-#else
+#if CONFIG_STACK_CHECK_NONE
 static inline void __stack_chk_fail (void) { return; }
 void *__stack_chk_guard = NULL;
+#else
+extern void *__stack_chk_fail;
+extern void *__stack_chk_guard;
 #endif
 
 #define EXPORT_SYMBOL(x) &x
@@ -128,16 +231,18 @@ static const void *exports[] = {
 %s
 };
 
-#else
+#else  // JOLT_OS
 
-const jolt_version_t JOLT_JELF_VERSION = { 0 };
+static const jolt_version_t JOLT_JELF_VERSION = { 0 };
 
 /* Dummy place holder */
 static const void *exports[%d] = { 0 };
 
-#endif
+#endif  // JOLT_OS 
 
-const jelfLoaderEnv_t jelf_loader_env = {
+static const jelfLoaderEnv_t jelf_loader_env = {
     .exported = exports,
     .exported_size = sizeof(exports) / sizeof(*exports)
 };
+
+#endif  // JOLT_LIB_H__

@@ -30,6 +30,7 @@ static struct {
     int argc;
     char **argv;
     char name[JOLT_FS_MAX_FILENAME_BUF_LEN]; /**< App Name */
+    int nonce;
     uint8_t ref_ctr; /**< Number of references to currently running app code. Can only unload app if this is 0. */
     bool loading;    /* True until app actually begins executing */
 } app_cache = {0};
@@ -48,20 +49,15 @@ static void launch_app_cache_clear()
         if( app_cache.ctx != NULL ) { jelfLoaderFree( app_cache.ctx ); }
         app_cache.ctx = NULL;
         sodium_memzero( app_cache.name, sizeof( app_cache.name ) );
-        app_cache.argc = 0;
-        app_cache.argv = NULL;
+        app_cache.argc  = 0;
+        app_cache.argv  = NULL;
+        app_cache.nonce = 0;
     }
 }
 
-/* Launches app specified without ".jelf" suffix. i.e. "app"
- * Launches the app's function with same name as func.
- *
- * If the app was the last app launched (or currently launched app), it will
- * use the last cached instance (unless vault has been invalidated and
- * matches derivation path)
- */
 int jolt_launch_file( const char *fn_basename, int app_argc, char **app_argv, const char *passphrase )
 {
+    int nonce                = 0;
     int return_code          = JOLT_LAUNCHER_ERR_UNKNOWN_FAIL;
     lv_obj_t *preloading_scr = NULL;
     LOADER_FD_T program      = NULL;
@@ -86,20 +82,36 @@ int jolt_launch_file( const char *fn_basename, int app_argc, char **app_argv, co
     }
     ESP_LOGD( TAG, "App fullpath \"%s\"", exec_fn );
 
+    {
+        struct stat st;
+        if( 0 != stat( exec_fn, &st ) ) { EXIT( JOLT_LAUNCHER_ERR_DOESNT_EXIST ); }
+        nonce = (int)st.st_mtime;
+    }
+    ESP_LOGD( TAG, "App File mtime nonce: %d", nonce );
+
     if( NULL != app_cache.ctx ) {
         ESP_LOGI( TAG, "An app is already cached. Checking..." );
         if( 0 == strcmp( app_cache.name, fn_basename ) ) {
-            if( app_argc > 0 ) {
-                /* CLI command; Skip all the loading, goto execution */
-                goto exec;
-            }
-            else if( jolt_launch_in_app() ) {
-                ESP_LOGW( TAG, "App is already launched" );
-                EXIT( JOLT_LAUNCHER_ERR_ALREADY_LAUNCHED );
-            }
-            else {
-                ESP_LOGI( TAG, "Launching GUI for cached app" );
-                goto exec;
+            /* Confirm that the file's nonce is the same.
+             * This (with very high certainty) detects if the file has
+             * been modified since the app was cached.
+             * */
+
+            if( 0 != nonce && nonce == app_cache.nonce ) {
+                if( app_argc > 0 ) {
+                    /* CLI command; Skip all the loading, goto execution */
+                    goto exec;
+                }
+                else if( jolt_launch_in_app() ) {
+                    /* Somehow the application was launched from the Jolt GUI
+                     * while it was already in the app */
+                    ESP_LOGW( TAG, "App is already launched" );
+                    EXIT( JOLT_LAUNCHER_ERR_ALREADY_LAUNCHED );
+                }
+                else {
+                    ESP_LOGI( TAG, "Launching GUI for cached app" );
+                    goto exec;
+                }
             }
         }
         else if( jolt_launch_in_app() ) {
@@ -167,6 +179,9 @@ int jolt_launch_file( const char *fn_basename, int app_argc, char **app_argv, co
     strlcpy( app_cache.name, fn_basename, sizeof( app_cache.name ) );
     ESP_LOGD( TAG, "app_cache name set to \"%s\"", app_cache.name );
 
+    app_cache.nonce = nonce;
+    ESP_LOGD( TAG, "app_cache nonce set to %d", app_cache.nonce );
+
 exec:
     /* Verify Signature */
     if( !jelfLoaderSigCheck( app_cache.ctx ) ) {
@@ -180,7 +195,7 @@ exec:
 
     ESP_LOGI( TAG, "Derivation Purpose: 0x%x. Coin Type: 0x%x", app_cache.ctx->header.e_coin_purpose,
               app_cache.ctx->header.e_coin_path );
-    ESP_LOGI( TAG, "The following BIP32 Key is %d char long:%s.", strlen( app_cache.ctx->bip32_key ),
+    ESP_LOGI( TAG, "The following BIP32 Key is %d char long:%s.", strlen( app_cache.ctx->header.e_bip32key ),
               app_cache.ctx->header.e_bip32key );
     jolt_launch_inc_ref_ctr();
     vault_set( app_cache.ctx->header.e_coin_purpose, app_cache.ctx->header.e_coin_path,
