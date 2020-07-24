@@ -75,6 +75,9 @@ static int gatt_svr_chr_access_spp_read( uint16_t conn_handle, uint16_t attr_han
 static int gatt_svr_chr_access_spp_write( uint16_t conn_handle, uint16_t attr_handle,
                                           struct ble_gatt_access_ctxt *ctxt, void *arg );
 
+/* For some reason this isn't in an esp-idf/nimble header? */
+void ble_store_config_init(void);
+
 static const char TAG[] = "bluetooth.c";
 
 xQueueHandle ble_in_queue = NULL;
@@ -849,6 +852,8 @@ esp_err_t jolt_bluetooth_start()
         if( rc != 0 ) { goto exit; }
     }
 
+    ble_store_config_init();
+
     nimble_port_freertos_init( bleprph_host_task );
 
 exit:
@@ -1016,7 +1021,8 @@ static void bleprph_on_sync( void )
 
     /* Printing ADDR */
     uint8_t addr_val[6] = {0};
-    rc                  = ble_hs_id_copy_addr( own_addr_type, addr_val, NULL );
+
+    rc = ble_hs_id_copy_addr( own_addr_type, addr_val, NULL );
 
     {
         uint8_t *u8p = addr_val;
