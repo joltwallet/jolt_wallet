@@ -54,6 +54,7 @@ FILE *ble_stderr = NULL;
     #include "nimble/nimble_port_freertos.h"
     #include "services/gap/ble_svc_gap.h"
     #include "services/gatt/ble_svc_gatt.h"
+    #include "host/ble_hs_pvcy.h"
 
     #define GATTS_SEND_REQUIRE_CONFIRM false
 
@@ -829,8 +830,9 @@ esp_err_t jolt_bluetooth_start()
         ble_hs_cfg.sm_bonding        = 1;
         ble_hs_cfg.sm_mitm           = 1;
         ble_hs_cfg.sm_sc             = 1;
-        ble_hs_cfg.sm_our_key_dist   = 1;
-        ble_hs_cfg.sm_their_key_dist = 1;
+        ble_hs_cfg.sm_our_key_dist   = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
+        ble_hs_cfg.sm_their_key_dist = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
+
     }
 
     /* Set the default device name. */
@@ -1009,14 +1011,15 @@ static void bleprph_on_sync( void )
 {
     int rc;
 
-    rc = ble_hs_util_ensure_addr( 0 );
+    rc = ble_hs_util_ensure_addr( 1 );
     assert( rc == 0 );
 
-    /* Figure out address to use while advertising (no privacy for now) */
-    rc = ble_hs_id_infer_auto( 0, &own_addr_type );
-    if( rc != 0 ) {
-        MODLOG_DFLT( ERROR, "error determining address type; rc=%d\n", rc );
-        return;
+    own_addr_type = BLE_OWN_ADDR_RANDOM;
+
+    rc = ble_hs_pvcy_rpa_config(true);
+    if (rc != ESP_OK) {
+        ESP_LOGE(TAG, "Error configuring privacy (RPA)");
+        return rc;
     }
 
     /* Printing ADDR */
